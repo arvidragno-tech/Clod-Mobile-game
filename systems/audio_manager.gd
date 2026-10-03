@@ -53,6 +53,20 @@ func _ready() -> void:
 	add_child(_ambient_player)
 
 
+func _exit_tree() -> void:
+	stop_all()
+
+
+## Stops every playback (used before quitting so streams release cleanly).
+func stop_all() -> void:
+	_ambient_player.stop()
+	for p in _pool:
+		p.stop()
+		p.stream = null
+	_ambient_player.stream = null
+	_streams.clear()
+
+
 func play_sfx(id: StringName, pitch_variance: float = 0.05) -> void:
 	if not sfx_enabled:
 		return

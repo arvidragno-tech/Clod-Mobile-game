@@ -52,6 +52,8 @@ func _run_all() -> void:
 	add_child(_main)
 	await _e2e_full_loop()
 	SaveManager.delete_save()
+	AudioManager.stop_all()
+	await _frames(10)
 	print("")
 	if _failures.is_empty():
 		print("ALL TESTS PASSED (%d checks)" % _checks)
@@ -184,7 +186,7 @@ func _test_save_roundtrip() -> void:
 
 func _e2e_full_loop() -> void:
 	await _wait_screen(UIManager.SCREEN_MAIN_MENU)
-	await _shot("main_menu")
+	await _checkpoint("main_menu")
 	await _click_named("NewGameButton")
 	await _wait_screen(UIManager.SCREEN_CLINIC)
 	var start_money := EconomyManager.money
@@ -198,7 +200,7 @@ func _e2e_full_loop() -> void:
 		check(r1.grade in ["S", "A", "B"], "run 1: clean play grades B or better (%s)" % r1.grade)
 		check(r1.complications_total >= 1, "run 1: at least one complication happened")
 		check(r1.complications_handled == r1.complications_total, "run 1: complications handled")
-	await _shot("results_clean")
+	await _checkpoint("results_clean")
 	await _click_named("ContinueButton", 10.0)
 	await _wait_screen(UIManager.SCREEN_CLINIC)
 	check(EconomyManager.money > start_money, "money increased after surgery (%d -> %d)" % [start_money, EconomyManager.money])
@@ -224,17 +226,23 @@ func _e2e_full_loop() -> void:
 	await _wait_screen(UIManager.SCREEN_RESULTS, 10.0)
 	var r3 := GameManager.last_result
 	check(r3 != null and not r3.success and r3.grade == "F", "run 3: aborted op is graded F")
-	await _shot("results_failed")
+	await _checkpoint("results_failed")
 	await _click_named("ContinueButton", 10.0)
 	await _wait_screen(UIManager.SCREEN_CLINIC)
 	check(ReputationManager.reputation < rep_before + (r2.reputation_delta if r2 else 0) + 1, "failure cost reputation")
+
+	# Run 4: reckless splicing until the neural link collapses.
+	var r4 := await _play_customer_to_results(false, true)
+	check(r4 != null and not r4.success and r4.failure_reason == &"neural_collapse", "run 4: repeated mistakes fail the operation (%s)" % (r4.failure_reason if r4 else &"none"))
+	await _click_named("ContinueButton", 10.0)
+	await _wait_screen(UIManager.SCREEN_CLINIC)
 
 	# Supply terminal purchase.
 	EconomyManager.add_money(500)
 	await _click_named("SupplyButton")
 	await _frames(5)
 	var before_stock := InventoryManager.get_implant_count(&"nx1_neural_bridge")
-	await _shot("supply")
+	await _checkpoint("supply")
 	await _click_named("BuyImplant_nx1_neural_bridge")
 	check(InventoryManager.get_implant_count(&"nx1_neural_bridge") == before_stock + 1, "supply terminal restocks implant")
 	await _click_named("CloseButton")
@@ -247,7 +255,7 @@ func _e2e_full_loop() -> void:
 
 
 ## Clinic -> customer -> diagnosis -> plan -> surgery -> results.
-func _play_customer_to_results(sloppy: bool) -> SurgeryResult:
+func _play_customer_to_results(sloppy: bool, reckless: bool = false) -> SurgeryResult:
 	await _start_surgery_from_clinic(sloppy)
 	var stage_count := SurgeryManager.get_stage_count()
 	for i in stage_count:
@@ -258,15 +266,23 @@ func _play_customer_to_results(sloppy: bool) -> SurgeryResult:
 		var screen := UIManager.current_screen
 		var stage: SurgeryStage = screen.current_stage
 		var stage_id := stage.stage.id
-		await _shot("surgery_stage_%d_%s" % [i, stage_id])
+		await _checkpoint("surgery_stage_%d_%s" % [i, stage_id])
+		if reckless and stage is ConnectInterfaceStage:
+			await _click_named("Tool_splicer")
+			var attempts := 0
+			while SurgeryManager.is_active and attempts < 30:
+				var wrong: Array = stage.get_autoplay_hints()["wrong"]
+				await _drag([stage.get_global_rect().position + wrong[0], stage.get_global_rect().position + wrong[1]])
+				attempts += 1
+			break
 		await _play_stage(stage, sloppy)
 		if stage_id in [&"incision", &"debride", &"install", &"connect", &"close"]:
-			await _shot("surgery_after_%s" % stage_id)
+			await _checkpoint("surgery_after_%s" % stage_id)
 		var advanced := await _wait_until(func() -> bool: return not SurgeryManager.is_active or SurgeryManager.stage_index > i, STEP_TIMEOUT)
 		check(advanced, "stage %d (%s) completed" % [i, stage_id])
 		if not advanced or not SurgeryManager.is_active:
 			break
-	await _shot("surgery_end")
+	await _checkpoint("surgery_end")
 	await _wait_screen(UIManager.SCREEN_RESULTS, 10.0)
 	await _frames(10)
 	return GameManager.last_result
@@ -276,18 +292,18 @@ func _start_surgery_from_clinic(sloppy: bool) -> void:
 	await _wait_screen(UIManager.SCREEN_CLINIC)
 	await _wait_until(func() -> bool: return CustomerManager.has_customer(), 10.0)
 	await _frames(20)
-	await _shot("clinic")
+	await _checkpoint("clinic")
 	await _click_named("SeeButton")
 	await _wait_screen(UIManager.SCREEN_CUSTOMER)
 	await _frames(30)
-	await _shot("customer")
+	await _checkpoint("customer")
 	await _click_named("AcceptButton")
 	await _wait_screen(UIManager.SCREEN_DIAGNOSIS)
 	var scan: ScanView = UIManager.current_screen.get_node("%ScanView")
 	for region: StringName in [&"neck", &"head", &"spine"]:
 		await _tap(scan.get_global_rect().position + scan.get_region_center(region))
 		await _wait_until(func() -> bool: return not scan.is_busy(), 3.0)
-	await _shot("diagnosis")
+	await _checkpoint("diagnosis")
 	var customer := GameManager.get_current_customer()
 	var diagnosis := customer.true_diagnosis_id
 	if sloppy:
@@ -298,7 +314,7 @@ func _start_surgery_from_clinic(sloppy: bool) -> void:
 	await _click_named("Option_%s" % diagnosis)
 	await _click_named("ConfirmButton")
 	await _frames(5)
-	await _shot("plan")
+	await _checkpoint("plan")
 	await _click_named("BeginButton")
 	await _wait_screen(UIManager.SCREEN_SURGERY)
 
@@ -388,6 +404,22 @@ func _play_stage(stage: SurgeryStage, sloppy: bool) -> void:
 			await _tap(origin + p)
 
 
+## Every visible button must be fully on-screen and at least touch-sized.
+func _check_layout(label: String) -> void:
+	var view := get_viewport().get_visible_rect().grow(1.0)
+	var offenders: Array[String] = []
+	for node in get_tree().root.find_children("*", "BaseButton", true, false):
+		var b := node as Control
+		if not b.is_visible_in_tree():
+			continue
+		var r := b.get_global_rect()
+		if not view.encloses(r):
+			offenders.append("%s off-screen %s" % [b.name, r])
+		elif minf(r.size.x, r.size.y) < GameConfig.MIN_TOUCH - 4.0:
+			offenders.append("%s too small %s" % [b.name, r.size])
+	check(offenders.is_empty(), "layout ok at '%s' %s" % [label, ", ".join(offenders)])
+
+
 # --- Input helpers -----------------------------------------------------------
 
 func _handle_complication() -> void:
@@ -397,7 +429,7 @@ func _handle_complication() -> void:
 	var b := UIManager.current_screen.find_child("Quick_%s" % c.counter_action, true, false) as Button
 	if b and not b.disabled:
 		_handling_complication = true
-		await _shot("complication")
+		await _checkpoint("complication")
 		await _click(b)
 		_handling_complication = false
 
@@ -516,7 +548,9 @@ func _seconds(s: float) -> void:
 	await get_tree().create_timer(s).timeout
 
 
-func _shot(label: String) -> void:
+## Layout guard + optional screenshot at key moments of the playthrough.
+func _checkpoint(label: String) -> void:
+	_check_layout(label)
 	if _shots_dir.is_empty():
 		return
 	await RenderingServer.frame_post_draw
