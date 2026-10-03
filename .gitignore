@@ -1,0 +1,35 @@
+# Godot 4 generated
+.godot/
+.import/
+*.translation
+
+# Exports / builds
+/build/
+/export/
+*.ipa
+*.apk
+*.aab
+*.pck
+*.zip
+*.xcodeproj/
+*.xcarchive/
+
+# Export credentials (never commit signing info)
+export_credentials.cfg
+
+# Mono / C# (not used, but safe)
+.mono/
+data_*/
+mono_crash.*.json
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp
+.vscode/
+.idea/
+
+# Test / tooling output
+/tests/output/
+__pycache__/
