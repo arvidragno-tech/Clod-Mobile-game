@@ -156,12 +156,14 @@ class Canvas:
                     if a > 0:
                         self.set(x, y, (c[0], c[1], c[2], a))
 
-    def save(self, rel_path: str, scale: int = 1) -> None:
+    def save(self, rel_path: str, scale: int = 1, opaque: bool = False) -> None:
         path = os.path.join(ROOT, rel_path)
         os.makedirs(os.path.dirname(path), exist_ok=True)
         img = self.img
         if scale != 1:
             img = img.resize((self.w * scale, self.h * scale), Image.NEAREST)
+        if opaque:
+            img = img.convert("RGB")  # App Store icons must not have alpha
         img.save(path)
         print("wrote", os.path.relpath(path, os.path.join(ROOT, "..", "..")))
 
@@ -683,7 +685,7 @@ def app_icon() -> None:
     cv.line(15, 22, 18, 17, ACCENT)
     cv.hline(18, 27, 17, ACCENT)
     cv.save("ui/app_icon.png", scale=8)        # 256x256 (project icon)
-    cv.save("ui/app_icon_1024.png", scale=32)  # 1024x1024 (App Store icon)
+    cv.save("ui/app_icon_1024.png", scale=32, opaque=True)  # App Store icon
 
 
 def main() -> None:
