@@ -4,7 +4,7 @@ extends Control
 ## The item list is built from CyberwareManager / InventoryManager data.
 
 const ICON_SIZE := Vector2(44, 44)
-const BUY_BUTTON_SIZE := Vector2(96, 48)
+const BUY_BUTTON_SIZE := Vector2(84, 48)
 
 var _list: VBoxContainer
 var _money: Label
@@ -107,6 +107,7 @@ func _add_row(icon_path: String, title: String, desc: String, price: int, on_buy
 	row.add_child(info)
 	var name_label := Label.new()
 	name_label.text = title
+	name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	info.add_child(name_label)
 	var desc_label := Label.new()
 	desc_label.text = desc
