@@ -1,0 +1,200 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/screens/customer_screen.gd" id="1_cust"]
+
+[node name="CustomerScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_cust")
+
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="VBox" type="VBoxContainer" parent="Margin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Header" type="HBoxContainer" parent="Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="BackButton" type="Button" parent="Margin/VBox/Header"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+focus_mode = 0
+theme_type_variation = &"GhostButton"
+text = "<"
+
+[node name="Titles" type="VBoxContainer" parent="Margin/VBox/Header"]
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_constants/separation = 0
+
+[node name="Step" type="Label" parent="Margin/VBox/Header/Titles"]
+layout_mode = 2
+theme_type_variation = &"SubHeaderLabel"
+text = "STEP 1 / 4 · INTAKE"
+
+[node name="Title" type="Label" parent="Margin/VBox/Header/Titles"]
+layout_mode = 2
+theme_type_variation = &"HeaderLabel"
+text = "CUSTOMER FILE"
+
+[node name="Profile" type="PanelContainer" parent="Margin/VBox"]
+layout_mode = 2
+theme_type_variation = &"AccentPanel"
+
+[node name="HBox" type="HBoxContainer" parent="Margin/VBox/Profile"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Portrait" type="TextureRect" parent="Margin/VBox/Profile/HBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 120)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Info" type="VBoxContainer" parent="Margin/VBox/Profile/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+theme_override_constants/separation = 4
+
+[node name="CustomerName" type="Label" parent="Margin/VBox/Profile/HBox/Info"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HeaderLabel"
+text = "Name"
+autowrap_mode = 3
+
+[node name="Alias" type="Label" parent="Margin/VBox/Profile/HBox/Info"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MonoLabel"
+theme_override_colors/font_color = Color(1, 0.239216, 0.505882, 1)
+text = "\"Alias\""
+
+[node name="Bio" type="Label" parent="Margin/VBox/Profile/HBox/Info"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"DimLabel"
+text = "Age · Job"
+autowrap_mode = 3
+
+[node name="DialogueCard" type="PanelContainer" parent="Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_type_variation = &"CardPanel"
+
+[node name="VBox" type="VBoxContainer" parent="Margin/VBox/DialogueCard"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="Caption" type="Label" parent="Margin/VBox/DialogueCard/VBox"]
+layout_mode = 2
+theme_type_variation = &"SubHeaderLabel"
+text = "STATEMENT"
+
+[node name="Dialogue" type="Label" parent="Margin/VBox/DialogueCard/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MonoLabel"
+text = "..."
+autowrap_mode = 3
+
+[node name="Job" type="PanelContainer" parent="Margin/VBox"]
+layout_mode = 2
+theme_type_variation = &"CardPanel"
+
+[node name="Grid" type="GridContainer" parent="Margin/VBox/Job"]
+layout_mode = 2
+theme_override_constants/h_separation = 12
+theme_override_constants/v_separation = 6
+columns = 2
+
+[node name="ProcedureCaption" type="Label" parent="Margin/VBox/Job/Grid"]
+layout_mode = 2
+theme_type_variation = &"SubHeaderLabel"
+text = "PROCEDURE"
+
+[node name="Procedure" type="Label" parent="Margin/VBox/Job/Grid"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "-"
+autowrap_mode = 3
+
+[node name="ImplantCaption" type="Label" parent="Margin/VBox/Job/Grid"]
+layout_mode = 2
+theme_type_variation = &"SubHeaderLabel"
+text = "IMPLANT"
+
+[node name="Implant" type="Label" parent="Margin/VBox/Job/Grid"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "-"
+autowrap_mode = 3
+
+[node name="OfferCaption" type="Label" parent="Margin/VBox/Job/Grid"]
+layout_mode = 2
+theme_type_variation = &"SubHeaderLabel"
+text = "OFFER"
+
+[node name="Offer" type="Label" parent="Margin/VBox/Job/Grid"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MonoLabel"
+theme_override_colors/font_color = Color(1, 0.705882, 0.239216, 1)
+text = "-"
+
+[node name="RiskCaption" type="Label" parent="Margin/VBox/Job/Grid"]
+layout_mode = 2
+theme_type_variation = &"SubHeaderLabel"
+text = "RISK"
+
+[node name="Risk" type="Label" parent="Margin/VBox/Job/Grid"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MonoLabel"
+text = "-"
+
+[node name="Buttons" type="HBoxContainer" parent="Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="DeclineButton" type="Button" parent="Margin/VBox/Buttons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+theme_type_variation = &"GhostButton"
+text = "DECLINE"
+
+[node name="AcceptButton" type="Button" parent="Margin/VBox/Buttons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 1.8
+focus_mode = 0
+theme_type_variation = &"AccentButton"
+text = "ACCEPT JOB"

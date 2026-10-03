@@ -1,0 +1,76 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/components/player_hud.gd" id="1_hud"]
+
+[node name="PlayerHud" type="PanelContainer"]
+theme_type_variation = &"HudPanel"
+script = ExtResource("1_hud")
+
+[node name="HBox" type="HBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="MoneyBox" type="VBoxContainer" parent="HBox"]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="Caption" type="Label" parent="HBox/MoneyBox"]
+layout_mode = 2
+theme_type_variation = &"SubHeaderLabel"
+text = "CREDS"
+
+[node name="Money" type="Label" parent="HBox/MoneyBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MonoLabel"
+theme_override_colors/font_color = Color(1, 0.705882, 0.239216, 1)
+text = "0 cr"
+
+[node name="LevelBox" type="VBoxContainer" parent="HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 2
+
+[node name="Caption" type="Label" parent="HBox/LevelBox"]
+layout_mode = 2
+theme_type_variation = &"SubHeaderLabel"
+text = "RIPPER LEVEL"
+
+[node name="Level" type="Label" parent="HBox/LevelBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MonoLabel"
+theme_override_colors/font_color = Color(0.180392, 0.901961, 0.784314, 1)
+text = "LV 1"
+
+[node name="XpBar" type="ProgressBar" parent="HBox/LevelBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 5)
+layout_mode = 2
+show_percentage = false
+
+[node name="RepBox" type="VBoxContainer" parent="HBox"]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="Caption" type="Label" parent="HBox/RepBox"]
+layout_mode = 2
+theme_type_variation = &"SubHeaderLabel"
+text = "STREET REP"
+horizontal_alignment = 2
+
+[node name="Rep" type="Label" parent="HBox/RepBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MonoLabel"
+theme_override_colors/font_color = Color(1, 0.239216, 0.505882, 1)
+text = "REP 0"
+horizontal_alignment = 2
+
+[node name="RepTier" type="Label" parent="HBox/RepBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"DimLabel"
+theme_override_font_sizes/font_size = 12
+text = "Unknown"
+horizontal_alignment = 2

@@ -1,0 +1,111 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/screens/main_menu_screen.gd" id="1_menu"]
+[ext_resource type="Script" path="res://scripts/components/city_backdrop.gd" id="2_city"]
+
+[node name="MainMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_menu")
+
+[node name="Backdrop" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("2_city")
+
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 28
+theme_override_constants/margin_bottom = 20
+
+[node name="VBox" type="VBoxContainer" parent="Margin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="TopSpacer" type="Control" parent="Margin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 0.6
+
+[node name="Kicker" type="Label" parent="Margin/VBox"]
+layout_mode = 2
+theme_type_variation = &"SubHeaderLabel"
+text = "UNDERGROUND CYBER-SURGERY"
+horizontal_alignment = 1
+
+[node name="Title" type="Label" parent="Margin/VBox"]
+layout_mode = 2
+theme_type_variation = &"TitleLabel"
+text = "UNDERCITY"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"TitleLabel"
+theme_override_colors/font_color = Color(1, 0.239216, 0.505882, 1)
+theme_override_colors/font_shadow_color = Color(0.478431, 0.121569, 0.258824, 0.8)
+theme_override_font_sizes/font_size = 52
+text = "RIPPER"
+horizontal_alignment = 1
+
+[node name="Tagline" type="Label" parent="Margin/VBox"]
+layout_mode = 2
+theme_type_variation = &"DimLabel"
+text = "Cut clean. Get paid. Stay off the grid."
+horizontal_alignment = 1
+
+[node name="MidSpacer" type="Control" parent="Margin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Buttons" type="VBoxContainer" parent="Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="ContinueButton" type="Button" parent="Margin/VBox/Buttons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+focus_mode = 0
+theme_type_variation = &"AccentButton"
+text = "CONTINUE"
+
+[node name="NewGameButton" type="Button" parent="Margin/VBox/Buttons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+focus_mode = 0
+text = "NEW GAME"
+
+[node name="SoundButton" type="Button" parent="Margin/VBox/Buttons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+focus_mode = 0
+theme_type_variation = &"GhostButton"
+text = "SOUND: ON"
+
+[node name="Version" type="Label" parent="Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"DimLabel"
+theme_override_font_sizes/font_size = 12
+text = "v0.1.0"
+horizontal_alignment = 1

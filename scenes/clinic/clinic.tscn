@@ -1,0 +1,193 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/screens/clinic_screen.gd" id="1_clinic"]
+[ext_resource type="PackedScene" path="res://ui/components/player_hud.tscn" id="2_hud"]
+[ext_resource type="Script" path="res://scripts/components/clinic_view.gd" id="3_view"]
+
+[node name="Clinic" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_clinic")
+
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="VBox" type="VBoxContainer" parent="Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="PlayerHud" parent="Margin/VBox" instance=ExtResource("2_hud")]
+layout_mode = 2
+
+[node name="ViewFrame" type="PanelContainer" parent="Margin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_type_variation = &"HudPanel"
+
+[node name="ClinicView" type="Control" parent="Margin/VBox/ViewFrame"]
+unique_name_in_owner = true
+layout_mode = 2
+script = ExtResource("3_view")
+
+[node name="TopRow" type="HBoxContainer" parent="Margin/VBox/ViewFrame/ClinicView"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 6.0
+offset_top = 6.0
+offset_right = -6.0
+offset_bottom = 30.0
+grow_horizontal = 2
+mouse_filter = 2
+
+[node name="Location" type="Label" parent="Margin/VBox/ViewFrame/ClinicView/TopRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"SubHeaderLabel"
+theme_override_colors/font_color = Color(0.788235, 0.839216, 0.87451, 1)
+theme_override_colors/font_outline_color = Color(0.027451, 0.031373, 0.047059, 1)
+theme_override_constants/outline_size = 4
+text = "SUBLEVEL 3 · BACKROOM CLINIC"
+
+[node name="BottomRow" type="VBoxContainer" parent="Margin/VBox/ViewFrame/ClinicView"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 6.0
+offset_top = -72.0
+offset_right = -6.0
+offset_bottom = -6.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+theme_override_constants/separation = 4
+alignment = 2
+
+[node name="StockLabel" type="Label" parent="Margin/VBox/ViewFrame/ClinicView/BottomRow"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MonoLabel"
+theme_override_colors/font_color = Color(0.419608, 0.486275, 0.54902, 1)
+theme_override_colors/font_outline_color = Color(0.027451, 0.031373, 0.047059, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 18
+text = "STOCK"
+horizontal_alignment = 2
+
+[node name="BlackMarketButton" type="Button" parent="Margin/VBox/ViewFrame/ClinicView/BottomRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 8
+focus_mode = 0
+theme_type_variation = &"GhostButton"
+theme_override_colors/font_color = Color(0.478431, 0.121569, 0.258824, 1)
+theme_override_font_sizes/font_size = 11
+text = "BLACK MARKET · LOCKED"
+
+[node name="CustomerCard" type="PanelContainer" parent="Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"AccentPanel"
+
+[node name="VBox" type="VBoxContainer" parent="Margin/VBox/CustomerCard"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Info" type="HBoxContainer" parent="Margin/VBox/CustomerCard/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Portrait" type="TextureRect" parent="Margin/VBox/CustomerCard/VBox/Info"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(72, 72)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Text" type="VBoxContainer" parent="Margin/VBox/CustomerCard/VBox/Info"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+theme_override_constants/separation = 2
+
+[node name="CustomerName" type="Label" parent="Margin/VBox/CustomerCard/VBox/Info/Text"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HeaderLabel"
+theme_override_font_sizes/font_size = 14
+text = "Name"
+autowrap_mode = 3
+
+[node name="Request" type="Label" parent="Margin/VBox/CustomerCard/VBox/Info/Text"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Wants:"
+
+[node name="Offer" type="Label" parent="Margin/VBox/CustomerCard/VBox/Info/Text"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MonoLabel"
+theme_override_colors/font_color = Color(1, 0.705882, 0.239216, 1)
+text = "Offer"
+
+[node name="Waiting" type="Label" parent="Margin/VBox/CustomerCard/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+theme_type_variation = &"DimLabel"
+text = "Waiting for customers..."
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="SeeButton" type="Button" parent="Margin/VBox/CustomerCard/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+focus_mode = 0
+theme_type_variation = &"AccentButton"
+text = "SEE CUSTOMER"
+
+[node name="Actions" type="HBoxContainer" parent="Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SupplyButton" type="Button" parent="Margin/VBox/Actions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+text = "SUPPLY"
+
+[node name="RecordsButton" type="Button" parent="Margin/VBox/Actions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+text = "RECORDS"
+
+[node name="MenuButton" type="Button" parent="Margin/VBox/Actions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+theme_type_variation = &"GhostButton"
+text = "MENU"
