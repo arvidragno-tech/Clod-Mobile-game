@@ -24,7 +24,9 @@ var last_saved_unix: int = 0
 func _notification(what: int) -> void:
 	match what:
 		NOTIFICATION_APPLICATION_PAUSED, NOTIFICATION_APPLICATION_FOCUS_OUT, NOTIFICATION_WM_CLOSE_REQUEST:
-			if autosave_enabled:
+			# Never persist a half-finished operation; the last save is from
+			# before it started, which is the state the player returns to.
+			if autosave_enabled and not SurgeryManager.is_active:
 				save_game()
 
 

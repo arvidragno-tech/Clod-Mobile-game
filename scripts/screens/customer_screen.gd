@@ -35,7 +35,7 @@ func on_enter(_params: Dictionary) -> void:
 	_bio.text = "%d yrs · %s" % [c.age, c.occupation]
 	_procedure.text = surgery.display_name
 	_implant.text = "%s (%s)" % [item.display_name, item.manufacturer] if item else "?"
-	_offer.text = "~%s" % EconomyManager.format_money(int(round(surgery.base_pay * c.pay_multiplier)))
+	_offer.text = "%s base" % EconomyManager.format_money(int(round(surgery.base_pay * c.pay_multiplier)))
 	var risk := c.get_risk_level()
 	_risk.text = RISK_LABELS[risk]
 	_risk.add_theme_color_override(&"font_color", RISK_COLORS[risk])

@@ -57,7 +57,7 @@ func _show_customer(customer: CustomerData, animate: bool) -> void:
 	_name.text = "%s \"%s\"" % [customer.display_name, customer.alias]
 	_request.text = "Wants: %s" % (item.display_name if item else "?")
 	var expected := int(round(surgery.base_pay * customer.pay_multiplier)) if surgery else 0
-	_offer.text = "Offer ~%s" % EconomyManager.format_money(expected)
+	_offer.text = "Offers %s" % EconomyManager.format_money(expected)
 	_waiting.visible = false
 	for node: Control in [_portrait, _name, _request, _offer, _see_button]:
 		node.visible = true
