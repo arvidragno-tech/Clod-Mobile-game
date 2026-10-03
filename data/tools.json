@@ -1,0 +1,18 @@
+{
+  "tools": [
+    { "id": "scalpel_rust", "name": "Rust-Edge Scalpel", "category": "scalpel", "tier": 1, "price": 0, "starter": true,
+      "description": "Sharpened on a curb. Does the job.", "icon": "res://assets/sprites/tools/scalpel.png", "precision": 1.0, "speed": 1.0 },
+    { "id": "scalpel_mono", "name": "Mono-Edge Scalpel", "category": "scalpel", "tier": 2, "price": 450,
+      "description": "Molecular edge. Wider safe margin on every cut.", "icon": "res://assets/sprites/tools/scalpel_mono.png", "precision": 1.6, "speed": 1.0 },
+    { "id": "retractor_basic", "name": "Spreader Clamps", "category": "retractor", "tier": 1, "price": 0, "starter": true,
+      "description": "Four hooks and a spring.", "icon": "res://assets/sprites/tools/retractor.png", "precision": 1.0, "speed": 1.0 },
+    { "id": "cautery_basic", "name": "Cauter-Laser", "category": "cautery", "tier": 1, "price": 0, "starter": true,
+      "description": "Repurposed engraving laser. Burns what you point it at.", "icon": "res://assets/sprites/tools/cautery.png", "precision": 1.0, "speed": 1.0 },
+    { "id": "forceps_basic", "name": "Grip Forceps", "category": "forceps", "tier": 1, "price": 0, "starter": true,
+      "description": "Magnetic tips for handling chrome.", "icon": "res://assets/sprites/tools/forceps.png", "precision": 1.0, "speed": 1.0 },
+    { "id": "splicer_basic", "name": "Neural Splicer", "category": "splicer", "tier": 1, "price": 0, "starter": true,
+      "description": "Fuses synthetic leads onto living nerve.", "icon": "res://assets/sprites/tools/splicer.png", "precision": 1.0, "speed": 1.0 },
+    { "id": "suture_basic", "name": "Staple Suturer", "category": "suture", "tier": 1, "price": 0, "starter": true,
+      "description": "Industrial stapler, medically adjusted. Mostly.", "icon": "res://assets/sprites/tools/suture.png", "precision": 1.0, "speed": 1.0 }
+  ]
+}

@@ -1,0 +1,128 @@
+{
+  "surgeries": [
+    {
+      "id": "install_basic_neural_implant",
+      "code": "INSTALL_BASIC_NEURAL_IMPLANT",
+      "name": "Neural Bridge Install",
+      "description": "Seat an NX-1 Neural Bridge in the cervical port cavity and splice it to the spinal relay.",
+      "cyberware": "nx1_neural_bridge",
+      "base_pay": 260,
+      "base_xp": 60,
+      "target_time_sec": 150,
+      "diagnosis_options": [
+        {
+          "id": "scar_tissue",
+          "name": "Port scar tissue",
+          "description": "Fibrous growth around an old interface site."
+        },
+        {
+          "id": "burnt_socket",
+          "name": "Burnt legacy socket",
+          "description": "Previous implant overloaded; charred contacts in the cavity."
+        },
+        {
+          "id": "neural_rejection",
+          "name": "Neural rejection",
+          "description": "Immune response against synthetic nerve tissue."
+        }
+      ],
+      "stages": [
+        {
+          "id": "prepare",
+          "type": "anesthesia",
+          "title": "PREPARE PATIENT",
+          "instruction": "HOLD to infuse sedative. Release inside the green band.",
+          "tool": "",
+          "params": {
+            "fill_rate": 38.0,
+            "zone_min": 55.0,
+            "zone_max": 72.0
+          }
+        },
+        {
+          "id": "incision",
+          "type": "incision",
+          "title": "INCISION",
+          "instruction": "Select SCALPEL. Drag along the guide from the marker.",
+          "tool": "scalpel",
+          "params": {
+            "path": [[0.47, 0.18], [0.5, 0.5], [0.53, 0.82]],
+            "tolerance_px": 3.2
+          }
+        },
+        {
+          "id": "expose",
+          "type": "expose",
+          "title": "EXPOSE INTERFACE",
+          "instruction": "Select RETRACTOR. Tap each clamp point to open the site.",
+          "tool": "retractor",
+          "params": {
+            "clamps": [[0.33, 0.3], [0.67, 0.3], [0.33, 0.7], [0.67, 0.7]],
+            "radius_px": 6.0
+          },
+          "complication_window": true
+        },
+        {
+          "id": "debride",
+          "type": "remove_tissue",
+          "title": "REMOVE DAMAGED TISSUE",
+          "instruction": "Select CAUTERY. Hold on dark tissue to burn it. Avoid yellow nerves.",
+          "tool": "cautery",
+          "params": {
+            "nodes": 4,
+            "burn_time": 0.35,
+            "nerve_radius_px": 1.6
+          },
+          "complication_window": true
+        },
+        {
+          "id": "install",
+          "type": "install_implant",
+          "title": "INSTALL IMPLANT",
+          "instruction": "Select FORCEPS. Drag the implant into the socket, rotate to align, then SEAT.",
+          "tool": "forceps",
+          "params": {
+            "socket": [0.5, 0.5],
+            "snap_px": 9.0,
+            "align_tolerance_deg": 12.0
+          },
+          "complication_window": true
+        },
+        {
+          "id": "connect",
+          "type": "connect_interface",
+          "title": "CONNECT NEURAL INTERFACE",
+          "instruction": "Select SPLICER. Drag each implant pin to the nerve with the same mark.",
+          "tool": "splicer",
+          "params": {
+            "endpoints": [[0.41, 0.3], [0.59, 0.3], [0.5, 0.74]]
+          },
+          "complication_window": true
+        },
+        {
+          "id": "calibrate",
+          "type": "calibrate",
+          "title": "CALIBRATE IMPLANT",
+          "instruction": "Slide to match the waves, then LOCK. 3 bands.",
+          "tool": "",
+          "params": {
+            "rounds": 3,
+            "good_sync": 0.8,
+            "poor_sync": 0.55
+          },
+          "complication_window": true
+        },
+        {
+          "id": "close",
+          "type": "close_incision",
+          "title": "CLOSE INCISION",
+          "instruction": "Select SUTURE. Tap the stitch points in numbered order.",
+          "tool": "suture",
+          "params": {
+            "stitches": 6
+          }
+        }
+      ]
+    }
+  ]
+}

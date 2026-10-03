@@ -1,0 +1,29 @@
+{
+  "cyberware": [
+    {
+      "id": "nx1_neural_bridge",
+      "name": "NX-1 Neural Bridge",
+      "manufacturer": "Halden Microsystems",
+      "category": "neural",
+      "tier": 1,
+      "description": "Entry-level cervical data bridge. Cheap, reliable, a little noisy.",
+      "price": 120,
+      "icon": "res://assets/sprites/surgery/implant_nx1.png",
+      "install_surgery": "install_basic_neural_implant",
+      "base_performance": 1.0
+    },
+    {
+      "id": "kx4_reflex_lattice",
+      "name": "KX-4 Reflex Lattice",
+      "manufacturer": "Sable Kinetics",
+      "category": "reflex",
+      "tier": 2,
+      "description": "Grey-import reflex accelerator. Rumoured to fry cheap spinal relays.",
+      "price": 900,
+      "icon": "res://assets/sprites/surgery/implant_nx1.png",
+      "install_surgery": "",
+      "base_performance": 1.2,
+      "black_market": true
+    }
+  ]
+}
