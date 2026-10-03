@@ -200,6 +200,9 @@ func _e2e_full_loop() -> void:
 		check(r1.grade in ["S", "A", "B"], "run 1: clean play grades B or better (%s)" % r1.grade)
 		check(r1.complications_total >= 1, "run 1: at least one complication happened")
 		check(r1.complications_handled == r1.complications_total, "run 1: complications handled")
+	await _wait_until(func() -> bool:
+		var b := _find_visible("ContinueButton") as Button
+		return b != null and not b.disabled, 10.0)
 	await _checkpoint("results_clean")
 	await _click_named("ContinueButton", 10.0)
 	await _wait_screen(UIManager.SCREEN_CLINIC)
