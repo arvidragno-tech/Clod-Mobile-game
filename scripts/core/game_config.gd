@@ -114,6 +114,10 @@ const GUARANTEED_COMPLICATIONS := 1
 const EXTRA_COMPLICATION_BASE_CHANCE := 0.25
 const WRONG_DIAGNOSIS_RISK_MULT := 1.6
 const COMPLICATION_DELAY_RANGE := Vector2(1.5, 4.0)
+## If a stage is cleared before its complication fired, it fires this soon
+## into the next stage instead.
+const COMPLICATION_CARRY_OVER_SEC := 1.0
+const COMPLICATION_FINAL_STAGE_SEC := 0.2
 
 # --- Surgery: pacing ---------------------------------------------------------
 ## Pause after a stage is cleared before the next one starts.

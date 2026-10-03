@@ -41,6 +41,7 @@ var last_result: SurgeryResult
 var _cooldowns: Dictionary = {}  # StringName -> seconds remaining
 var _planned_complication_stages: Array[int] = []
 var _pending_complication_delay: float = -1.0
+var _queued_complications: int = 0
 var _used_complication_ids: Array[StringName] = []
 var _warnings_active: Dictionary = {}
 var _rng := RandomNumberGenerator.new()
@@ -92,6 +93,7 @@ func start_session(p_surgery: SurgeryData, p_customer: CustomerData, p_diagnosis
 	_warnings_active.clear()
 	_used_complication_ids.clear()
 	_pending_complication_delay = -1.0
+	_queued_complications = 0
 	_plan_complications()
 	is_active = true
 	is_running = false
@@ -142,8 +144,21 @@ func _advance_stage() -> void:
 	stage_index += 1
 	var stage := get_current_stage()
 	if _planned_complication_stages.has(stage_index):
-		_pending_complication_delay = _rng.randf_range(GameConfig.COMPLICATION_DELAY_RANGE.x, GameConfig.COMPLICATION_DELAY_RANGE.y)
+		_queued_complications += 1
+	if _pending_complication_delay >= 0.0:
+		# The player cleared the previous stage first: carry it over, soon
+		# (almost immediately on the final stage so it is never skipped).
+		var carry := GameConfig.COMPLICATION_CARRY_OVER_SEC
+		if stage_index == surgery.stages.size() - 1:
+			carry = GameConfig.COMPLICATION_FINAL_STAGE_SEC
+		_pending_complication_delay = minf(_pending_complication_delay, carry)
+	elif _queued_complications > 0 and active_complication == null:
+		_schedule_next_complication()
 	stage_started.emit(stage_index, stage)
+
+
+func _schedule_next_complication() -> void:
+	_pending_complication_delay = _rng.randf_range(GameConfig.COMPLICATION_DELAY_RANGE.x, GameConfig.COMPLICATION_DELAY_RANGE.y)
 
 
 func _apply_stage_outputs(stage: SurgeryStageData, data: Dictionary) -> void:
@@ -306,6 +321,8 @@ func use_quick_action(action_id: StringName) -> bool:
 		var resolved := active_complication
 		active_complication = null
 		complication_resolved.emit(resolved, true)
+		if _queued_complications > 0:
+			_schedule_next_complication()
 	vitals_changed.emit(vitals)
 	return true
 
@@ -346,6 +363,8 @@ func _tick_complications(delta: float) -> void:
 			active_complication = null
 			vitals.apply_effects(failed.failure_effects)
 			complication_resolved.emit(failed, false)
+			if _queued_complications > 0:
+				_schedule_next_complication()
 		return
 	if _pending_complication_delay >= 0.0:
 		_pending_complication_delay -= delta
@@ -361,6 +380,7 @@ func _start_complication() -> void:
 	if pool.is_empty():
 		pool.assign(complications.values())
 	if not pool.is_empty():
+		_queued_complications = maxi(_queued_complications - 1, 0)
 		_begin_complication(pool[_rng.randi_range(0, pool.size() - 1)])
 
 
