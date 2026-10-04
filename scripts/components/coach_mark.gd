@@ -128,9 +128,13 @@ func _place_card() -> void:
 		var card := Rect2(x, y, w, h)
 		var cost := 0.0
 		if _rect.has_area():
-			cost += _overlap(card, _rect) * 50.0
+			# Small targets (a button) must stay fully visible; a big one
+			# (the body scan, the field) can be partly covered rather than
+			# hiding the buttons the player needs next.
+			var big := _rect.get_area() > size.x * size.y * 0.15
+			cost += _overlap(card, _rect) * (3.0 if big else 50.0)
 		for r in buttons:
-			cost += _overlap(card, r) * 10.0
+			cost += _overlap(card, r) * 20.0
 		for r in texts:
 			cost += _overlap(card, r) * 1.0
 		cost += absf(y - (_card_y if _card_y >= 0.0 else y)) * 0.5  # stay put

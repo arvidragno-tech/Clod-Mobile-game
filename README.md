@@ -377,21 +377,38 @@ With rendering, the bot also saves screenshots of each step:
 
 ## Performance
 
-Measured with the perf probe on a software rasterizer (llvmpipe). A phone GPU
-will do the rendering work far faster, so treat these as upper bounds on CPU
-cost:
-- About 8–12 ms average frame time on every screen.
-- 17–65 draw calls.
-- About 34–38 MB static memory and up to 14 MB of texture memory.
-- Screen builds take 20–95 ms.
+These numbers come from the perf probe (`tests/perf_probe.tscn`) running on a
+**software rasterizer** (llvmpipe, CPU-only) at 360×780. An iPhone GPU renders
+far faster, so treat them as upper bounds; on-device profiling is still to do
+(see the Xcode Instruments note below).
+
+| Screen | Build ms | Avg frame ms | Draw calls | Nodes | Texture MB |
+|---|---|---|---|---|---|
+| Main menu | 82–88 | 10.4–10.8 | 48 | 70 | 12.4 |
+| Clinic (tier 0 / 5) | 48–99 | 10.1–11.6 | 66–68 | 121–123 | 8.4–12.4 |
+| Customer | 30–53 | 9.9–11.1 | 57 | 120 | 12.5 |
+| Diagnosis | 41–58 | 9.9–11.0 | 39 | 97 | 12.5 |
+| Surgery | 91–176 | 11.3–12.8 | 61 | 106 | 13.8 |
+| Shop / Skills / Upgrades / Dossier / Settings | 20–71 | 8.4–10.9 | 17–65 | 84–282 | 8.8–12.4 |
+| Black market (full-screen glitch shader) | 89–173 | 14.5–17.0 | 59 | 130 | 11.7 |
+
+Totals:
+- Static memory is 35–40 MB and texture memory peaks at about 14 MB.
+- The stability soak (30 operations) keeps the node count flat (112 → 112) with no orphan nodes.
 
 Design choices that keep it light:
 - Sprites are tiny and cached at 2×.
 - The surgical field is one SubViewport at half resolution.
-- Wound geometry is precomputed once per incision.
+- Wound geometry is precomputed once per incision (29 ms → 6.6 ms after optimisation).
 - Character composites are cached (up to 48).
-- Particles are capped (12 emitters).
-- No per-frame allocations in the vitals loop.
+- Particles are capped (12 emitters, halved with Reduce Motion).
+- Ambient animation draws a few pixels from precomputed anchors.
+- Audio is OGG streamed (about 1.7 MB in total).
+- There are no per-frame allocations in the vitals loop.
+
+**On device:** profile with Xcode → Product → Profile → *Time Profiler* / *Game
+Performance* on the oldest iPhone you support. Godot's debugger monitors also
+work over remote debug.
 
 ## Building for iPhone
 

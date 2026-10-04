@@ -43,6 +43,8 @@ func _ready() -> void:
 	await _measure(&"skills", "skills")
 	await _measure(&"upgrades", "upgrades")
 	await _measure(&"dossier", "dossier")
+	await _measure(&"settings", "settings")
+	await _measure(&"main_menu", "main_menu")
 	ClinicManager.tier = 0
 	await _measure(&"clinic", "clinic")
 	CustomerManager.debug_set_customer(CustomerManager.get_customer(&"mara_quill"))

@@ -270,6 +270,19 @@ func _e2e() -> void:
 	await _click_named("BackButton")
 	await _wait_screen(UIManager.SCREEN_CLINIC)
 
+	# Detail zoom: double-tap the clinic art, pan, double-tap back.
+	await _frames(10)
+	var view := _find_visible("ClinicView") as ClinicView
+	if view:
+		var spot := view.get_global_rect().position + Vector2(view.size.x * 0.6, view.size.y * 0.3)
+		await _tap(spot)
+		await _tap(spot)
+		check(view.zoomed, "double-tap zooms into the clinic art")
+		await _checkpoint("clinic_zoom")
+		await _drag([spot, spot + Vector2(-60, -30)])
+		await _tap(spot)
+		await _tap(spot)
+		check(not view.zoomed, "double-tap again resets the zoom")
 	# Pause menu -> how to play -> settings (sliders, toggles) -> back.
 	await _frames(10)
 	await _click_named("MenuButton")

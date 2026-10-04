@@ -224,9 +224,18 @@ def make_icon(category: str, tier: int) -> Canvas:
 
 
 def generate():
+    """Renders only the category/tier icons that data/cyberware.json uses
+    (plus neural_t1, the surgical field's default implant)."""
+    import json
+    import os
+    data = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "data", "cyberware.json")
+    wanted = {"neural_t1"}
+    for item in json.load(open(data))["cyberware"]:
+        wanted.add(os.path.splitext(os.path.basename(item["icon"]))[0])
     n = 0
     for cat in CATEGORIES:
         for tier in range(1, 6):
-            make_icon(cat, tier).save(f"cyberware/{cat}_t{tier}.png")
-            n += 1
+            if f"{cat}_t{tier}" in wanted:
+                make_icon(cat, tier).save(f"cyberware/{cat}_t{tier}.png")
+                n += 1
     print("cyberware icons:", n)

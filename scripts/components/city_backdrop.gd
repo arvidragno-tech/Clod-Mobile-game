@@ -83,11 +83,11 @@ func _draw() -> void:
 	draw_texture_rect(_tex, Rect2(_offset, Vector2(_tex.get_size()) * _scale), false)
 	# Darken the sky behind the title block in hard dithered steps, so the
 	# wordmark and tagline read over the city.
-	var title_end := size.y * 0.5
+	var title_end := size.y * 0.52
 	var step := 4
 	for i in step:
 		var y0 := title_end * i / step
-		draw_rect(Rect2(0, floorf(y0), size.x, ceilf(title_end / step)), Color(0.02, 0.02, 0.05, 0.62 - i * 0.12))
+		draw_rect(Rect2(0, floorf(y0), size.x, ceilf(title_end / step)), Color(0.02, 0.02, 0.05, 0.72 - i * 0.1))
 	# Cross sign buzz: occasionally drops out for a few frames.
 	if not Settings.reduce_motion and fmod(_time, 5.3) < 0.12:
 		draw_rect(Rect2(_art(CROSS.position), CROSS.size * _scale), Color(0.02, 0.02, 0.04, 0.85))

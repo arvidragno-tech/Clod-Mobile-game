@@ -29,6 +29,14 @@ var _time: float = 0.0
 var _flicker: float = 0.0
 var _next_flicker: float = 2.0
 var _dust: Array[Vector3] = []
+## Detail zoom: double-tap doubles the (integer) pixel scale around the
+## tapped point; drag pans while zoomed; double-tap again to reset.
+var zoomed: bool = false
+var _zoom_focus := Vector2(90, 120)  # art px kept centred when zoomed
+var _last_tap_ms: int = -1000
+var _last_tap_pos := Vector2.ZERO
+var _panning: bool = false
+const DOUBLE_TAP_MS := 350
 var _fx: Array = []
 var _puffs: Array[Vector4] = []  # x, y, age, life (steam)
 var _sparks: Array[Vector4] = []  # x, y, vy, life
@@ -100,9 +108,23 @@ func _layout() -> void:
 	_scale = float(GameConfig.PIXEL_SCALE)
 	while img.x * _scale < size.x or img.y * _scale < size.y:
 		_scale += 1.0
+	if zoomed:
+		_scale *= 2.0
 	var drawn := img * _scale
-	_offset = Vector2((size.x - drawn.x) / 2.0, (size.y - drawn.y) * VERTICAL_FOCUS).round()
+	if zoomed:
+		_offset = (size / 2.0 - _zoom_focus * _scale).round()
+		_offset.x = clampf(_offset.x, size.x - drawn.x, 0.0)
+		_offset.y = clampf(_offset.y, size.y - drawn.y, 0.0)
+	else:
+		_offset = Vector2((size.x - drawn.x) / 2.0, (size.y - drawn.y) * VERTICAL_FOCUS).round()
 	queue_redraw()
+
+
+func set_zoom(on: bool, at_local: Vector2 = Vector2.INF) -> void:
+	if at_local != Vector2.INF:
+		_zoom_focus = (at_local - _offset) / _scale
+	zoomed = on
+	_layout()
 
 
 func _process(delta: float) -> void:
@@ -153,18 +175,41 @@ func _draw() -> void:
 		var tint := Color(1, 1, 1, _customer_alpha)
 		draw_texture_rect_region(_customer_tex, Rect2(r.position + Vector2(0, bot_src.position.y * _scale), bot_src.size * _scale), bot_src, tint)
 		draw_texture_rect_region(_customer_tex, Rect2(r.position - Vector2(0, inhale * _scale), top_src.size * _scale), top_src, tint)
+	if zoomed:
+		# Zoom badge (top-right), drawn in whole pixels.
+		var badge := Rect2(size.x - 34, 6, 28, 14)
+		draw_rect(badge, Color(0.02, 0.03, 0.05, 0.8))
+		draw_string(get_theme_font(&"font", &"PixelLabel"), badge.position + Vector2(4, 11), "x2", HORIZONTAL_ALIGNMENT_LEFT, -1, 8, Palette.ACCENT)
 	if _flicker > 0.0 and fmod(_flicker * 40.0, 2.0) < 1.0:
 		draw_rect(Rect2(Vector2.ZERO, size), Color(0, 0, 0, 0.28))
 
 
 func _gui_input(event: InputEvent) -> void:
-	if not _has_customer:
-		return
 	var mb := event as InputEventMouseButton
-	if mb and mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT:
-		if get_customer_rect().grow(GameConfig.TOUCH_SLOP).has_point(mb.position):
+	if mb and mb.button_index == MOUSE_BUTTON_LEFT:
+		if not mb.pressed:
+			_panning = false
+			return
+		if _has_customer and get_customer_rect().grow(GameConfig.TOUCH_SLOP).has_point(mb.position):
 			customer_tapped.emit()
 			accept_event()
+			return
+		var now := Time.get_ticks_msec()
+		if now - _last_tap_ms < DOUBLE_TAP_MS and mb.position.distance_to(_last_tap_pos) < 40.0:
+			set_zoom(not zoomed, mb.position)
+			AudioManager.play_sfx(&"servo", 0.0)
+			_last_tap_ms = -1000
+		else:
+			_last_tap_ms = now
+			_last_tap_pos = mb.position
+		_panning = zoomed
+		accept_event()
+		return
+	var mm := event as InputEventMouseMotion
+	if mm and _panning and zoomed:
+		_zoom_focus -= mm.relative / _scale
+		_layout()
+		accept_event()
 
 
 # --- Ambient animation ----------------------------------------------------------

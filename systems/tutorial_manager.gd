@@ -31,7 +31,7 @@ const STEPS: Array[Dictionary] = [
 		"text": "You earned a skill point. Spend it in SKILLS. SUPPLY sells tools and implants. Good luck, ripper."},
 ]
 
-const HELP_TEXT := "1. See the customer and accept the job.\n2. Scan 2+ body regions, then pick the diagnosis.\n3. Check the plan and BEGIN.\n4. Each stage: tap the glowing tool, follow the instruction bar.\n5. Complications: tap the flashing emergency button (COAG / SEDATE / STABIL).\n6. Get paid, spend skill points, upgrade your clinic.\nColours: cyan = tech/OK, amber = careful, red = danger, magenta = black market."
+const HELP_TEXT := "1. See the customer and accept the job.\n2. Scan 2+ body regions, then pick the diagnosis.\n3. Check the plan and BEGIN.\n4. Each stage: tap the glowing tool, follow the instruction bar.\n5. Complications: tap the flashing emergency button (COAG / SEDATE / STABIL).\n6. Get paid, spend skill points, upgrade your clinic.\n7. Double-tap the clinic to zoom in on details (drag to look around).\nColours: cyan = tech/OK, amber = careful, red = danger, magenta = black market."
 
 var active: bool = false
 var step_index: int = -1
