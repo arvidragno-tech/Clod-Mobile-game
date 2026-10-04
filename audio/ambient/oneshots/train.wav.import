@@ -2,13 +2,13 @@
 
 importer="wav"
 type="AudioStreamWAV"
-uid="uid://barafoopw3ksf"
-path="res://.godot/imported/clinic_hum.wav-025308786517e8b74d2495f66f9b7772.sample"
+uid="uid://cwctpgmiadt8n"
+path="res://.godot/imported/train.wav-0f3c4cb72eae9f826c5845433bef3111.sample"
 
 [deps]
 
-source_file="res://audio/ambient/clinic_hum.wav"
-dest_files=["res://.godot/imported/clinic_hum.wav-025308786517e8b74d2495f66f9b7772.sample"]
+source_file="res://audio/ambient/oneshots/train.wav"
+dest_files=["res://.godot/imported/train.wav-0f3c4cb72eae9f826c5845433bef3111.sample"]
 
 [params]
 
