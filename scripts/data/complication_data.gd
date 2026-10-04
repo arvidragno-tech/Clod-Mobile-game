@@ -12,6 +12,8 @@ extends Resource
 @export var onset_effects: Dictionary = {}
 ## Applied if the player fails to counter in time.
 @export var failure_effects: Dictionary = {}
+## Eligibility: {"min_neural_load": float, "requires_condition": id}.
+@export var conditions: Dictionary = {}
 
 
 static func from_dict(d: Dictionary) -> ComplicationData:
@@ -23,4 +25,14 @@ static func from_dict(d: Dictionary) -> ComplicationData:
 	c.time_limit = DataLoader.get_float(d, "time_limit", 6.0)
 	c.onset_effects = DataLoader.get_dict(d, "onset_effects")
 	c.failure_effects = DataLoader.get_dict(d, "failure_effects")
+	c.conditions = DataLoader.get_dict(d, "conditions")
 	return c
+
+
+## Whether this complication can happen to `customer` at `neural_load`.
+func is_eligible(customer: CustomerData, neural_load: float) -> bool:
+	if conditions.has("min_neural_load") and neural_load < float(conditions["min_neural_load"]):
+		return false
+	if conditions.has("requires_condition"):
+		return customer != null and customer.hidden_conditions.has(StringName(str(conditions["requires_condition"])))
+	return true

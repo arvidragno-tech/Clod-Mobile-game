@@ -1,15 +1,21 @@
 extends Node
 ## High-level game flow: new game / continue, the customer → diagnosis →
-## surgery → results loop, and applying rewards. Screens call into this;
-## it coordinates the other systems and tells UIManager where to go next.
+## plan → surgery → results loop, and applying rewards and consequences.
+## Screens call into this; it coordinates the other systems and tells
+## UIManager where to go next.
 
 var is_running: bool = false
 var chosen_diagnosis_id: StringName = &""
 var diagnosis_correct: bool = false
 var last_result: SurgeryResult = null
+## uid of the implant chosen on the operation plan ("" = automatic).
+var selected_implant_uid: String = ""
+
+var _rng := RandomNumberGenerator.new()
 
 
 func _ready() -> void:
+	_rng.randomize()
 	SurgeryManager.session_finished.connect(_on_surgery_finished)
 
 
@@ -18,6 +24,7 @@ func _ready() -> void:
 func start_new_game() -> void:
 	SaveManager.delete_save()
 	SaveManager.reset_all()
+	StoryManager.unlock_rumor(&"welcome")
 	_begin_play()
 	SaveManager.save_game()
 	EventBus.new_game_started.emit()
@@ -44,6 +51,18 @@ func _begin_play() -> void:
 	SaveManager.autosave_enabled = true
 	chosen_diagnosis_id = &""
 	last_result = null
+	if BlackMarketManager.is_unlocked() and BlackMarketManager.stock.is_empty():
+		BlackMarketManager.refresh_stock()
+
+
+# --- Navigation helpers -------------------------------------------------------
+
+func go_to_clinic() -> void:
+	UIManager.go_to(UIManager.SCREEN_CLINIC)
+
+
+func open_screen(screen_id: StringName) -> void:
+	UIManager.go_to(screen_id)
 
 
 # --- Customer flow -----------------------------------------------------------
@@ -52,9 +71,18 @@ func get_current_customer() -> CustomerData:
 	return CustomerManager.current_customer
 
 
+func get_requested_item() -> CyberwareData:
+	var c := get_current_customer()
+	return CyberwareManager.get_cyberware(c.requested_cyberware_id) if c else null
+
+
 func get_current_surgery() -> SurgeryData:
 	var c := get_current_customer()
-	return SurgeryManager.get_surgery(c.requested_surgery_id) if c else null
+	if c == null:
+		return null
+	var item := get_requested_item()
+	var sid := item.install_surgery_id if item else c.requested_surgery_id
+	return SurgeryManager.get_surgery(sid)
 
 
 func open_customer() -> void:
@@ -63,7 +91,10 @@ func open_customer() -> void:
 
 
 func decline_customer() -> void:
+	var c := get_current_customer()
 	ReputationManager.change(GameConfig.DECLINE_REPUTATION_PENALTY)
+	if c:
+		FactionManager.change(c.faction_id, -1)
 	CustomerManager.dismiss_current()
 	SaveManager.save_game()
 	UIManager.go_to(UIManager.SCREEN_CLINIC)
@@ -71,6 +102,7 @@ func decline_customer() -> void:
 
 func accept_customer() -> void:
 	chosen_diagnosis_id = &""
+	selected_implant_uid = ""
 	UIManager.go_to(UIManager.SCREEN_DIAGNOSIS)
 
 
@@ -80,40 +112,123 @@ func submit_diagnosis(diagnosis_id: StringName) -> void:
 	diagnosis_correct = c != null and diagnosis_id == c.true_diagnosis_id
 
 
-## Readiness check shown on the operation plan.
-## Returns {"ok": bool, "missing_tools": Array[StringName], "implant_source": StringName}
-## implant_source is &"stock", &"salvaged" (no stock, can't afford one) or &"buy".
+# --- Operation plan ----------------------------------------------------------
+
+## Implant units that could go into the current customer (same category).
+func get_implant_options() -> Array[ImplantInstance]:
+	var item := get_requested_item()
+	if item == null:
+		return []
+	var opts := InventoryManager.get_instances_of(item.category)
+	opts.sort_custom(func(a: ImplantInstance, b: ImplantInstance) -> bool:
+		var ar := 0 if a.cyberware_id == item.id else 1
+		var br := 0 if b.cyberware_id == item.id else 1
+		return ar < br or (ar == br and a.condition > b.condition))
+	return opts
+
+
+func select_implant(uid: String) -> void:
+	selected_implant_uid = uid
+
+
+## The unit that will be installed (null = none in stock).
+func get_selected_implant() -> ImplantInstance:
+	var opts := get_implant_options()
+	if selected_implant_uid != "":
+		for o in opts:
+			if o.uid == selected_implant_uid:
+				return o
+	return opts[0] if not opts.is_empty() else null
+
+
+## Whether the customer accepts a different / risky unit than requested.
+func customer_accepts(inst: ImplantInstance) -> bool:
+	var c := get_current_customer()
+	if c == null or inst == null:
+		return true
+	# Heavily loaded patients get cold feet: severe / critical projected load
+	# needs a matching appetite for risk, even for the unit they asked for.
+	var needed_nerve := consent_risk_needed(NeuralLoad.projected(c, inst))
+	if c.risk_tolerance < needed_nerve:
+		return false
+	if inst.cyberware_id == c.requested_cyberware_id and inst.traits.is_empty():
+		return true
+	var data := inst.get_data()
+	var requested := get_requested_item()
+	# Upgrades are always welcome; downgrades and shady chrome need nerve.
+	if data and requested and data.tier > requested.tier and not data.black_market:
+		return true
+	return c.risk_tolerance >= (0.35 if not inst.has_unknown_traits() else 0.6)
+
+
+## Minimum risk tolerance a customer needs to consent at a projected load.
+func consent_risk_needed(projected_load: float) -> float:
+	match NeuralLoad.band(projected_load)["id"]:
+		&"severe":
+			return GameConfig.CONSENT_RISK_SEVERE
+		&"critical":
+			return GameConfig.CONSENT_RISK_CRITICAL
+	return 0.0
+
+
+## Everything the plan screen needs to show and gate BEGIN OPERATION.
 func get_surgery_readiness() -> Dictionary:
+	var r := {"ok": false, "missing_tools": [] as Array[String], "implant_source": &"stock", "implant": null,
+		"supplies_ok": true, "invalid": "", "accepts": true, "neural_now": 0.0, "neural_after": 0.0}
+	var c := get_current_customer()
+	var item := get_requested_item()
 	var surgery := get_current_surgery()
-	var missing: Array[StringName] = []
-	if surgery == null:
-		return {"ok": false, "missing_tools": missing, "implant_source": &"stock"}
+	if c == null or item == null or surgery == null or not CyberwareManager.is_valid(item.id):
+		r["invalid"] = "INVALID CYBERWARE REQUEST"
+		return r
+	var missing: Array[String] = []
 	for category in surgery.get_required_tool_categories():
 		if not InventoryManager.has_tool_category(category):
-			missing.append(category)
-	var source := &"stock"
-	if InventoryManager.get_implant_count(surgery.cyberware_id) <= 0:
-		var item := CyberwareManager.get_cyberware(surgery.cyberware_id)
-		source = &"buy" if item and EconomyManager.can_afford(item.price) else &"salvaged"
-	return {"ok": missing.is_empty(), "missing_tools": missing, "implant_source": source}
+			missing.append(String(category).to_upper())
+	for req in item.get_tool_requirements():
+		if not InventoryManager.has_tool_category(req["category"], int(req["tier"])):
+			var label := "%s T%d" % [String(req["category"]).to_upper(), int(req["tier"])]
+			if not missing.has(label):
+				missing.append(label)
+	r["missing_tools"] = missing
+	var inst := get_selected_implant()
+	if inst:
+		r["implant"] = inst
+		r["implant_source"] = &"stock" if inst.cyberware_id == item.id else &"substitute"
+		r["accepts"] = customer_accepts(inst)
+	elif not item.black_market and CyberwareManager.is_tier_available(item.tier) and EconomyManager.can_afford(InventoryManager.implant_price(item)):
+		r["implant_source"] = &"buy"
+	else:
+		r["implant_source"] = &"salvaged"
+	r["supplies_ok"] = InventoryManager.supplies >= surgery.supplies
+	r["neural_now"] = NeuralLoad.compute(c)
+	var preview := inst if inst else ImplantInstance.create(item.id)
+	r["neural_after"] = NeuralLoad.projected(c, preview)
+	r["ok"] = missing.is_empty() and bool(r["accepts"])
+	return r
 
 
 func begin_surgery() -> void:
 	var surgery := get_current_surgery()
 	var readiness := get_surgery_readiness()
 	if surgery == null or not readiness["ok"]:
-		UIManager.show_toast("Cannot operate: missing equipment", &"danger")
+		UIManager.show_toast(str(readiness.get("invalid", "")) if readiness.get("invalid", "") != "" else "Cannot operate: missing equipment", &"danger")
 		return
 	var implant_quality := 1.0
+	var inst: ImplantInstance = readiness["implant"]
 	match readiness["implant_source"]:
 		&"buy":
-			InventoryManager.buy_implant(surgery.cyberware_id)
-			InventoryManager.consume_implant(surgery.cyberware_id)
+			InventoryManager.buy_implant(get_requested_item().id)
+			inst = InventoryManager.consume_implant(get_requested_item().id)
 		&"salvaged":
 			implant_quality = GameConfig.SALVAGED_IMPLANT_QUALITY
+			inst = ImplantInstance.create(get_requested_item().id, 70.0, &"salvaged")
 		_:
-			InventoryManager.consume_implant(surgery.cyberware_id)
-	SurgeryManager.start_session(surgery, get_current_customer(), diagnosis_correct, implant_quality)
+			InventoryManager.remove_instance(inst.uid)
+	var session_mods := {}
+	if not InventoryManager.use_supplies(surgery.supplies):
+		session_mods = GameConfig.NO_SUPPLIES_MODIFIERS.duplicate()
+	SurgeryManager.start_session(surgery, get_current_customer(), diagnosis_correct, implant_quality, -1, inst, session_mods)
 	UIManager.go_to(UIManager.SCREEN_SURGERY)
 
 
@@ -121,12 +236,28 @@ func abort_surgery() -> void:
 	SurgeryManager.abort()
 
 
+# --- Results -----------------------------------------------------------------
+
 func _on_surgery_finished(result: SurgeryResult) -> void:
+	var c := SurgeryManager.customer
+	_apply_patience(result, c)
 	EconomyManager.add_money(result.pay)
 	result.levels_gained = ProgressionManager.add_xp(result.xp)
 	ReputationManager.change(result.reputation_delta)
 	ProgressionManager.record_surgery(result.surgery_id, result.success, result.grade)
+	_apply_faction_and_heat(result, c)
+	if c:
+		if result.success:
+			c.existing_cyberware.append(result.implant_id)
+		result.consequences = CustomerManager.record_outcome(c, result)
 	CustomerManager.dismiss_current()
+	EventManager.on_operation_completed()
+	BlackMarketManager.on_operation_completed()
+	if result.neural_break:
+		EventManager.queue_event(&"static_fever")
+	else:
+		EventManager.roll_random_event()
+	StoryManager.update_rumors()
 	last_result = result
 	SaveManager.save_game()
 	EventBus.surgery_rewarded.emit(result)
@@ -135,9 +266,36 @@ func _on_surgery_finished(result: SurgeryResult) -> void:
 	UIManager.go_to(UIManager.SCREEN_RESULTS, {"result": result})
 
 
+## Impatient customers pay less when the job runs long.
+func _apply_patience(result: SurgeryResult, c: CustomerData) -> void:
+	if c == null or not result.success or result.elapsed_sec <= result.target_time_sec:
+		return
+	var over := clampf((result.elapsed_sec - result.target_time_sec) / result.target_time_sec, 0.0, 1.0)
+	var cut := over * (1.0 - c.patience / 100.0) * 0.4
+	result.pay = int(round(result.pay * (1.0 - cut)))
+
+
+func _apply_faction_and_heat(result: SurgeryResult, c: CustomerData) -> void:
+	var heat := -GameConfig.HEAT_DECAY_PER_OP
+	if c:
+		result.faction_id = c.faction_id
+		var delta := GameConfig.FACTION_REP_SUCCESS + (2 if result.grade in ["S", "A"] else 0)
+		if not result.success:
+			delta = GameConfig.FACTION_REP_DEATH if result.failure_reason == &"flatline" else GameConfig.FACTION_REP_FAILURE
+		result.faction_delta = FactionManager.change(c.faction_id, delta)
+	if result.black_market_implant:
+		heat += GameConfig.HEAT_PER_BM_INSTALL
+		var inst := SurgeryManager.implant
+		if inst:
+			heat += inst.trait_effect("heat")
+	if result.failure_reason == &"flatline":
+		heat += GameConfig.HEAT_PER_DEATH
+	if result.success and _rng.randf() < NeuralLoad.break_chance(result.neural_load_after):
+		result.neural_break = true
+	var before := FactionManager.heat
+	FactionManager.add_heat(heat)
+	result.heat_delta = FactionManager.heat - before
+
+
 func finish_results() -> void:
 	go_to_clinic()
-
-
-func go_to_clinic() -> void:
-	UIManager.go_to(UIManager.SCREEN_CLINIC)

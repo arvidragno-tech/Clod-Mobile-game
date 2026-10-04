@@ -9,8 +9,14 @@ const SAVEABLE_SYSTEMS: Array[String] = [
 	"EconomyManager",
 	"ReputationManager",
 	"ProgressionManager",
+	"FactionManager",
+	"SkillManager",
+	"ClinicManager",
 	"CyberwareManager",
 	"InventoryManager",
+	"StoryManager",
+	"EventManager",
+	"BlackMarketManager",
 	"CustomerManager",
 	"AudioManager",
 ]
@@ -114,6 +120,30 @@ func _migrate(data: Dictionary) -> Dictionary:
 	var version := int(data.get("version", 0))
 	if version > GameConfig.SAVE_VERSION:
 		push_warning("SaveManager: save is from a newer version (%d)" % version)
+	var systems: Dictionary = data.get("systems", {})
+	if version < 2:
+		# v1 -> v2: count-based implant stock became individual units, the
+		# Step 1 clinic was the Backroom tier, resources were introduced.
+		var inv: Dictionary = systems.get("InventoryManager", {})
+		var units := []
+		var stock: Dictionary = inv.get("implant_stock", {})
+		for id: Variant in stock:
+			for i in int(stock[id]):
+				units.append({"uid": "imp_v1_%s_%d" % [id, i], "id": str(id), "condition": 100.0, "traits": [], "revealed": [], "source": "supply"})
+		inv["instances"] = units
+		inv.erase("implant_stock")
+		inv["supplies"] = GameConfig.STARTING_SUPPLIES
+		systems["InventoryManager"] = inv
+		systems["ClinicManager"] = {"tier": 1}
+		var ops := 0
+		for rec: Variant in systems.get("ProgressionManager", {}).get("surgery_records", {}).values():
+			ops += int(rec.get("completed", 0)) + int(rec.get("failed", 0))
+		systems["EventManager"] = {"operations": ops}
+		var cm: Dictionary = systems.get("CustomerManager", {})
+		if cm.has("current_customer"):
+			cm["current"] = cm["current_customer"]
+		systems["CustomerManager"] = cm
+		data["systems"] = systems
 	data["version"] = GameConfig.SAVE_VERSION
 	return data
 

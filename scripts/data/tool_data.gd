@@ -1,7 +1,7 @@
 class_name ToolData
 extends Resource
-## A surgical tool. Tools of the same category are interchangeable; the best
-## owned tool of a category is used during surgery. Loaded from data/tools.json.
+## A surgical tool. Tools of the same category are interchangeable; the
+## highest-tier owned tool of a category is used. Loaded from data/tools.json.
 
 @export var id: StringName
 @export var display_name: String
@@ -14,7 +14,12 @@ extends Resource
 @export var precision: float = 1.0
 ## Multiplies work speed (e.g. how fast the cauteriser burns tissue).
 @export var speed: float = 1.0
+## Multiplies complication chance while this tool is in use (<1 = safer).
+@export var risk: float = 1.0
+@export var unlock_level: int = 1
 @export var starter: bool = false
+## Passive modifiers granted while owned (ModifierManager keys).
+@export var modifiers: Dictionary = {}
 
 
 static func from_dict(d: Dictionary) -> ToolData:
@@ -28,5 +33,8 @@ static func from_dict(d: Dictionary) -> ToolData:
 	t.icon_path = DataLoader.get_str(d, "icon")
 	t.precision = DataLoader.get_float(d, "precision", 1.0)
 	t.speed = DataLoader.get_float(d, "speed", 1.0)
+	t.risk = DataLoader.get_float(d, "risk", 1.0)
+	t.unlock_level = DataLoader.get_int(d, "unlock_level", 1)
 	t.starter = bool(d.get("starter", false))
+	t.modifiers = DataLoader.get_dict(d, "modifiers")
 	return t

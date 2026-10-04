@@ -30,6 +30,8 @@ var mistake_count: int = 0
 var stage_qualities: Array[float] = []
 var implant_alignment: float = 1.0
 var calibration_quality: float = 1.0
+## Bone-anchor quality (drill stage) feeds implant seating.
+var anchor_quality: float = 1.0
 ## Multiplier for the implant itself (salvaged units perform worse).
 var implant_quality: float = 1.0
 var active_complication: ComplicationData = null
@@ -37,6 +39,14 @@ var complication_time_left: float = 0.0
 var complications_total: int = 0
 var complications_handled: int = 0
 var last_result: SurgeryResult
+## The unit being installed (null = legacy/salvaged).
+var implant: ImplantInstance = null
+var implant_item: CyberwareData = null
+var neural_load_before: float = 0.0
+var neural_load_after: float = 0.0
+## Extra modifiers for this session only (e.g. no supplies).
+var session_modifiers: Dictionary = {}
+var supplies_ok: bool = true
 
 var _cooldowns: Dictionary = {}  # StringName -> seconds remaining
 var _planned_complication_stages: Array[int] = []
@@ -69,23 +79,33 @@ func get_surgery(id: StringName) -> SurgeryData:
 
 # --- Session lifecycle -------------------------------------------------------
 
-func start_session(p_surgery: SurgeryData, p_customer: CustomerData, p_diagnosis_correct: bool, p_implant_quality: float = 1.0, rng_seed: int = -1) -> void:
+func start_session(p_surgery: SurgeryData, p_customer: CustomerData, p_diagnosis_correct: bool, p_implant_quality: float = 1.0,
+		rng_seed: int = -1, p_implant: ImplantInstance = null, p_session_modifiers: Dictionary = {}) -> void:
 	surgery = p_surgery
 	implant_quality = p_implant_quality
 	customer = p_customer
 	diagnosis_correct = p_diagnosis_correct
+	implant = p_implant
+	session_modifiers = p_session_modifiers
+	var item_id := implant.cyberware_id if implant else (customer.requested_cyberware_id if customer and customer.requested_cyberware_id != &"" else surgery.cyberware_id)
+	implant_item = CyberwareManager.get_cyberware(item_id)
 	if rng_seed >= 0:
 		_rng.seed = rng_seed
 	else:
 		_rng.randomize()
+	neural_load_before = NeuralLoad.compute(customer)
+	neural_load_after = NeuralLoad.projected(customer, implant) if implant else neural_load_before + (implant_item.neural_load if implant_item else 0.0)
 	vitals = SurgeryVitals.new()
 	vitals.configure_for(customer)
+	vitals.neural = clampf((customer.neural_stability if customer else 100.0) - NeuralLoad.start_penalty(neural_load_after), 15.0, 100.0)
+	vitals.neural_multiplier *= NeuralLoad.drain_multiplier(neural_load_after)
 	stage_index = -1
 	elapsed = 0.0
 	mistake_count = 0
 	stage_qualities.clear()
 	implant_alignment = 1.0
 	calibration_quality = 1.0
+	anchor_quality = 1.0
 	active_complication = null
 	complications_total = 0
 	complications_handled = 0
@@ -135,6 +155,31 @@ func complete_stage(quality: float, data: Dictionary = {}) -> void:
 		_advance_stage()
 
 
+## Modifier value for this session: global stack + session-only extras.
+func mod(key: StringName) -> float:
+	return ModifierManager.value(key) + float(session_modifiers.get(String(key), 0.0))
+
+
+func mod_mult(key: StringName) -> float:
+	return 1.0 + mod(key)
+
+
+func get_difficulty_factor() -> float:
+	return implant_item.get_difficulty_factor() if implant_item else 1.0
+
+
+## Context handed to stage interactions (keeps stages decoupled from systems).
+func get_stage_context() -> Dictionary:
+	return {
+		"difficulty": get_difficulty_factor(),
+		"neural_load": neural_load_after,
+		"alignment_mult": mod_mult(&"surgery.alignment"),
+		"sync_range_mult": mod_mult(&"calibrate.range") * NeuralLoad.sync_range_multiplier(neural_load_after),
+		"implant_icon": implant_item.icon_path if implant_item else "",
+		"implant_tier": implant_item.tier if implant_item else 1,
+	}
+
+
 func abort() -> void:
 	if is_active:
 		_finish(false, &"aborted")
@@ -168,7 +213,9 @@ func _apply_stage_outputs(stage: SurgeryStageData, data: Dictionary) -> void:
 		&"incision":
 			vitals.set_wound_open(true)
 		&"install_implant":
-			implant_alignment = float(data.get("alignment", 1.0))
+			implant_alignment = float(data.get("alignment", 1.0)) * anchor_quality
+		&"anchor_drill":
+			anchor_quality = clampf(0.6 + 0.4 * float(data.get("anchor_quality", 1.0)), 0.3, 1.0)
 		&"calibrate":
 			calibration_quality = float(data.get("sync", 1.0))
 		&"close_incision":
@@ -200,15 +247,23 @@ func _finish(success: bool, reason: StringName) -> void:
 	r.final_neural = vitals.neural
 	r.final_blood_loss = vitals.blood_loss
 	r.diagnosis_correct = diagnosis_correct
+	r.implant_id = implant_item.id if implant_item else &""
+	r.implant_name = implant_item.display_name if implant_item else ""
+	r.install_difficulty = implant_item.install_difficulty if implant_item else 1
+	r.neural_load_before = neural_load_before
+	r.neural_load_after = neural_load_after
+	r.black_market_implant = implant != null and implant.source == &"black_market"
+	r.implant_pay_mult = 1.0 + (implant.trait_effect("pay") if implant else 0.0)
+	r.implant_price = implant_item.price if implant_item else 0
 	SurgeryScoring.apply_rewards(r, surgery, customer)
 	last_result = r
 	session_finished.emit(r)
 
 
 func get_implant_performance() -> float:
-	var item := CyberwareManager.get_cyberware(surgery.cyberware_id) if surgery else null
-	var base := item.base_performance if item else 1.0
-	return clampf(base * implant_quality * (0.5 * implant_alignment + 0.5 * calibration_quality), 0.0, 1.0)
+	var base := implant_item.base_performance if implant_item else 1.0
+	var unit := implant.get_quality() if implant else 1.0
+	return clampf(base * unit * implant_quality * (0.5 * implant_alignment + 0.5 * calibration_quality), 0.0, 1.0)
 
 
 static func _average(values: Array[float], count: int) -> float:
@@ -240,9 +295,17 @@ func _process(delta: float) -> void:
 func report_mistake(kind: StringName, severity: float = 1.0) -> void:
 	if not is_active:
 		return
-	var effects: Dictionary = GameConfig.MISTAKE_EFFECTS.get(kind, {})
+	var effects: Dictionary = GameConfig.MISTAKE_EFFECTS.get(kind, {}).duplicate()
 	if effects.is_empty():
 		push_warning("SurgeryManager: unknown mistake '%s'" % kind)
+	# Skills / tools soften the consequences of mistakes.
+	for key in ["bleed_rate", "blood"]:
+		if effects.has(key):
+			effects[key] = float(effects[key]) * maxf(0.1, mod_mult(&"surgery.bleed"))
+	if effects.has("pain"):
+		effects["pain"] = float(effects["pain"]) * maxf(0.1, mod_mult(&"surgery.pain"))
+	if kind == &"wrong_connection" and effects.has("neural"):
+		effects["neural"] = float(effects["neural"]) * maxf(0.1, mod_mult(&"neural.splice_penalty"))
 	vitals.apply_effects(effects, severity)
 	mistake_count += 1
 	mistake_made.emit(kind, severity)
@@ -281,14 +344,21 @@ func get_tool_for_category(category: StringName) -> ToolData:
 	return InventoryManager.get_best_tool(category)
 
 
+## Effective precision: tool x skills/clinic, divided by install difficulty.
 func get_tool_precision(category: StringName) -> float:
 	var t := get_tool_for_category(category)
-	return t.precision if t else 1.0
+	var base := t.precision if t else 1.0
+	return maxf(0.3, base * mod_mult(&"surgery.precision") / get_difficulty_factor())
 
 
 func get_tool_speed(category: StringName) -> float:
 	var t := get_tool_for_category(category)
-	return t.speed if t else 1.0
+	return maxf(0.3, (t.speed if t else 1.0) * mod_mult(&"surgery.speed"))
+
+
+func get_cooldown_total(action_id: StringName) -> float:
+	var cfg: Dictionary = GameConfig.QUICK_ACTIONS.get(action_id, {})
+	return float(cfg.get("cooldown", 5.0)) * maxf(0.3, mod_mult(&"quick.cooldown"))
 
 
 # --- Quick actions -----------------------------------------------------------
@@ -298,9 +368,7 @@ func get_cooldown_remaining(action_id: StringName) -> float:
 
 
 func get_cooldown_ratio(action_id: StringName) -> float:
-	var cfg: Dictionary = GameConfig.QUICK_ACTIONS.get(action_id, {})
-	var total := float(cfg.get("cooldown", 1.0))
-	return clampf(get_cooldown_remaining(action_id) / total, 0.0, 1.0)
+	return clampf(get_cooldown_remaining(action_id) / get_cooldown_total(action_id), 0.0, 1.0)
 
 
 func use_quick_action(action_id: StringName) -> bool:
@@ -313,8 +381,10 @@ func use_quick_action(action_id: StringName) -> bool:
 	for key: String in ["bleed_rate", "blood", "pain", "neural", "health", "pain_baseline"]:
 		if cfg.has(key):
 			effects[key] = cfg[key]
+	if action_id == &"coag" and mod(&"coag.heal") > 0.0:
+		effects["health"] = mod(&"coag.heal")
 	vitals.apply_effects(effects)
-	_cooldowns[action_id] = float(cfg.get("cooldown", 5.0))
+	_cooldowns[action_id] = get_cooldown_total(action_id)
 	quick_action_used.emit(action_id)
 	if active_complication and active_complication.counter_action == action_id:
 		complications_handled += 1
@@ -342,17 +412,31 @@ func _plan_complications() -> void:
 			windows.append(i)
 	if windows.is_empty():
 		return
-	var risk := customer.complication_risk if customer else 1.0
-	if not diagnosis_correct:
-		risk *= GameConfig.WRONG_DIAGNOSIS_RISK_MULT
 	var count := GameConfig.GUARANTEED_COMPLICATIONS
-	if _rng.randf() < GameConfig.EXTRA_COMPLICATION_BASE_CHANCE * risk:
+	if _rng.randf() < get_extra_complication_chance():
 		count += 1
 	count = mini(count, windows.size())
 	for i in count:
 		var pick := windows[_rng.randi_range(0, windows.size() - 1)]
 		windows.erase(pick)
 		_planned_complication_stages.append(pick)
+
+
+## Chance of a second complication from all risk sources.
+func get_extra_complication_chance() -> float:
+	var risk := customer.complication_risk if customer else 1.0
+	if not diagnosis_correct:
+		risk *= GameConfig.WRONG_DIAGNOSIS_RISK_MULT
+	var chance := GameConfig.EXTRA_COMPLICATION_BASE_CHANCE * risk
+	chance += NeuralLoad.complication_bonus(neural_load_after)
+	chance += implant.get_extra_risk() if implant else (implant_item.failure_risk if implant_item else 0.0)
+	var tool_risk := 1.0
+	for cat in surgery.get_required_tool_categories():
+		var t := get_tool_for_category(cat)
+		if t:
+			tool_risk *= t.risk
+	chance *= tool_risk * maxf(0.1, mod_mult(&"complication.chance"))
+	return clampf(chance, 0.0, 0.95)
 
 
 func _tick_complications(delta: float) -> void:
@@ -375,10 +459,15 @@ func _tick_complications(delta: float) -> void:
 func _start_complication() -> void:
 	var pool: Array[ComplicationData] = []
 	for c: ComplicationData in complications.values():
-		if not _used_complication_ids.has(c.id):
+		if not _used_complication_ids.has(c.id) and c.is_eligible(customer, neural_load_after):
 			pool.append(c)
+			# Implant-specific complications are twice as likely.
+			if implant_item and implant_item.complication_ids.has(c.id):
+				pool.append(c)
 	if pool.is_empty():
-		pool.assign(complications.values())
+		for c: ComplicationData in complications.values():
+			if c.is_eligible(customer, neural_load_after):
+				pool.append(c)
 	if not pool.is_empty():
 		_queued_complications = maxi(_queued_complications - 1, 0)
 		_begin_complication(pool[_rng.randi_range(0, pool.size() - 1)])
@@ -387,7 +476,7 @@ func _start_complication() -> void:
 func _begin_complication(c: ComplicationData) -> void:
 	active_complication = c
 	_used_complication_ids.append(c.id)
-	complication_time_left = c.time_limit
+	complication_time_left = c.time_limit * maxf(0.4, mod_mult(&"complication.time"))
 	complications_total += 1
 	vitals.apply_effects(c.onset_effects)
 	complication_started.emit(c)
@@ -402,4 +491,4 @@ func debug_trigger_complication(id: StringName) -> void:
 func get_complication_time_ratio() -> float:
 	if active_complication == null:
 		return 0.0
-	return clampf(complication_time_left / active_complication.time_limit, 0.0, 1.0)
+	return clampf(complication_time_left / (active_complication.time_limit * maxf(0.4, mod_mult(&"complication.time"))), 0.0, 1.0)

@@ -1,5 +1,5 @@
 extends Node
-## Cyberware catalogue and which implants the player has unlocked.
+## Cyberware catalogue and tier availability (player level + clinic tier).
 
 var catalog: Dictionary = {}  # StringName -> CyberwareData
 var unlocked: Array[StringName] = []
@@ -25,8 +25,27 @@ func get_cyberware(id: StringName) -> CyberwareData:
 	return catalog.get(id) as CyberwareData
 
 
+func is_valid(id: StringName) -> bool:
+	var c := get_cyberware(id)
+	return c != null and SurgeryManager.get_surgery(c.install_surgery_id) != null
+
+
+## Highest tier the player can buy/attract: limited by level (XP) and clinic.
+func get_available_tier() -> int:
+	var by_level := 1
+	for t: int in GameConfig.CYBERWARE_TIER_LEVEL:
+		if ProgressionManager.level >= int(GameConfig.CYBERWARE_TIER_LEVEL[t]):
+			by_level = maxi(by_level, t)
+	return mini(by_level, ClinicManager.get_max_cyberware_tier())
+
+
+func is_tier_available(tier: int) -> bool:
+	return tier <= get_available_tier()
+
+
 func is_unlocked(id: StringName) -> bool:
-	return unlocked.has(id)
+	var c := get_cyberware(id)
+	return c != null and (unlocked.has(id) or (not c.black_market and is_tier_available(c.tier)))
 
 
 func unlock(id: StringName) -> void:
@@ -35,12 +54,21 @@ func unlock(id: StringName) -> void:
 		EventBus.cyberware_unlocked.emit(id)
 
 
-## Implants visible in the clinic supply terminal.
-func get_supply_catalog() -> Array[CyberwareData]:
+func get_by_category(category: StringName, max_tier: int = 99, include_bm: bool = false) -> Array[CyberwareData]:
 	var out: Array[CyberwareData] = []
-	for item: CyberwareData in catalog.values():
-		if is_unlocked(item.id) and not item.black_market:
-			out.append(item)
+	for c: CyberwareData in catalog.values():
+		if c.category == category and c.tier <= max_tier and (include_bm or not c.black_market):
+			out.append(c)
+	return out
+
+
+## Implants sold at the regular supply terminal.
+func get_supply_catalog(include_locked: bool = false) -> Array[CyberwareData]:
+	var out: Array[CyberwareData] = []
+	for c: CyberwareData in catalog.values():
+		if not c.black_market and (include_locked or is_tier_available(c.tier)):
+			out.append(c)
+	out.sort_custom(func(a: CyberwareData, b: CyberwareData) -> bool: return a.tier < b.tier or (a.tier == b.tier and a.price < b.price))
 	return out
 
 

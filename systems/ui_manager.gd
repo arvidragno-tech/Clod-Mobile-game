@@ -9,6 +9,11 @@ const SCREEN_CUSTOMER := &"customer"
 const SCREEN_DIAGNOSIS := &"diagnosis"
 const SCREEN_SURGERY := &"surgery"
 const SCREEN_RESULTS := &"results"
+const SCREEN_SHOP := &"shop"
+const SCREEN_BLACK_MARKET := &"black_market"
+const SCREEN_SKILLS := &"skills"
+const SCREEN_UPGRADES := &"upgrades"
+const SCREEN_DOSSIER := &"dossier"
 
 const SCREEN_SCENES := {
 	SCREEN_MAIN_MENU: "res://scenes/main_menu/main_menu.tscn",
@@ -17,6 +22,11 @@ const SCREEN_SCENES := {
 	SCREEN_DIAGNOSIS: "res://scenes/diagnosis/diagnosis_screen.tscn",
 	SCREEN_SURGERY: "res://scenes/surgery/surgery_screen.tscn",
 	SCREEN_RESULTS: "res://scenes/results/results_screen.tscn",
+	SCREEN_SHOP: "res://scenes/shop/shop_screen.tscn",
+	SCREEN_BLACK_MARKET: "res://scenes/black_market/black_market_screen.tscn",
+	SCREEN_SKILLS: "res://scenes/skills/skills_screen.tscn",
+	SCREEN_UPGRADES: "res://scenes/upgrades/upgrades_screen.tscn",
+	SCREEN_DOSSIER: "res://scenes/dossier/dossier_screen.tscn",
 }
 
 const DIALOG_SCENE := preload("res://ui/components/dialog.tscn")
@@ -91,6 +101,12 @@ func go_to(screen_id: StringName, params: Dictionary = {}) -> void:
 func show_toast(text: String, kind: StringName = &"info") -> void:
 	if _toast_box == null:
 		return
+	# Keep at most MAX_TOASTS on screen: the oldest makes way immediately.
+	var live: Array[Node] = _toast_box.get_children().filter(func(n: Node) -> bool: return not n.is_queued_for_deletion())
+	while live.size() >= GameConfig.MAX_TOASTS:
+		var oldest: Node = live.pop_front()
+		_toast_box.remove_child(oldest)
+		oldest.queue_free()
 	var toast := PanelContainer.new()
 	toast.theme_type_variation = &"ToastPanel"
 	toast.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -122,6 +138,10 @@ func shake(strength: float = 4.0) -> void:
 		var offset := Vector2(randf_range(-1, 1), randf_range(-1, 1)).normalized() * strength * falloff
 		_shake_tween.tween_property(target, "position", offset.round(), GameConfig.SHAKE_DURATION_SEC / steps)
 	_shake_tween.tween_property(target, "position", Vector2.ZERO, 0.03)
+
+
+func is_shaking() -> bool:
+	return _shake_tween != null and _shake_tween.is_running()
 
 
 func flash(color: Color, peak_alpha: float = 0.25) -> void:

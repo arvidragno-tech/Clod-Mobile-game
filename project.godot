@@ -11,8 +11,8 @@ config_version=5
 [application]
 
 config/name="UNDERCITY: RIPPER"
-config/description="Underground cyber-surgery sim. Vertical slice (Step 1)."
-config/version="0.1.0"
+config/description="Underground cyber-surgery sim (Step 2)."
+config/version="0.2.0"
 run/main_scene="res://scenes/main/main.tscn"
 config/features=PackedStringArray("4.3", "GL Compatibility")
 boot_splash/bg_color=Color(0.027, 0.031, 0.047, 1)
@@ -27,6 +27,13 @@ InventoryManager="*res://systems/inventory_manager.gd"
 EconomyManager="*res://systems/economy_manager.gd"
 ReputationManager="*res://systems/reputation_manager.gd"
 ProgressionManager="*res://systems/progression_manager.gd"
+FactionManager="*res://systems/faction_manager.gd"
+SkillManager="*res://systems/skill_manager.gd"
+ClinicManager="*res://systems/clinic_manager.gd"
+StoryManager="*res://systems/story_manager.gd"
+EventManager="*res://systems/event_manager.gd"
+BlackMarketManager="*res://systems/black_market_manager.gd"
+ModifierManager="*res://systems/modifier_manager.gd"
 CustomerManager="*res://systems/customer_manager.gd"
 SurgeryManager="*res://systems/surgery_manager.gd"
 SaveManager="*res://systems/save_manager.gd"

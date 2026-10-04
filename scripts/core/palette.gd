@@ -2,7 +2,7 @@ class_name Palette
 extends RefCounted
 ## The game's limited colour palette. Very dark base, one primary neon (cyan),
 ## one brand accent (magenta, used sparingly) and status colours.
-## tools/generate_placeholder_art.py mirrors these values.
+## tools/art/palette.py mirrors these values.
 
 const BG_0 := Color("07080c")
 const BG_1 := Color("0d1017")

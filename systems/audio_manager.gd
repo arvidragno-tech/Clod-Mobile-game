@@ -20,6 +20,9 @@ const SFX_PATHS := {
 	&"customer": "res://audio/sfx/customer_arrival.wav",
 	&"cash": "res://audio/sfx/cash.wav",
 	&"levelup": "res://audio/sfx/level_up.wav",
+	&"drill": "res://audio/sfx/drill.wav",
+	&"glitch": "res://audio/sfx/glitch.wav",
+	&"event": "res://audio/sfx/event.wav",
 }
 
 const AMBIENT_PATHS := {

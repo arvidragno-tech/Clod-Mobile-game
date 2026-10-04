@@ -17,6 +17,11 @@ static func load_entries(path: String, key: String) -> Array:
 	return entries
 
 
+## Loads a whole JSON file (Dictionary or Array), or null on failure.
+static func load_json(path: String) -> Variant:
+	return _load_json(path)
+
+
 static func _load_json(path: String) -> Variant:
 	if ResourceLoader.exists(path):
 		var res := load(path) as JSON

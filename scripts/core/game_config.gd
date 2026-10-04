@@ -11,7 +11,19 @@ const GAME_SUBTITLE := "RIPPER"
 const CURRENCY_SUFFIX := " cr"
 
 # --- Data paths --------------------------------------------------------------
-const DATA_CUSTOMERS := "res://data/customers.json"
+const DATA_CHARACTERS := "res://data/characters.json"
+const DATA_ARCHETYPES := "res://data/archetypes.json"
+const DATA_NAMES := "res://data/names.json"
+const DATA_DIALOGUE := "res://data/dialogue.json"
+const DATA_CONDITIONS := "res://data/conditions.json"
+const DATA_FACTIONS := "res://data/factions.json"
+const DATA_SKILLS := "res://data/skills.json"
+const DATA_CLINIC_TIERS := "res://data/clinic_tiers.json"
+const DATA_EVENTS := "res://data/events.json"
+const DATA_RUMORS := "res://data/rumors.json"
+const DATA_BLACK_MARKET := "res://data/black_market.json"
+const DATA_PALETTES := "res://data/palettes.json"
+const DATA_CHARACTER_PARTS := "res://data/character_parts.json"
 const DATA_CYBERWARE := "res://data/cyberware.json"
 const DATA_TOOLS := "res://data/tools.json"
 const DATA_SURGERIES := "res://data/surgeries.json"
@@ -19,13 +31,18 @@ const DATA_COMPLICATIONS := "res://data/complications.json"
 
 # --- Save --------------------------------------------------------------------
 const SAVE_PATH := "user://savegame.json"
-const SAVE_VERSION := 1
+const SAVE_VERSION := 2
 
 # --- New game ----------------------------------------------------------------
 const STARTING_MONEY := 300
 const STARTING_REPUTATION := 0
-const STARTING_IMPLANT_STOCK := {&"nx1_neural_bridge": 2}
+const STARTING_IMPLANT_STOCK := {&"nx1_neural_bridge": 2, &"kestrel_sight": 1, &"kevlace_mesh": 1}
 const STARTING_UNLOCKED_CYBERWARE: Array[StringName] = [&"nx1_neural_bridge"]
+const STARTING_SUPPLIES := 8
+const STARTING_PARTS := 2
+const STARTING_TOKENS := 0
+const STARTING_SKILL_POINTS := 1
+const SKILL_POINTS_PER_LEVEL := 1
 
 # --- Progression -------------------------------------------------------------
 const XP_BASE_TO_LEVEL := 100
@@ -33,6 +50,8 @@ const XP_GROWTH_PER_LEVEL := 60
 const MAX_REPUTATION := 100
 const MIN_REPUTATION := -100
 const BLACK_MARKET_REPUTATION := 25
+## Player level needed for each cyberware tier (tier 5 = black market only).
+const CYBERWARE_TIER_LEVEL := {1: 1, 2: 2, 3: 4, 4: 7, 5: 99}
 
 # --- Clinic ------------------------------------------------------------------
 const CUSTOMER_ARRIVAL_DELAY_SEC := 1.2
@@ -40,6 +59,47 @@ const DECLINE_REPUTATION_PENALTY := -1
 ## Used when the clinic has no implant in stock and cannot afford one: the
 ## customer brings a salvaged unit, which performs worse.
 const SALVAGED_IMPLANT_QUALITY := 0.8
+## Chance an event fires when returning to the clinic after an operation.
+const EVENT_CHANCE := 0.4
+const SUPPLY_PACK_SIZE := 5
+const SUPPLY_PACK_PRICE := 70
+## Penalty when operating without enough supplies.
+const NO_SUPPLIES_MODIFIERS := {"complication.chance": 0.2, "surgery.bleed": 0.3}
+
+# --- Factions / heat ----------------------------------------------------------
+const FACTION_STANDINGS := [[-50, "HOSTILE"], [-15, "UNFRIENDLY"], [15, "NEUTRAL"], [40, "FRIENDLY"], [101, "ALLIED"]]
+const FACTION_REP_SUCCESS := 4
+const FACTION_REP_FAILURE := -8
+const FACTION_REP_DEATH := -14
+const HEAT_DECAY_PER_OP := 3.0
+const HEAT_PER_BM_INSTALL := 6.0
+const HEAT_PER_DEATH := 10.0
+const MAX_HEAT := 100.0
+
+# --- Customer consequences -------------------------------------------------------
+const REFERRAL_CHANCE := 0.3
+const RETURN_CHANCE := 0.25
+const RETURN_DELAY_OPS := Vector2i(2, 5)
+const REGULAR_VISITS := 3
+const REGULAR_PAY_BONUS := 0.1
+const COMPLAINT_CHANCE := 0.5
+const SUBSTITUTE_PAY_MULT := 0.85
+## Post-op complication chance by grade, added to the patient's hidden
+## post-op risk (conditions) and the post_op.risk modifier.
+const POST_OP_RISK_BY_GRADE := {"S": 0.0, "A": 0.02, "B": 0.05, "C": 0.12, "D": 0.2}
+
+## Risk tolerance a customer needs to consent when the projected neural load
+## lands in the severe (85-95) / critical (95+) band.
+const CONSENT_RISK_SEVERE := 0.45
+const CONSENT_RISK_CRITICAL := 0.75
+
+# --- Cyberware ----------------------------------------------------------------
+## Tolerance divisor per install-difficulty step above 1.
+const DIFFICULTY_TOLERANCE_STEP := 0.12
+## Extra complication risk for a fully worn (0% condition) implant.
+const WORN_IMPLANT_RISK := 0.15
+## Install pay markup on the implant's price.
+const IMPLANT_PRICE_MARKUP := 0.45
 
 # --- Surgery: vitals (all vitals are 0..100) --------------------------------
 const VITAL_MAX := 100.0
@@ -80,6 +140,8 @@ const MISTAKE_EFFECTS := {
 	&"poor_calibration": {"neural": -5.0},
 	&"bad_stitch": {"bleed_rate": 0.2, "blood": 1.5, "pain": 5.0},
 	&"underdose": {"pain_baseline": 18.0},
+	&"bone_crack": {"health": -7.0, "pain": 14.0, "bleed_rate": 0.25},
+	&"loose_anchor": {"pain": 4.0},
 	&"overdose": {"health": -10.0, "neural": -10.0},
 }
 
@@ -95,6 +157,8 @@ const MISTAKE_LABELS := {
 	&"poor_calibration": "POOR SYNC",
 	&"bad_stitch": "BAD STITCH",
 	&"underdose": "UNDERDOSED",
+	&"bone_crack": "BONE CRACK",
+	&"loose_anchor": "LOOSE ANCHOR",
 	&"overdose": "OVERDOSED",
 }
 
@@ -141,11 +205,15 @@ const CORRECT_DIAGNOSIS_XP_BONUS := 0.2
 const WRONG_DIAGNOSIS_PAY_MULT := 0.9
 
 # --- UI ----------------------------------------------------------------------
+## Viewport units per art pixel. Every sprite, background and the surgical
+## field render at exactly this scale (see docs/ART_BIBLE.md).
+const PIXEL_SCALE := 2
 ## Minimum touch target in viewport units (360 units ≈ 390pt iPhone width).
 const MIN_TOUCH := 48.0
 const TOUCH_SLOP := 26.0
 const SCREEN_FADE_OUT_SEC := 0.14
 const SCREEN_FADE_IN_SEC := 0.2
+const MAX_TOASTS := 2
 const TOAST_DURATION_SEC := 2.2
 const SHAKE_DURATION_SEC := 0.22
 const HAPTICS_MS := 25
