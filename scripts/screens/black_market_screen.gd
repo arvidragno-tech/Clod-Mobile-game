@@ -119,7 +119,7 @@ func _rebuild() -> void:
 
 func _item_header(row: HBoxContainer, inst: ImplantInstance) -> VBoxContainer:
 	var data := inst.get_data()
-	row.add_child(UIKit.icon(data.icon_path, 32))
+	row.add_child(CyberwareIcon.make(data))
 	var info := UIKit.vbox(2)
 	UIKit.expand(info)
 	row.add_child(info)

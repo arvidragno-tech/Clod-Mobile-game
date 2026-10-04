@@ -12,6 +12,7 @@ const CURRENCY_SUFFIX := " cr"
 
 # --- Data paths --------------------------------------------------------------
 const DATA_CHARACTERS := "res://data/characters.json"
+const DATA_CLINIC_FX := "res://data/clinic_fx.json"
 const DATA_ARCHETYPES := "res://data/archetypes.json"
 const DATA_NAMES := "res://data/names.json"
 const DATA_DIALOGUE := "res://data/dialogue.json"

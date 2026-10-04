@@ -405,48 +405,103 @@ def generate():
 
 
 def app_icon():
-    """64x64 app icon composed from the shipped sprites: a T3 neural implant
-    under a magenta key light with a precision scalpel and an ECG trace.
-    Exported at 4x (256, project icon) and 16x (1024, App Store, opaque)."""
+    """App icon on a 60x60 grid (iOS sizes 120/180 are exact 2x/3x; 1024 is
+    17x plus a 2 px bleed). Big, high-contrast shapes so it reads at 40 px:
+    a cyan neural implant under a magenta-edged scalpel, a blood drop, on a
+    dark underground backdrop with a magenta key light."""
     import os
     from PIL import Image
     from .lib import SPRITES, bayer
-    S = 64
-    img = Image.new("RGBA", (S, S))
-    bg0, bg1, glow = (11, 10, 16), (24, 20, 34), (122, 30, 92)
+    S = 60
+    img = Image.new("RGB", (S, S))
+    bg0, bg1, key = (9, 8, 14), (22, 17, 34), (110, 26, 84)
     for y in range(S):
         for x in range(S):
-            d = math.hypot(x - 30, y - 28) / 40.0
+            d = math.hypot(x - 24, y - 22) / 42.0
             t = clamp(1.0 - d, 0.0, 1.0)
-            base = bg1 if (y / S + 0.25 * bayer(x, y)) < 0.85 else bg0
-            # Banded, dithered key light falloff.
+            base = bg1 if (y / S) < 0.62 + 0.25 * bayer(x, y) else bg0
             band = 0.0
-            if t > 0.55 or (t > 0.4 and bayer(x, y) < (t - 0.4) / 0.15):
-                band = 0.35
-            if t > 0.8 or (t > 0.7 and bayer(x, y) < (t - 0.7) / 0.1):
-                band = 0.6
-            img.putpixel((x, y), tuple(int(base[i] + (glow[i] - base[i]) * band) for i in range(3)) + (255,))
-    # Frame.
-    for i in range(S):
-        for (x, y) in ((i, 1), (i, S - 2), (1, i), (S - 2, i)):
-            img.putpixel((x, y), (59, 50, 80, 255))
-        for (x, y) in ((i, 0), (i, S - 1), (0, i), (S - 1, i)):
-            img.putpixel((x, y), (6, 5, 9, 255))
-    implant = Image.open(os.path.join(SPRITES, "cyberware/neural_t3.png")).convert("RGBA")
-    img.alpha_composite(implant, (14, 10))
-    scalpel = Image.open(os.path.join(SPRITES, "tools/scalpel_precision.png")).convert("RGBA")
-    img.alpha_composite(scalpel, (34, 30))
-    # ECG trace across the bottom (cyan = tech).
-    cyan, dim = (46, 230, 200, 255), (20, 110, 100, 255)
-    pts = [(4, 52), (16, 52), (19, 46), (23, 58), (26, 50), (29, 52), (60, 52)]
-    for (x0, y0), (x1, y1) in zip(pts, pts[1:]):
-        n = max(abs(x1 - x0), abs(y1 - y0))
-        for k in range(n + 1):
-            x = round(x0 + (x1 - x0) * k / n)
-            y = round(y0 + (y1 - y0) * k / n)
-            img.putpixel((x, y), cyan)
-            if y + 1 < S - 2:
-                img.putpixel((x, y + 1), dim)
+            if t > 0.5 or (t > 0.38 and bayer(x, y) < (t - 0.38) / 0.12):
+                band = 0.32
+            if t > 0.78 or (t > 0.68 and bayer(x, y) < (t - 0.68) / 0.1):
+                band = 0.55
+            img.putpixel((x, y), tuple(int(base[i] + (key[i] - base[i]) * band) for i in range(3)))
+    px = img.load()
+
+    def rect(x, y, w, h, c):
+        for yy in range(y, y + h):
+            for xx in range(x, x + w):
+                if 0 <= xx < S and 0 <= yy < S:
+                    px[xx, yy] = c
+
+    # Neural implant: chunky chip with pins and a glowing core.
+    cyan, cyan_d, cyan_l = (46, 230, 200), (20, 110, 100), (180, 255, 240)
+    metal, metal_d, metal_l = (60, 70, 86), (28, 33, 42), (120, 134, 152)
+    rect(13, 13, 26, 26, metal_d)
+    rect(14, 14, 24, 24, metal)
+    rect(14, 14, 24, 2, metal_l)
+    for k in range(5):  # pins
+        rect(16 + k * 5, 10, 2, 3, metal_l)
+        rect(16 + k * 5, 39, 2, 3, metal_l)
+        rect(10, 16 + k * 5, 3, 2, metal_l)
+        rect(39, 16 + k * 5, 3, 2, metal_l)
+    rect(19, 19, 14, 14, cyan_d)
+    rect(21, 21, 10, 10, cyan)
+    rect(23, 23, 6, 6, cyan_l)
+    for k in range(3):  # traces
+        rect(15, 18 + k * 6, 4, 1, cyan_d)
+        rect(33, 20 + k * 6, 4, 1, cyan_d)
+    # Scalpel: diagonal blade crossing the chip, magenta cutting edge.
+    steel, steel_l, edge = (170, 182, 196), (236, 242, 248), (255, 61, 129)
+    handle, handle_l = (40, 44, 54), (80, 88, 104)
+    for t in range(0, 36):
+        x, y = 15 + t, 54 - t
+        if t < 14:  # handle with cyan grip rings
+            rect(x - 2, y - 2, 5, 5, (10, 10, 14))
+        else:
+            w = 5 if t < 31 else 3
+            rect(x - 2, y - 2, w + 1, w + 1, (10, 10, 14))
+    for t in range(0, 36):
+        x, y = 15 + t, 54 - t
+        if t < 14:
+            rect(x - 1, y - 1, 3, 3, handle)
+            px[x, y - 1] = handle_l
+            if t % 4 == 1:
+                rect(x - 1, y - 1, 3, 3, cyan_d)
+        else:  # blade: silver body, bright spine, magenta cutting edge
+            w = 4 if t < 31 else 2
+            rect(x - 1, y - 1, w, w, steel)
+            px[x, y - 1] = steel_l
+            px[min(S - 1, x + 1), y - 1] = steel_l
+            ex, ey = x + w - 2, y + w - 2
+            if 0 <= ex < S and 0 <= ey < S:
+                px[ex, ey] = edge
+    # Outline the blade for small-size contrast.
+    rect(30, 38, 2, 2, (10, 10, 14))
+    # Blood drop under the tip.
+    red, red_l = (196, 22, 48), (255, 110, 120)
+    rect(49, 25, 3, 4, red)
+    rect(48, 27, 5, 3, red)
+    px[50, 26] = red_l
+    # Frame: thin cyan bracket corners (reads as a medical HUD).
+    for (cx, cy, sx, sy) in ((2, 2, 1, 1), (57, 2, -1, 1), (2, 57, 1, -1), (57, 57, -1, -1)):
+        for k in range(6):
+            px[cx + sx * k, cy] = cyan_d
+            px[cx, cy + sy * k] = cyan_d
     out = os.path.join(SPRITES, "ui")
-    img.resize((256, 256), Image.NEAREST).save(os.path.join(out, "app_icon.png"), optimize=True)
-    img.resize((1024, 1024), Image.NEAREST).convert("RGB").save(os.path.join(out, "app_icon_1024.png"), optimize=True)
+    img.resize((240, 240), Image.NEAREST).save(os.path.join(out, "app_icon.png"), optimize=True)
+    big = Image.new("RGB", (1024, 1024), bg0)
+    big.paste(img.resize((1020, 1020), Image.NEAREST), (2, 2))
+    big.save(os.path.join(out, "app_icon_1024.png"), optimize=True)
+    # iOS icon set (iPhone): exact 2x/3x where possible, nearest elsewhere.
+    ios = os.path.join(SPRITES, "..", "ios")
+    os.makedirs(ios, exist_ok=True)
+    for size in (40, 58, 60, 76, 80, 87, 120, 152, 167, 180):
+        img.resize((size, size), Image.NEAREST).save(os.path.join(ios, f"icon_{size}.png"), optimize=True)
+    # Launch screen: the clinic mark + wordmark, integer-scaled per density.
+    logo = Image.new("RGBA", (64, 40), (0, 0, 0, 0))
+    lp = logo.load()
+    small = img.crop((10, 9, 44, 45)).resize((34, 36), Image.NEAREST)
+    logo.paste(small, (15, 0))
+    for scale, name in ((4, "launch@2x.png"), (6, "launch@3x.png")):
+        logo.resize((64 * scale, 40 * scale), Image.NEAREST).save(os.path.join(ios, name), optimize=True)

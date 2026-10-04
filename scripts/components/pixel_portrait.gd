@@ -10,6 +10,14 @@ extends Control
 var appearance: Dictionary = {}
 var _texture: Texture2D
 var _time: float = 0.0
+## Blink: skin colour sampled from the lid crease; null when the eyes are
+## covered (optics, visors) so we never paint skin over chrome.
+var _lid_color: Variant = null
+var _next_blink: float = 2.0
+var _blink: float = 0.0
+
+const EYE_ROW := 25
+const EYE_XS: Array[int] = [27, 37]
 
 
 func _ready() -> void:
@@ -21,11 +29,31 @@ func set_appearance(app: Dictionary, p_accent: Color = Palette.ACCENT) -> void:
 	appearance = app
 	accent = p_accent
 	_texture = CharacterArt.portrait(app) if not app.is_empty() else null
+	_lid_color = _sample_lid()
+	_next_blink = randf_range(1.0, 4.0)
 	queue_redraw()
+
+
+func _sample_lid() -> Variant:
+	if _texture == null:
+		return null
+	var img := _texture.get_image()
+	if img == null or img.get_width() < 64:
+		return null
+	# Open eyes have a bright sclera next to the iris on both sides.
+	for ex in EYE_XS:
+		if img.get_pixel(ex - 2, EYE_ROW).get_luminance() < 0.55:
+			return null
+	return img.get_pixel(EYE_XS[0] - 2, EYE_ROW - 2)
 
 
 func _process(delta: float) -> void:
 	_time += delta
+	_next_blink -= delta
+	if _next_blink <= 0.0:
+		_next_blink = randf_range(2.5, 6.0)
+		_blink = 0.13
+	_blink = maxf(0.0, _blink - delta)
 	queue_redraw()
 
 
@@ -42,6 +70,12 @@ func _draw() -> void:
 	draw_rect(Rect2(r.end.x - s * 6, r.position.y, s * 6, r.size.y), Color(accent, 0.07))
 	if _texture:
 		draw_texture_rect_region(_texture, r, Rect2(crop))
+		if _blink > 0.0 and _lid_color != null and not Settings.reduce_motion:
+			for ex in EYE_XS:
+				var p := Vector2(ex - 2, EYE_ROW - 1) - Vector2(crop.position)
+				if p.x >= 0 and p.y >= 0 and p.x + 5 <= crop.size.x and p.y + 2 <= crop.size.y:
+					draw_rect(Rect2(origin + p * s, Vector2(5, 2) * s), _lid_color)
+					draw_rect(Rect2(origin + (p + Vector2(0, 1)) * s, Vector2(5, 1) * s), (_lid_color as Color).darkened(0.35))
 	# Scanlines (every other art pixel row) + sweeping refresh line
 	var y := r.position.y
 	while y < r.end.y:

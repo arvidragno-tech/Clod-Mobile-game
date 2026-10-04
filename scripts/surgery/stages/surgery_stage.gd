@@ -58,6 +58,21 @@ func begin() -> void:
 	pass
 
 
+## Where the field should be framed for this stage (normalised).
+func get_focus() -> Vector2:
+	var path := stage.param_vec2_array("path") if stage else ([] as Array[Vector2])
+	if path.is_empty() and site and not site.incision_path.is_empty():
+		path = site.incision_path
+	if not path.is_empty():
+		var lo := path[0]
+		var hi := path[0]
+		for p in path:
+			lo = lo.min(p)
+			hi = hi.max(p)
+		return (lo + hi) / 2.0
+	return site.socket_pos if site else Vector2(0.5, 0.5)
+
+
 ## Optional stage-specific controls (hold button, slider...). Owned by the
 ## stage; the screen places it below the field and frees it with the stage.
 func create_controls() -> Control:

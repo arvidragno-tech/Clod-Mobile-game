@@ -229,7 +229,7 @@ func _implant_option(i: int, inst: ImplantInstance, selected: bool, requested: C
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	b.add_child(UIKit.full_rect(UIKit.margin(6, 4, 6, 4)))
 	(b.get_child(0) as MarginContainer).add_child(row)
-	row.add_child(UIKit.icon(data.icon_path, 32))
+	row.add_child(CyberwareIcon.make(data))
 	var v := UIKit.vbox(1)
 	v.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	UIKit.expand(v)

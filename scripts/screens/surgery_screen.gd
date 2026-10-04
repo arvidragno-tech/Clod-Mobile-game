@@ -142,6 +142,7 @@ func _load_stage(index: int, stage_data: SurgeryStageData) -> void:
 	stage.hint.connect(func(text: String) -> void: UIManager.show_toast(text, &"warn"))
 	_stage_host.add_child(stage)
 	current_stage = stage
+	_site.set_focus(stage.get_focus())
 	stage.begin()
 	var controls := stage.create_controls()
 	if controls:
@@ -376,6 +377,7 @@ func _update_vitals(immediate: bool) -> void:
 	_site.blood_level = v.blood_loss
 	_ecg.health = v.health
 	_ecg.heart_rate = 64.0 + v.pain * 0.5 + v.blood_loss * 0.8
+	_site.heart_rate = _ecg.heart_rate
 	_ecg.flatline = v.health <= 0.0
 	var load := SurgeryManager.neural_load_after
 	_neural_load.text = "LOAD %d%%" % roundi(load)

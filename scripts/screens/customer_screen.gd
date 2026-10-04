@@ -2,7 +2,6 @@ extends BaseScreen
 ## Customer intake: who they are (faction, personality, money, history,
 ## existing chrome, neural load) and what they want.
 
-const CHARS_PER_SEC := 60.0
 const RISK_LABELS := ["", "LOW", "MEDIUM", "HIGH"]
 const RISK_COLORS: Array[Color] = [Palette.TEXT, Palette.OK, Palette.WARN, Palette.DANGER]
 const WEALTH := ["BROKE", "GETTING BY", "COMFORTABLE", "LOADED"]
@@ -50,9 +49,12 @@ func on_enter(_params: Dictionary) -> void:
 	UIKit.expand(accept)
 	accept.size_flags_stretch_ratio = 1.8
 	buttons.add_child(accept)
-	_dialogue.visible_ratio = 0.0
-	_type_tween = create_tween()
-	_type_tween.tween_property(_dialogue, "visible_ratio", 1.0, c.dialogue.length() / CHARS_PER_SEC)
+	# Typewriter at the player's text speed (Settings; 0 = instant).
+	var cps := Settings.chars_per_second()
+	if cps > 0.0:
+		_dialogue.visible_ratio = 0.0
+		_type_tween = create_tween()
+		_type_tween.tween_property(_dialogue, "visible_ratio", 1.0, c.dialogue.length() / cps)
 
 
 func _profile_card(c: CustomerData) -> Control:
@@ -121,7 +123,7 @@ func _job_card(c: CustomerData, item: CyberwareData, surgery: SurgeryData) -> Co
 	var card := UIKit.panel(&"CardPanel")
 	var row := UIKit.hbox(10)
 	card.add_child(row)
-	row.add_child(UIKit.icon(item.icon_path, 32))
+	row.add_child(CyberwareIcon.make(item))
 	var g := GridContainer.new()
 	g.columns = 2
 	g.add_theme_constant_override(&"h_separation", 10)

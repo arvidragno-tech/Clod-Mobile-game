@@ -71,6 +71,8 @@ var closed: bool = false:
 var bleed_intensity: float = 0.0
 var blood_level: float = 0.0
 var emergency: bool = false
+## Beats per minute for the wound flush (set from vitals by the screen).
+var heart_rate: float = 72.0
 
 var _field_origin: Vector2 = Vector2.ZERO
 var _region_texture: Texture2D
@@ -295,8 +297,23 @@ func _rebuild_wound() -> void:
 
 # --- Layout / drawing --------------------------------------------------------
 
+## Region of interest (normalised). When the visible window is smaller than
+## the field (short phones), the field is framed around it instead of the
+## centre. Stages set it once at their start, never mid-gesture.
+var focus: Vector2 = Vector2(0.5, 0.5)
+
+
+func set_focus(norm: Vector2) -> void:
+	focus = norm.clamp(Vector2.ZERO, Vector2.ONE)
+	_layout()
+
+
 func _layout() -> void:
-	_field_origin = ((size - Vector2.ONE * FIELD_SIZE) / 2.0).floor()
+	var o := ((size - Vector2.ONE * FIELD_SIZE) / 2.0).floor()
+	for axis in 2:
+		if size[axis] < FIELD_SIZE:
+			o[axis] = floorf(clampf(size[axis] / 2.0 - focus[axis] * FIELD_SIZE, size[axis] - FIELD_SIZE, 0.0))
+	_field_origin = o
 	queue_redraw()
 
 
@@ -320,6 +337,11 @@ func _draw() -> void:
 	if _wound_dirty:
 		_rebuild_wound()
 	draw_texture(_wound_texture, _field_origin)
+	# Heartbeat: the open wound flushes faintly on each beat.
+	if not closed and opening > 0.2 and not Settings.reduce_motion:
+		var beat := fmod(_time * heart_rate / 60.0, 1.0)
+		if beat < 0.12:
+			draw_texture(_wound_texture, _field_origin, Color(1.4, 0.7, 0.7, 0.18 * (1.0 - beat / 0.12)))
 	if not closed and opening > 0.4:
 		_draw_nerves()
 	if show_socket:
@@ -372,6 +394,28 @@ func _draw_nerves() -> void:
 			_line(p0 + Vector2(1, 1), p1 + Vector2(1, 1), Color(NERVE[1], a))
 			_line(p0 + Vector2(1, 0), p1 + Vector2(1, 0), Color(NERVE[3], a))
 			_line(p0, p1, Color(NERVE[5], a))
+	# Neural signals: bright pulses travelling along each exposed nerve.
+	if Settings.reduce_motion:
+		return
+	for n in nerves.size():
+		var nerve := nerves[n]
+		var total := 0.0
+		for i in range(nerve.size() - 1):
+			total += to_local_pos(nerve[i]).distance_to(to_local_pos(nerve[i + 1]))
+		if total <= 0.0:
+			continue
+		for k in 2:
+			var d := fmod(_time * 22.0 + n * 17.0 + k * total * 0.5, total)
+			for i in range(nerve.size() - 1):
+				var p0 := to_local_pos(nerve[i])
+				var p1 := to_local_pos(nerve[i + 1])
+				var seg := p0.distance_to(p1)
+				if d <= seg:
+					var p := p0.lerp(p1, d / maxf(seg, 0.001)).floor()
+					_px(p, Color(NERVE[7], a))
+					_px(p - (p1 - p0).normalized().round(), Color(NERVE[6], a * 0.6))
+					break
+				d -= seg
 
 
 func _draw_socket() -> void:

@@ -9,7 +9,11 @@ from __future__ import annotations
 import math
 import random
 
+import json
+import os
+
 from . import palette as pal
+from . import props
 from .lib import Canvas, LitScene, poly_pixels, clamp, bayer
 
 W, H = 180, 250
@@ -28,6 +32,11 @@ FONT3x5 = {
     "Y": ["101", "101", "010", "010", "010"], "2": ["110", "001", "010", "100", "111"],
     "4": ["101", "101", "111", "001", "001"], "-": ["000", "000", "111", "000", "000"],
     " ": ["0", "0", "0", "0", "0"], "+": ["000", "010", "111", "010", "000"],
+    "V": ["101", "101", "101", "101", "010"], "G": ["011", "100", "101", "101", "011"],
+    "F": ["111", "100", "110", "100", "100"], "W": ["10001", "10001", "10101", "11011", "10001"],
+    "Z": ["111", "001", "010", "100", "111"], "J": ["001", "001", "001", "101", "010"],
+    "Q": ["010", "101", "101", "110", "011"], "0": ["111", "101", "101", "101", "111"],
+    "1": ["010", "110", "010", "010", "111"], "3": ["110", "001", "010", "001", "110"],
 }
 
 
@@ -219,6 +228,7 @@ def monitor(sc: LitScene, x, y, w, h, style="crt", glow="cyan", stand=True):
             if e and e != GLOW(glow, 6):
                 sc.emissive.px[yy][xx] = (max(0, e[0] - 3), max(0, e[1] - 6), max(0, e[2] - 6), 255)
     sc.light(x + w / 2, y + h / 2, pal.ACCENT[glow], 40, 0.55)
+    props.fx("monitor", sx0, sy0, sx1 - sx0, sy1 - sy0, color=glow)
     if style == "crt":
         sc.emissive.set(x + 3, y + h - 2, GLOW("green", 6))
         sc.emissive.set(x + 6, y + h - 2, GLOW("amber", 6))
@@ -343,6 +353,8 @@ def robot_arm(sc: LitScene, base_x, side=1, reach=(0, 0), kind="pro"):
     a.line(hx, hy + 2, hx, hy + 8, C(MAT["steel"], 6))
     sc.emissive.set(int(ex), int(ey), GLOW("cyan", 6))
     sc.emissive.set(int(hx), int(hy + 8), GLOW("red", 6))
+    props.fx("led", int(ex), int(ey), color="cyan", rate=0.6)
+    props.fx("laser", int(hx), int(hy + 8), color="red")
     for k in range(6):  # cable along the arm
         t = k / 5
         a.set(int(bx + (ex - bx) * t) + side * 3, int(by + 4 + (ey - by - 4) * t), C(MAT["dark"], 0))
@@ -366,6 +378,8 @@ def holo(sc: LitScene, x, y, w, h, color="cyan"):
         sc.emissive.set(cx + hw, yy, GLOW(color, 5))
     sc.emissive.set(cx, y + 14, GLOW("magenta", 7))
     sc.light(x + w / 2, y + h / 2, pal.ACCENT[color], 44, 0.5)
+    props.fx("holo", x, y, w, h, color=color)
+    props.fx("led", cx, y + 14, color="magenta", rate=1.2)
 
 
 def scanner_ring(sc: LitScene, cx, cy):
@@ -425,8 +439,45 @@ CLINIC_TIERS = [
 ]
 
 
+def dress(sc, tier, rng):
+    """Shared set dressing: power, ventilation, waste, storytelling."""
+    grime = max(0, 2 - tier)
+    props.power_box(sc, 14, 44, tier, sparks=tier == 0)
+    vent_pos = {0: (150, 24), 1: (150, 30), 2: (118, 34), 3: (150, 34), 4: (152, 34), 5: (116, 36)}[tier]
+    props.vent(sc, vent_pos[0], vent_pos[1], tier=tier)
+    props.waste_bin(sc, 50, tier)
+    # Floor storytelling (old stains in the cheap clinics, one fresh drop).
+    if tier <= 2:
+        props.blood(sc, 92, 188, 9 - tier * 2, 2, rng)
+        props.blood(sc, 110, 196, 4, 1, rng)
+    props.blood(sc, 100, 184 + tier, 2, 1, rng, fresh=True)
+    for k in range(3 - min(tier, 2)):
+        props.discarded_implant(sc, 40 + k * 7, FLOOR_Y + 6 + (k % 2) * 3, rng, glow=(k == 0))
+    if tier <= 3:
+        props.drain(sc, 132, 204)
+    if tier >= 1:
+        props.tool_cart(sc, 140, 178, tier)
+    # Foreground (bottom of the frame) so the floor isn't an empty plane.
+    if tier <= 1:
+        props.box_stack(sc, 4, 212, rng)
+    else:
+        props.equipment_case(sc, 6, 222, "cyan" if tier < 5 else "magenta")
+    if tier <= 2:
+        props.floor_cables(sc, [(0, 206), (40, 202), (90, 204), (138, 200), (150, 198)])
+    if tier <= 1:
+        props.hidden_compartment(sc, 120 if tier == 0 else 124, 150, "panel")
+    else:
+        props.hidden_compartment(sc, 60, 214, "hatch")
+    # Steam leaking from the ceiling pipe joints (cheap clinics).
+    if tier <= 2:
+        props.steam(34 + tier * 30, 10)
+    if tier <= 2:
+        props.steam(160, 10)
+
+
 def clinic(tier: int) -> Canvas:
     rng = random.Random(100 + tier)
+    props.reset_fx()
     amb = [(0.22, 0.22, 0.30), (0.25, 0.26, 0.34), (0.28, 0.30, 0.38), (0.33, 0.36, 0.44), (0.34, 0.37, 0.46), (0.38, 0.41, 0.50)][tier]
     sc = LitScene(W, H, ambient=amb)
     wall(sc, ["concrete", "tile", "panel", "clean", "hex", "clean"][tier], rng)
@@ -500,6 +551,25 @@ def clinic(tier: int) -> Canvas:
         sc.albedo.rect(0, 14, W, 3, C(MAT["steel"], 5))  # gantry rail
         for x in range(0, W):
             sc.emissive.set(x, FLOOR_Y + 1, C(MAT["white"], 6) if x % 3 else GLOW("cyan", 5))
+    dress(sc, tier, rng)
+    if tier == 0:
+        props.graffiti(sc, 66, 100, "NO DOC", "magenta", rng)
+        props.tape(sc, 142, 129)
+        props.tape(sc, 160, 131, 4, vertical=True)
+        floor_cables_t0 = [(150, 146), (150, 176), (126, 186), (60, 182)]
+        props.floor_cables(sc, floor_cables_t0)
+    elif tier == 1:
+        props.graffiti(sc, 112, 100, "R4T", "cyan", rng)
+        props.tape(sc, 52, 99)
+        props.floor_cables(sc, [(61, 176), (70, 186), (104, 184), (106, 176)])
+    elif tier == 2:
+        props.graffiti(sc, 96, 150, "XX", "magenta", rng)
+        props.ecg_cart(sc, 122, tier)
+        props.floor_cables(sc, [(60, 176), (72, 188), (108, 186), (110, 176)])
+        props.floor_cables(sc, [(129, 176), (124, 190), (112, 190)])
+    elif tier >= 3:
+        props.floor_cables(sc, [(60, 176), (76, 192), (106, 190), (108, 176)])
+        props.warning_label(sc, 150, 58 if tier < 5 else 84, "BIO")
     return sc.render()
 
 
@@ -589,10 +659,136 @@ def surgery_backdrop(level: int) -> Canvas:
     return sc.render()
 
 
+def title_scene() -> Canvas:
+    """Main-menu key art (180x400): a rain-soaked undercity alley. Megastructure
+    silhouettes in the haze above (kept dark behind the title), neon signage,
+    stairs down to the clinic door glowing red, a customer waiting under the
+    cross sign, puddles reflecting the neon."""
+    Wt, Ht = 180, 400
+    rng = random.Random(4242)
+    sc = LitScene(Wt, Ht, ambient=(0.30, 0.27, 0.44))
+    a = sc.albedo
+    # Haze sky: deep blue-purple, darker at the top.
+    sky = R("1c1830", 0.05)
+    for y in range(Ht):
+        for x in range(Wt):
+            v = 1.2 + 1.6 * (y / 220.0) + (0.4 if bayer(x, y) < 0.25 else 0.0)
+            a.shade_px(x, y, sky, min(v, 3.4))
+    # Distant megastructures (three depth layers, lit windows sparse).
+    for layer, (base, tone, density) in enumerate(((150, 1.2, 0.05), (200, 1.7, 0.08), (250, 2.2, 0.1))):
+        x = -6
+        while x < Wt:
+            w = rng.randrange(14, 34)
+            top = base - rng.randrange(20, 110) + layer * 10
+            for yy in range(top, Ht):
+                for xx in range(x, min(Wt, x + w)):
+                    a.shade_px(xx, yy, MAT["dark"], tone)
+            if layer < 2:  # antenna / spire
+                a.vline(x + w // 2, top - rng.randrange(6, 20), top, C(MAT["dark"], 1))
+                sc.emissive.set(x + w // 2, top - 6, GLOW("red", 5))
+            # Rim light on the roof edge (city glow from below/behind).
+            a.hline(x, min(Wt, x + w) - 1, top, C(sky, 4 + layer))
+            # Lit floors: whole window strips, not random dots.
+            for yy in range(top + 4, Ht - 130, 5):
+                if rng.random() < density * 4:
+                    col = rng.choice(["amber", "amber", "cyan", "magenta"])
+                    start = x + 2 + rng.randrange(0, max(1, w // 3))
+                    length = rng.randrange(3, max(4, w - 4))
+                    for xx in range(start, min(x + w - 2, start + length)):
+                        if xx % 3 != 0:
+                            sc.emissive.set(xx, yy, GLOW(col, 1 + layer))
+            x += w + rng.randrange(0, 6)
+    # Horizon haze: the city's glow bouncing off low cloud.
+    sc.light(90, 230, pal.ACCENT["magenta"], 140, 0.35)
+    sc.light(30, 260, pal.ACCENT["cyan"], 90, 0.25)
+    # Near buildings framing the alley (they hide the city behind them).
+    for side in (0, 1):
+        x0 = 0 if side == 0 else 132
+        x1 = 48 if side == 0 else Wt
+        for yy in range(170, Ht):
+            for xx in range(x0, x1):
+                sc.emissive.px[yy][xx] = None
+                v = 2.2 + rng.random() * 0.3 - (1.0 if (yy % 18 == 0) else 0)
+                a.shade_px(xx, yy, MAT["concrete"], v)
+        for yy in range(186, 300, 26):  # windows with blinds
+            for k in range(2):
+                wx = x0 + 8 + k * 20
+                a.rect(wx, yy, 12, 14, C(MAT["dark"], 0))
+                for by in range(yy + 1, yy + 13, 2):
+                    a.hline(wx + 1, wx + 10, by, C(MAT["dark"], 2))
+                if rng.random() < 0.5:
+                    for by in range(yy + 2, yy + 12, 2):
+                        sc.emissive.hline(wx + 1, wx + 10, by, GLOW("amber", 2))
+    # Fire escape on the right building.
+    for yy in range(196, 300, 24):
+        a.hline(132, Wt - 1, yy, C(MAT["steel"], 3))
+        for xx in range(134, Wt, 4):
+            a.vline(xx, yy - 6, yy, C(MAT["steel"], 2))
+    # Vertical neon blade on the left building: "RIPPER" stacked letters.
+    a.rect(30, 196, 13, 62, C(MAT["dark"], 0))
+    for i, ch in enumerate("RIPPER"):
+        text(sc.emissive, 34, 199 + i * 10, ch, GLOW("magenta", 6))
+    sc.light(36, 226, pal.ACCENT["magenta"], 70, 0.8)
+    # Medical cross sign over the stairwell (cyan), slightly broken.
+    cx, cy = 92, 252
+    sc.albedo.rect(cx - 9, cy - 9, 19, 19, C(MAT["dark"], 0))
+    for d in range(-6, 7):
+        sc.emissive.set(cx + d, cy, GLOW("cyan", 6))
+        sc.emissive.set(cx + d, cy + 1, GLOW("cyan", 5))
+        if d != 3:  # dead tube segment
+            sc.emissive.set(cx, cy + d, GLOW("cyan", 6))
+            sc.emissive.set(cx + 1, cy + d, GLOW("cyan", 5))
+    sc.light(cx, cy, pal.ACCENT["cyan"], 60, 0.7)
+    # Street, stairs down to the clinic door.
+    street_y = 300
+    for yy in range(street_y, Ht):
+        for xx in range(Wt):
+            sc.emissive.px[yy][xx] = None
+            a.shade_px(xx, yy, MAT["floor_c"], 2.6 + rng.random() * 0.3)
+    for k in range(7):  # stairwell steps going down
+        y = street_y + 6 + k * 6
+        a.rect(66 - k * 2, y, 52 + k * 4, 2, C(MAT["concrete"], 4))
+        a.rect(66 - k * 2, y + 2, 52 + k * 4, 4, C(MAT["concrete"], 2))
+    a.rect(58, street_y, 3, 46, C(MAT["steel"], 4))  # railing
+    a.rect(123, street_y, 3, 46, C(MAT["steel"], 4))
+    a.hline(58, 125, street_y, C(MAT["steel"], 5))
+    # The clinic door at the bottom of the stairs, red work light.
+    a.shaded_poly([(76, 346), (108, 346), (108, 384), (76, 384)], MAT["rust"], 4.0, 2.2, 1, 1)
+    a.rect(80, 352, 24, 8, C(MAT["dark"], 1))
+    sc.emissive.rect(82, 342, 20, 2, GLOW("red", 6))
+    sc.light(92, 344, pal.ACCENT["red"], 54, 0.9, cone=(90, 70))
+    text(sc.emissive, 85, 352, "DOC", GLOW("red", 5))
+    # A customer waiting under the sign: silhouette with one glowing optic.
+    fx_, fy = 140, 300
+    a.ellipse(fx_, fy - 34, 4, 5, (8, 8, 12, 255))
+    a.shaded_poly([(fx_ - 7, fy - 28), (fx_ + 7, fy - 28), (fx_ + 6, fy - 8), (fx_ - 6, fy - 8)], MAT["dark"], 1.5, 1, 1, 1)
+    a.rect(fx_ - 5, fy - 8, 4, 8, (8, 8, 12, 255))
+    a.rect(fx_ + 1, fy - 8, 4, 8, (8, 8, 12, 255))
+    sc.emissive.set(fx_ + 2, fy - 35, GLOW("red", 7))
+    sc.light(fx_ + 2, fy - 35, pal.ACCENT["red"], 10, 0.6)
+    for xx in range(fx_ - 8, fx_ + 9):  # rim light from the cross sign
+        if bayer(xx, fy - 20) < 0.5:
+            sc.emissive.set(xx, fy - 29, GLOW("cyan", 2))
+    # Puddles reflecting the neon.
+    for px_, w_, cols in ((20, 30, ["magenta", "magenta", "cyan"]), (140, 34, ["cyan", "amber"]), (60, 18, ["red"])):
+        puddle(sc, px_, 384 if px_ != 60 else 392, w_, rng, [GLOW(c, 4) for c in cols])
+    # Steam from a street vent.
+    a.rect(14, 318, 16, 3, C(MAT["steel"], 3))
+    for xx in range(14, 30, 2):
+        a.set(xx, 319, (8, 8, 10, 255))
+    return sc.render()
+
+
 def generate():
+    fx_all = {}
     for t, name in enumerate(CLINIC_TIERS):
         clinic(t).save(f"clinic/clinic_t{t}_{name}.png")
+        fx_all[str(t)] = list(props.FX)
+    root = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "data", "clinic_fx.json")
+    with open(root, "w") as f:
+        json.dump({"_doc": "Animation anchors per clinic tier (art px), generated by tools/art/environments.py", "tiers": fx_all}, f, indent=1)
     black_market().save("blackmarket/den.png")
+    title_scene().save("ui/title_keyart.png")
     for lv in range(3):
         surgery_backdrop(lv).save(f"surgery/backdrop_{lv}.png")
     print("environments: clinic x6, black market, surgery x3")

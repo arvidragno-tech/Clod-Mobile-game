@@ -68,7 +68,7 @@ func _implant_card(item: CyberwareData) -> Control:
 	var card := UIKit.panel(&"CardPanel")
 	var row := UIKit.hbox(10)
 	card.add_child(row)
-	row.add_child(UIKit.icon(item.icon_path, 32))
+	row.add_child(CyberwareIcon.make(item))
 	var info := UIKit.vbox(2)
 	UIKit.expand(info)
 	row.add_child(info)
