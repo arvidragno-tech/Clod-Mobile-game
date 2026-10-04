@@ -4,9 +4,13 @@ An original 2D pixel-art cyberpunk surgery sim for iPhone. You run an
 underground clinic: take customers, diagnose them, install cyberware with
 your fingers, handle complications, get paid, and climb toward the black market.
 
-**Status:** Step 1, a playable vertical slice. One complete operation
-(`INSTALL_BASIC_NEURAL_IMPLANT`) and the full loop:
-Main Menu → Clinic → Customer → Diagnosis → Surgery → Results → Clinic.
+**Status:** Step 2: the core game. It has 8 operations across 8 cyberware
+categories and 27 implants (tiers 1–5). Customers are procedural, with hidden
+conditions and a neural-load system. There are 21 upgradeable tools, 5
+factions with heat, a black market with unknown properties, a 4-branch skill
+tree, 6 clinic tiers, and 19 story/random events with characters and rumours.
+All art is detailed pixel art at one consistent density.
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and [docs/ART_BIBLE.md](docs/ART_BIBLE.md).
 
 ![Screens](docs/screenshots/overview.png)
 
@@ -35,13 +39,30 @@ and device go through the same input path.
 
 ### Playing a shift
 
-1. **Clinic.** A customer shows up at the door. Tap them or **SEE CUSTOMER**.
-2. **Customer file.** Read who they are, what they want and the risk. **ACCEPT JOB** (declining costs a little reputation).
-3. **Diagnosis.** Tap the glowing body regions to scan them (at least 2), read the findings, then pick a diagnosis. A correct diagnosis means fewer complications and bonus XP.
-4. **Plan.** Check stages, tools and implant stock, then **BEGIN OPERATION**.
-5. **Surgery.** 8 stages, described below. Keep an eye on the vitals and use the emergency buttons.
-6. **Results.** You get a grade (S–F), payout, XP and reputation. The game autosaves.
-7. Back in the clinic, use **SUPPLY** to restock implants or buy the Mono-Edge Scalpel.
+1. **Clinic.** A customer shows up at the door, drawn with their own face, outfit and installed chrome. Tap them or **SEE CUSTOMER**. The nav bar opens **SUPPLY**, **SKILLS**, **CLINIC** (upgrades), **DOSSIER** (factions, contacts, rumours, records) and, once you have the contacts, the **MARKET**.
+2. **Customer file.** Shows who they are:
+   - faction, personality, wealth, patience and risk appetite
+   - their current neural load and their medical history
+   - what they want and what they'll pay
+
+   **ACCEPT JOB**, or decline (which costs a little rep and faction standing).
+3. **Diagnosis.** Scan body regions (at least 2). Scans can reveal **hidden conditions** (rejection-prone, clotting disorder, neural scarring...), which change how the operation behaves. Then pick a diagnosis.
+4. **Plan.** Choose which implant unit to install: stock, buy now, a black-market unit, or a salvaged one. Review the checks:
+   - required tools (e.g. a drill for limbs)
+   - supplies
+   - before → after neural load
+   - the customer's consent
+
+   Then **BEGIN OPERATION**.
+5. **Surgery.** 8–9 stages depending on the procedure. Keep an eye on the vitals and neural sync, and use the emergency buttons.
+6. **Results.** You get a grade (S–F), pay, XP, rep, a faction change and heat, plus consequences:
+   - referral, a return visit, or becoming a regular
+   - a post-op complication
+   - a neural break
+
+   Then events may trigger. The game autosaves.
+
+---
 
 ---
 
@@ -50,25 +71,31 @@ and device go through the same input path.
 ```
 project.godot            Engine config (portrait, stretch, autoloads, renderer)
 export_presets.cfg       iOS export preset (no signing secrets)
-data/                    Game content as JSON (customers, cyberware, tools, surgeries, complications)
+data/                    Game content as JSON (cyberware, tools, surgeries, complications, characters,
+                         archetypes, names, dialogue, conditions, factions, skills, clinic tiers,
+                         events, rumors, black market, palettes, character parts)
 systems/                 Autoload singletons (the game's services)
 scripts/
   core/                  GameConfig (all tuning values), Palette
   data/                  Typed Resource classes + JSON loader
-  surgery/               Vitals model, scoring, result, site renderer, stage registry
-    stages/              One script per surgery interaction (8 stages)
+  surgery/               Vitals, scoring, result, site renderer, lighting, stage registry
+    stages/              One script per surgery interaction (9 stage types)
+  customers/             Procedural customer generator
+  art/                   PixelArt (density helpers), CharacterArt (runtime palette compositing)
+  ui/                    UIKit: code-built UI helpers
   screens/               One script per screen (+ BaseScreen, Main root)
   components/            Reusable UI widgets (vital bar, tool tray, scan view, FX...)
   util/                  Safe-area helper
-scenes/                  Screen scenes: main, main_menu, clinic, customer, diagnosis, surgery, results
+scenes/                  Screen scenes: main, main_menu, clinic, customer, diagnosis, surgery, results,
+                         shop, black_market, skills, upgrades, dossier
 ui/
   theme/main_theme.tres  Global theme (generated by tools/build_theme.gd)
   components/            Reusable UI scenes (player HUD, dialog)
-assets/                  Fonts (OFL), sprites, CRT shader
+assets/                  Fonts (OFL), sprites (generated), CRT + black-market glitch shaders
 audio/                   Placeholder SFX + ambient loop
-tools/                   Reproducible generators: pixel art, audio, theme
-tests/                   Unit tests + end-to-end playthrough bot
-docs/                    Screenshots (ignored by Godot)
+tools/                   Reproducible generators: art/ (pixel-art pipeline), audio, theme
+tests/                   Unit tests, end-to-end bot, compile check, perf probe
+docs/                    ARCHITECTURE.md, ART_BIBLE.md, screenshots (ignored by Godot)
 LICENSES/                Font licences (SIL OFL 1.1)
 ```
 
@@ -78,39 +105,59 @@ LICENSES/                Font licences (SIL OFL 1.1)
 
 | Autoload | Responsibility |
 |---|---|
-| `EventBus` | Cross-cutting signals (money/xp/rep changed, customer arrived, saved...) |
-| `GameManager` | Game flow: new game/continue, customer → diagnosis → surgery → results, applying rewards |
-| `CustomerManager` | Customer templates, who is waiting, arrival timing |
-| `SurgeryManager` | Runs an operation: stages, vitals tick, mistakes, complications, quick actions, final result |
-| `CyberwareManager` | Implant catalogue and unlocks |
-| `InventoryManager` | Owned tools (best per category is used) and implant stock |
+| `EventBus` | Cross-cutting signals |
+| `GameManager` | Game flow: customer → diagnosis → plan → surgery → results, rewards and consequences |
+| `CustomerManager` | Story characters, archetypes, procedural generator, arrival queue, history |
+| `SurgeryManager` | Runs an operation: stages, vitals, mistakes, complications, quick actions, result |
+| `CyberwareManager` | Implant catalogue, tier access, validity |
+| `InventoryManager` | Tools, implant instances (condition, hidden traits), supplies, parts, tokens |
 | `EconomyManager` | Money: the only place it changes |
-| `ReputationManager` | Street rep and tiers; gates the black market (locked teaser in Step 1) |
-| `ProgressionManager` | XP, levels, surgery records |
-| `SaveManager` | Versioned JSON save/load of all the above |
-| `AudioManager` | Sound hooks: `play_sfx(id)`, `play_ambient(id)` |
-| `UIManager` | Screen navigation with fades, toasts, dialogs, screen shake, flashes, haptics |
+| `ReputationManager` | Street rep and tiers |
+| `ProgressionManager` | XP, levels, skill points, records |
+| `FactionManager` | 5 faction standings and heat |
+| `SkillManager` | Skill tree: Surgery / Cybernetics / Medicine / Underworld |
+| `ClinicManager` | Clinic tiers 0–5 |
+| `StoryManager` | Story flags, contacts, rumours |
+| `EventManager` | Random and story events with choices, timed modifiers |
+| `BlackMarketManager` | Stock, unknown traits, buy / sell / study / modify / scrap, cases |
+| `ModifierManager` | One stat-modifier stack fed by skills, clinic, tools and events |
+| `SaveManager` | Versioned JSON save (v2, migrates v1) |
+| `AudioManager` | Sound hooks |
+| `UIManager` | Navigation, toasts, dialogs, modals, shake, flash, haptics |
 
 How the pieces talk to each other:
 - Screens call **GameManager** for flow and **UIManager** for presentation. Screens never create other screens.
 - Systems emit signals (on `EventBus`, or on `SurgeryManager` for high-frequency surgery events), and the UI listens to them.
-- Pure logic (`SurgeryVitals`, `SurgeryScoring`) has no nodes, so it can be unit-tested.
-- Every number a designer might tune lives in `scripts/core/game_config.gd` or `data/*.json`.
+- Pure logic (`SurgeryVitals`, `SurgeryScoring`, `NeuralLoad`, `CustomerGenerator`) has no nodes, so it can be unit-tested.
+- Every tunable number lives in `scripts/core/game_config.gd` or `data/*.json`. Every bonus (skills, clinic, tools, events) flows through `ModifierManager` keys, listed in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ### Data-driven content
 
-JSON in `data/` loads into typed `Resource` classes (`CustomerData`, `CyberwareData`,
-`ToolData`, `SurgeryData`, `SurgeryStageData`, `ComplicationData`).
-Godot treats `.json` as a resource, and the iOS preset also has an explicit include filter, so exports pick up the data files.
+JSON in `data/` loads into typed `Resource` classes. Godot treats `.json` as a
+resource, and the iOS preset also has an explicit `data/*.json` include filter,
+so exports pick the files up.
 
-- **New customer:** add an entry to `data/customers.json` plus two sprites.
-- **New surgery:** add an entry to `data/surgeries.json` that lists stages by `type`, each with its own `params` (paths, clamp points, node counts, tolerances...). The existing stage types are reused, so no code is needed.
-- **New interaction type:** subclass `SurgeryStage` and register it in `scripts/surgery/surgery_stage_registry.gd`.
+Most new content is a data entry (the full table is in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#adding-content)):
+- **New implant:** an entry in `data/cyberware.json`. The icon is chosen by category and tier.
+- **New surgery:** an entry in `data/surgeries.json`. It lists stages by `type` with their own params, so no code is needed.
+- **New event, condition, archetype, faction, skill or clinic tier:** the matching JSON file.
+- **New interaction type:** subclass `SurgeryStage` and register it in `surgery_stage_registry.gd`.
 
 ## How the surgery system works
 
-`SurgeryManager.start_session()` takes a surgery, a customer, whether the
-diagnosis was correct, and the implant quality. Each frame it:
+`SurgeryManager.start_session()` takes:
+- a surgery and a customer
+- whether the diagnosis was correct
+- the implant unit (condition and hidden traits)
+- session modifiers (e.g. operating without supplies)
+
+Tolerances scale with:
+- the implant's install difficulty
+- the customer's neural load and hidden conditions
+- tool quality
+- skills and clinic modifiers
+
+Each frame it:
 
 - **Ticks the vitals** (`SurgeryVitals`, all values 0–100):
   - **Blood loss** rises at `bleed_rate` while the wound is open. Clotting pulls the rate back toward a baseline.
@@ -122,8 +169,12 @@ diagnosis was correct, and the implant quality. Each frame it:
 - **Raises warnings** when a vital crosses its threshold (toast, sound, blinking bar).
 
 Each **stage** is a self-contained interaction drawn over a persistent
-`SurgicalSiteView` (a 64×64 "art-pixel" close-up of the patient's neck that
-keeps the incision, clamps, burns, implant, wires and stitches across stages).
+`SurgicalSiteView`: the operating room backdrop plus a 160×160 art-pixel
+anatomy close-up (neck, forearm, chest, thigh or orbital, recoloured to the
+patient's skin). It keeps the incision, clamps, burns, anchors, implant,
+wires and stitches across stages. The view renders inside a `SubViewport` at
+native art resolution with dithered lamp, monitor and emergency lighting, so
+it matches the density of the rest of the game.
 Stages never touch systems directly. They emit `mistake`, `effect_requested`,
 `feedback` and `stage_finished(quality, data)`, and `SurgeryScreen` routes those
 to `SurgeryManager`, the FX layer and audio.
@@ -134,6 +185,7 @@ to `SurgeryManager`, the FX layer and audio.
 | 2 | Incision | Tap **scalpel**, **drag** along the guide | Drifting off the line: bleeding, pain |
 | 3 | Expose interface | Tap **retractor**, **tap** the 4 clamp points | Jabbing tissue: tear, bleeding |
 | 4 | Remove damaged tissue | Tap **cautery**, **hold** on dark tissue | Touching nerves: neural damage (cautery also seals vessels) |
+| 4b | Drill anchors (limbs, spine) | Tap **drill**, **hold** on each anchor, release in the green depth band | Too shallow: loose anchor. Too deep: bone crack |
 | 5 | Install implant | Tap **forceps**, **drag** implant into the socket, **rotate** (drag around or `<<`/`>>`), SEAT | Misaligned seat: neural damage, lower implant performance |
 | 6 | Connect neural interface | Tap **splicer**, **drag** wires pin → matching terminal (colour *and* shape) | Bad splice: neural shock, pain |
 | 7 | Calibrate | **Slide** to match the waves, tap LOCK ×3 | Poor sync: neural damage, lower implant performance |
@@ -153,13 +205,27 @@ counter-action:
 | Arterial bleed | COAG |
 | Neural spike | STABIL |
 | Patient waking | SEDATE |
+| Neural feedback (neural load 55+) | STABIL |
+| Rejection spasm (hidden *rejection-prone* condition) | SEDATE |
 
 The three quick actions can also be used at any time, but each has a cooldown.
 
 **Scoring.** Average stage quality, final health, final neural stability and
 implant performance are combined, plus a time bonus or penalty. That score
 gives the grade (S/A/B/C/D, F on failure), pay, XP and reputation
-(`SurgeryScoring`, tuned in `GameConfig`).
+(`SurgeryScoring`, tuned in `GameConfig`):
+- Pay includes a markup on the implant's price.
+- XP scales with difficulty.
+
+**Neural load** (bands 0–50 stable, 50–70 minor, 70–85 instability,
+85–95 severe, 95+ critical) affects:
+- neural drain and starting stability
+- complication odds and which complications can appear
+- the calibration window
+- customer consent
+- the chance of a post-op neural break
+
+Details are in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#neural-load).
 
 ## Touch controls and mobile UI
 
@@ -171,50 +237,96 @@ gives the grade (S/A/B/C/D, F on failure), pay, XP and reputation
 
 ## Save system
 
-- **What:** money, XP/level, reputation, owned tools, implant stock, unlocked cyberware, surgery records, the waiting customer, and sound settings.
+- **What:**
+  - money, XP/level, skill points and ranks, reputation
+  - faction standings and heat
+  - clinic tier
+  - tools, implant instances (condition and traits), supplies, parts and tokens
+  - black-market stock
+  - story flags, contacts, rumours, pending event and timed modifiers
+  - customer queue and history, and the waiting customer
+  - records and settings
 - **Where:** `user://savegame.json`. On iOS this is inside the app's sandbox, so it survives app restarts and updates.
-- **How:** each saveable system implements `get_save_data()`, `load_save_data()` and `reset_state()`. `SaveManager` collects them under a `version` field. It writes a temp file, keeps the previous save as `.bak` and then swaps the temp file in. A corrupt main file falls back to the backup. `_migrate()` is where future format upgrades go.
+- **How:** each saveable system implements `get_save_data()`, `load_save_data()` and `reset_state()`. `SaveManager` collects them under a `version` field. It writes a temp file, keeps the previous save as `.bak` and then swaps the temp file in. A corrupt main file falls back to the backup. The format is version 2. `_migrate()` upgrades Step 1 (v1) saves: stock becomes implant instances, veterans get clinic tier 1, and the waiting customer is kept.
 - **When:** after every operation, purchase and decline, and when the app is backgrounded or closed (`NOTIFICATION_APPLICATION_PAUSED` / `FOCUS_OUT` / `WM_CLOSE_REQUEST`). An operation in progress is never saved: if the app is killed mid-surgery, you reopen in the clinic, before the operation, with the same customer waiting.
 
 ## Audio
 
 `AudioManager` exposes hooks: `click`, `tool`, `cut`, `burn`, `clamp`, `zap`,
 `stitch`, `implant`, `stage`, `mistake`, `warning`, `success`, `failure`,
-`customer`, `cash`, `levelup`, plus the `clinic` ambient loop. Every button
+`customer`, `cash`, `levelup`, `drill`, `glitch` (black market), `event`, plus
+the `clinic` ambient loop. Every button
 clicks automatically. The current sounds are synthesized placeholders from
 `tools/generate_placeholder_audio.py`. To use final audio, replace the files and
 keep the names.
 
 ## Art pipeline
 
-All placeholder art is generated by `tools/generate_placeholder_art.py`
-(Pillow) at native pixel size and shown with nearest filtering. Final art can
-replace any PNG 1:1. The surgical field is drawn procedurally on the same
-pixel grid. The UI theme is generated by `tools/build_theme.gd`:
+All art is generated by a reproducible Python/Pillow pipeline in `tools/art/`
+at a single global density (1 art pixel = 2 UI units):
+- hue-shifted 8-step ramps
+- Bayer dithering limited to shade transitions
+- shaded primitives with selective outlines
+- banded dithered lighting
+
+Characters are palette-indexed parts, composited and recoloured at runtime
+(`CharacterArt`), so every customer looks different and their installed chrome
+shows. The rules are in [docs/ART_BIBLE.md](docs/ART_BIBLE.md).
 
 ```sh
-python3 tools/generate_placeholder_art.py
+python3 tools/generate_art.py                 # all groups, ~5 s
 python3 tools/generate_placeholder_audio.py
 godot --headless --path . --script res://tools/build_theme.gd
 ```
 
+Any PNG can be replaced 1:1 by hand-made art of the same size.
+
 ## Tests
 
 ```sh
-tests/run_tests.sh            # headless, at 360x780 and 360x640
+tests/run_tests.sh            # compile check + unit + E2E, headless at 360x780 and 360x640
 ```
 
-The run covers:
-- **Unit tests:** vitals, scoring, progression, economy and inventory, data integrity, save round-trip and corrupt-save recovery.
-- **End-to-end bot:** plays the full loop by injecting real pointer events (taps, drags, holds) into the viewport:
-  - a clean run (expects a high grade and handled complications)
-  - a sloppy run (wrong tool, off-line cut, bad splice, poor sync, misaligned implant, wrong diagnosis)
-  - an aborted operation
-  - a reckless run that must crash the patient
-  - a supply purchase and a save/reload
+- **Compile check:** loads every script and scene.
+- **Unit and system tests:**
+  - vitals, scoring, progression, economy and inventory
+  - **insufficient money**, **insufficient tools**, **invalid cyberware** (wrong category or tier), **excessive neural load** (drain, complications, consent, neural break)
+  - customer generation (300 customers validated across archetypes, unique looks, seeded determinism, lossless serialisation, portrait compositing)
+  - modifiers and skills, factions and heat, clinic upgrades
+  - events (including post-op complications), **black-market purchases**, study, sell and modify
+  - death and failure
+  - save round-trip, corrupt-save recovery and **v1 → v2 migration**
+- **End-to-end bot:** plays the game through real pointer events (taps, drags, holds):
+  1. clean neural install
+  2. sloppy run
+  3. arm install that is blocked without a drill, buys the drill in the shop, then completes the anchor-drill stage
+  4. aborted op
+  5. reckless run that kills the patient
+  6. optic install on a generated customer
 
-With rendering, it also saves screenshots of each step:
+  It also covers the Wire story event, black-market buy/study/sell through the UI, a skill upgrade, a clinic upgrade, all dossier tabs and a reload. A layout guard asserts that every button is on-screen, at least 44 units, and that nothing overflows the screen width.
+- **Perf probe:** `xvfb-run -a godot --path . --rendering-driver opengl3 res://tests/perf_probe.tscn` prints load time, frame time, draw calls, nodes and memory per screen.
+
+With rendering, the bot also saves screenshots of each step:
 `xvfb-run godot --path . --rendering-driver opengl3 --resolution 360x780 res://tests/test_runner.tscn -- --shots=/abs/path`
+
+## Performance
+
+Measured with the perf probe on a software rasterizer (llvmpipe). A phone GPU
+will do the rendering work far faster, so treat these as upper bounds on CPU
+cost:
+- About 8–12 ms average frame time on every screen.
+- 17–65 draw calls.
+- About 34–38 MB static memory and up to 14 MB of texture memory.
+- Screen builds take 20–95 ms.
+
+Design choices that keep it light:
+- Sprites are tiny and cached at 2×.
+- The surgical field is one SubViewport at half resolution.
+- Wound geometry is precomputed once per incision.
+- Character composites are cached (up to 48).
+- Particles are capped (12 emitters).
+- No per-frame allocations in the vitals loop.
 
 ## Exporting to iOS
 
