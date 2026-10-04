@@ -6,8 +6,14 @@
       "message": "Vessel nicked! Hit COAG now.",
       "counter_action": "coag",
       "time_limit": 6.0,
-      "onset_effects": { "bleed_rate": 1.4 },
-      "failure_effects": { "bleed_rate": 1.2, "blood": 12.0, "health": -8.0 }
+      "onset_effects": {
+        "bleed_rate": 1.4
+      },
+      "failure_effects": {
+        "bleed_rate": 1.2,
+        "blood": 12.0,
+        "health": -8.0
+      }
     },
     {
       "id": "neural_spike",
@@ -15,8 +21,12 @@
       "message": "Feedback surge in the relay! STABIL now.",
       "counter_action": "stabilize",
       "time_limit": 6.0,
-      "onset_effects": { "neural": -6.0 },
-      "failure_effects": { "neural": -22.0 }
+      "onset_effects": {
+        "neural": -6.0
+      },
+      "failure_effects": {
+        "neural": -22.0
+      }
     },
     {
       "id": "patient_waking",
@@ -24,8 +34,50 @@
       "message": "Sedation fading, patient is moving! SEDATE now.",
       "counter_action": "sedate",
       "time_limit": 6.0,
-      "onset_effects": { "pain": 25.0 },
-      "failure_effects": { "pain": 30.0, "health": -6.0, "neural": -8.0 }
+      "onset_effects": {
+        "pain": 25.0
+      },
+      "failure_effects": {
+        "pain": 30.0,
+        "health": -6.0,
+        "neural": -8.0
+      }
+    },
+    {
+      "id": "neural_feedback",
+      "title": "NEURAL FEEDBACK",
+      "message": "Implant overload echoing through the relay! STABIL now.",
+      "counter_action": "stabilize",
+      "time_limit": 5.0,
+      "onset_effects": {
+        "neural": -10.0,
+        "pain": 10.0
+      },
+      "failure_effects": {
+        "neural": -26.0
+      },
+      "conditions": {
+        "min_neural_load": 55
+      }
+    },
+    {
+      "id": "rejection_spasm",
+      "title": "REJECTION SPASM",
+      "message": "Tissue convulsing around the implant! SEDATE now.",
+      "counter_action": "sedate",
+      "time_limit": 5.5,
+      "onset_effects": {
+        "pain": 20.0,
+        "bleed_rate": 0.6
+      },
+      "failure_effects": {
+        "pain": 25.0,
+        "health": -10.0,
+        "neural": -6.0
+      },
+      "conditions": {
+        "requires_condition": "rejection_prone"
+      }
     }
   ]
 }

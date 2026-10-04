@@ -3,12 +3,23 @@
     {
       "id": "install_basic_neural_implant",
       "code": "INSTALL_BASIC_NEURAL_IMPLANT",
-      "name": "Neural Bridge Install",
-      "description": "Seat an NX-1 Neural Bridge in the cervical port cavity and splice it to the spinal relay.",
+      "name": "Neural Implant Install",
+      "description": "Install neural cyberware.",
+      "category": "neural",
       "cyberware": "nx1_neural_bridge",
       "base_pay": 260,
       "base_xp": 60,
       "target_time_sec": 150,
+      "supplies": 1,
+      "site": {
+        "region": "neck",
+        "nerves": [
+          [[0.41, 0.3],[0.38, 0.45],[0.4, 0.64]],
+          [[0.59, 0.3],[0.62, 0.45],[0.6, 0.64]]
+        ],
+        "opening_half_width": 13.0
+      },
+      "scan_region": "neck",
       "diagnosis_options": [
         {
           "id": "scar_tissue",
@@ -26,6 +37,17 @@
           "description": "Immune response against synthetic nerve tissue."
         }
       ],
+      "diagnosis_findings": {
+        "scar_tissue": [
+          "Fibrous mass wrapped around an old port seat."
+        ],
+        "burnt_socket": [
+          "Charred contacts and carbon scoring in the cavity."
+        ],
+        "neural_rejection": [
+          "Swollen tissue and immune activity around the interface."
+        ]
+      },
       "stages": [
         {
           "id": "prepare",
@@ -46,7 +68,7 @@
           "instruction": "Select SCALPEL. Drag along the guide from the marker.",
           "tool": "scalpel",
           "params": {
-            "path": [[0.47, 0.18], [0.5, 0.5], [0.53, 0.82]],
+            "path": [[0.47, 0.18],[0.5, 0.5],[0.53, 0.82]],
             "tolerance_px": 3.2
           }
         },
@@ -57,7 +79,7 @@
           "instruction": "Select RETRACTOR. Tap each clamp point to open the site.",
           "tool": "retractor",
           "params": {
-            "clamps": [[0.33, 0.3], [0.67, 0.3], [0.33, 0.7], [0.67, 0.7]],
+            "clamps": [[0.33, 0.3],[0.67, 0.3],[0.33, 0.7],[0.67, 0.7]],
             "radius_px": 6.0
           },
           "complication_window": true
@@ -95,7 +117,7 @@
           "instruction": "Select SPLICER. Drag each implant pin to the nerve with the same mark.",
           "tool": "splicer",
           "params": {
-            "endpoints": [[0.41, 0.3], [0.59, 0.3], [0.5, 0.74]]
+            "endpoints": [[0.41, 0.3],[0.59, 0.3],[0.5, 0.74]]
           },
           "complication_window": true
         },
@@ -120,6 +142,1002 @@
           "tool": "suture",
           "params": {
             "stitches": 6
+          }
+        }
+      ]
+    },
+    {
+      "id": "install_spine",
+      "code": "INSTALL_SPINAL_IMPLANT",
+      "name": "Spinal Implant Install",
+      "description": "Install spine cyberware.",
+      "category": "spine",
+      "cyberware": "",
+      "base_pay": 420,
+      "base_xp": 90,
+      "target_time_sec": 190,
+      "supplies": 2,
+      "site": {
+        "region": "neck",
+        "nerves": [
+          [[0.41, 0.3],[0.38, 0.45],[0.4, 0.64]],
+          [[0.59, 0.3],[0.62, 0.45],[0.6, 0.64]]
+        ],
+        "opening_half_width": 13.0
+      },
+      "scan_region": "neck",
+      "diagnosis_options": [
+        {
+          "id": "clean_site",
+          "name": "Clean site",
+          "description": "Healthy tissue, first install."
+        },
+        {
+          "id": "old_hardware",
+          "name": "Old hardware remnants",
+          "description": "Leftover mounts and dead leads from earlier chrome."
+        },
+        {
+          "id": "tissue_damage",
+          "name": "Scarred tissue",
+          "description": "Fibrous scarring or necrosis at the site."
+        }
+      ],
+      "diagnosis_findings": {
+        "clean_site": [
+          "Tissue healthy. No foreign material.",
+          "Clean site. Good vascular supply."
+        ],
+        "old_hardware": [
+          "Metal fragments and dead leads in the site.",
+          "Old mounting bracket still bolted in place."
+        ],
+        "tissue_damage": [
+          "Fibrous scarring around the site.",
+          "Necrotic patches near the target area."
+        ]
+      },
+      "stages": [
+        {
+          "id": "prepare",
+          "type": "anesthesia",
+          "title": "PREPARE PATIENT",
+          "instruction": "HOLD to infuse sedative. Release inside the green band.",
+          "tool": "",
+          "params": {
+            "fill_rate": 38.0,
+            "zone_min": 55.0,
+            "zone_max": 72.0
+          }
+        },
+        {
+          "id": "incision",
+          "type": "incision",
+          "title": "INCISION",
+          "instruction": "Select SCALPEL. Drag along the guide from the marker.",
+          "tool": "scalpel",
+          "params": {
+            "path": [[0.5, 0.3],[0.5, 0.55],[0.5, 0.8]],
+            "tolerance_px": 3.2
+          }
+        },
+        {
+          "id": "expose",
+          "type": "expose",
+          "title": "EXPOSE SITE",
+          "instruction": "Select RETRACTOR. Tap each clamp point to open the site.",
+          "tool": "retractor",
+          "params": {
+            "clamps": [[0.34, 0.42],[0.66, 0.42],[0.34, 0.7],[0.66, 0.7]],
+            "radius_px": 6.0
+          },
+          "complication_window": true
+        },
+        {
+          "id": "anchor",
+          "type": "anchor_drill",
+          "title": "DRILL ANCHORS",
+          "instruction": "Select DRILL. Hold on each anchor; release with depth in the green.",
+          "tool": "drill",
+          "params": {
+            "anchors": [[0.44, 0.47],[0.56, 0.47],[0.44, 0.66],[0.56, 0.66]],
+            "depth_rate": 55.0,
+            "zone_min": 58.0,
+            "zone_max": 78.0
+          },
+          "complication_window": true
+        },
+        {
+          "id": "install",
+          "type": "install_implant",
+          "title": "INSTALL IMPLANT",
+          "instruction": "Select FORCEPS. Drag the implant into the socket, rotate to align, then SEAT.",
+          "tool": "forceps",
+          "params": {
+            "socket": [0.5, 0.56],
+            "snap_px": 9.0,
+            "align_tolerance_deg": 12.0
+          },
+          "complication_window": true
+        },
+        {
+          "id": "connect",
+          "type": "connect_interface",
+          "title": "CONNECT INTERFACE",
+          "instruction": "Select SPLICER. Drag each implant pin to the nerve with the same mark.",
+          "tool": "splicer",
+          "params": {
+            "endpoints": [[0.41, 0.36],[0.59, 0.36],[0.5, 0.76]]
+          },
+          "complication_window": true
+        },
+        {
+          "id": "calibrate",
+          "type": "calibrate",
+          "title": "SYNC SPINAL RELAY",
+          "instruction": "Slide to match the waves, then LOCK. 3 bands.",
+          "tool": "",
+          "params": {
+            "rounds": 3,
+            "good_sync": 0.8,
+            "poor_sync": 0.55
+          },
+          "complication_window": true
+        },
+        {
+          "id": "close",
+          "type": "close_incision",
+          "title": "CLOSE INCISION",
+          "instruction": "Select SUTURE. Tap the stitch points in numbered order.",
+          "tool": "suture",
+          "params": {
+            "stitches": 7
+          }
+        }
+      ]
+    },
+    {
+      "id": "install_arm",
+      "code": "INSTALL_ARM_IMPLANT",
+      "name": "Arm Implant Install",
+      "description": "Install arms cyberware.",
+      "category": "arms",
+      "cyberware": "",
+      "base_pay": 340,
+      "base_xp": 75,
+      "target_time_sec": 170,
+      "supplies": 2,
+      "site": {
+        "region": "forearm",
+        "nerves": [
+          [[0.43, 0.28],[0.41, 0.5],[0.43, 0.72]],
+          [[0.57, 0.28],[0.59, 0.5],[0.57, 0.72]]
+        ],
+        "opening_half_width": 13.0
+      },
+      "scan_region": "arms",
+      "diagnosis_options": [
+        {
+          "id": "clean_site",
+          "name": "Clean site",
+          "description": "Healthy tissue, first install."
+        },
+        {
+          "id": "old_hardware",
+          "name": "Old hardware remnants",
+          "description": "Leftover mounts and dead leads from earlier chrome."
+        },
+        {
+          "id": "tissue_damage",
+          "name": "Scarred tissue",
+          "description": "Fibrous scarring or necrosis at the site."
+        }
+      ],
+      "diagnosis_findings": {
+        "clean_site": [
+          "Tissue healthy. No foreign material.",
+          "Clean site. Good vascular supply."
+        ],
+        "old_hardware": [
+          "Metal fragments and dead leads in the site.",
+          "Old mounting bracket still bolted in place."
+        ],
+        "tissue_damage": [
+          "Fibrous scarring around the site.",
+          "Necrotic patches near the target area."
+        ]
+      },
+      "stages": [
+        {
+          "id": "prepare",
+          "type": "anesthesia",
+          "title": "PREPARE PATIENT",
+          "instruction": "HOLD to infuse sedative. Release inside the green band.",
+          "tool": "",
+          "params": {
+            "fill_rate": 38.0,
+            "zone_min": 55.0,
+            "zone_max": 72.0
+          }
+        },
+        {
+          "id": "incision",
+          "type": "incision",
+          "title": "INCISION",
+          "instruction": "Select SCALPEL. Drag along the guide from the marker.",
+          "tool": "scalpel",
+          "params": {
+            "path": [[0.5, 0.24],[0.5, 0.5],[0.5, 0.76]],
+            "tolerance_px": 3.2
+          }
+        },
+        {
+          "id": "expose",
+          "type": "expose",
+          "title": "EXPOSE SITE",
+          "instruction": "Select RETRACTOR. Tap each clamp point to open the site.",
+          "tool": "retractor",
+          "params": {
+            "clamps": [[0.37, 0.36],[0.63, 0.36],[0.37, 0.64],[0.63, 0.64]],
+            "radius_px": 6.0
+          },
+          "complication_window": true
+        },
+        {
+          "id": "debride",
+          "type": "remove_tissue",
+          "title": "REMOVE DAMAGED TISSUE",
+          "instruction": "Select CAUTERY. Hold on dark tissue to burn it. Avoid yellow nerves.",
+          "tool": "cautery",
+          "params": {
+            "nodes": 2,
+            "burn_time": 0.35,
+            "nerve_radius_px": 1.6
+          },
+          "complication_window": true
+        },
+        {
+          "id": "anchor",
+          "type": "anchor_drill",
+          "title": "DRILL ANCHORS",
+          "instruction": "Select DRILL. Hold on each anchor; release with depth in the green.",
+          "tool": "drill",
+          "params": {
+            "anchors": [[0.5, 0.37],[0.5, 0.65]],
+            "depth_rate": 55.0,
+            "zone_min": 58.0,
+            "zone_max": 78.0
+          },
+          "complication_window": true
+        },
+        {
+          "id": "install",
+          "type": "install_implant",
+          "title": "INSTALL IMPLANT",
+          "instruction": "Select FORCEPS. Drag the implant into the socket, rotate to align, then SEAT.",
+          "tool": "forceps",
+          "params": {
+            "socket": [0.5, 0.51],
+            "snap_px": 9.0,
+            "align_tolerance_deg": 12.0
+          },
+          "complication_window": true
+        },
+        {
+          "id": "connect",
+          "type": "connect_interface",
+          "title": "CONNECT INTERFACE",
+          "instruction": "Select SPLICER. Drag each implant pin to the nerve with the same mark.",
+          "tool": "splicer",
+          "params": {
+            "endpoints": [[0.43, 0.31],[0.57, 0.31],[0.5, 0.71]]
+          },
+          "complication_window": true
+        },
+        {
+          "id": "calibrate",
+          "type": "calibrate",
+          "title": "MOTOR SYNC",
+          "instruction": "Slide to match the waves, then LOCK. 3 bands.",
+          "tool": "",
+          "params": {
+            "rounds": 3,
+            "good_sync": 0.8,
+            "poor_sync": 0.55
+          },
+          "complication_window": true
+        },
+        {
+          "id": "close",
+          "type": "close_incision",
+          "title": "CLOSE INCISION",
+          "instruction": "Select SUTURE. Tap the stitch points in numbered order.",
+          "tool": "suture",
+          "params": {
+            "stitches": 6
+          }
+        }
+      ]
+    },
+    {
+      "id": "install_leg",
+      "code": "INSTALL_LEG_IMPLANT",
+      "name": "Leg Implant Install",
+      "description": "Install legs cyberware.",
+      "category": "legs",
+      "cyberware": "",
+      "base_pay": 330,
+      "base_xp": 75,
+      "target_time_sec": 170,
+      "supplies": 2,
+      "site": {
+        "region": "thigh",
+        "nerves": [
+          [[0.4, 0.25],[0.38, 0.5],[0.41, 0.75]],
+          [[0.6, 0.25],[0.62, 0.5],[0.59, 0.75]]
+        ],
+        "opening_half_width": 13.0
+      },
+      "scan_region": "legs",
+      "diagnosis_options": [
+        {
+          "id": "clean_site",
+          "name": "Clean site",
+          "description": "Healthy tissue, first install."
+        },
+        {
+          "id": "old_hardware",
+          "name": "Old hardware remnants",
+          "description": "Leftover mounts and dead leads from earlier chrome."
+        },
+        {
+          "id": "tissue_damage",
+          "name": "Scarred tissue",
+          "description": "Fibrous scarring or necrosis at the site."
+        }
+      ],
+      "diagnosis_findings": {
+        "clean_site": [
+          "Tissue healthy. No foreign material.",
+          "Clean site. Good vascular supply."
+        ],
+        "old_hardware": [
+          "Metal fragments and dead leads in the site.",
+          "Old mounting bracket still bolted in place."
+        ],
+        "tissue_damage": [
+          "Fibrous scarring around the site.",
+          "Necrotic patches near the target area."
+        ]
+      },
+      "stages": [
+        {
+          "id": "prepare",
+          "type": "anesthesia",
+          "title": "PREPARE PATIENT",
+          "instruction": "HOLD to infuse sedative. Release inside the green band.",
+          "tool": "",
+          "params": {
+            "fill_rate": 38.0,
+            "zone_min": 55.0,
+            "zone_max": 72.0
+          }
+        },
+        {
+          "id": "incision",
+          "type": "incision",
+          "title": "INCISION",
+          "instruction": "Select SCALPEL. Drag along the guide from the marker.",
+          "tool": "scalpel",
+          "params": {
+            "path": [[0.5, 0.22],[0.5, 0.5],[0.5, 0.78]],
+            "tolerance_px": 3.2
+          }
+        },
+        {
+          "id": "expose",
+          "type": "expose",
+          "title": "EXPOSE SITE",
+          "instruction": "Select RETRACTOR. Tap each clamp point to open the site.",
+          "tool": "retractor",
+          "params": {
+            "clamps": [[0.34, 0.34],[0.66, 0.34],[0.34, 0.66],[0.66, 0.66]],
+            "radius_px": 6.0
+          },
+          "complication_window": true
+        },
+        {
+          "id": "anchor",
+          "type": "anchor_drill",
+          "title": "DRILL ANCHORS",
+          "instruction": "Select DRILL. Hold on each anchor; release with depth in the green.",
+          "tool": "drill",
+          "params": {
+            "anchors": [[0.5, 0.33],[0.44, 0.62],[0.56, 0.62]],
+            "depth_rate": 55.0,
+            "zone_min": 58.0,
+            "zone_max": 78.0
+          },
+          "complication_window": true
+        },
+        {
+          "id": "install",
+          "type": "install_implant",
+          "title": "INSTALL IMPLANT",
+          "instruction": "Select FORCEPS. Drag the implant into the socket, rotate to align, then SEAT.",
+          "tool": "forceps",
+          "params": {
+            "socket": [0.5, 0.49],
+            "snap_px": 9.0,
+            "align_tolerance_deg": 12.0
+          },
+          "complication_window": true
+        },
+        {
+          "id": "connect",
+          "type": "connect_interface",
+          "title": "CONNECT INTERFACE",
+          "instruction": "Select SPLICER. Drag each implant pin to the nerve with the same mark.",
+          "tool": "splicer",
+          "params": {
+            "endpoints": [[0.42, 0.3],[0.58, 0.3],[0.5, 0.74]]
+          },
+          "complication_window": true
+        },
+        {
+          "id": "close",
+          "type": "close_incision",
+          "title": "CLOSE INCISION",
+          "instruction": "Select SUTURE. Tap the stitch points in numbered order.",
+          "tool": "suture",
+          "params": {
+            "stitches": 7
+          }
+        }
+      ]
+    },
+    {
+      "id": "install_optic",
+      "code": "INSTALL_OPTIC_IMPLANT",
+      "name": "Optic Implant Install",
+      "description": "Install eyes cyberware.",
+      "category": "eyes",
+      "cyberware": "",
+      "base_pay": 300,
+      "base_xp": 70,
+      "target_time_sec": 160,
+      "supplies": 1,
+      "site": {
+        "region": "orbital",
+        "nerves": [
+          [[0.34, 0.66],[0.42, 0.7]],
+          [[0.7, 0.66],[0.62, 0.7]]
+        ],
+        "opening_half_width": 11.0
+      },
+      "scan_region": "head",
+      "diagnosis_options": [
+        {
+          "id": "clean_site",
+          "name": "Clean site",
+          "description": "Healthy tissue, first install."
+        },
+        {
+          "id": "old_hardware",
+          "name": "Old hardware remnants",
+          "description": "Leftover mounts and dead leads from earlier chrome."
+        },
+        {
+          "id": "tissue_damage",
+          "name": "Scarred tissue",
+          "description": "Fibrous scarring or necrosis at the site."
+        }
+      ],
+      "diagnosis_findings": {
+        "clean_site": [
+          "Tissue healthy. No foreign material.",
+          "Clean site. Good vascular supply."
+        ],
+        "old_hardware": [
+          "Metal fragments and dead leads in the site.",
+          "Old mounting bracket still bolted in place."
+        ],
+        "tissue_damage": [
+          "Fibrous scarring around the site.",
+          "Necrotic patches near the target area."
+        ]
+      },
+      "stages": [
+        {
+          "id": "prepare",
+          "type": "anesthesia",
+          "title": "PREPARE PATIENT",
+          "instruction": "HOLD to infuse sedative. Release inside the green band.",
+          "tool": "",
+          "params": {
+            "fill_rate": 38.0,
+            "zone_min": 55.0,
+            "zone_max": 72.0
+          }
+        },
+        {
+          "id": "incision",
+          "type": "incision",
+          "title": "INCISION",
+          "instruction": "Select SCALPEL. Drag along the guide from the marker.",
+          "tool": "scalpel",
+          "params": {
+            "path": [[0.3, 0.62],[0.5, 0.66],[0.7, 0.62]],
+            "tolerance_px": 3.0
+          }
+        },
+        {
+          "id": "expose",
+          "type": "expose",
+          "title": "EXPOSE SITE",
+          "instruction": "Select RETRACTOR. Tap each clamp point to open the site.",
+          "tool": "retractor",
+          "params": {
+            "clamps": [[0.34, 0.5],[0.66, 0.5],[0.5, 0.76]],
+            "radius_px": 6.0
+          },
+          "complication_window": true
+        },
+        {
+          "id": "debride",
+          "type": "remove_tissue",
+          "title": "REMOVE DAMAGED TISSUE",
+          "instruction": "Select CAUTERY. Hold on dark tissue to burn it. Avoid yellow nerves.",
+          "tool": "cautery",
+          "params": {
+            "nodes": 2,
+            "burn_time": 0.35,
+            "nerve_radius_px": 1.6
+          },
+          "complication_window": true
+        },
+        {
+          "id": "install",
+          "type": "install_implant",
+          "title": "INSTALL IMPLANT",
+          "instruction": "Select FORCEPS. Drag the implant into the socket, rotate to align, then SEAT.",
+          "tool": "forceps",
+          "params": {
+            "socket": [0.52, 0.6],
+            "snap_px": 9.0,
+            "align_tolerance_deg": 12.0
+          },
+          "complication_window": true
+        },
+        {
+          "id": "connect",
+          "type": "connect_interface",
+          "title": "CONNECT INTERFACE",
+          "instruction": "Select SPLICER. Drag each implant pin to the nerve with the same mark.",
+          "tool": "splicer",
+          "params": {
+            "endpoints": [[0.36, 0.58],[0.68, 0.58],[0.52, 0.74]]
+          },
+          "complication_window": true
+        },
+        {
+          "id": "calibrate",
+          "type": "calibrate",
+          "title": "FOCUS CALIBRATION",
+          "instruction": "Slide to match the waves, then LOCK. 3 bands.",
+          "tool": "",
+          "params": {
+            "rounds": 3,
+            "good_sync": 0.8,
+            "poor_sync": 0.55
+          },
+          "complication_window": true
+        },
+        {
+          "id": "close",
+          "type": "close_incision",
+          "title": "CLOSE INCISION",
+          "instruction": "Select SUTURE. Tap the stitch points in numbered order.",
+          "tool": "suture",
+          "params": {
+            "stitches": 5
+          }
+        }
+      ]
+    },
+    {
+      "id": "install_dermal",
+      "code": "INSTALL_DERMAL_IMPLANT",
+      "name": "Dermal Plating Install",
+      "description": "Install dermal cyberware.",
+      "category": "dermal",
+      "cyberware": "",
+      "base_pay": 180,
+      "base_xp": 40,
+      "target_time_sec": 100,
+      "supplies": 1,
+      "site": {
+        "region": "forearm",
+        "nerves": [
+          [[0.43, 0.28],[0.41, 0.5],[0.43, 0.72]],
+          [[0.57, 0.28],[0.59, 0.5],[0.57, 0.72]]
+        ],
+        "opening_half_width": 12.0
+      },
+      "scan_region": "arms",
+      "diagnosis_options": [
+        {
+          "id": "clean_site",
+          "name": "Clean site",
+          "description": "Healthy tissue, first install."
+        },
+        {
+          "id": "old_hardware",
+          "name": "Old hardware remnants",
+          "description": "Leftover mounts and dead leads from earlier chrome."
+        },
+        {
+          "id": "tissue_damage",
+          "name": "Scarred tissue",
+          "description": "Fibrous scarring or necrosis at the site."
+        }
+      ],
+      "diagnosis_findings": {
+        "clean_site": [
+          "Tissue healthy. No foreign material.",
+          "Clean site. Good vascular supply."
+        ],
+        "old_hardware": [
+          "Metal fragments and dead leads in the site.",
+          "Old mounting bracket still bolted in place."
+        ],
+        "tissue_damage": [
+          "Fibrous scarring around the site.",
+          "Necrotic patches near the target area."
+        ]
+      },
+      "stages": [
+        {
+          "id": "prepare",
+          "type": "anesthesia",
+          "title": "PREPARE PATIENT",
+          "instruction": "HOLD to infuse sedative. Release inside the green band.",
+          "tool": "",
+          "params": {
+            "fill_rate": 38.0,
+            "zone_min": 55.0,
+            "zone_max": 72.0
+          }
+        },
+        {
+          "id": "incision",
+          "type": "incision",
+          "title": "INCISION",
+          "instruction": "Select SCALPEL. Drag along the guide from the marker.",
+          "tool": "scalpel",
+          "params": {
+            "path": [[0.5, 0.32],[0.5, 0.5],[0.5, 0.68]],
+            "tolerance_px": 3.2
+          }
+        },
+        {
+          "id": "expose",
+          "type": "expose",
+          "title": "EXPOSE SITE",
+          "instruction": "Select RETRACTOR. Tap each clamp point to open the site.",
+          "tool": "retractor",
+          "params": {
+            "clamps": [[0.38, 0.42],[0.62, 0.58]],
+            "radius_px": 6.0
+          },
+          "complication_window": true
+        },
+        {
+          "id": "install",
+          "type": "install_implant",
+          "title": "INSTALL IMPLANT",
+          "instruction": "Select FORCEPS. Drag the implant into the socket, rotate to align, then SEAT.",
+          "tool": "forceps",
+          "params": {
+            "socket": [0.5, 0.5],
+            "snap_px": 9.0,
+            "align_tolerance_deg": 12.0
+          },
+          "complication_window": true
+        },
+        {
+          "id": "close",
+          "type": "close_incision",
+          "title": "CLOSE INCISION",
+          "instruction": "Select SUTURE. Tap the stitch points in numbered order.",
+          "tool": "suture",
+          "params": {
+            "stitches": 4
+          }
+        }
+      ]
+    },
+    {
+      "id": "install_respiratory",
+      "code": "INSTALL_RESPIRATORY_IMPLANT",
+      "name": "Respiratory Implant Install",
+      "description": "Install respiratory cyberware.",
+      "category": "respiratory",
+      "cyberware": "",
+      "base_pay": 280,
+      "base_xp": 65,
+      "target_time_sec": 150,
+      "supplies": 1,
+      "site": {
+        "region": "chest",
+        "nerves": [
+          [[0.42, 0.25],[0.4, 0.5],[0.42, 0.75]],
+          [[0.58, 0.25],[0.6, 0.5],[0.58, 0.75]]
+        ],
+        "opening_half_width": 13.0
+      },
+      "scan_region": "chest",
+      "diagnosis_options": [
+        {
+          "id": "clean_site",
+          "name": "Clean site",
+          "description": "Healthy tissue, first install."
+        },
+        {
+          "id": "old_hardware",
+          "name": "Old hardware remnants",
+          "description": "Leftover mounts and dead leads from earlier chrome."
+        },
+        {
+          "id": "tissue_damage",
+          "name": "Scarred tissue",
+          "description": "Fibrous scarring or necrosis at the site."
+        }
+      ],
+      "diagnosis_findings": {
+        "clean_site": [
+          "Tissue healthy. No foreign material.",
+          "Clean site. Good vascular supply."
+        ],
+        "old_hardware": [
+          "Metal fragments and dead leads in the site.",
+          "Old mounting bracket still bolted in place."
+        ],
+        "tissue_damage": [
+          "Fibrous scarring around the site.",
+          "Necrotic patches near the target area."
+        ]
+      },
+      "stages": [
+        {
+          "id": "prepare",
+          "type": "anesthesia",
+          "title": "PREPARE PATIENT",
+          "instruction": "HOLD to infuse sedative. Release inside the green band.",
+          "tool": "",
+          "params": {
+            "fill_rate": 38.0,
+            "zone_min": 55.0,
+            "zone_max": 72.0
+          }
+        },
+        {
+          "id": "incision",
+          "type": "incision",
+          "title": "INCISION",
+          "instruction": "Select SCALPEL. Drag along the guide from the marker.",
+          "tool": "scalpel",
+          "params": {
+            "path": [[0.5, 0.24],[0.5, 0.5],[0.5, 0.76]],
+            "tolerance_px": 3.2
+          }
+        },
+        {
+          "id": "expose",
+          "type": "expose",
+          "title": "EXPOSE SITE",
+          "instruction": "Select RETRACTOR. Tap each clamp point to open the site.",
+          "tool": "retractor",
+          "params": {
+            "clamps": [[0.35, 0.36],[0.65, 0.36],[0.35, 0.64],[0.65, 0.64]],
+            "radius_px": 6.0
+          },
+          "complication_window": true
+        },
+        {
+          "id": "debride",
+          "type": "remove_tissue",
+          "title": "REMOVE DAMAGED TISSUE",
+          "instruction": "Select CAUTERY. Hold on dark tissue to burn it. Avoid yellow nerves.",
+          "tool": "cautery",
+          "params": {
+            "nodes": 3,
+            "burn_time": 0.35,
+            "nerve_radius_px": 1.6
+          },
+          "complication_window": true
+        },
+        {
+          "id": "install",
+          "type": "install_implant",
+          "title": "INSTALL IMPLANT",
+          "instruction": "Select FORCEPS. Drag the implant into the socket, rotate to align, then SEAT.",
+          "tool": "forceps",
+          "params": {
+            "socket": [0.5, 0.5],
+            "snap_px": 9.0,
+            "align_tolerance_deg": 12.0
+          },
+          "complication_window": true
+        },
+        {
+          "id": "connect",
+          "type": "connect_interface",
+          "title": "CONNECT INTERFACE",
+          "instruction": "Select SPLICER. Drag each implant pin to the nerve with the same mark.",
+          "tool": "splicer",
+          "params": {
+            "endpoints": [[0.42, 0.3],[0.58, 0.3],[0.5, 0.72]]
+          },
+          "complication_window": true
+        },
+        {
+          "id": "close",
+          "type": "close_incision",
+          "title": "CLOSE INCISION",
+          "instruction": "Select SUTURE. Tap the stitch points in numbered order.",
+          "tool": "suture",
+          "params": {
+            "stitches": 6
+          }
+        }
+      ]
+    },
+    {
+      "id": "install_internal",
+      "code": "INSTALL_INTERNAL_IMPLANT",
+      "name": "Internal Organ Module",
+      "description": "Install internal cyberware.",
+      "category": "internal",
+      "cyberware": "",
+      "base_pay": 400,
+      "base_xp": 90,
+      "target_time_sec": 190,
+      "supplies": 2,
+      "site": {
+        "region": "chest",
+        "nerves": [
+          [[0.47, 0.25],[0.45, 0.5],[0.47, 0.75]],
+          [[0.69, 0.25],[0.71, 0.5],[0.69, 0.75]]
+        ],
+        "opening_half_width": 13.0
+      },
+      "scan_region": "chest",
+      "diagnosis_options": [
+        {
+          "id": "clean_site",
+          "name": "Clean site",
+          "description": "Healthy tissue, first install."
+        },
+        {
+          "id": "old_hardware",
+          "name": "Old hardware remnants",
+          "description": "Leftover mounts and dead leads from earlier chrome."
+        },
+        {
+          "id": "tissue_damage",
+          "name": "Scarred tissue",
+          "description": "Fibrous scarring or necrosis at the site."
+        }
+      ],
+      "diagnosis_findings": {
+        "clean_site": [
+          "Tissue healthy. No foreign material.",
+          "Clean site. Good vascular supply."
+        ],
+        "old_hardware": [
+          "Metal fragments and dead leads in the site.",
+          "Old mounting bracket still bolted in place."
+        ],
+        "tissue_damage": [
+          "Fibrous scarring around the site.",
+          "Necrotic patches near the target area."
+        ]
+      },
+      "stages": [
+        {
+          "id": "prepare",
+          "type": "anesthesia",
+          "title": "PREPARE PATIENT",
+          "instruction": "HOLD to infuse sedative. Release inside the green band.",
+          "tool": "",
+          "params": {
+            "fill_rate": 38.0,
+            "zone_min": 55.0,
+            "zone_max": 72.0
+          }
+        },
+        {
+          "id": "incision",
+          "type": "incision",
+          "title": "INCISION",
+          "instruction": "Select SCALPEL. Drag along the guide from the marker.",
+          "tool": "scalpel",
+          "params": {
+            "path": [[0.56, 0.26],[0.58, 0.5],[0.6, 0.76]],
+            "tolerance_px": 3.2
+          }
+        },
+        {
+          "id": "expose",
+          "type": "expose",
+          "title": "EXPOSE SITE",
+          "instruction": "Select RETRACTOR. Tap each clamp point to open the site.",
+          "tool": "retractor",
+          "params": {
+            "clamps": [[0.42, 0.36],[0.72, 0.36],[0.44, 0.66],[0.74, 0.66]],
+            "radius_px": 6.0
+          },
+          "complication_window": true
+        },
+        {
+          "id": "debride",
+          "type": "remove_tissue",
+          "title": "REMOVE DAMAGED TISSUE",
+          "instruction": "Select CAUTERY. Hold on dark tissue to burn it. Avoid yellow nerves.",
+          "tool": "cautery",
+          "params": {
+            "nodes": 4,
+            "burn_time": 0.35,
+            "nerve_radius_px": 1.6
+          },
+          "complication_window": true
+        },
+        {
+          "id": "install",
+          "type": "install_implant",
+          "title": "INSTALL IMPLANT",
+          "instruction": "Select FORCEPS. Drag the implant into the socket, rotate to align, then SEAT.",
+          "tool": "forceps",
+          "params": {
+            "socket": [0.58, 0.52],
+            "snap_px": 9.0,
+            "align_tolerance_deg": 12.0
+          },
+          "complication_window": true
+        },
+        {
+          "id": "connect",
+          "type": "connect_interface",
+          "title": "CONNECT INTERFACE",
+          "instruction": "Select SPLICER. Drag each implant pin to the nerve with the same mark.",
+          "tool": "splicer",
+          "params": {
+            "endpoints": [[0.48, 0.32],[0.68, 0.32],[0.58, 0.74]]
+          },
+          "complication_window": true
+        },
+        {
+          "id": "calibrate",
+          "type": "calibrate",
+          "title": "BIO-SYNC",
+          "instruction": "Slide to match the waves, then LOCK. 3 bands.",
+          "tool": "",
+          "params": {
+            "rounds": 3,
+            "good_sync": 0.8,
+            "poor_sync": 0.55
+          },
+          "complication_window": true
+        },
+        {
+          "id": "close",
+          "type": "close_incision",
+          "title": "CLOSE INCISION",
+          "instruction": "Select SUTURE. Tap the stitch points in numbered order.",
+          "tool": "suture",
+          "params": {
+            "stitches": 7
           }
         }
       ]

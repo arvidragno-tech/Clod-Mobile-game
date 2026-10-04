@@ -1,0 +1,709 @@
+{
+ "events": [
+  {
+   "id": "wire_intro",
+   "title": "A CARD UNDER THE DOOR",
+   "character": "vesna_kalo",
+   "once": true,
+   "weight": 100,
+   "conditions": {
+    "min_rep": 12,
+    "min_ops": 3,
+    "not_flag": "bm_access"
+   },
+   "text": "A woman with magenta hair and a too-wide smile leans on your doorframe. 'Wire. I move things that aren't supposed to move. You'll want what I sell.'",
+   "choices": [
+    {
+     "label": "TAKE HER CARD",
+     "outcomes": {
+      "flag": "bm_access",
+      "faction": {
+       "black_market": 6
+      },
+      "rumor": "undermarket",
+      "text": "Wire taps the card twice. 'Ask for the den behind the noodle stall. Bring cash.'"
+     }
+    },
+    {
+     "label": "NOT INTERESTED",
+     "outcomes": {
+      "faction": {
+       "medical_authorities": 3
+      },
+      "text": "'They all say that once.' She leaves the card anyway."
+     }
+    }
+   ]
+  },
+  {
+   "id": "wire_return",
+   "title": "WIRE AGAIN",
+   "character": "vesna_kalo",
+   "weight": 60,
+   "cooldown": 99,
+   "conditions": {
+    "min_rep": 20,
+    "min_ops": 6,
+    "not_flag": "bm_access"
+   },
+   "text": "'Still cutting with scrap? Last offer, ripper.'",
+   "choices": [
+    {
+     "label": "ACCEPT",
+     "outcomes": {
+      "flag": "bm_access",
+      "faction": {
+       "black_market": 4
+      },
+      "text": "'Smart.'"
+     }
+    },
+    {
+     "label": "REFUSE",
+     "outcomes": {
+      "text": "She shrugs and melts into the rain."
+     }
+    }
+   ]
+  },
+  {
+   "id": "inspector_visit",
+   "title": "INSPECTION",
+   "character": "adaeze_moor",
+   "weight": 80,
+   "cooldown": 4,
+   "conditions": {
+    "min_heat": 35
+   },
+   "text": "Inspector Moor of the Civic Medical Board steps in, scanner already humming. 'Routine check. Unless you'd rather it wasn't routine.'",
+   "choices": [
+    {
+     "label": "BRIBE (300 cr)",
+     "requires": {
+      "money": 300
+     },
+     "outcomes": {
+      "money": -300,
+      "heat": -30,
+      "faction": {
+       "medical_authorities": 4
+      },
+      "text": "The scanner goes quiet. 'Clean as a whistle. See you next quarter.'"
+     }
+    },
+    {
+     "label": "FORGED LICENSE",
+     "outcomes": {
+      "risk": {
+       "chance": 0.5,
+       "success": {
+        "heat": -18,
+        "text": "She squints at the forgery... and nods."
+       },
+       "fail": {
+        "money": -400,
+        "heat": -10,
+        "faction": {
+         "medical_authorities": -10
+        },
+        "reputation": -3,
+        "text": "'Cute. That's a 400 credit fine.'"
+       }
+      }
+     }
+    },
+    {
+     "label": "COOPERATE",
+     "outcomes": {
+      "heat": -22,
+      "lose_bm_item": true,
+      "faction": {
+       "medical_authorities": 8,
+       "black_market": -4
+      },
+      "text": "She confiscates one item of contraband and leaves satisfied."
+     }
+    }
+   ]
+  },
+  {
+   "id": "suspicious_customer",
+   "title": "SUSPICIOUS CUSTOMER",
+   "weight": 30,
+   "cooldown": 5,
+   "conditions": {
+    "min_ops": 2
+   },
+   "text": "A hooded man won't give a name. He wants a corporate tracking chip cut out of his shoulder. Tonight.",
+   "choices": [
+    {
+     "label": "CUT IT OUT (+250 cr)",
+     "outcomes": {
+      "money": 250,
+      "heat": 10,
+      "faction": {
+       "black_market": 4,
+       "corporate_security": -6
+      },
+      "xp": 20,
+      "text": "The chip pings once in your tray, then dies. He's gone before it stops."
+     }
+    },
+    {
+     "label": "REFUSE",
+     "outcomes": {
+      "faction": {
+       "corporate_security": 3
+      },
+      "text": "He leaves without a word. A drone hovers outside a minute later."
+     }
+    }
+   ]
+  },
+  {
+   "id": "stolen_cyberware",
+   "title": "HOT CHROME",
+   "weight": 30,
+   "cooldown": 5,
+   "conditions": {
+    "min_ops": 2
+   },
+   "text": "A jittery runner opens a duffel bag: still-warm implants with corporate serials. 'Three hundred for the lot, no questions.'",
+   "choices": [
+    {
+     "label": "BUY (300 cr)",
+     "requires": {
+      "money": 300
+     },
+     "outcomes": {
+      "money": -300,
+      "item": {
+       "random_tier": 2,
+       "condition": [
+        55,
+        80
+       ]
+      },
+      "heat": 8,
+      "faction": {
+       "street_gangs": 3
+      },
+      "text": "You stash an implant. The rest are scrap."
+     }
+    },
+    {
+     "label": "REPORT IT",
+     "outcomes": {
+      "faction": {
+       "corporate_security": 6,
+       "street_gangs": -6
+      },
+      "heat": -6,
+      "text": "Corporate security thanks you. The Rustline crews won't."
+     }
+    },
+    {
+     "label": "SEND HIM AWAY",
+     "outcomes": {
+      "text": "He swears at you and runs."
+     }
+    }
+   ]
+  },
+  {
+   "id": "emergency_patient",
+   "title": "EMERGENCY",
+   "weight": 35,
+   "cooldown": 4,
+   "conditions": {
+    "min_ops": 1
+   },
+   "text": "Someone hammers the door: a Rustline kid with a knife wound and failing chrome, dumped by friends who already ran.",
+   "choices": [
+    {
+     "label": "TREAT NOW",
+     "outcomes": {
+      "customer": "emergency",
+      "text": "You drag him onto the table. Fast pay if he lives."
+     }
+    },
+    {
+     "label": "TURN HIM AWAY",
+     "outcomes": {
+      "faction": {
+       "street_gangs": -10
+      },
+      "reputation": -2,
+      "text": "Word travels fast in the lower levels."
+     }
+    }
+   ]
+  },
+  {
+   "id": "bm_deal",
+   "title": "SEALED CASE",
+   "character": "vesna_kalo",
+   "weight": 30,
+   "cooldown": 4,
+   "conditions": {
+    "flag": "bm_access"
+   },
+   "text": "Wire slides a sealed case across your table. 'One token. Could be junk. Could be military. I genuinely don't know.'",
+   "choices": [
+    {
+     "label": "OPEN IT (1 token)",
+     "requires": {
+      "tokens": 1
+     },
+     "outcomes": {
+      "tokens": -1,
+      "item": {
+       "black_market": true,
+       "condition": [
+        40,
+        95
+       ]
+      },
+      "text": "Inside, something hums."
+     }
+    },
+    {
+     "label": "PASS",
+     "outcomes": {
+      "text": "'Your loss.'"
+     }
+    }
+   ]
+  },
+  {
+   "id": "rook_request",
+   "title": "A FAVOUR FOR ROOK",
+   "character": "rook_varga",
+   "weight": 40,
+   "cooldown": 6,
+   "conditions": {
+    "faction": {
+     "street_gangs": [
+      10,
+      100
+     ]
+    }
+   },
+   "text": "Rook wants a kill-switch slipped into a rival lieutenant's arm during his next checkup. 'Four hundred. And my gratitude.'",
+   "choices": [
+    {
+     "label": "DO IT (+400 cr)",
+     "outcomes": {
+      "money": 400,
+      "faction": {
+       "street_gangs": 12,
+       "corporate_security": -4,
+       "medical_authorities": -6
+      },
+      "heat": 12,
+      "reputation": -2,
+      "flag": "did_killswitch",
+      "text": "It's a small chip. It weighs a lot."
+     }
+    },
+    {
+     "label": "REFUSE",
+     "outcomes": {
+      "faction": {
+       "street_gangs": -8,
+       "medical_authorities": 3
+      },
+      "text": "'Shame. I liked you.'"
+     }
+    }
+   ]
+  },
+  {
+   "id": "rook_intro",
+   "title": "PROTECTION",
+   "character": "rook_varga",
+   "once": true,
+   "weight": 70,
+   "conditions": {
+    "min_ops": 4,
+    "not_flag": "rook_met"
+   },
+   "text": "A big man with a chrome jaw blocks your doorway. 'Rook. This block is Rustline. We keep it quiet for people we like.'",
+   "choices": [
+    {
+     "label": "ACCEPT PROTECTION",
+     "outcomes": {
+      "flag": "rook_met",
+      "faction": {
+       "street_gangs": 10,
+       "corporate_security": -4
+      },
+      "modifier": {
+       "key": "heat.gain",
+       "value": -0.15,
+       "ops": 10
+      },
+      "text": "'Good. Nobody bothers you now. Mostly.'"
+     }
+    },
+    {
+     "label": "DECLINE",
+     "outcomes": {
+      "flag": "rook_met",
+      "faction": {
+       "street_gangs": -5
+      },
+      "text": "'Your call. The streets are dangerous.'"
+     }
+    }
+   ]
+  },
+  {
+   "id": "defective_implant",
+   "title": "RECALL NOTICE",
+   "weight": 25,
+   "cooldown": 6,
+   "conditions": {
+    "min_stock": 1
+   },
+   "text": "A recall bulletin scrolls across your terminal: one of your stocked implants is from a defective batch.",
+   "choices": [
+    {
+     "label": "SCRAP IT (+3 parts)",
+     "outcomes": {
+      "lose_stock_item": true,
+      "parts": 3,
+      "text": "You strip it for parts."
+     }
+    },
+    {
+     "label": "INSTALL ANYWAY",
+     "outcomes": {
+      "modifier": {
+       "key": "complication.chance",
+       "value": 0.25,
+       "ops": 1
+      },
+      "text": "Next operation will be riskier."
+     }
+    }
+   ]
+  },
+  {
+   "id": "power_outage",
+   "title": "POWER OUTAGE",
+   "weight": 30,
+   "cooldown": 5,
+   "conditions": {},
+   "text": "The block grid dies. Your lamp flickers on the emergency battery.",
+   "choices": [
+    {
+     "label": "RENT GENERATOR (150 cr)",
+     "requires": {
+      "money": 150
+     },
+     "outcomes": {
+      "money": -150,
+      "text": "The generator coughs to life."
+     }
+    },
+    {
+     "label": "WORK IN THE DARK",
+     "outcomes": {
+      "modifier": {
+       "key": "complication.chance",
+       "value": 0.3,
+       "ops": 1
+      },
+      "text": "Next operation: complications more likely."
+     }
+    }
+   ]
+  },
+  {
+   "id": "equipment_failure",
+   "title": "EQUIPMENT FAILURE",
+   "weight": 25,
+   "cooldown": 6,
+   "conditions": {
+    "min_ops": 3
+   },
+   "text": "Your instrument tray's sterilizer shorts out with a smell of burnt plastic.",
+   "choices": [
+    {
+     "label": "REPAIR (120 cr)",
+     "requires": {
+      "money": 120
+     },
+     "outcomes": {
+      "money": -120,
+      "text": "Fixed. Mostly."
+     }
+    },
+    {
+     "label": "USE PARTS (2)",
+     "requires": {
+      "parts": 2
+     },
+     "outcomes": {
+      "parts": -2,
+      "text": "You patch it with salvaged parts."
+     }
+    },
+    {
+     "label": "IMPROVISE",
+     "outcomes": {
+      "modifier": {
+       "key": "surgery.precision",
+       "value": -0.2,
+       "ops": 2
+      },
+      "text": "Your next two operations will be less precise."
+     }
+    }
+   ]
+  },
+  {
+   "id": "corporate_surveillance",
+   "title": "DRONE OUTSIDE",
+   "weight": 30,
+   "cooldown": 5,
+   "conditions": {
+    "min_heat": 15
+   },
+   "text": "A matte-black Aegis drone has been hovering at the end of your alley for an hour.",
+   "choices": [
+    {
+     "label": "JAM IT (2 parts)",
+     "requires": {
+      "parts": 2
+     },
+     "outcomes": {
+      "parts": -2,
+      "heat": -12,
+      "faction": {
+       "corporate_security": -3
+      },
+      "text": "It drifts away, confused."
+     }
+    },
+    {
+     "label": "BRIBE A GUARD (200 cr)",
+     "requires": {
+      "money": 200
+     },
+     "outcomes": {
+      "money": -200,
+      "heat": -8,
+      "faction": {
+       "corporate_security": 4
+      },
+      "text": "A clerical error loses your file."
+     }
+    },
+    {
+     "label": "IGNORE IT",
+     "outcomes": {
+      "heat": 10,
+      "text": "It takes pictures. Lots of pictures."
+     }
+    }
+   ]
+  },
+  {
+   "id": "refused_payment",
+   "title": "NO PAY",
+   "weight": 25,
+   "cooldown": 5,
+   "conditions": {
+    "min_ops": 2
+   },
+   "text": "Your last customer's 'friend' comes back: they won't pay the second half. 'What are you gonna do about it?'",
+   "choices": [
+    {
+     "label": "LEAN ON HIM",
+     "outcomes": {
+      "risk": {
+       "chance": 0.55,
+       "success": {
+        "money": 160,
+        "reputation": 1,
+        "text": "He pays. Grudgingly."
+       },
+       "fail": {
+        "reputation": -4,
+        "faction": {
+         "street_gangs": -4
+        },
+        "text": "He laughs and walks out. People heard."
+       }
+      }
+     }
+    },
+    {
+     "label": "LET IT GO",
+     "outcomes": {
+      "reputation": 2,
+      "text": "Word gets around that you're fair. Or soft."
+     }
+    },
+    {
+     "label": "CALL ROOK",
+     "requires": {
+      "flag": "rook_met"
+     },
+     "outcomes": {
+      "money": 160,
+      "heat": 5,
+      "faction": {
+       "street_gangs": 2
+      },
+      "text": "Rook's crew collects. They keep a cut of your goodwill."
+     }
+    }
+   ]
+  },
+  {
+   "id": "supply_drop",
+   "title": "SURPLUS SUPPLIES",
+   "weight": 30,
+   "cooldown": 3,
+   "conditions": {},
+   "text": "A hospital orderly sells 'expired' surgical supplies out of a van.",
+   "choices": [
+    {
+     "label": "BUY 6 (90 cr)",
+     "requires": {
+      "money": 90
+     },
+     "outcomes": {
+      "money": -90,
+      "supplies": 6,
+      "text": "Expired yesterday. Fine."
+     }
+    },
+    {
+     "label": "PASS",
+     "outcomes": {
+      "text": "The van drives off."
+     }
+    }
+   ]
+  },
+  {
+   "id": "hartmann_offer",
+   "title": "THE OLD SURGEON",
+   "character": "ilse_hartmann",
+   "once": true,
+   "weight": 60,
+   "conditions": {
+    "min_ops": 6
+   },
+   "text": "A gray-haired woman watches you clean up. 'I was a corporate surgeon for twenty years. For 400 I'll show you what they never put in manuals.'",
+   "choices": [
+    {
+     "label": "PAY (400 cr)",
+     "requires": {
+      "money": 400
+     },
+     "outcomes": {
+      "money": -400,
+      "skill_points": 1,
+      "flag": "hartmann_mentor",
+      "faction": {
+       "corporate_security": 2
+      },
+      "text": "You learn more in one night than in a year. (+1 skill point)"
+     }
+    },
+    {
+     "label": "DECLINE",
+     "outcomes": {
+      "text": "'Suit yourself. I'll be around.'"
+     }
+    }
+   ]
+  },
+  {
+   "id": "angry_relative",
+   "title": "AN ANGRY VISIT",
+   "weight": 0,
+   "conditions": {},
+   "text": "Family of a patient you failed is at your door. They want answers, or money.",
+   "choices": [
+    {
+     "label": "COMPENSATE (200 cr)",
+     "requires": {
+      "money": 200
+     },
+     "outcomes": {
+      "money": -200,
+      "reputation": 2,
+      "text": "They leave, still angry, but quiet."
+     }
+    },
+    {
+     "label": "STONEWALL",
+     "outcomes": {
+      "reputation": -3,
+      "heat": 6,
+      "text": "They promise to tell everyone."
+     }
+    }
+   ]
+  },
+  {
+   "id": "post_op_return",
+   "title": "BACK ON YOUR TABLE",
+   "weight": 0,
+   "conditions": {},
+   "text": "A recent patient staggers in, sweating, the fresh incision red and hot. Your work is failing. Everyone on the block is watching how you handle it.",
+   "choices": [
+    {
+     "label": "TREAT FREE (2 supplies)",
+     "requires": {
+      "supplies": 2
+     },
+     "outcomes": {
+      "supplies": -2,
+      "reputation": 3,
+      "text": "You reopen, clean it out and send them home grateful."
+     }
+    },
+    {
+     "label": "BILL THEM (+150 cr)",
+     "outcomes": {
+      "money": 150,
+      "reputation": -3,
+      "text": "They pay. They also tell everyone they had to."
+     }
+    },
+    {
+     "label": "TURN THEM AWAY",
+     "outcomes": {
+      "reputation": -6,
+      "heat": 5,
+      "text": "They collapse two doors down. The street remembers."
+     }
+    }
+   ]
+  },
+  {
+   "id": "static_fever",
+   "title": "STATIC FEVER",
+   "weight": 0,
+   "conditions": {},
+   "text": "News feed: a patient with too much chrome had a neural break on the transit line. Your name is being whispered.",
+   "choices": [
+    {
+     "label": "LAY LOW",
+     "outcomes": {
+      "reputation": -3,
+      "heat": 8,
+      "text": "Overloading people has consequences."
+     }
+    }
+   ]
+  }
+ ]
+}

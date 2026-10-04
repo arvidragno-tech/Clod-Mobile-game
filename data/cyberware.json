@@ -1,29 +1,677 @@
 {
-  "cyberware": [
-    {
-      "id": "nx1_neural_bridge",
-      "name": "NX-1 Neural Bridge",
-      "manufacturer": "Halden Microsystems",
-      "category": "neural",
-      "tier": 1,
-      "description": "Entry-level cervical data bridge. Cheap, reliable, a little noisy.",
-      "price": 120,
-      "icon": "res://assets/sprites/surgery/implant_nx1.png",
-      "install_surgery": "install_basic_neural_implant",
-      "base_performance": 1.0
-    },
-    {
-      "id": "kx4_reflex_lattice",
-      "name": "KX-4 Reflex Lattice",
-      "manufacturer": "Sable Kinetics",
-      "category": "reflex",
-      "tier": 2,
-      "description": "Grey-import reflex accelerator. Rumoured to fry cheap spinal relays.",
-      "price": 900,
-      "icon": "res://assets/sprites/surgery/implant_nx1.png",
-      "install_surgery": "",
-      "base_performance": 1.2,
-      "black_market": true
-    }
-  ]
+ "cyberware": [
+  {
+   "id": "nx1_neural_bridge",
+   "name": "NX-1 Neural Bridge",
+   "manufacturer": "Halden Microsystems",
+   "category": "neural",
+   "tier": 1,
+   "price": 120,
+   "install_difficulty": 1,
+   "neural_load": 5,
+   "required_tools": [],
+   "failure_risk": 0.0,
+   "benefits": [
+    "Data link +1",
+    "Navigation overlay"
+   ],
+   "complications": [],
+   "rarity": "common",
+   "description": "Entry-level cervical data bridge. Cheap, reliable, a little noisy.",
+   "icon": "res://assets/sprites/cyberware/neural_t1.png",
+   "install_surgery": "install_basic_neural_implant",
+   "base_performance": 1.0,
+   "black_market": false
+  },
+  {
+   "id": "synapse_router_s2",
+   "name": "Synapse Router S2",
+   "manufacturer": "Vantage Neurodyne",
+   "category": "neural",
+   "tier": 2,
+   "price": 650,
+   "install_difficulty": 3,
+   "neural_load": 12,
+   "required_tools": [],
+   "failure_risk": 0.0,
+   "benefits": [
+    "Data link +2",
+    "Reaction time +8%"
+   ],
+   "complications": [],
+   "rarity": "uncommon",
+   "description": "Professional-grade neural router for netwalkers and analysts.",
+   "icon": "res://assets/sprites/cyberware/neural_t2.png",
+   "install_surgery": "install_basic_neural_implant",
+   "base_performance": 1.0,
+   "black_market": false
+  },
+  {
+   "id": "warden_coprocessor",
+   "name": "Warden Tactical Coprocessor",
+   "manufacturer": "Aegis Meridian",
+   "category": "neural",
+   "tier": 3,
+   "price": 1700,
+   "install_difficulty": 4,
+   "neural_load": 20,
+   "required_tools": [
+    "calibrator:2"
+   ],
+   "failure_risk": 0.08,
+   "benefits": [
+    "Target tracking",
+    "Reaction time +15%"
+   ],
+   "complications": [
+    "neural_feedback"
+   ],
+   "rarity": "rare",
+   "description": "Military threat-assessment coprocessor. Runs hot.",
+   "icon": "res://assets/sprites/cyberware/neural_t3.png",
+   "install_surgery": "install_basic_neural_implant",
+   "base_performance": 1.0,
+   "black_market": false
+  },
+  {
+   "id": "mnemos_core",
+   "name": "Mnemos Experimental Core",
+   "manufacturer": "Lyra Biocomp Lab",
+   "category": "neural",
+   "tier": 4,
+   "price": 3200,
+   "install_difficulty": 5,
+   "neural_load": 28,
+   "required_tools": [
+    "calibrator:2"
+   ],
+   "failure_risk": 0.12,
+   "benefits": [
+    "Memory capacity x3",
+    "Pattern recall"
+   ],
+   "complications": [
+    "neural_feedback"
+   ],
+   "rarity": "epic",
+   "description": "Prototype memory-expansion core. Nobody knows the long-term effects.",
+   "icon": "res://assets/sprites/cyberware/neural_t4.png",
+   "install_surgery": "install_basic_neural_implant",
+   "base_performance": 1.0,
+   "black_market": false
+  },
+  {
+   "id": "kestrel_sight",
+   "name": "Kestrel Sight-1",
+   "manufacturer": "Halden Microsystems",
+   "category": "eyes",
+   "tier": 1,
+   "price": 180,
+   "install_difficulty": 2,
+   "neural_load": 6,
+   "required_tools": [],
+   "failure_risk": 0.0,
+   "benefits": [
+    "Zoom x4",
+    "Low-light vision"
+   ],
+   "complications": [],
+   "rarity": "common",
+   "description": "Civilian replacement optic with zoom and low-light.",
+   "icon": "res://assets/sprites/cyberware/eyes_t1.png",
+   "install_surgery": "install_optic",
+   "base_performance": 1.0,
+   "black_market": false
+  },
+  {
+   "id": "lumen_pro_optic",
+   "name": "Lumen Pro Optic",
+   "manufacturer": "Vantage Neurodyne",
+   "category": "eyes",
+   "tier": 2,
+   "price": 520,
+   "install_difficulty": 3,
+   "neural_load": 9,
+   "required_tools": [],
+   "failure_risk": 0.0,
+   "benefits": [
+    "Zoom x8",
+    "Recording",
+    "Thermal tint"
+   ],
+   "complications": [],
+   "rarity": "uncommon",
+   "description": "Professional optic with spectral overlay and recording.",
+   "icon": "res://assets/sprites/cyberware/eyes_t2.png",
+   "install_surgery": "install_optic",
+   "base_performance": 1.0,
+   "black_market": false
+  },
+  {
+   "id": "gunsight_ocular",
+   "name": "Gunsight MX Ocular",
+   "manufacturer": "Aegis Meridian",
+   "category": "eyes",
+   "tier": 3,
+   "price": 1300,
+   "install_difficulty": 4,
+   "neural_load": 14,
+   "required_tools": [
+    "calibrator:2"
+   ],
+   "failure_risk": 0.05,
+   "benefits": [
+    "Smart-link",
+    "Threat highlight"
+   ],
+   "complications": [],
+   "rarity": "rare",
+   "description": "Military ballistic ocular with smart-link.",
+   "icon": "res://assets/sprites/cyberware/eyes_t3.png",
+   "install_surgery": "install_optic",
+   "base_performance": 1.0,
+   "black_market": false
+  },
+  {
+   "id": "prism_x_eye",
+   "name": "Prism-X Spectral Eye",
+   "manufacturer": "Lyra Biocomp Lab",
+   "category": "eyes",
+   "tier": 4,
+   "price": 2600,
+   "install_difficulty": 5,
+   "neural_load": 18,
+   "required_tools": [
+    "calibrator:2"
+   ],
+   "failure_risk": 0.1,
+   "benefits": [
+    "Full-spectrum vision",
+    "Signal sight"
+   ],
+   "complications": [],
+   "rarity": "epic",
+   "description": "Experimental full-spectrum eye. Sees things it shouldn't.",
+   "icon": "res://assets/sprites/cyberware/eyes_t4.png",
+   "install_surgery": "install_optic",
+   "base_performance": 1.0,
+   "black_market": false
+  },
+  {
+   "id": "liftwell_arm",
+   "name": "Liftwell Assist Arm",
+   "manufacturer": "Dockside Mechanics",
+   "category": "arms",
+   "tier": 1,
+   "price": 300,
+   "install_difficulty": 2,
+   "neural_load": 8,
+   "required_tools": [
+    "drill:1"
+   ],
+   "failure_risk": 0.0,
+   "benefits": [
+    "Lift capacity +60%",
+    "Grip lock"
+   ],
+   "complications": [],
+   "rarity": "common",
+   "description": "Load-assist forearm module for dock and warehouse work.",
+   "icon": "res://assets/sprites/cyberware/arms_t1.png",
+   "install_surgery": "install_arm",
+   "base_performance": 1.0,
+   "black_market": false
+  },
+  {
+   "id": "torsion_forearm",
+   "name": "Torsion Pro Forearm",
+   "manufacturer": "Kessler Kinetics",
+   "category": "arms",
+   "tier": 2,
+   "price": 800,
+   "install_difficulty": 3,
+   "neural_load": 11,
+   "required_tools": [
+    "drill:1"
+   ],
+   "failure_risk": 0.0,
+   "benefits": [
+    "Strength +30%",
+    "Fine motor +20%"
+   ],
+   "complications": [],
+   "rarity": "uncommon",
+   "description": "Synthetic-muscle forearm with fine motor control.",
+   "icon": "res://assets/sprites/cyberware/arms_t2.png",
+   "install_surgery": "install_arm",
+   "base_performance": 1.0,
+   "black_market": false
+  },
+  {
+   "id": "breacher_limb",
+   "name": "Breacher Combat Limb",
+   "manufacturer": "Aegis Meridian",
+   "category": "arms",
+   "tier": 3,
+   "price": 1900,
+   "install_difficulty": 4,
+   "neural_load": 16,
+   "required_tools": [
+    "drill:2"
+   ],
+   "failure_risk": 0.06,
+   "benefits": [
+    "Strength +70%",
+    "Impact plating"
+   ],
+   "complications": [],
+   "rarity": "rare",
+   "description": "Military breaching arm with armoured housing.",
+   "icon": "res://assets/sprites/cyberware/arms_t3.png",
+   "install_surgery": "install_arm",
+   "base_performance": 1.0,
+   "black_market": false
+  },
+  {
+   "id": "strider_knee",
+   "name": "Strider Knee Kit",
+   "manufacturer": "Dockside Mechanics",
+   "category": "legs",
+   "tier": 1,
+   "price": 280,
+   "install_difficulty": 2,
+   "neural_load": 7,
+   "required_tools": [
+    "drill:1"
+   ],
+   "failure_risk": 0.0,
+   "benefits": [
+    "Joint pain relief",
+    "Endurance +10%"
+   ],
+   "complications": [],
+   "rarity": "common",
+   "description": "Cheap knee replacement with shock absorber.",
+   "icon": "res://assets/sprites/cyberware/legs_t1.png",
+   "install_surgery": "install_leg",
+   "base_performance": 1.0,
+   "black_market": false
+  },
+  {
+   "id": "sprintline_struts",
+   "name": "Sprintline Shin Struts",
+   "manufacturer": "Kessler Kinetics",
+   "category": "legs",
+   "tier": 2,
+   "price": 760,
+   "install_difficulty": 3,
+   "neural_load": 10,
+   "required_tools": [
+    "drill:1"
+   ],
+   "failure_risk": 0.0,
+   "benefits": [
+    "Sprint speed +25%",
+    "Jump +15%"
+   ],
+   "complications": [],
+   "rarity": "uncommon",
+   "description": "Carbon struts for runners and couriers.",
+   "icon": "res://assets/sprites/cyberware/legs_t2.png",
+   "install_surgery": "install_leg",
+   "base_performance": 1.0,
+   "black_market": false
+  },
+  {
+   "id": "vaultjack_legs",
+   "name": "Vaultjack Mil-Legs",
+   "manufacturer": "Aegis Meridian",
+   "category": "legs",
+   "tier": 3,
+   "price": 1800,
+   "install_difficulty": 4,
+   "neural_load": 15,
+   "required_tools": [
+    "drill:2"
+   ],
+   "failure_risk": 0.06,
+   "benefits": [
+    "Jump +60%",
+    "Fall dampening"
+   ],
+   "complications": [],
+   "rarity": "rare",
+   "description": "Military leg actuators rated for vertical breach.",
+   "icon": "res://assets/sprites/cyberware/legs_t3.png",
+   "install_surgery": "install_leg",
+   "base_performance": 1.0,
+   "black_market": false
+  },
+  {
+   "id": "backbone_relay",
+   "name": "Backbone Relay Spine",
+   "manufacturer": "Kessler Kinetics",
+   "category": "spine",
+   "tier": 2,
+   "price": 900,
+   "install_difficulty": 3,
+   "neural_load": 12,
+   "required_tools": [
+    "drill:1"
+   ],
+   "failure_risk": 0.0,
+   "benefits": [
+    "Implant sync +20%",
+    "Posture lock"
+   ],
+   "complications": [],
+   "rarity": "uncommon",
+   "description": "Spinal relay that synchronises limb implants.",
+   "icon": "res://assets/sprites/cyberware/spine_t2.png",
+   "install_surgery": "install_spine",
+   "base_performance": 1.0,
+   "black_market": false
+  },
+  {
+   "id": "kinetic_lattice",
+   "name": "Kinetic Lattice Spine",
+   "manufacturer": "Aegis Meridian",
+   "category": "spine",
+   "tier": 3,
+   "price": 2100,
+   "install_difficulty": 5,
+   "neural_load": 18,
+   "required_tools": [
+    "drill:2",
+    "calibrator:2"
+   ],
+   "failure_risk": 0.08,
+   "benefits": [
+    "Reflexes +25%",
+    "Balance"
+   ],
+   "complications": [
+    "neural_feedback"
+   ],
+   "rarity": "rare",
+   "description": "Military reflex lattice threaded along the vertebrae.",
+   "icon": "res://assets/sprites/cyberware/spine_t3.png",
+   "install_surgery": "install_spine",
+   "base_performance": 1.0,
+   "black_market": false
+  },
+  {
+   "id": "kevlace_mesh",
+   "name": "Kevlace Subdermal Mesh",
+   "manufacturer": "Halden Microsystems",
+   "category": "dermal",
+   "tier": 1,
+   "price": 200,
+   "install_difficulty": 1,
+   "neural_load": 3,
+   "required_tools": [],
+   "failure_risk": 0.0,
+   "benefits": [
+    "Cut resistance"
+   ],
+   "complications": [],
+   "rarity": "common",
+   "description": "Fibre mesh under the skin. Stops knives, mostly.",
+   "icon": "res://assets/sprites/cyberware/dermal_t1.png",
+   "install_surgery": "install_dermal",
+   "base_performance": 1.0,
+   "black_market": false
+  },
+  {
+   "id": "ironhide_plating",
+   "name": "Ironhide Dermal Plating",
+   "manufacturer": "Aegis Meridian",
+   "category": "dermal",
+   "tier": 3,
+   "price": 1400,
+   "install_difficulty": 3,
+   "neural_load": 8,
+   "required_tools": [],
+   "failure_risk": 0.0,
+   "benefits": [
+    "Ballistic resistance",
+    "Impact dampening"
+   ],
+   "complications": [],
+   "rarity": "rare",
+   "description": "Military ceramic plating bonded beneath the skin.",
+   "icon": "res://assets/sprites/cyberware/dermal_t3.png",
+   "install_surgery": "install_dermal",
+   "base_performance": 1.0,
+   "black_market": false
+  },
+  {
+   "id": "smogbreaker_filter",
+   "name": "Smogbreaker Filter",
+   "manufacturer": "Dockside Mechanics",
+   "category": "respiratory",
+   "tier": 1,
+   "price": 220,
+   "install_difficulty": 2,
+   "neural_load": 4,
+   "required_tools": [],
+   "failure_risk": 0.0,
+   "benefits": [
+    "Toxin filtering"
+   ],
+   "complications": [],
+   "rarity": "common",
+   "description": "Lung filter cartridge for the toxic lower levels.",
+   "icon": "res://assets/sprites/cyberware/respiratory_t1.png",
+   "install_surgery": "install_respiratory",
+   "base_performance": 1.0,
+   "black_market": false
+  },
+  {
+   "id": "deepbreath_booster",
+   "name": "Deepbreath Oxy Booster",
+   "manufacturer": "Kessler Kinetics",
+   "category": "respiratory",
+   "tier": 2,
+   "price": 700,
+   "install_difficulty": 3,
+   "neural_load": 7,
+   "required_tools": [],
+   "failure_risk": 0.0,
+   "benefits": [
+    "Breath hold 6 min",
+    "Stamina +15%"
+   ],
+   "complications": [],
+   "rarity": "uncommon",
+   "description": "Oxygen reservoir and pump. Hold your breath for minutes.",
+   "icon": "res://assets/sprites/cyberware/respiratory_t2.png",
+   "install_surgery": "install_respiratory",
+   "base_performance": 1.0,
+   "black_market": false
+  },
+  {
+   "id": "toxsponge_liver",
+   "name": "Toxsponge Liver Module",
+   "manufacturer": "Vantage Neurodyne",
+   "category": "internal",
+   "tier": 2,
+   "price": 750,
+   "install_difficulty": 3,
+   "neural_load": 8,
+   "required_tools": [],
+   "failure_risk": 0.0,
+   "benefits": [
+    "Toxin immunity",
+    "Stim tolerance"
+   ],
+   "complications": [],
+   "rarity": "uncommon",
+   "description": "Synthetic liver support. Popular with bartenders and chemists.",
+   "icon": "res://assets/sprites/cyberware/internal_t2.png",
+   "install_surgery": "install_internal",
+   "base_performance": 1.0,
+   "black_market": false
+  },
+  {
+   "id": "helix_bioreactor",
+   "name": "Helix Bio-Reactor",
+   "manufacturer": "Lyra Biocomp Lab",
+   "category": "internal",
+   "tier": 4,
+   "price": 2800,
+   "install_difficulty": 5,
+   "neural_load": 16,
+   "required_tools": [],
+   "failure_risk": 0.1,
+   "benefits": [
+    "Implant power +40%",
+    "Regeneration"
+   ],
+   "complications": [],
+   "rarity": "epic",
+   "description": "Experimental implant energy reactor. Feeds other chrome.",
+   "icon": "res://assets/sprites/cyberware/internal_t4.png",
+   "install_surgery": "install_internal",
+   "base_performance": 1.0,
+   "black_market": false
+  },
+  {
+   "id": "unknown_military_core",
+   "name": "UNKNOWN MILITARY NEURAL CORE",
+   "manufacturer": "CLASSIFIED",
+   "category": "neural",
+   "tier": 5,
+   "price": 2400,
+   "install_difficulty": 5,
+   "neural_load": 30,
+   "required_tools": [
+    "calibrator:2"
+   ],
+   "failure_risk": 0.18,
+   "benefits": [
+    "Neural processing +35%",
+    "???"
+   ],
+   "complications": [
+    "neural_feedback"
+   ],
+   "rarity": "legendary",
+   "description": "Pulled from a crashed security drone. Serial numbers burned off.",
+   "icon": "res://assets/sprites/cyberware/neural_t5.png",
+   "install_surgery": "install_basic_neural_implant",
+   "base_performance": 1.15,
+   "black_market": true,
+   "origin": "CLASSIFIED",
+   "unknown_traits": 2
+  },
+  {
+   "id": "ghostlink_eye",
+   "name": "Ghostlink Ocular (Stolen)",
+   "manufacturer": "Aegis Meridian (stolen)",
+   "category": "eyes",
+   "tier": 3,
+   "price": 900,
+   "install_difficulty": 4,
+   "neural_load": 14,
+   "required_tools": [
+    "calibrator:2"
+   ],
+   "failure_risk": 0.08,
+   "benefits": [
+    "Smart-link",
+    "Threat highlight"
+   ],
+   "complications": [],
+   "rarity": "rare",
+   "description": "Military ocular lifted from a corp armory. Still phones home?",
+   "icon": "res://assets/sprites/cyberware/eyes_t3.png",
+   "install_surgery": "install_optic",
+   "base_performance": 1.0,
+   "black_market": true,
+   "origin": "Corporate armory theft",
+   "unknown_traits": 1
+  },
+  {
+   "id": "kx4_reflex_lattice",
+   "name": "KX-4 Reflex Lattice",
+   "manufacturer": "Sable Kinetics",
+   "category": "spine",
+   "tier": 5,
+   "price": 1600,
+   "install_difficulty": 5,
+   "neural_load": 22,
+   "required_tools": [
+    "drill:2"
+   ],
+   "failure_risk": 0.15,
+   "benefits": [
+    "Reflexes +40%",
+    "???"
+   ],
+   "complications": [
+    "neural_feedback"
+   ],
+   "rarity": "epic",
+   "description": "Grey-import reflex accelerator. Rumoured to fry cheap spinal relays.",
+   "icon": "res://assets/sprites/cyberware/spine_t5.png",
+   "install_surgery": "install_spine",
+   "base_performance": 1.0,
+   "black_market": true,
+   "origin": "Grey import, Sable Kinetics",
+   "unknown_traits": 1
+  },
+  {
+   "id": "ripjaw_arm",
+   "name": "Ripjaw Arm Prototype",
+   "manufacturer": "Unknown fabricator",
+   "category": "arms",
+   "tier": 5,
+   "price": 1500,
+   "install_difficulty": 4,
+   "neural_load": 18,
+   "required_tools": [
+    "drill:2"
+   ],
+   "failure_risk": 0.14,
+   "benefits": [
+    "Strength +90%",
+    "???"
+   ],
+   "complications": [],
+   "rarity": "epic",
+   "description": "Hand-built combat arm with exposed actuators and a temper.",
+   "icon": "res://assets/sprites/cyberware/arms_t5.png",
+   "install_surgery": "install_arm",
+   "base_performance": 1.0,
+   "black_market": true,
+   "origin": "Backstreet fabricator",
+   "unknown_traits": 1
+  },
+  {
+   "id": "black_lung_pump",
+   "name": "Black Lung Pump",
+   "manufacturer": "Unknown fabricator",
+   "category": "respiratory",
+   "tier": 5,
+   "price": 800,
+   "install_difficulty": 3,
+   "neural_load": 9,
+   "required_tools": [],
+   "failure_risk": 0.1,
+   "benefits": [
+    "Breath hold 10 min",
+    "???"
+   ],
+   "complications": [],
+   "rarity": "rare",
+   "description": "Respiratory pump stripped from a mining rig.",
+   "icon": "res://assets/sprites/cyberware/respiratory_t5.png",
+   "install_surgery": "install_respiratory",
+   "base_performance": 1.0,
+   "black_market": true,
+   "origin": "Salvaged mining rig",
+   "unknown_traits": 1
+  }
+ ]
 }

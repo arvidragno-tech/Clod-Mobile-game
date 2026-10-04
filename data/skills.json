@@ -1,0 +1,255 @@
+{
+ "categories": [
+  {
+   "id": "surgery",
+   "name": "SURGERY",
+   "color": "2ee6c8"
+  },
+  {
+   "id": "cybernetics",
+   "name": "CYBERNETICS",
+   "color": "3a8cff"
+  },
+  {
+   "id": "medicine",
+   "name": "MEDICINE",
+   "color": "6dff8a"
+  },
+  {
+   "id": "underworld",
+   "name": "UNDERWORLD",
+   "color": "ff3d81"
+  }
+ ],
+ "skills": [
+  {
+   "id": "precision",
+   "category": "surgery",
+   "name": "Precision",
+   "description": "Wider tolerance on cuts, clamps and anchors.",
+   "max_rank": 3,
+   "costs": [
+    1,
+    1,
+    2
+   ],
+   "effect_per_rank": {
+    "surgery.precision": 0.12
+   },
+   "unlock_level": 1
+  },
+  {
+   "id": "speed",
+   "category": "surgery",
+   "name": "Speed",
+   "description": "Cautery and drill work faster.",
+   "max_rank": 3,
+   "costs": [
+    1,
+    1,
+    2
+   ],
+   "effect_per_rank": {
+    "surgery.speed": 0.15
+   },
+   "unlock_level": 1
+  },
+  {
+   "id": "tissue_handling",
+   "category": "surgery",
+   "name": "Tissue Handling",
+   "description": "Mistakes bleed and hurt less.",
+   "max_rank": 3,
+   "costs": [
+    1,
+    1,
+    2
+   ],
+   "effect_per_rank": {
+    "surgery.bleed": -0.12,
+    "surgery.pain": -0.1
+   },
+   "unlock_level": 1
+  },
+  {
+   "id": "implant_installation",
+   "category": "surgery",
+   "name": "Implant Installation",
+   "description": "Bigger alignment window when seating implants.",
+   "max_rank": 3,
+   "costs": [
+    1,
+    1,
+    2
+   ],
+   "effect_per_rank": {
+    "surgery.alignment": 0.2
+   },
+   "unlock_level": 2
+  },
+  {
+   "id": "neural_interfaces",
+   "category": "cybernetics",
+   "name": "Neural Interfaces",
+   "description": "Bad splices shock less; installs add less neural load.",
+   "max_rank": 3,
+   "costs": [
+    1,
+    1,
+    2
+   ],
+   "effect_per_rank": {
+    "neural.splice_penalty": -0.15,
+    "neural.load": -0.06
+   },
+   "unlock_level": 1
+  },
+  {
+   "id": "calibration",
+   "category": "cybernetics",
+   "name": "Calibration",
+   "description": "Wider sync window when calibrating.",
+   "max_rank": 3,
+   "costs": [
+    1,
+    1,
+    2
+   ],
+   "effect_per_rank": {
+    "calibrate.range": 0.15
+   },
+   "unlock_level": 1
+  },
+  {
+   "id": "modification",
+   "category": "cybernetics",
+   "name": "Cyberware Modification",
+   "description": "Study and modify black-market chrome for less.",
+   "max_rank": 3,
+   "costs": [
+    1,
+    1,
+    2
+   ],
+   "effect_per_rank": {
+    "bm.modify": -0.15
+   },
+   "unlock_level": 3
+  },
+  {
+   "id": "diagnosis",
+   "category": "medicine",
+   "name": "Diagnosis",
+   "description": "Scans reveal hidden conditions more often.",
+   "max_rank": 3,
+   "costs": [
+    1,
+    1,
+    2
+   ],
+   "effect_per_rank": {
+    "diagnosis.reveal": 0.2
+   },
+   "unlock_level": 1
+  },
+  {
+   "id": "infection_control",
+   "category": "medicine",
+   "name": "Infection Control",
+   "description": "Fewer post-op complications; uses fewer supplies.",
+   "max_rank": 3,
+   "costs": [
+    1,
+    1,
+    2
+   ],
+   "effect_per_rank": {
+    "post_op.risk": -0.05,
+    "supplies.use": -0.15
+   },
+   "unlock_level": 1
+  },
+  {
+   "id": "emergency_treatment",
+   "category": "medicine",
+   "name": "Emergency Treatment",
+   "description": "Emergency actions recharge faster; complications give you longer.",
+   "max_rank": 3,
+   "costs": [
+    1,
+    1,
+    2
+   ],
+   "effect_per_rank": {
+    "quick.cooldown": -0.1,
+    "complication.time": 0.12
+   },
+   "unlock_level": 1
+  },
+  {
+   "id": "black_market",
+   "category": "underworld",
+   "name": "Black Market",
+   "description": "Better prices and more stock at the Undermarket.",
+   "max_rank": 3,
+   "costs": [
+    1,
+    1,
+    2
+   ],
+   "effect_per_rank": {
+    "bm.price": -0.08,
+    "bm.stock": 1
+   },
+   "unlock_level": 2
+  },
+  {
+   "id": "negotiation",
+   "category": "underworld",
+   "name": "Negotiation",
+   "description": "Customers pay more.",
+   "max_rank": 3,
+   "costs": [
+    1,
+    1,
+    2
+   ],
+   "effect_per_rank": {
+    "pay": 0.07
+   },
+   "unlock_level": 1
+  },
+  {
+   "id": "smuggling",
+   "category": "underworld",
+   "name": "Smuggling",
+   "description": "Illegal work draws less heat.",
+   "max_rank": 3,
+   "costs": [
+    1,
+    1,
+    2
+   ],
+   "effect_per_rank": {
+    "heat.gain": -0.2
+   },
+   "unlock_level": 2
+  },
+  {
+   "id": "faction_relations",
+   "category": "underworld",
+   "name": "Faction Relations",
+   "description": "Reputation gains with factions are larger.",
+   "max_rank": 3,
+   "costs": [
+    1,
+    1,
+    2
+   ],
+   "effect_per_rank": {
+    "faction.gain": 0.15
+   },
+   "unlock_level": 1
+  }
+ ]
+}

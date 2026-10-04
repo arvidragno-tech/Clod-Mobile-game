@@ -1,0 +1,79 @@
+{
+ "stock_size": 4,
+ "refresh_every_ops": 2,
+ "min_condition": 42,
+ "max_condition": 100,
+ "sell_ratio": 0.45,
+ "study_cost_parts": 2,
+ "study_cost_money": 120,
+ "modify_cost_parts": 3,
+ "modify_condition_gain": 18,
+ "mystery_case_tokens": 2,
+ "parts_from_scrap": 3,
+ "traits": [
+  {
+   "id": "overclocked",
+   "name": "Overclocked",
+   "positive": true,
+   "description": "Runs above spec: +15% performance.",
+   "effects": {
+    "performance": 0.15
+   }
+  },
+  {
+   "id": "efficient",
+   "name": "Efficient firmware",
+   "positive": true,
+   "description": "-6% neural load.",
+   "effects": {
+    "neural_load": -6
+   }
+  },
+  {
+   "id": "military_ice",
+   "name": "Military-grade shielding",
+   "positive": true,
+   "description": "Fewer feedback complications.",
+   "effects": {
+    "complication_risk": -0.15
+   }
+  },
+  {
+   "id": "tracker",
+   "name": "Hidden tracker",
+   "positive": false,
+   "description": "Phones home to its original owner. Draws heat.",
+   "effects": {
+    "heat": 12
+   }
+  },
+  {
+   "id": "unstable",
+   "name": "Unstable controller",
+   "positive": false,
+   "description": "+12% complication risk during install.",
+   "effects": {
+    "complication_risk": 0.12
+   }
+  },
+  {
+   "id": "neural_leech",
+   "name": "Neural leech",
+   "positive": false,
+   "description": "+10% neural load.",
+   "effects": {
+    "neural_load": 10
+   }
+  },
+  {
+   "id": "killswitch",
+   "name": "Remote kill-switch",
+   "positive": false,
+   "description": "Someone else can turn it off. Customers hate this.",
+   "effects": {
+    "pay": -0.35,
+    "heat": 6
+   }
+  }
+ ]
+}

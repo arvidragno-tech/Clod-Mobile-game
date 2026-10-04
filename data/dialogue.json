@@ -1,0 +1,105 @@
+{
+ "greeting": {
+  "stoic": [
+   "I need work done. Don't waste my time.",
+   "You the cutter? Good."
+  ],
+  "hard": [
+   "Heard you're quiet and quick. Prove it.",
+   "Let's be clear: you screw this up, we have a problem."
+  ],
+  "calm": [
+   "Evening, doc. I'll keep it simple.",
+   "Thanks for seeing me this late."
+  ],
+  "aggressive": [
+   "Hurry up. People are looking for me.",
+   "Make it fast and make it hurt less than the last guy."
+  ],
+  "chatty": [
+   "Love the neon. Very... underground. Anyway, here's the thing.",
+   "My cousin swore by you, so here I am!"
+  ],
+  "paranoid": [
+   "Is this room clean? No cameras? Okay. Okay.",
+   "Nobody followed me. I checked twice."
+  ],
+  "tired": [
+   "Long shift. Long year. Let's get this done.",
+   "My back hurts just walking down here."
+  ],
+  "smooth": [
+   "Doc. Pleasure. I hear you're going places.",
+   "Let's call this an investment in each other."
+  ],
+  "nervous": [
+   "I've never done this before. Is it going to hurt?",
+   "I saved up for months for this."
+  ]
+ },
+ "reason": {
+  "neural": [
+   "My head link keeps dropping. I need a cleaner bridge.",
+   "Work needs me jacked in faster."
+  ],
+  "eyes": [
+   "My eyes can't keep up anymore. I want chrome that can.",
+   "I need to see what's coming before it gets to me."
+  ],
+  "arms": [
+   "I need an arm that won't quit on me.",
+   "My grip's going. Can't afford that in my line of work."
+  ],
+  "legs": [
+   "My knees are shot. I need to move again.",
+   "I need to outrun people. Fast."
+  ],
+  "spine": [
+   "My back's held together with spite. Fix it.",
+   "Need my implants to actually talk to each other."
+  ],
+  "dermal": [
+   "I want something under my skin that stops a knife.",
+   "Plating. The thicker the better."
+  ],
+  "respiratory": [
+   "The air down here is killing me. Literally.",
+   "I need to breathe where others can't."
+  ],
+  "internal": [
+   "My insides are wrecked from stims. I need help.",
+   "I want an edge nobody can see."
+  ]
+ },
+ "money": {
+  "0": [
+   "I'm short on cash, but I'll pay what I can.",
+   "This is everything I've got."
+  ],
+  "1": [
+   "I can pay the going rate.",
+   "Cash up front, if you want."
+  ],
+  "2": [
+   "Money's not the problem.",
+   "Name your price, within reason."
+  ],
+  "3": [
+   "Price doesn't matter. Results do.",
+   "My employer covers expenses. Generously."
+  ]
+ },
+ "symptoms": [
+  "Sometimes I hear dial tones that aren't there.",
+  "My hands shake when the chrome warms up.",
+  "I lose minutes. Just... gone.",
+  "My implants argue with each other at night."
+ ],
+ "returning": [
+  "Back again, doc. Last job held up great.",
+  "You did good work last time. I want more."
+ ],
+ "referral": [
+  "{name} sent me. Said you're the real deal."
+ ]
+}
