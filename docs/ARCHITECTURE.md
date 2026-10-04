@@ -47,7 +47,9 @@ Rules the code sticks to:
 | `SurgeryManager` | Runs one operation: stages, vitals, mistakes, complications, quick actions, result |
 | `SaveManager` | Versioned JSON save with backup, migration and autosave |
 | `AudioManager` | `play_sfx(id)` / `play_ambient(id)` hooks |
-| `UIManager` | Screen navigation, toasts, dialogs, modals, shake, flash, haptics |
+| `UIManager` | Screen navigation (also switches the audio profile), toasts, dialogs, modals, shake, flash, haptic tiers, `celebrate(kind)` |
+| `Settings` | Player preferences in `user://settings.cfg` (volumes, haptics, shake, text speed, large text, high contrast, reduce motion); emits `changed` |
+| `TutorialManager` | First-shift coach marks; advances on screen, plan and stage-type contexts; saved with the game |
 | `GameManager` | The loop: customer → diagnosis → plan → surgery → results, and applying rewards and consequences |
 
 Each saveable system implements `get_save_data()`, `load_save_data(d)` and
@@ -160,9 +162,24 @@ The plan screen shows a before → after load meter, and the consent line reads 
 
 Story characters (`characters.json`) use fixed appearances and dialogue, and arrive through events.
 
+## Learning curve
+
+`scripts/core/difficulty.gd` is the single place for early-game help. It keys
+off `EventManager.operations` and controls:
+- the tolerance assist (multiplies tool precision)
+- the complication cap and timer
+- the event gate and hidden-condition gate
+- the neural-load cap for generated customers
+
+`CustomerGenerator` also steers most requests toward jobs the clinic can do
+(`GameConfig.FEASIBLE_REQUEST_SHARE`). The numbers are validated by
+`tests/balance_sim.tscn`.
+
 ## Save format
 
-Version 2 (`GameConfig.SAVE_VERSION`):
+Version 3 (`GameConfig.SAVE_VERSION`):
+- Every file ends with `#md5:<hash of the JSON text>`. A mismatch rejects the file, and the loader then tries `.bak`, then `.tmp` (to recover from a kill between write and swap).
+- v2 → v3: settings move out of the save, and the tutorial is marked done for existing players.
 - `SaveManager._migrate()` upgrades v1 saves:
   - implant stock becomes instances
   - clinic tier 1 for veterans

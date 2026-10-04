@@ -4,13 +4,20 @@ An original 2D pixel-art cyberpunk surgery sim for iPhone. You run an
 underground clinic: take customers, diagnose them, install cyberware with
 your fingers, handle complications, get paid, and climb toward the black market.
 
-**Status:** Step 2: the core game. It has 8 operations across 8 cyberware
-categories and 27 implants (tiers 1–5). Customers are procedural, with hidden
-conditions and a neural-load system. There are 21 upgradeable tools, 5
-factions with heat, a black market with unknown properties, a 4-branch skill
-tree, 6 clinic tiers, and 19 story/random events with characters and rumours.
-All art is detailed pixel art at one consistent density.
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and [docs/ART_BIBLE.md](docs/ART_BIBLE.md).
+**Status: 1.0.0, a production-ready build.** The game has:
+- a guided first shift, then a gradual learning curve
+- 8 operations across 8 cyberware categories, with 27 implants (tiers 1–5)
+- procedural customers with hidden conditions, and a neural-load system
+- 21 upgradeable tools
+- 5 factions with heat
+- a black market with unknown properties
+- a 4-branch skill tree and 6 clinic tiers
+- 20 story and random events
+- a full settings and accessibility menu
+- a layered soundscape and haptics
+- detailed, animated pixel art at one consistent density
+
+[CHANGELOG.md](CHANGELOG.md) lists the changes. Design and code are documented in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and [docs/ART_BIBLE.md](docs/ART_BIBLE.md).
 
 ![Screens](docs/screenshots/overview.png)
 
@@ -39,6 +46,11 @@ and device go through the same input path.
 
 ### Playing a shift
 
+A new game starts a **10-step tutorial** on an easy first patient. Coach marks
+point at the control to use, and you can skip it at any time. The clinic menu
+(≡) has **HOW TO PLAY**, **SETTINGS** and **SAVE & QUIT**. The **NEXT** line
+under the clinic view always shows the most useful next step.
+
 1. **Clinic.** A customer shows up at the door, drawn with their own face, outfit and installed chrome. Tap them or **SEE CUSTOMER**. The nav bar opens **SUPPLY**, **SKILLS**, **CLINIC** (upgrades), **DOSSIER** (factions, contacts, rumours, records) and, once you have the contacts, the **MARKET**.
 2. **Customer file.** Shows who they are:
    - faction, personality, wealth, patience and risk appetite
@@ -64,7 +76,35 @@ and device go through the same input path.
 
 ---
 
----
+## Difficulty and learning curve
+
+Everything keys off the number of completed jobs (`scripts/core/difficulty.gd`):
+
+| Phase | Jobs | What changes |
+|---|---|---|
+| Tutorial | 0 | Scripted easy patient, ×1.5 tolerances, no complications, guided steps |
+| Learning | 1–2 | Forgiving tolerances, at most one slow complication, calm and stable customers (neural load ≤ 45%), no hidden conditions, no random events, jobs match your tools |
+| Street | 3–7 | Assist fades to ×1.0. Hidden conditions, second complications and events begin. The black market arrives around job 6 (rep 18) |
+| Undercity | 8+ | Full game: risk scales with chrome tier, neural load and conditions. Tier-4 chrome comes at LV8, the late clinic tiers need high rep |
+
+Pacing was checked with `tests/balance_sim.tscn`, which runs the real economy for 40 jobs across several player profiles:
+- tier-2 chrome arrives about 8–10 minutes in
+- the black market opens at about 15–25 minutes
+- tier-3 chrome arrives at about 20–45 minutes
+- the third clinic tier comes after about 1 hour
+
+The simulator found no dead ends: there are never more than 3 impossible jobs in a row, money never goes negative, and a struggling player still upgrades the clinic. The checks also close a black-market buy/sell loop.
+
+## Settings and accessibility
+
+The settings are stored in `user://settings.cfg`, separately from the save, so a new game keeps them:
+- **Audio:** music, ambience and effects volume (three audio buses)
+- **Feedback:** haptics on/off and screen shake on/off. Haptics come in tiers: UI tick, success, warning, mistake, critical and implant, each with its own strength.
+- **Text:** text speed (slow / normal / fast / instant typewriter) and large text (+2 pt on every theme text style)
+- **Accessibility:**
+  - high contrast: brighter secondary text and a lighter CRT overlay
+  - reduce motion: no shake, flicker or glitch, and fewer particles
+  - colour-independent status everywhere: `!` on warning vitals, `+`/`x` on plan checks, neural bands named in text
 
 ## Project structure
 
@@ -121,9 +161,11 @@ LICENSES/                Font licences (SIL OFL 1.1)
 | `EventManager` | Random and story events with choices, timed modifiers |
 | `BlackMarketManager` | Stock, unknown traits, buy / sell / study / modify / scrap, cases |
 | `ModifierManager` | One stat-modifier stack fed by skills, clinic, tools and events |
-| `SaveManager` | Versioned JSON save (v2, migrates v1) |
-| `AudioManager` | Sound hooks |
-| `UIManager` | Navigation, toasts, dialogs, modals, shake, flash, haptics |
+| `SaveManager` | Versioned JSON save (v3, with a checksum; migrates v1 and v2) |
+| `AudioManager` | Music, ambience profiles and SFX on three buses |
+| `UIManager` | Navigation, toasts, dialogs, modals, shake, flash, haptic tiers, `celebrate()` feedback |
+| `Settings` | Player preferences (own file) |
+| `TutorialManager` | First-shift coach marks |
 
 How the pieces talk to each other:
 - Screens call **GameManager** for flow and **UIManager** for presentation. Screens never create other screens.
@@ -195,8 +237,9 @@ Using the wrong tool is also a (rate-limited) mistake. Mistakes stack. Enough
 of them, especially on a sensitive patient, will crash the operation (the test
 suite proves this).
 
-**Complications.** Every operation gets at least one, timed randomly within a
-stage that allows them. There is a chance of a second, which rises with
+**Complications.** After the tutorial job, every operation gets at least one,
+timed randomly within a stage that allows them. During the learning phase
+there is at most one, with a longer timer. There is a chance of a second, which rises with
 customer risk and with a wrong diagnosis. Each one has a countdown and a
 counter-action:
 
@@ -233,7 +276,12 @@ Details are in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#neural-load).
 - **Safe area.** `Main` reads `DisplayServer.get_display_safe_area()` and insets all screens and overlays, which keeps the notch, Dynamic Island and home indicator clear. To preview on desktop, set `GameConfig.DEBUG_SIMULATED_SAFE_AREA`.
 - **Touch targets.** Primary buttons are 48–56 units tall (52–60pt on iPhone), and nothing interactive is smaller than 44 units (about 48pt). Small visual targets (clamp points, pins, stitches) get enlarged hit areas resolved to the nearest target. The automated tests assert that every visible button is on-screen and at least 44 units at both 360×780 and 360×640 (iPhone SE).
 - **Layout.** Containers and anchors are used throughout. Screens that can run long scroll their middle section and keep the action buttons pinned.
-- **Feedback.** Pixel particle bursts, floating text, small screen shakes, red or cyan flashes, haptics (`Input.vibrate_handheld` on device) and a subtle CRT scanline/vignette overlay.
+- **Feedback.**
+  - a correct action gets a cyan confirmation pulse; a minor mistake gets an amber warning; a major one gets red with a shake; a critical failure gets a flatline tone, a hard flash and the strongest haptic
+  - purchases, unlocks and upgrades share one celebration (`UIManager.celebrate`)
+  - haptics use `Input.vibrate_handheld(ms, amplitude)` on device
+- **Destructive actions confirm first:** abort (which also freezes the patient while you decide), wiping the save, resetting settings, and skipping the tutorial.
+- **Suspension.** Backgrounding the app mid-operation pauses it behind a RESUME card.
 
 ## Save system
 
@@ -246,19 +294,29 @@ Details are in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#neural-load).
   - story flags, contacts, rumours, pending event and timed modifiers
   - customer queue and history, and the waiting customer
   - records and settings
+- **Settings** are stored separately in `user://settings.cfg`.
 - **Where:** `user://savegame.json`. On iOS this is inside the app's sandbox, so it survives app restarts and updates.
-- **How:** each saveable system implements `get_save_data()`, `load_save_data()` and `reset_state()`. `SaveManager` collects them under a `version` field. It writes a temp file, keeps the previous save as `.bak` and then swaps the temp file in. A corrupt main file falls back to the backup. The format is version 2. `_migrate()` upgrades Step 1 (v1) saves: stock becomes implant instances, veterans get clinic tier 1, and the waiting customer is kept.
+- **How:** each saveable system implements `get_save_data()`, `load_save_data()` and `reset_state()`. `SaveManager` collects them under a `version` field. It writes a temp file, keeps the previous save as `.bak` and then swaps the temp file in. Integrity and recovery:
+- Each file ends with an MD5 line over the JSON text, so tampered or truncated files are rejected.
+- A rejected main file falls back to the `.bak`.
+- If the app is killed between the write and the swap, the temp file is recovered.
+- A failed write shows a toast.
+
+The format is version 3, and `_migrate()` upgrades older saves:
+- v1 → v2: stock becomes implant instances, veterans get clinic tier 1, and the waiting customer is kept.
+- v2 → v3: settings move out of the save, and veterans skip the tutorial.
 - **When:** after every operation, purchase and decline, and when the app is backgrounded or closed (`NOTIFICATION_APPLICATION_PAUSED` / `FOCUS_OUT` / `WM_CLOSE_REQUEST`). An operation in progress is never saved: if the app is killed mid-surgery, you reopen in the clinic, before the operation, with the same customer waiting.
 
 ## Audio
 
-`AudioManager` exposes hooks: `click`, `tool`, `cut`, `burn`, `clamp`, `zap`,
-`stitch`, `implant`, `stage`, `mistake`, `warning`, `success`, `failure`,
-`customer`, `cash`, `levelup`, `drill`, `glitch` (black market), `event`, plus
-the `clinic` ambient loop. Every button
-clicks automatically. The current sounds are synthesized placeholders from
-`tools/generate_placeholder_audio.py`. To use final audio, replace the files and
-keep the names.
+`tools/generate_audio.py` synthesises the whole soundscape deterministically
+(standard library plus `ffmpeg` for OGG):
+- **Music:** three seamless loops (clinic, surgery, black market) that crossfade between screens.
+- **Ambience:** four layers (electrical hum, ventilation, CRT buzz, distant city) mixed per screen profile, plus random one-shots: drips, sirens, trains, servos, beeps.
+- **SFX hooks:** `click`, `tool`, `cut`, `burn`, `clamp`, `zap`, `stitch`, `implant`, `stage`, `mistake`, `warning`, `success`, `failure`, `customer`, `cash`, `levelup`, `drill`, `glitch`, `event`, `beep`, `servo`, `activate`, `critical`, `confirm`, `back`, `denied`, `unlock`, `purchase`, `heartbeat`, `spark`, `tutorial`.
+
+Every button clicks automatically. Any file can be replaced 1:1 with final audio.
+On iOS the audio session uses Godot's default **Ambient** category, so the ring/silent switch mutes the game and it mixes with other apps.
 
 ## Art pipeline
 
@@ -275,7 +333,7 @@ shows. The rules are in [docs/ART_BIBLE.md](docs/ART_BIBLE.md).
 
 ```sh
 python3 tools/generate_art.py                 # all groups, ~5 s
-python3 tools/generate_placeholder_audio.py
+python3 tools/generate_audio.py               # sfx | ambience | music
 godot --headless --path . --script res://tools/build_theme.gd
 ```
 
@@ -284,7 +342,7 @@ Any PNG can be replaced 1:1 by hand-made art of the same size.
 ## Tests
 
 ```sh
-tests/run_tests.sh            # compile check + unit + E2E, headless at 360x780 and 360x640
+tests/run_tests.sh            # compile check, balance sim, stability suite, unit + E2E at 360x780 and 360x640
 ```
 
 - **Compile check:** loads every script and scene.
@@ -305,6 +363,13 @@ tests/run_tests.sh            # compile check + unit + E2E, headless at 360x780 
   6. optic install on a generated customer
 
   It also covers the Wire story event, black-market buy/study/sell through the UI, a skill upgrade, a clinic upgrade, all dossier tabs and a reload. A layout guard asserts that every button is on-screen, at least 44 units, and that nothing overflows the screen width.
+- **Balance simulator** (`tests/balance_sim.tscn`): 40 jobs through the real economy for normal and struggling players. It asserts pacing milestones and that there are no dead ends.
+- **Stability suite** (`tests/stability_test.tscn`):
+  - a 30-shift soak through the real screens, with save → wipe → load every 5 shifts
+  - 3,000 random monkey inputs (taps, drags, long presses), after which the game must still navigate
+  - rapid screen-change spam
+  - 60 fuzzed save files (byte flips, truncation, garbage)
+  - node and orphan leak checks
 - **Perf probe:** `xvfb-run -a godot --path . --rendering-driver opengl3 res://tests/perf_probe.tscn` prints load time, frame time, draw calls, nodes and memory per screen.
 
 With rendering, the bot also saves screenshots of each step:
@@ -328,28 +393,67 @@ Design choices that keep it light:
 - Particles are capped (12 emitters).
 - No per-frame allocations in the vitals loop.
 
-## Exporting to iOS
+## Building for iPhone
 
-iOS builds require **macOS + Xcode**. Steps:
+### 1. Required Godot version
+**Godot 4.3 stable**, standard build (not .NET), from
+<https://godotengine.org/download/archive/4.3-stable/>. The project uses the
+GL Compatibility renderer. 4.4+ will offer to upgrade the project; the iOS icon
+options changed in 4.4, so stay on 4.3 for the preset in this repo.
 
-1. In Godot, open **Editor → Manage Export Templates** and install the templates for 4.3.
-2. Open **Project → Export → iOS** (the preset is already in the repo):
-   - set **App Store Team ID** (find it at developer.apple.com → Membership)
-   - set a unique **Bundle Identifier** (replace `com.example.undercityripper`)
-   - set the provisioning profile / signing identity, or leave them for Xcode automatic signing.
+### 2. macOS and Xcode setup
+- A Mac running a macOS version supported by your Xcode.
+- A current **Xcode** (15 or newer) from the Mac App Store. Open it once to accept the licence and install the iOS platform components.
+- Command line tools: `xcode-select --install`.
+- An Apple ID. A free account can run builds on your own iPhone for 7 days; the **Apple Developer Program** is needed for TestFlight and the App Store.
 
-   Signing values are personal: don't commit them. `export_credentials.cfg` is git-ignored.
-3. Click **Export Project** and pick a folder such as `build/ios/` (git-ignored). Godot writes an Xcode project there. Unless *Export Project Only* is ticked, it also runs `xcodebuild` to produce an `.ipa`.
+### 3. iOS export templates
+In Godot: **Editor → Manage Export Templates → Download and Install** (4.3.stable).
+Offline, use **Install From File** with `Godot_v4.3-stable_export_templates.tpz`.
 
-## Running on an iPhone
+### 4. Apple signing configuration
+1. Open **Project → Export → iOS**. The preset ships in `export_presets.cfg`; its icons, launch image, portrait orientation, version 1.0.0 (build 3) and arm64 are already set.
+2. Set **Application → App Store Team ID**. It's the 10-character Team ID from developer.apple.com → Membership, or from Xcode → Settings → Accounts.
+3. Replace the placeholder **Bundle Identifier** `com.example.undercityripper` with your own reverse-DNS ID (e.g. `com.yourstudio.undercityripper`). It must match an App ID in your developer account (Xcode can create it automatically).
+4. Choose how to sign:
+   - **Automatic signing (recommended):** leave the provisioning profile UUIDs empty, export the Xcode project, and let Xcode manage signing (step 6).
+   - **Manual signing:** fill in the provisioning profile UUIDs and signing identities in the preset.
+5. Keep your signing values out of git. Godot stores them in `.godot/export_credentials.cfg`, and `.godot/` is ignored.
 
+### 5. Build for a physical iPhone
+1. **Project → Export → iOS → Export Project…**
+2. Choose `build/ios/` (git-ignored) and name it `UndercityRipper`.
+3. Tick **Export Project Only** to get the Xcode project without running `xcodebuild`. Godot writes `UndercityRipper.xcodeproj` plus the game `.pck`.
+4. Scripted equivalent (macOS): `godot --headless --path . --export-debug "iOS" build/ios/UndercityRipper.ipa` (use `--export-release` for release). With *Export Project Only* enabled, it stops after writing the Xcode project into `build/ios/`.
+
+### 6. Run through Xcode
 1. Connect the iPhone by USB (or pair it over Wi-Fi in Xcode) and trust the Mac.
-2. On the iPhone, enable **Settings → Privacy & Security → Developer Mode** (iOS 16+) and reboot.
-3. Open the exported `.xcodeproj` in Xcode. Under **Signing & Capabilities**, pick your team and enable automatic signing.
-4. Select your iPhone as the run destination and press **Run (⌘R)**.
-5. With a free Apple ID, the first launch needs **Settings → General → VPN & Device Management → trust the developer**. Free provisioning expires after 7 days.
+2. On the iPhone, enable **Settings → Privacy & Security → Developer Mode** (iOS 16+) and restart.
+3. Open `build/ios/UndercityRipper.xcodeproj`.
+4. Select the **UndercityRipper** target → **Signing & Capabilities**. Tick *Automatically manage signing* and pick your team.
+5. Pick your iPhone as the run destination and press **Run (⌘R)**.
+6. With a free Apple ID, the first launch asks you to trust the developer under **Settings → General → VPN & Device Management**.
 
-For TestFlight, use **Product → Archive** in Xcode and upload it to App Store Connect.
+Checks on device:
+- portrait lock
+- safe areas (notch, Dynamic Island, home indicator)
+- haptics (Settings → Haptics)
+- the silent switch muting audio
+- the save surviving an app kill (swipe it away and relaunch)
+
+### 7. Create an App Store build
+1. In Xcode, set the run destination to **Any iOS Device (arm64)**.
+2. **Product → Archive**. When it finishes, the Organizer opens.
+3. **Distribute App → App Store Connect → Upload**. This needs a paid Developer Program membership and an app record in App Store Connect with the same bundle ID.
+4. In App Store Connect, add the build to **TestFlight** for testing, then fill in the store listing, privacy details, screenshots and age rating before submitting for review.
+5. For each new build, bump `application/version` (the build number) in the iOS preset; bump `short_version` for user-facing releases.
+
+The preset also handles three icon details:
+- The app icon is pixel art on a 60 px grid, so the 120/180 px icons are exact 2×/3× scales.
+- `icon_interpolation` is nearest-neighbour.
+- Every icon slot points at a pre-scaled PNG in `assets/ios/`.
+
+> No App Store submission has been made from this repository. The steps above are the procedure; signing and submission happen on your own Apple account.
 
 ## Credits and licences
 

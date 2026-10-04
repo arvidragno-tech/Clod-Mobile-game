@@ -21,7 +21,7 @@ func on_enter(_params: Dictionary) -> void:
 	_continue_button.pressed.connect(GameManager.continue_game)
 	_new_game_button.pressed.connect(_on_new_game_pressed)
 	_settings_button.pressed.connect(func() -> void: UIManager.go_to(UIManager.SCREEN_SETTINGS, {"return_to": UIManager.SCREEN_MAIN_MENU}))
-	_version.text = "v%s · PRE-RELEASE BUILD" % ProjectSettings.get_setting("application/config/version", "0")
+	_version.text = "v%s" % ProjectSettings.get_setting("application/config/version", "0")
 
 
 func _process(delta: float) -> void:

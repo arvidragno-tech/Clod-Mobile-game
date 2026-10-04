@@ -394,7 +394,13 @@ func _events() -> void:
 	var ok := SurgeryResult.new()
 	ok.success = true
 	ok.grade = "C"
-	var notes := CustomerManager.record_outcome(risky, ok)
+	check(CustomerManager.get_post_op_risk(risky, "C") >= 0.85, "risky patient has a high post-op risk")
+	var notes := {}
+	for attempt in 20:  # risk is capped below 100%, so retry the roll
+		EventManager.pending_event = &""
+		notes = CustomerManager.record_outcome(risky, ok)
+		if bool(notes["post_op"]):
+			break
 	check(bool(notes["post_op"]) and EventManager.pending_event == &"post_op_return", "post-op complication brings the patient back")
 	check(CustomerManager.get_post_op_risk(risky, "S") > CustomerManager.get_post_op_risk(CustomerManager.generator.generate({}), "S"), "hidden conditions raise post-op risk")
 	InventoryManager.supplies = 0

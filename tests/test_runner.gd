@@ -28,6 +28,10 @@ func _ready() -> void:
 		if arg.begins_with("--shots="):
 			_shots_dir = arg.trim_prefix("--shots=")
 			DirAccess.make_dir_recursive_absolute(_shots_dir)
+		elif arg.begins_with("--safe-area="):
+			# top,bottom insets in viewport units (e.g. iPhone 15: 54,31)
+			var tb := arg.trim_prefix("--safe-area=").split(",")
+			SafeAreaUtil.simulated = Rect2(0, float(tb[0]), 0, float(tb[1]))
 		elif arg.begins_with("--viewport="):
 			var parts := arg.trim_prefix("--viewport=").split("x")
 			viewport_size = Vector2i(int(parts[0]), int(parts[1]))

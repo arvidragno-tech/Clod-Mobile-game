@@ -88,6 +88,12 @@ func _find_target() -> Control:
 	return UIManager.current_screen.find_child(_target_name, true, false) as Control
 
 
+var _place_timer: float = 0.0
+var _card_y: float = -1.0
+
+
+## Finds the vertical slot that hides the least: never the target, avoid
+## other buttons strongly, text and panels mildly. Re-evaluated 4x/second.
 func _place_card() -> void:
 	if _card == null:
 		return
@@ -96,15 +102,49 @@ func _place_card() -> void:
 	_card.reset_size()
 	_card.size.x = w
 	var h := _card.get_combined_minimum_size().y
-	var target_low := _rect.has_area() and _rect.get_center().y > size.y * 0.5
-	var y := 64.0 if target_low else size.y - h - 76.0
-	# Never cover the highlighted control.
-	if _rect.has_area():
-		if target_low and y + h > _rect.position.y - 4.0:
-			y = maxf(8.0, _rect.position.y - h - 8.0)
-		elif not target_low and y < _rect.end.y + 4.0:
-			y = minf(size.y - h - 8.0, _rect.end.y + 8.0)
-	_card.position = Vector2(roundf((size.x - w) / 2.0), roundf(y))
+	var x := roundf((size.x - w) / 2.0)
+	_place_timer -= get_process_delta_time()
+	if _card_y >= 0.0 and _place_timer > 0.0:
+		_card.position = Vector2(x, _card_y)
+		return
+	_place_timer = 0.25
+	var buttons: Array[Rect2] = []
+	var texts: Array[Rect2] = []
+	var me := get_global_rect().position
+	if UIManager.current_screen:
+		for n in UIManager.current_screen.find_children("*", "Control", true, false):
+			var c := n as Control
+			if not c.is_visible_in_tree():
+				continue
+			var r := Rect2(c.get_global_rect().position - me, c.size)
+			if c is BaseButton:
+				buttons.append(r)
+			elif c is Label or c is RichTextLabel:
+				texts.append(r)
+	var best_y := 8.0
+	var best_cost := INF
+	var y := 8.0
+	while y <= size.y - h - 8.0:
+		var card := Rect2(x, y, w, h)
+		var cost := 0.0
+		if _rect.has_area():
+			cost += _overlap(card, _rect) * 50.0
+		for r in buttons:
+			cost += _overlap(card, r) * 10.0
+		for r in texts:
+			cost += _overlap(card, r) * 1.0
+		cost += absf(y - (_card_y if _card_y >= 0.0 else y)) * 0.5  # stay put
+		if cost < best_cost:
+			best_cost = cost
+			best_y = y
+		y += 8.0
+	_card_y = roundf(best_y)
+	_card.position = Vector2(x, _card_y)
+
+
+static func _overlap(a: Rect2, b: Rect2) -> float:
+	var i := a.intersection(b)
+	return i.get_area() if i.has_area() else 0.0
 
 
 func _draw() -> void:

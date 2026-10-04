@@ -96,6 +96,7 @@ func go_to(screen_id: StringName, params: Dictionary = {}) -> void:
 		current_screen.queue_free()
 		current_screen = null
 	close_modal()
+	clear_toasts()
 	var scene := load(path) as PackedScene
 	var screen := scene.instantiate() as BaseScreen
 	_screen_host.add_child(screen)
@@ -112,6 +113,14 @@ func go_to(screen_id: StringName, params: Dictionary = {}) -> void:
 
 
 # --- Feedback ----------------------------------------------------------------
+
+## Toasts belong to the screen that raised them.
+func clear_toasts() -> void:
+	if _toast_box:
+		for t in _toast_box.get_children():
+			_toast_box.remove_child(t)
+			t.queue_free()
+
 
 func show_toast(text: String, kind: StringName = &"info") -> void:
 	if _toast_box == null:

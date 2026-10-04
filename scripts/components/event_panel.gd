@@ -47,7 +47,11 @@ func _build() -> void:
 	if who:
 		titles.add_child(UIKit.label(who.get_display_title(), &"DimLabel", true))
 	head.add_child(titles)
-	_box.add_child(UIKit.label(str(e.get("text", "")), &"", true))
+	var body := TypewriterLabel.new()
+	body.text = str(e.get("text", ""))
+	body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_box.add_child(body)
+	body.play()
 	var choices: Array = e.get("choices", [])
 	for i in choices.size():
 		var choice: Dictionary = choices[i]

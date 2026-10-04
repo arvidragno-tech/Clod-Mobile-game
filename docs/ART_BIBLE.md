@@ -121,3 +121,76 @@ python3 tools/generate_art.py                 # everything (~5 s)
 python3 tools/generate_art.py chars tools     # groups: palette chars cyberware tools regions env ui
 godot --headless --path . --script res://tools/build_theme.gd
 ```
+
+## Final direction (1.0)
+
+The final style combines high-detail pixel art, dark cyberpunk, neon
+futurism, advanced medical technology and industrial science fiction. It is a
+modern premium pixel look, not retro 8-bit.
+
+### Lighting roles
+
+| Role | Colour | Where |
+|---|---|---|
+| Key light | White surgical (`e8fff8`) | Operating lamps, ring lights, field lamp pool |
+| Ambient | Dark blue/purple | Scene ambient for every backdrop (0.2–0.4 blue-purple) |
+| Technology | Cyan | Monitors, holo panels, implant cores, confirmations |
+| Black market | Magenta | Undermarket, hidden stashes, unknown properties |
+| Warning | Amber | Door work lights, minor mistakes, caution |
+| Critical | Red | Emergency beacon, major mistakes, flatline |
+
+Dark areas stay dark. Glow comes only from emissive pixel clusters with
+banded, dithered falloff (`LitScene`), and nothing glows unless it is a light
+source.
+
+### Environmental storytelling (clinic tiers)
+
+`tools/art/props.py` adds set dressing to every tier, and the cheap clinics
+look worse:
+- power boxes with breaker LEDs and HV labels; tier 0 has a sparking wire
+- vents with grime streaks
+- biohazard bins that overflow at low tiers
+- graffiti tags: "NO DOC", "R4T", "XX"
+- old and fresh blood
+- discarded implants with dying LEDs
+- instrument carts and diagnostic carts
+- floor cables and drains
+- field repairs in grey tape
+- hidden stash compartments leaking magenta light: a wall panel at tiers 0–1, a floor hatch from tier 2
+- foreground boxes or hard cases, so the floor plane is never empty
+
+### Animation
+
+All animation moves in whole art pixels, and **Reduce Motion** turns off
+everything that isn't essential.
+
+- **Clinic:** the generator exports anchors to `data/clinic_fx.json` for:
+  - blinking LEDs, monitor refresh lines and blackout flickers, ECG traces
+  - holo shimmer, spinning vent fans, steam, sparks, drips, blinking robot-arm lasers
+
+  The customer breathes (upper body rises 1 px). Dust drifts in the lamp light.
+- **Portraits:** eyes blink every few seconds. This is skipped automatically when optics or visors cover the eyes.
+- **Cyberware icons** (`CyberwareIcon`):
+  - every icon: emissive pulse and a scan glint
+  - optics: a refocus blink
+  - neural and spine: data flicker
+  - limbs: a faster servo glint
+- **Surgery:**
+  - lamps flicker on at the start
+  - neural signals travel along exposed nerves
+  - the wound flushes with each heartbeat
+  - mistakes get rings in the semantic colours
+- **Menu:** key art (`ui/title_keyart.png`) with rain, a buzzing cross sign, a pulsing door light, a blinking optic and street steam.
+
+### App icon
+
+The icon is designed on a **60 px grid**:
+- iPhone 120/180 px are exact 2×/3× scales, and the App Store 1024 px is 17× with a 2 px bleed.
+- It uses big, high-contrast shapes (cyan implant, magenta-edged scalpel, blood drop) so it reads at 40 px.
+- iOS export uses nearest-neighbour scaling, with every size pre-rendered in `assets/ios/`.
+
+### QA rules (checked in screenshots)
+
+- One density everywhere (1 art px = 2 UI units). The 3-unit procedural menu skyline was replaced for this reason.
+- No anti-aliasing: every `StyleBoxFlat` has `anti_aliasing = false`, textures use the nearest filter, and soft shadows are not allowed.
+- Text never relies on colour alone.

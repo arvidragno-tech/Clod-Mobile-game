@@ -184,6 +184,7 @@ func _after_event() -> void:
 
 
 func _on_customer_arrived(customer: CustomerData) -> void:
+	_objective_timer = 0.0
 	AudioManager.play_sfx(&"customer")
 	UIManager.haptic(&"ui")
 	UIManager.show_toast("%s is at the door" % customer.display_name, &"danger" if customer.is_emergency else &"info")

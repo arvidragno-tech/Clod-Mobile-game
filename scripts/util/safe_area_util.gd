@@ -4,7 +4,13 @@ extends RefCounted
 ## insets. Returned Rect2 packs insets as position=(left, top), size=(right, bottom).
 
 
+## Test / preview override (left, top, right, bottom in viewport units).
+static var simulated: Rect2 = Rect2()
+
+
 static func get_insets(viewport: Viewport) -> Rect2:
+	if simulated != Rect2():
+		return simulated
 	var debug := GameConfig.DEBUG_SIMULATED_SAFE_AREA
 	if debug != Rect2():
 		return debug

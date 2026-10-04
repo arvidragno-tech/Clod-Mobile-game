@@ -12,6 +12,20 @@ func setup(title: String, body: String, buttons: Array[Dictionary]) -> void:
 	_title.text = title
 	_body.text = body
 	_body.visible = not body.is_empty()
+	# Long bodies scroll inside the dialog so the buttons always fit.
+	if body.length() > 220:
+		var sc := ScrollContainer.new()
+		sc.name = "BodyScroll"
+		sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+		var max_h := clampf(get_viewport_rect().size.y - 330.0, 140.0, 420.0)
+		sc.custom_minimum_size = Vector2(268, max_h)
+		var parent := _body.get_parent()
+		var idx := _body.get_index()
+		parent.remove_child(_body)
+		sc.add_child(_body)
+		_body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		parent.add_child(sc)
+		parent.move_child(sc, idx)
 	# More than two choices stack vertically so each stays thumb-sized.
 	var container: BoxContainer = _buttons
 	if buttons.size() > 2:
