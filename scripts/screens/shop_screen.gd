@@ -138,17 +138,16 @@ func _supplies_card() -> Control:
 
 func _buy_implant(id: StringName) -> void:
 	if InventoryManager.buy_implant(id):
-		AudioManager.play_sfx(&"cash")
-		UIManager.show_toast("%s stocked" % CyberwareManager.get_cyberware(id).display_name, &"success")
+		UIManager.celebrate(&"purchase", "%s stocked" % CyberwareManager.get_cyberware(id).display_name)
 		SaveManager.save_game()
 	else:
+		AudioManager.play_sfx(&"denied")
 		UIManager.show_toast("Purchase failed: insufficient credits", &"danger")
 
 
 func _buy_tool(id: StringName) -> void:
 	if InventoryManager.buy_tool(id):
-		AudioManager.play_sfx(&"cash")
-		UIManager.show_toast("%s acquired" % InventoryManager.get_tool(id).display_name, &"success")
+		UIManager.celebrate(&"tool", "%s acquired" % InventoryManager.get_tool(id).display_name)
 		SaveManager.save_game()
 	else:
 		UIManager.show_toast("Purchase failed", &"danger")
@@ -156,5 +155,5 @@ func _buy_tool(id: StringName) -> void:
 
 func _buy_supplies() -> void:
 	if InventoryManager.buy_supply_pack():
-		AudioManager.play_sfx(&"cash")
+		UIManager.celebrate(&"purchase")
 		SaveManager.save_game()

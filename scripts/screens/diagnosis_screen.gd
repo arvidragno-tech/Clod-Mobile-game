@@ -166,6 +166,7 @@ func _on_confirm() -> void:
 	_step.text = "STEP 3 / 4 · PLAN"
 	_title.text = "OPERATION PLAN"
 	_build_plan_contents()
+	TutorialManager.notify("plan")
 
 
 func _build_plan_contents() -> void:
@@ -247,7 +248,8 @@ func _check(caption: String, value: String, good: bool) -> void:
 	var c := UIKit.label(caption, &"SubHeaderLabel")
 	c.custom_minimum_size.x = 92
 	row.add_child(c)
-	var v := UIKit.label(value, &"MonoLabel", true, Palette.OK if good else Palette.WARN, 19)
+	# Symbol + colour: "+" ready, "x" blocked (readable without colour).
+	var v := UIKit.label(("+ " if good else "x ") + value, &"MonoLabel", true, Palette.OK if good else Palette.WARN, 19)
 	UIKit.expand(v)
 	row.add_child(v)
 	_plan_list.add_child(row)

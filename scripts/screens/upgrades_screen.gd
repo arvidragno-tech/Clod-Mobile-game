@@ -76,7 +76,5 @@ func _tier_card(index: int, current: bool) -> Control:
 
 func _upgrade() -> void:
 	if ClinicManager.upgrade():
-		AudioManager.play_sfx(&"levelup", 0.0)
-		UIManager.flash(Palette.BRAND, 0.25)
-		UIManager.show_toast("Welcome to the %s" % ClinicManager.get_tier_name(), &"success")
+		UIManager.celebrate(&"upgrade", "Welcome to the %s" % ClinicManager.get_tier_name())
 		SaveManager.save_game()

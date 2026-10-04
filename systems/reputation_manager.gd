@@ -23,6 +23,10 @@ func reset_state() -> void:
 
 func change(delta: int) -> void:
 	var old := reputation
+	# Diminishing returns: each point is harder to earn the higher you are,
+	# so "Legend" stays a long-term goal (losses always hit in full).
+	if delta > 0 and reputation > 0:
+		delta = maxi(1, roundi(delta * (1.0 - float(reputation) / (GameConfig.MAX_REPUTATION * 1.4))))
 	reputation = clampi(reputation + delta, GameConfig.MIN_REPUTATION, GameConfig.MAX_REPUTATION)
 	if reputation != old:
 		EventBus.reputation_changed.emit(reputation, reputation - old)

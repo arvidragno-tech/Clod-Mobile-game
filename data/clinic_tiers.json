@@ -27,7 +27,7 @@
    "description": "Tiled backroom with a proper chair and a neon sign.",
    "cost": 700,
    "min_level": 2,
-   "min_reputation": 5,
+   "min_reputation": 3,
    "background": "res://assets/sprites/clinic/clinic_t1_backroom.png",
    "surgery_backdrop": 1,
    "max_cyberware_tier": 2,

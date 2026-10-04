@@ -14,6 +14,7 @@ const SCREEN_BLACK_MARKET := &"black_market"
 const SCREEN_SKILLS := &"skills"
 const SCREEN_UPGRADES := &"upgrades"
 const SCREEN_DOSSIER := &"dossier"
+const SCREEN_SETTINGS := &"settings"
 
 const SCREEN_SCENES := {
 	SCREEN_MAIN_MENU: "res://scenes/main_menu/main_menu.tscn",
@@ -27,6 +28,7 @@ const SCREEN_SCENES := {
 	SCREEN_SKILLS: "res://scenes/skills/skills_screen.tscn",
 	SCREEN_UPGRADES: "res://scenes/upgrades/upgrades_screen.tscn",
 	SCREEN_DOSSIER: "res://scenes/dossier/dossier_screen.tscn",
+	SCREEN_SETTINGS: "res://scenes/settings/settings_screen.tscn",
 }
 
 const DIALOG_SCENE := preload("res://ui/components/dialog.tscn")
@@ -39,7 +41,19 @@ const TOAST_COLORS := {
 
 var current_screen: BaseScreen = null
 var current_screen_id: StringName = &""
-var haptics_enabled: bool = true
+## Haptic feedback strengths: [duration_ms, amplitude 0..1].
+const HAPTICS := {
+	&"ui": [8, 0.25],
+	&"success": [45, 0.55],
+	&"warning": [35, 0.5],
+	&"mistake": [60, 0.75],
+	&"critical": [260, 1.0],
+	&"implant": [80, 0.85],
+}
+## Which sound profile (music + ambience) each screen uses.
+const SCREEN_AUDIO := {
+	SCREEN_MAIN_MENU: &"menu", SCREEN_SURGERY: &"surgery", SCREEN_BLACK_MARKET: &"market",
+}
 
 var _screen_host: Control
 var _fade: ColorRect
@@ -87,6 +101,7 @@ func go_to(screen_id: StringName, params: Dictionary = {}) -> void:
 	_screen_host.add_child(screen)
 	current_screen = screen
 	current_screen_id = screen_id
+	AudioManager.set_profile(SCREEN_AUDIO.get(screen_id, &"clinic"))
 	screen.on_enter(params)
 	EventBus.screen_changed.emit(screen_id)
 	var fade_in := create_tween()
@@ -126,7 +141,7 @@ func show_toast(text: String, kind: StringName = &"info") -> void:
 
 
 func shake(strength: float = 4.0) -> void:
-	if current_screen == null:
+	if current_screen == null or not Settings.shake_allowed():
 		return
 	if _shake_tween and _shake_tween.is_valid():
 		_shake_tween.kill()
@@ -138,6 +153,46 @@ func shake(strength: float = 4.0) -> void:
 		var offset := Vector2(randf_range(-1, 1), randf_range(-1, 1)).normalized() * strength * falloff
 		_shake_tween.tween_property(target, "position", offset.round(), GameConfig.SHAKE_DURATION_SEC / steps)
 	_shake_tween.tween_property(target, "position", Vector2.ZERO, 0.03)
+
+
+## Overlay container above screens (below modals) for coach marks.
+func get_overlay_host() -> Control:
+	return _modal_host.get_parent() as Control if _modal_host else null
+
+
+## One place for "something good happened" feedback, so every purchase,
+## unlock and upgrade feels consistent (sound + flash + haptic + toast).
+func celebrate(kind: StringName, text: String = "") -> void:
+	match kind:
+		&"purchase":
+			AudioManager.play_sfx(&"purchase", 0.03)
+			flash(Palette.ACCENT, 0.08)
+			haptic(&"success")
+		&"bm_purchase":
+			AudioManager.play_sfx(&"glitch", 0.05)
+			AudioManager.play_sfx(&"purchase", 0.03)
+			flash(Palette.BRAND, 0.14)
+			haptic(&"success")
+		&"tool":
+			AudioManager.play_sfx(&"purchase", 0.0)
+			AudioManager.play_sfx(&"activate", 0.0)
+			flash(Palette.ACCENT, 0.15)
+			haptic(&"implant")
+		&"unlock":
+			AudioManager.play_sfx(&"unlock", 0.0)
+			flash(Palette.OK, 0.15)
+			haptic(&"success")
+		&"upgrade":
+			AudioManager.play_sfx(&"servo", 0.0)
+			AudioManager.play_sfx(&"levelup", 0.0)
+			flash(Palette.BRAND, 0.28)
+			shake(2.0)
+			haptic(&"implant")
+		&"sell":
+			AudioManager.play_sfx(&"cash", 0.03)
+			haptic(&"ui")
+	if text != "":
+		show_toast(text, &"success")
 
 
 func is_shaking() -> bool:
@@ -152,9 +207,18 @@ func flash(color: Color, peak_alpha: float = 0.25) -> void:
 	t.tween_property(_flash, "color:a", 0.0, 0.3)
 
 
-func haptic(duration_ms: int = GameConfig.HAPTICS_MS) -> void:
-	if haptics_enabled and OS.has_feature("mobile"):
-		Input.vibrate_handheld(duration_ms)
+## Plays a haptic of the given kind (see HAPTICS). Respects Settings.
+## Test builds can read last_haptic to verify feedback fired.
+var last_haptic: StringName = &""
+
+
+func haptic(kind: StringName = &"ui") -> void:
+	if not Settings.haptics:
+		return
+	last_haptic = kind
+	var h: Array = HAPTICS.get(kind, HAPTICS[&"ui"])
+	if OS.has_feature("mobile"):
+		Input.vibrate_handheld(int(h[0]), float(h[1]))
 
 
 # --- Dialogs -----------------------------------------------------------------
@@ -203,4 +267,4 @@ func _on_node_added(node: Node) -> void:
 
 func _on_any_button_pressed() -> void:
 	AudioManager.play_sfx(&"click", 0.02)
-	haptic(10)
+	haptic(&"ui")

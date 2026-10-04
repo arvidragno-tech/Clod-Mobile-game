@@ -13,6 +13,8 @@ func run(runner: Node) -> void:
 	_insufficient_money_and_tools()
 	_data_integrity()
 	_customer_generation()
+	_learning_curve()
+	_settings()
 	_neural_load()
 	_invalid_cyberware()
 	_modifiers_and_skills()
@@ -23,6 +25,7 @@ func run(runner: Node) -> void:
 	_failure_and_death()
 	_save_roundtrip()
 	_save_migration_v1()
+	_save_robustness()
 	SaveManager.reset_all()
 
 
@@ -90,7 +93,9 @@ func _progression() -> void:
 	var gained := ProgressionManager.add_xp(need)
 	check(gained == 1 and ProgressionManager.level == 2, "XP threshold levels up")
 	check(SkillManager.points == pts + GameConfig.SKILL_POINTS_PER_LEVEL, "level up grants a skill point")
-	check(CyberwareManager.get_available_tier() == 2, "LV2 unlocks tier-2 cyberware (in a T2 clinic)")
+	check(CyberwareManager.get_available_tier() == 1, "LV2 still tier-1 chrome (tier 2 unlocks at LV%d)" % GameConfig.CYBERWARE_TIER_LEVEL[2])
+	ProgressionManager.add_xp(ProgressionManager.xp_required_for_level(GameConfig.CYBERWARE_TIER_LEVEL[2]) - ProgressionManager.total_xp)
+	check(CyberwareManager.get_available_tier() == 2, "LV%d unlocks tier-2 cyberware (in a T2 clinic)" % GameConfig.CYBERWARE_TIER_LEVEL[2])
 	SaveManager.reset_all()
 	check(CyberwareManager.get_available_tier() == 1, "new game: tier 1 only")
 
@@ -218,6 +223,59 @@ func _customer_generation() -> void:
 	check(CharacterArt.body(ca.appearance).get_height() == 64, "body sprite composites to 32x64")
 
 
+func _learning_curve() -> void:
+	SaveManager.reset_all()
+	EventManager.operations = 0
+	var gen := CustomerGenerator.new(RandomNumberGenerator.new())
+	gen.rng.seed = 77
+	var worst := 0.0
+	var hidden := 0
+	for i in 60:
+		var c := gen.generate()
+		worst = maxf(worst, NeuralLoad.compute(c))
+		hidden += c.hidden_conditions.size()
+	check(worst <= Difficulty.EARLY_LOAD_CAP + 0.01 and hidden == 0, "early customers: stable load (max %d%%) and no hidden conditions" % roundi(worst))
+	check(Difficulty.assist(0) > Difficulty.assist(3) and Difficulty.assist(3) > Difficulty.assist(12) and is_equal_approx(Difficulty.assist(20), 1.0), "assist tapers to 1.0 as the player learns")
+	check(Difficulty.max_complications(1) == 1 and Difficulty.max_complications(5) > 1, "second complications only after the learning phase")
+	check(EventManager.roll_random_event(false) == &"", "no random events during the first jobs")
+	EventManager.operations = 8
+	gen.rng.seed = 77
+	var later_hidden := 0
+	for i in 60:
+		later_hidden += gen.generate().hidden_conditions.size()
+	check(later_hidden > 0, "hidden conditions appear later (%d in 60)" % later_hidden)
+	TutorialManager.start()
+	EventManager.operations = 0
+	check(CustomerManager.tutorial_customer().character_id == &"mara_quill" and Difficulty.max_complications(0) == 0, "tutorial patient is scripted and complication-free")
+	SaveManager.reset_all()
+
+
+func _settings() -> void:
+	var path := Settings.path
+	Settings.path = "user://test_settings.cfg"
+	Settings.reset_to_defaults()
+	Settings.set_value("sfx_volume", 0.25)
+	Settings.set_value("reduce_motion", true)
+	Settings.load_settings()
+	check(is_equal_approx(Settings.sfx_volume, 0.25) and Settings.reduce_motion and not Settings.shake_allowed(), "settings persist and reduce motion disables shake")
+	var f := FileAccess.open(Settings.path, FileAccess.WRITE)
+	f.store_string("[settings]\nsfx_volume=\"loud\"\ntext_speed=99\n")
+	f.close()
+	Settings.load_settings()
+	check(is_equal_approx(Settings.sfx_volume, Settings.DEFAULTS["sfx_volume"]) and Settings.text_speed == Settings.TEXT_SPEEDS.size() - 1, "corrupt settings fall back to safe values")
+	Settings.set_value("haptics", false)
+	UIManager.last_haptic = &""
+	UIManager.haptic(&"critical")
+	check(UIManager.last_haptic == &"", "haptics off suppresses feedback")
+	Settings.set_value("haptics", true)
+	UIManager.haptic(&"implant")
+	check(UIManager.last_haptic == &"implant", "haptic kinds fire when enabled")
+	Settings.reset_to_defaults()
+	DirAccess.remove_absolute(Settings.path)
+	Settings.path = path
+	Settings.load_settings()
+
+
 func _neural_load() -> void:
 	SaveManager.reset_all()
 	var c := CustomerManager.get_customer(&"mara_quill")
@@ -330,6 +388,7 @@ func _events() -> void:
 	check(CustomerManager.has_customer() and CustomerManager.current_customer.is_emergency, "emergency event spawns an emergency patient")
 	CustomerManager.reset_state()
 	# Post-op complications: a risky patient on a sloppy job comes back.
+	EventManager.operations = 6  # past the learning phase
 	var risky := CustomerManager.generator.generate({"category": "neural"})
 	risky.post_op_risk = 1.0
 	var ok := SurgeryResult.new()
@@ -438,6 +497,43 @@ func _save_roundtrip() -> void:
 
 
 ## A Step 1 (v1) save must load into the v2 format without losing progress.
+func _save_robustness() -> void:
+	SaveManager.reset_all()
+	SaveManager.delete_save()
+	EconomyManager.add_money(1111)
+	check(SaveManager.save_game(), "save writes")
+	var good := EconomyManager.money
+	EconomyManager.add_money(5)
+	SaveManager.save_game()  # previous file becomes the .bak
+	# Flip one digit inside the main file: JSON still parses, checksum fails.
+	var text := FileAccess.get_file_as_string(SaveManager.save_path)
+	var i := text.find(str(good + 5))
+	var f := FileAccess.open(SaveManager.save_path, FileAccess.WRITE)
+	f.store_string(text.substr(0, i) + str(good + 6) + text.substr(i + str(good + 5).length()))
+	f.close()
+	check(SaveManager.load_game() and EconomyManager.money == good, "tampered save fails its checksum; backup restores")
+	# Killed mid-swap: only the temp file survived.
+	SaveManager.save_game()
+	var m := EconomyManager.money
+	DirAccess.rename_absolute(SaveManager.save_path, SaveManager.save_path + ".tmp")
+	DirAccess.remove_absolute(SaveManager.save_path + ".bak")
+	check(SaveManager.has_save() and SaveManager.load_game() and EconomyManager.money == m, "interrupted save recovers from the temp file")
+	# Truncated file (power loss) with no backup -> safe failure, not a crash.
+	SaveManager.delete_save()
+	f = FileAccess.open(SaveManager.save_path, FileAccess.WRITE)
+	f.store_string("{\"version\": 3, \"systems\": {\"Econ")
+	f.close()
+	check(not SaveManager.load_game(), "truncated save is rejected safely")
+	# v2 -> v3 migration: settings leave the save, tutorial counts as done.
+	var v2 := {"version": 2, "saved_at": 0, "systems": {"EconomyManager": {"money": 4321}, "AudioManager": {"sfx_enabled": false}}}
+	f = FileAccess.open(SaveManager.save_path, FileAccess.WRITE)
+	f.store_string(JSON.stringify(v2))
+	f.close()
+	check(SaveManager.load_game() and EconomyManager.money == 4321 and TutorialManager.completed and not TutorialManager.is_active(), "v2 save migrates (tutorial skipped for veterans)")
+	SaveManager.delete_save()
+	SaveManager.reset_all()
+
+
 func _save_migration_v1() -> void:
 	SaveManager.reset_all()
 	var v1 := {

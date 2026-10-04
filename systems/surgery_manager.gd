@@ -348,7 +348,7 @@ func get_tool_for_category(category: StringName) -> ToolData:
 func get_tool_precision(category: StringName) -> float:
 	var t := get_tool_for_category(category)
 	var base := t.precision if t else 1.0
-	return maxf(0.3, base * mod_mult(&"surgery.precision") / get_difficulty_factor())
+	return maxf(0.3, base * mod_mult(&"surgery.precision") * Difficulty.assist() / get_difficulty_factor())
 
 
 func get_tool_speed(category: StringName) -> float:
@@ -415,7 +415,7 @@ func _plan_complications() -> void:
 	var count := GameConfig.GUARANTEED_COMPLICATIONS
 	if _rng.randf() < get_extra_complication_chance():
 		count += 1
-	count = mini(count, windows.size())
+	count = mini(mini(count, windows.size()), Difficulty.max_complications())
 	for i in count:
 		var pick := windows[_rng.randi_range(0, windows.size() - 1)]
 		windows.erase(pick)
@@ -476,7 +476,7 @@ func _start_complication() -> void:
 func _begin_complication(c: ComplicationData) -> void:
 	active_complication = c
 	_used_complication_ids.append(c.id)
-	complication_time_left = c.time_limit * maxf(0.4, mod_mult(&"complication.time"))
+	complication_time_left = c.time_limit * _complication_time_mult()
 	complications_total += 1
 	vitals.apply_effects(c.onset_effects)
 	complication_started.emit(c)
@@ -491,4 +491,9 @@ func debug_trigger_complication(id: StringName) -> void:
 func get_complication_time_ratio() -> float:
 	if active_complication == null:
 		return 0.0
-	return clampf(complication_time_left / (active_complication.time_limit * maxf(0.4, mod_mult(&"complication.time"))), 0.0, 1.0)
+	return clampf(complication_time_left / (active_complication.time_limit * _complication_time_mult()), 0.0, 1.0)
+
+
+## Skills/clinic modifier x the early-game grace period.
+func _complication_time_mult() -> float:
+	return maxf(0.4, mod_mult(&"complication.time")) * Difficulty.complication_time()

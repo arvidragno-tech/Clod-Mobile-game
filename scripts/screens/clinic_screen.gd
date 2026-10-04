@@ -4,6 +4,8 @@ extends BaseScreen
 
 const PlayerHudScene := preload("res://ui/components/player_hud.tscn")
 
+var _objective: Label
+var _objective_timer: float = 0.0
 var _view: ClinicView
 var _card: PanelContainer
 var _portrait: PixelPortrait
@@ -52,7 +54,7 @@ func _build() -> void:
 	var hud := PlayerHudScene.instantiate()
 	UIKit.expand(hud)
 	top.add_child(hud)
-	var menu := UIKit.button("", &"GhostButton", GameManager.quit_to_menu, "MenuButton")
+	var menu := UIKit.button("", &"GhostButton", _open_pause_menu, "MenuButton")
 	menu.icon = PixelArt.scaled("res://assets/sprites/ui/icons/menu.png")
 	menu.custom_minimum_size = Vector2(GameConfig.MIN_TOUCH, GameConfig.MIN_TOUCH)
 	menu.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -90,6 +92,13 @@ func _build() -> void:
 	_stock_label.offset_left = 6
 	_stock_label.offset_right = -6
 	_view.add_child(_stock_label)
+	# "NEXT" objective: always answers "what should I do now?"
+	_objective = UIKit.label("", &"MonoLabel", false, Palette.ACCENT, 18)
+	_objective.name = "Objective"
+	_objective.clip_text = true
+	_objective.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	col.add_child(_objective)
+	_refresh_objective()
 	# Customer card
 	_card = UIKit.panel(&"AccentPanel")
 	_card.name = "CustomerCard"
@@ -129,6 +138,10 @@ func _build() -> void:
 
 
 func _process(delta: float) -> void:
+	_objective_timer -= delta
+	if _objective_timer <= 0.0:
+		_objective_timer = 0.5
+		_refresh_objective()
 	if _waiting and _waiting.visible:
 		_waiting_dots += delta * 2.0
 		_waiting.text = "Waiting for customers" + ".".repeat(int(_waiting_dots) % 4)
@@ -172,7 +185,7 @@ func _after_event() -> void:
 
 func _on_customer_arrived(customer: CustomerData) -> void:
 	AudioManager.play_sfx(&"customer")
-	UIManager.haptic()
+	UIManager.haptic(&"ui")
 	UIManager.show_toast("%s is at the door" % customer.display_name, &"danger" if customer.is_emergency else &"info")
 	_show_customer(customer, true)
 
@@ -214,3 +227,28 @@ func _refresh_rumor() -> void:
 	var r := StoryManager.get_latest_rumor()
 	_rumor.text = ("RUMOR: " + r) if r != "" else ""
 	_rumor.tooltip_text = r
+
+
+## Pause menu: settings, a short how-to-play recap, or save & quit.
+func _open_pause_menu() -> void:
+	var buttons: Array[Dictionary] = [
+		{"label": "RESUME", "style": &"AccentButton", "name": "PauseResume"},
+		{"label": "SETTINGS", "style": &"", "name": "PauseSettings", "callback": func() -> void:
+			UIManager.go_to(UIManager.SCREEN_SETTINGS, {"return_to": UIManager.SCREEN_CLINIC})},
+		{"label": "HOW TO PLAY", "style": &"", "name": "PauseHelp", "callback": _show_help},
+		{"label": "SAVE & QUIT", "style": &"GhostButton", "name": "PauseQuit", "callback": GameManager.quit_to_menu},
+	]
+	UIManager.show_dialog("CLINIC PAUSED", "Progress is saved automatically after every job, purchase and upgrade.", buttons)
+
+
+func _show_help() -> void:
+	var buttons: Array[Dictionary] = [{"label": "GOT IT", "style": &"AccentButton", "name": "HelpClose"}]
+	UIManager.show_dialog("HOW TO PLAY", TutorialManager.HELP_TEXT, buttons)
+
+
+func _refresh_objective() -> void:
+	if _objective == null:
+		return
+	var o := GameManager.get_next_objective()
+	_objective.text = "NEXT > " + str(o["text"]).to_upper()
+	_objective.add_theme_color_override(&"font_color", Palette.WARN if o["kind"] == &"warn" else Palette.ACCENT)

@@ -34,6 +34,8 @@ var black_market_implant: bool = false
 var implant_pay_mult: float = 1.0
 ## Filled in by GameManager after rewards are applied.
 var levels_gained: int = 0
+## New cyberware tier the player gained access to (0 = none).
+var unlocked_tier: int = 0
 var faction_id: StringName
 var faction_delta: int = 0
 var heat_delta: float = 0.0

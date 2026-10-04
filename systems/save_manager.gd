@@ -3,6 +3,12 @@ extends Node
 ## load_save_data(data) and reset_state(); this manager collects them into one
 ## versioned JSON file in user:// (the app's sandboxed Documents dir on iOS).
 ## Writes go to a temp file first and the previous save is kept as a backup.
+## Each file ends with an MD5 line over the JSON text, so a truncated or
+## bit-flipped save is detected (and the backup / temp copy used instead).
+
+const CHECKSUM_PREFIX := "\n#md5:"
+
+signal save_failed(reason: String)
 
 ## Autoload names whose state is persisted, in load order.
 const SAVEABLE_SYSTEMS: Array[String] = [
@@ -18,7 +24,7 @@ const SAVEABLE_SYSTEMS: Array[String] = [
 	"EventManager",
 	"BlackMarketManager",
 	"CustomerManager",
-	"AudioManager",
+	"TutorialManager",
 ]
 
 ## Whether gameplay has started (so app-backgrounding should autosave).
@@ -37,7 +43,7 @@ func _notification(what: int) -> void:
 
 
 func has_save() -> bool:
-	return FileAccess.file_exists(save_path) or FileAccess.file_exists(_backup_path())
+	return FileAccess.file_exists(save_path) or FileAccess.file_exists(_backup_path()) or FileAccess.file_exists(_tmp_path())
 
 
 func save_game() -> bool:
@@ -55,10 +61,17 @@ func save_game() -> bool:
 	var tmp := _tmp_path()
 	var file := FileAccess.open(tmp, FileAccess.WRITE)
 	if file == null:
-		push_error("SaveManager: cannot write '%s' (%s)" % [tmp, error_string(FileAccess.get_open_error())])
+		var reason := error_string(FileAccess.get_open_error())
+		push_error("SaveManager: cannot write '%s' (%s)" % [tmp, reason])
+		save_failed.emit(reason)
 		return false
-	file.store_string(JSON.stringify(payload, "\t"))
+	var text := JSON.stringify(payload, "\t")
+	file.store_string(text + CHECKSUM_PREFIX + text.md5_text())
+	var write_error := file.get_error()
 	file.close()
+	if write_error != OK:
+		save_failed.emit(error_string(write_error))
+		return false
 	if FileAccess.file_exists(save_path):
 		DirAccess.remove_absolute(_backup_path())
 		DirAccess.rename_absolute(save_path, _backup_path())
@@ -75,6 +88,9 @@ func load_game() -> bool:
 	var data := _read_save(save_path)
 	if data.is_empty():
 		data = _read_save(_backup_path())
+	if data.is_empty():
+		# Killed between writing the temp file and swapping it in.
+		data = _read_save(_tmp_path())
 	if data.is_empty():
 		return false
 	data = _migrate(data)
@@ -107,6 +123,13 @@ func _read_save(path: String) -> Dictionary:
 	if not FileAccess.file_exists(path):
 		return {}
 	var text := FileAccess.get_file_as_string(path)
+	var mark := text.rfind(CHECKSUM_PREFIX)
+	if mark != -1:
+		var body := text.substr(0, mark)
+		if text.substr(mark + CHECKSUM_PREFIX.length()).strip_edges() != body.md5_text():
+			push_warning("SaveManager: '%s' failed its checksum, ignoring" % path)
+			return {}
+		text = body
 	var parsed: Variant = JSON.parse_string(text)
 	if typeof(parsed) != TYPE_DICTIONARY or not parsed.has("systems"):
 		push_warning("SaveManager: '%s' is corrupt, ignoring" % path)
@@ -143,6 +166,12 @@ func _migrate(data: Dictionary) -> Dictionary:
 		if cm.has("current_customer"):
 			cm["current"] = cm["current_customer"]
 		systems["CustomerManager"] = cm
+		data["systems"] = systems
+	if version < 3:
+		# v2 -> v3: settings moved to user://settings.cfg; the tutorial is
+		# new, so existing players count as having finished it.
+		systems.erase("AudioManager")
+		systems["TutorialManager"] = {"completed": true, "active": false, "step": -1}
 		data["systems"] = systems
 	data["version"] = GameConfig.SAVE_VERSION
 	return data

@@ -7,8 +7,8 @@
    "once": true,
    "weight": 100,
    "conditions": {
-    "min_rep": 12,
-    "min_ops": 3,
+    "min_rep": 18,
+    "min_ops": 6,
     "not_flag": "bm_access"
    },
    "text": "A woman with magenta hair and a too-wide smile leans on your doorframe. 'Wire. I move things that aren't supposed to move. You'll want what I sell.'",
@@ -216,7 +216,7 @@
    "weight": 35,
    "cooldown": 4,
    "conditions": {
-    "min_ops": 1
+    "min_ops": 3
    },
    "text": "Someone hammers the door: a Rustline kid with a knife wound and failing chrome, dumped by friends who already ran.",
    "choices": [

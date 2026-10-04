@@ -1,3 +1,4 @@
+class_name SurgeryScreen
 extends BaseScreen
 ## The operating table. Hosts the current stage interaction on top of the
 ## persistent SurgicalSiteView, shows vitals, the tool tray and emergency
@@ -11,7 +12,6 @@ const QUICK_ICONS := {
 const BLEEDING_MISTAKES: Array[StringName] = [&"cut_deviation", &"tissue_tear", &"bad_stitch"]
 const BURN_SFX_INTERVAL := 0.15
 const MISTAKE_SHAKE := 5.0
-const MISTAKE_HAPTIC_MS := 40
 
 @onready var _stage_counter: Label = %StageCounter
 @onready var _stage_title: Label = %StageTitle
@@ -66,6 +66,11 @@ func on_enter(_params: Dictionary) -> void:
 	_complication_banner.visible = false
 	_stamp.visible = false
 	_update_vitals(true)
+	# Surgery start: lamps flicker on, the arm whirs into place, monitor beeps.
+	_lighting.power_up()
+	AudioManager.play_sfx(&"servo", 0.0)
+	AudioManager.play_sfx(&"beep", 0.0)
+	UIManager.haptic(&"ui")
 	# The first stage started before this screen existed; load it now.
 	_load_stage(SurgeryManager.stage_index, SurgeryManager.get_current_stage())
 	SurgeryManager.resume()
@@ -169,20 +174,34 @@ func _on_tool_selected(category: StringName) -> void:
 
 # --- Feedback ----------------------------------------------------------------
 
+## Minor mistakes read amber ("careful"), major ones red ("damage").
+static func is_major_mistake(kind: StringName, severity: float) -> bool:
+	return GameConfig.MAJOR_MISTAKES.has(kind) or severity >= GameConfig.MAJOR_SEVERITY
+
+
 func _on_stage_mistake(kind: StringName, severity: float, local_pos: Vector2) -> void:
 	SurgeryManager.report_mistake(kind, severity)
-	_fx_text.float_text(field_to_area(local_pos) + Vector2(0, -16), GameConfig.MISTAKE_LABELS.get(kind, "MISTAKE"), Palette.DANGER)
+	var major := is_major_mistake(kind, severity)
+	var color := Palette.DANGER if major else Palette.WARN
+	var label: String = GameConfig.MISTAKE_LABELS.get(kind, "MISTAKE")
+	_fx_text.float_text(field_to_area(local_pos) + Vector2(0, -16), ("!! " if major else "! ") + label, color)
+	_fx.ring(local_pos, color, 9.0)
 	if BLEEDING_MISTAKES.has(kind):
-		_fx.burst(local_pos, Palette.BLOOD, 14, 110.0, 3.0)
+		_fx.burst(local_pos, Palette.BLOOD, 14 if major else 6, 110.0, 3.0)
 	else:
-		_fx.burst(local_pos, Palette.DANGER, 8, 70.0, 2.0, 60.0)
+		_fx.burst(local_pos, color, 8 if major else 4, 70.0, 2.0, 60.0)
 
 
-func _on_mistake_made(_kind: StringName, _severity: float) -> void:
-	AudioManager.play_sfx(&"mistake")
-	UIManager.shake(MISTAKE_SHAKE)
-	UIManager.flash(Palette.DANGER, 0.18)
-	UIManager.haptic(MISTAKE_HAPTIC_MS)
+func _on_mistake_made(kind: StringName, severity: float) -> void:
+	if is_major_mistake(kind, severity):
+		AudioManager.play_sfx(&"mistake")
+		UIManager.shake(MISTAKE_SHAKE)
+		UIManager.flash(Palette.DANGER, 0.18)
+		UIManager.haptic(&"mistake")
+	else:
+		AudioManager.play_sfx(&"denied", 0.02)
+		UIManager.flash(Palette.WARN, 0.08)
+		UIManager.haptic(&"warning")
 
 
 func _on_stage_feedback(kind: StringName, local_pos: Vector2) -> void:
@@ -200,19 +219,25 @@ func _on_stage_feedback(kind: StringName, local_pos: Vector2) -> void:
 			AudioManager.play_sfx(&"zap", 0.1)
 		&"clamp":
 			_fx.burst(local_pos, Palette.METAL, 6, 60.0, 2.0)
+			_fx.ring(local_pos, Palette.ACCENT, 6.0)
 			AudioManager.play_sfx(&"clamp")
 		&"stitch":
 			_fx.burst(local_pos, Palette.METAL, 5, 50.0, 2.0)
+			_fx.ring(local_pos, Palette.ACCENT, 5.0)
 			AudioManager.play_sfx(&"stitch")
 		&"implant":
 			_fx.burst(local_pos, Palette.ACCENT, 24, 130.0, 3.0, 80.0)
+			_fx.ring(local_pos, Palette.ACCENT, 14.0, 0.5)
 			AudioManager.play_sfx(&"implant", 0.0)
-			UIManager.shake(3.0)
+			AudioManager.play_sfx(&"activate", 0.0)
+			UIManager.shake(2.0)
 			UIManager.flash(Palette.ACCENT, 0.15)
-			UIManager.haptic(30)
+			UIManager.haptic(&"implant")
 		&"good":
-			_fx_text.float_text(field_to_area(local_pos) + Vector2(0, -24), "LOCKED", Palette.OK)
-			AudioManager.play_sfx(&"tool", 0.0)
+			_fx_text.float_text(field_to_area(local_pos) + Vector2(0, -24), "+ LOCKED", Palette.ACCENT)
+			_fx.ring(local_pos, Palette.ACCENT, 8.0)
+			AudioManager.play_sfx(&"confirm", 0.0)
+			UIManager.haptic(&"ui")
 		&"drill":
 			_fx.burst(local_pos, Palette.METAL, 3, 70.0, 2.0, 120.0)
 			if _burn_sfx_cooldown <= 0.0:
@@ -243,9 +268,9 @@ func _on_complication_started(c: ComplicationData) -> void:
 	_complication_banner.modulate.a = 0.0
 	create_tween().tween_property(_complication_banner, "modulate:a", 1.0, 0.15)
 	AudioManager.play_sfx(&"warning", 0.0)
-	UIManager.shake(6.0)
+	UIManager.shake(4.0)
 	UIManager.flash(Palette.DANGER, 0.25)
-	UIManager.haptic(60)
+	UIManager.haptic(&"warning")
 	if _quick_buttons.has(c.counter_action):
 		(_quick_buttons[c.counter_action] as QuickActionButton).urgent = true
 	_lighting.emergency = true
@@ -264,8 +289,9 @@ func _on_complication_resolved(c: ComplicationData, handled: bool) -> void:
 	else:
 		UIManager.show_toast("%s: too slow!" % c.title, &"danger")
 		AudioManager.play_sfx(&"mistake")
-		UIManager.shake(7.0)
+		UIManager.shake(6.0)
 		UIManager.flash(Palette.DANGER, 0.3)
+		UIManager.haptic(&"mistake")
 
 
 func _on_session_finished(result: SurgeryResult) -> void:
@@ -289,17 +315,34 @@ func _on_session_finished(result: SurgeryResult) -> void:
 		_stamp.text = "OPERATION\nCOMPLETE"
 		_stamp.add_theme_color_override(&"font_color", Palette.OK)
 		AudioManager.play_sfx(&"success", 0.0)
+		UIManager.haptic(&"success")
 		_fx.burst(_site.get_visible_field_rect().get_center(), Palette.ACCENT, 30, 160.0, 3.0, 120.0)
 	else:
 		_stamp.text = "PATIENT\nCRASHED" if result.failure_reason != &"aborted" else "OPERATION\nABORTED"
 		_stamp.add_theme_color_override(&"font_color", Palette.DANGER)
-		AudioManager.play_sfx(&"failure", 0.0)
-		UIManager.shake(10.0)
-		UIManager.flash(Palette.DANGER, 0.4)
+		if result.failure_reason == &"aborted":
+			AudioManager.play_sfx(&"failure", 0.0)
+			UIManager.haptic(&"warning")
+		else:
+			# Critical failure: flatline tone, hard flash, strongest haptic.
+			AudioManager.play_sfx(&"critical", 0.0)
+			UIManager.shake(8.0)
+			UIManager.flash(Palette.DANGER, 0.5)
+			UIManager.haptic(&"critical")
 
 
 func _on_abort_pressed() -> void:
-	UIManager.confirm("ABORT OPERATION?", "The patient walks out unfinished. No pay, reputation loss.", "ABORT", GameManager.abort_surgery, true)
+	# Freeze the patient while the player decides (destructive action).
+	var was_running := SurgeryManager.is_running
+	SurgeryManager.is_running = false
+	var resume := func() -> void:
+		if was_running:
+			SurgeryManager.resume()
+	var buttons: Array[Dictionary] = [
+		{"label": "KEEP GOING", "style": &"AccentButton", "name": "AbortCancel", "callback": resume},
+		{"label": "ABORT", "style": &"DangerButton", "name": "AbortConfirm", "callback": GameManager.abort_surgery},
+	]
+	UIManager.show_dialog("ABORT OPERATION?", "The patient walks out unfinished. No pay, reputation loss.", buttons)
 
 
 # --- Per-frame HUD -----------------------------------------------------------
@@ -337,3 +380,29 @@ func _update_vitals(immediate: bool) -> void:
 	var load := SurgeryManager.neural_load_after
 	_neural_load.text = "LOAD %d%%" % roundi(load)
 	_neural_load.add_theme_color_override(&"font_color", NeuralLoad.band(load)["color"])
+
+
+# --- App suspension ------------------------------------------------------------
+
+## iOS suspends the app on home-swipe / calls: freeze the patient and show a
+## pause card so nothing happens while the player is away.
+## Tests disable this so a desktop focus change can't stall the bot.
+static var pause_on_suspend: bool = true
+
+
+func _notification(what: int) -> void:
+	if pause_on_suspend and what in [NOTIFICATION_APPLICATION_PAUSED, NOTIFICATION_APPLICATION_FOCUS_OUT]:
+		pause_operation()
+
+
+func pause_operation() -> void:
+	if _ended or not SurgeryManager.is_active or not SurgeryManager.is_running or UIManager.has_modal():
+		return
+	SurgeryManager.is_running = false
+	var buttons: Array[Dictionary] = [{"label": "RESUME", "style": &"AccentButton", "name": "ResumeSurgery", "callback": func() -> void:
+		SurgeryManager.resume()}]
+	UIManager.show_dialog("OPERATION PAUSED", "The patient is stable while you're away. Vitals resume when you do.", buttons)
+
+
+func is_paused() -> bool:
+	return SurgeryManager.is_active and not SurgeryManager.is_running and not _ended

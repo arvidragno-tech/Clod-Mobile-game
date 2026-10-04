@@ -25,6 +25,7 @@ func start_new_game() -> void:
 	SaveManager.delete_save()
 	SaveManager.reset_all()
 	StoryManager.unlock_rumor(&"welcome")
+	TutorialManager.start()
 	_begin_play()
 	SaveManager.save_game()
 	EventBus.new_game_started.emit()
@@ -59,6 +60,23 @@ func _begin_play() -> void:
 
 func go_to_clinic() -> void:
 	UIManager.go_to(UIManager.SCREEN_CLINIC)
+
+
+## The single most useful next step for the player (clinic "NEXT" line).
+## Returns {"text": String, "kind": &"info"|&"warn"}.
+func get_next_objective() -> Dictionary:
+	if EventManager.has_pending():
+		return {"text": "Someone is waiting: deal with the incident", "kind": &"warn"}
+	var c := get_current_customer()
+	if c:
+		return {"text": "See %s at the door%s" % [c.display_name, " (EMERGENCY)" if c.is_emergency else ""], "kind": &"warn" if c.is_emergency else &"info"}
+	if SkillManager.points > 0:
+		return {"text": "Spend %d skill point%s in SKILLS" % [SkillManager.points, "s" if SkillManager.points > 1 else ""], "kind": &"info"}
+	if ClinicManager.get_upgrade_block_reason() == "":
+		return {"text": "Clinic upgrade ready: open CLINIC", "kind": &"info"}
+	if InventoryManager.supplies < 2:
+		return {"text": "Supplies low: restock in SUPPLY", "kind": &"warn"}
+	return {"text": "Waiting for the next customer", "kind": &"info"}
 
 
 func open_screen(screen_id: StringName) -> void:
@@ -242,7 +260,10 @@ func _on_surgery_finished(result: SurgeryResult) -> void:
 	var c := SurgeryManager.customer
 	_apply_patience(result, c)
 	EconomyManager.add_money(result.pay)
+	var tier_before := CyberwareManager.get_available_tier()
 	result.levels_gained = ProgressionManager.add_xp(result.xp)
+	if CyberwareManager.get_available_tier() > tier_before:
+		result.unlocked_tier = CyberwareManager.get_available_tier()
 	ReputationManager.change(result.reputation_delta)
 	ProgressionManager.record_surgery(result.surgery_id, result.success, result.grade)
 	_apply_faction_and_heat(result, c)
@@ -263,7 +284,10 @@ func _on_surgery_finished(result: SurgeryResult) -> void:
 	EventBus.surgery_rewarded.emit(result)
 	# Let the surgery screen play its success/failure moment first.
 	await get_tree().create_timer(GameConfig.RESULTS_DELAY_SEC).timeout
-	UIManager.go_to(UIManager.SCREEN_RESULTS, {"result": result})
+	# Only the operating table leads to the report (never yank the player
+	# off another screen, e.g. after an app resume or a headless session).
+	if UIManager.current_screen_id == UIManager.SCREEN_SURGERY:
+		UIManager.go_to(UIManager.SCREEN_RESULTS, {"result": result})
 
 
 ## Impatient customers pay less when the job runs long.

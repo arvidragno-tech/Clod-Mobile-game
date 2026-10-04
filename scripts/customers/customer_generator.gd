@@ -73,7 +73,16 @@ func generate(context: Dictionary = {}) -> CustomerData:
 	c.complication_risk = rng.randf_range(0.85, 1.15)
 	c.pay_multiplier = float(arch.get("pay_mult", 1.0)) * (0.8 + 0.15 * c.wealth)
 	_roll_existing_cyberware(c, arch)
-	_roll_conditions(c)
+	# Learning curve: early patients are calm, stable and have no surprises
+	# (context "full_difficulty" opts out, e.g. for story spawns and tests).
+	var learning := not bool(context.get("full_difficulty", false))
+	if learning:
+		while c.existing_cyberware.size() > 0 and c.get_neural_load() > Difficulty.early_load_cap():
+			c.existing_cyberware.pop_back()
+		if Difficulty.ops() < Difficulty.HIDDEN_CONDITIONS_FROM_OP:
+			c.patience = maxi(c.patience, 70)
+	if not learning or Difficulty.hidden_conditions_allowed():
+		_roll_conditions(c)
 	_roll_request(c, arch, context)
 	_roll_diagnosis(c)
 	_build_findings(c)
@@ -145,10 +154,37 @@ func _roll_request(c: CustomerData, arch: Dictionary, context: Dictionary) -> vo
 		if not c.existing_cyberware.has(item.id):
 			choice = item
 			break
+	# Most customers want jobs the clinic is equipped for (all of them while
+	# the player is learning); the rest are a nudge to buy better tools.
+	if not context.has("category") and not context.has("cyberware") and not is_feasible(choice):
+		var feasible_share := 1.0 if Difficulty.ops() < Difficulty.EARLY_LOAD_CAP_UNTIL_OP else GameConfig.FEASIBLE_REQUEST_SHARE
+		if rng.randf() < feasible_share:
+			var options: Array[CyberwareData] = []
+			for cat_id: Variant in arch["categories"]:
+				for item in CyberwareManager.get_by_category(StringName(str(cat_id)), wanted_tier):
+					if is_feasible(item) and not c.existing_cyberware.has(item.id):
+						options.append(item)
+			if options.is_empty():
+				options = CyberwareManager.get_by_category(&"neural", 1)
+			choice = options[rng.randi_range(0, options.size() - 1)]
 	if context.has("cyberware") and CyberwareManager.get_cyberware(StringName(str(context["cyberware"]))):
 		choice = CyberwareManager.get_cyberware(StringName(str(context["cyberware"])))
 	c.requested_cyberware_id = choice.id
 	c.requested_surgery_id = choice.install_surgery_id
+
+
+## Whether the clinic owns every tool the job needs right now.
+static func is_feasible(item: CyberwareData) -> bool:
+	var surgery := SurgeryManager.get_surgery(item.install_surgery_id)
+	if surgery == null:
+		return false
+	for category in surgery.get_required_tool_categories():
+		if not InventoryManager.has_tool_category(category):
+			return false
+	for req in item.get_tool_requirements():
+		if not InventoryManager.has_tool_category(req["category"], int(req["tier"])):
+			return false
+	return true
 
 
 func _roll_diagnosis(c: CustomerData) -> void:

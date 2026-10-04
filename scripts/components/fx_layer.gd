@@ -21,6 +21,8 @@ func _ready() -> void:
 func burst(pos: Vector2, color: Color, amount: int = 12, speed: float = 90.0, pixel_size: float = 3.0, gravity: float = 260.0) -> void:
 	if get_child_count() >= MAX_EMITTERS:
 		return
+	if Settings.reduce_motion:
+		amount = maxi(2, amount / 2)
 	speed *= unit_scale
 	gravity *= unit_scale
 	pixel_size = maxf(1.0, roundf(pixel_size * unit_scale))
@@ -65,3 +67,37 @@ func float_text(pos: Vector2, text: String, color: Color, big: bool = false) -> 
 	t.tween_property(label, "position:y", label.position.y - FLOAT_TEXT_RISE, FLOAT_TEXT_TIME).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
 	t.tween_property(label, "modulate:a", 0.0, FLOAT_TEXT_TIME * 0.5).set_delay(FLOAT_TEXT_TIME * 0.5)
 	t.chain().tween_callback(label.queue_free)
+
+
+## Expanding pixel ring: the "confirmed" pulse (cyan) or a warning pulse.
+func ring(pos: Vector2, color: Color, radius: float = 10.0, time: float = 0.35) -> void:
+	if get_child_count() >= MAX_EMITTERS:
+		return
+	var r := _Ring.new()
+	r.position = pos
+	r.color = color
+	r.max_radius = radius * maxf(unit_scale, 0.5) * (2.0 if unit_scale >= 1.0 else 1.0)
+	r.px = maxf(1.0, roundf(unit_scale * 2.0))
+	add_child(r)
+	var t := r.create_tween()
+	t.tween_property(r, "progress", 1.0, time)
+	t.tween_callback(r.queue_free)
+
+
+class _Ring extends Node2D:
+	var color: Color = Color.WHITE
+	var max_radius: float = 10.0
+	var px: float = 1.0
+	var progress: float = 0.0:
+		set(v):
+			progress = v
+			queue_redraw()
+
+	func _draw() -> void:
+		var r := maxf(1.0, max_radius * progress)
+		var c := Color(color, 1.0 - progress)
+		var steps := maxi(12, int(r * 2.0))
+		for i in steps:
+			var a := TAU * i / steps
+			var p := (Vector2(cos(a), sin(a)) * r / px).round() * px
+			draw_rect(Rect2(p, Vector2(px, px)), c)

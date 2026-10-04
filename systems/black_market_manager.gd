@@ -80,7 +80,10 @@ func price_for(inst: ImplantInstance) -> int:
 
 func sell_value(inst: ImplantInstance) -> int:
 	var data := inst.get_data()
-	return int(round((data.price if data else 50) * float(config.get("sell_ratio", 0.45)) * inst.condition / 100.0))
+	var value := int(round((data.price if data else 50) * float(config.get("sell_ratio", 0.45)) * inst.condition / 100.0))
+	# Never more than 80% of what the market would charge for it: no
+	# buy-low / sell-high loop, whatever discounts stack up.
+	return mini(value, int(price_for(inst) * 0.8))
 
 
 func study_cost_parts() -> int:

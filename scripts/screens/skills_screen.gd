@@ -78,6 +78,5 @@ func _skill_card(id: StringName, color: Color) -> Control:
 
 func _upgrade(id: StringName) -> void:
 	if SkillManager.upgrade(id):
-		AudioManager.play_sfx(&"levelup", 0.0)
-		UIManager.flash(Palette.ACCENT, 0.15)
+		UIManager.celebrate(&"unlock")
 		SaveManager.save_game()

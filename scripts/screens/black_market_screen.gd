@@ -43,6 +43,7 @@ func on_enter(_params: Dictionary) -> void:
 	var mat := ShaderMaterial.new()
 	mat.shader = load("res://assets/shaders/bm_glitch.gdshader")
 	glitch.material = mat
+	mat.set_shader_parameter(&"intensity", 0.0 if Settings.reduce_motion else 0.6)
 	add_child(UIKit.full_rect(glitch))
 	EventBus.money_changed.connect(func(_a: int, _d: int) -> void: _rebuild())
 	EventBus.inventory_changed.connect(_rebuild)
@@ -208,7 +209,7 @@ func _cases_card() -> Control:
 
 func _buy(i: int) -> void:
 	if BlackMarketManager.buy(i):
-		AudioManager.play_sfx(&"cash")
+		UIManager.celebrate(&"bm_purchase")
 		UIManager.show_toast("Bought. Don't ask where it came from.", &"success")
 		SaveManager.save_game()
 	else:
@@ -220,7 +221,7 @@ func _study(uid: String) -> void:
 	if BlackMarketManager.study(uid):
 		var t := inst.revealed[inst.revealed.size() - 1]
 		UIManager.show_toast("Revealed: %s" % str(BlackMarketManager.get_trait(t).get("name", t)), &"info")
-		AudioManager.play_sfx(&"zap")
+		UIManager.celebrate(&"unlock")
 		SaveManager.save_game()
 	else:
 		UIManager.show_toast("Can't study: need parts or credits", &"danger")
@@ -238,7 +239,7 @@ func _sell(uid: String) -> void:
 	var v := BlackMarketManager.sell(uid)
 	if v > 0:
 		UIManager.show_toast("Sold for %s" % EconomyManager.format_money(v), &"success")
-		AudioManager.play_sfx(&"cash")
+		UIManager.celebrate(&"sell")
 		SaveManager.save_game()
 
 

@@ -31,7 +31,7 @@ const DATA_COMPLICATIONS := "res://data/complications.json"
 
 # --- Save --------------------------------------------------------------------
 const SAVE_PATH := "user://savegame.json"
-const SAVE_VERSION := 2
+const SAVE_VERSION := 3
 
 # --- New game ----------------------------------------------------------------
 const STARTING_MONEY := 300
@@ -51,7 +51,7 @@ const MAX_REPUTATION := 100
 const MIN_REPUTATION := -100
 const BLACK_MARKET_REPUTATION := 25
 ## Player level needed for each cyberware tier (tier 5 = black market only).
-const CYBERWARE_TIER_LEVEL := {1: 1, 2: 2, 3: 4, 4: 7, 5: 99}
+const CYBERWARE_TIER_LEVEL := {1: 1, 2: 3, 3: 5, 4: 8, 5: 99}
 
 # --- Clinic ------------------------------------------------------------------
 const CUSTOMER_ARRIVAL_DELAY_SEC := 1.2
@@ -84,6 +84,8 @@ const REGULAR_VISITS := 3
 const REGULAR_PAY_BONUS := 0.1
 const COMPLAINT_CHANCE := 0.5
 const SUBSTITUTE_PAY_MULT := 0.85
+## Share of (post-learning) customers whose job the clinic can already do.
+const FEASIBLE_REQUEST_SHARE := 0.8
 ## Post-op complication chance by grade, added to the patient's hidden
 ## post-op risk (conditions) and the post_op.risk modifier.
 const POST_OP_RISK_BY_GRADE := {"S": 0.0, "A": 0.02, "B": 0.05, "C": 0.12, "D": 0.2}
@@ -162,6 +164,11 @@ const MISTAKE_LABELS := {
 	&"overdose": "OVERDOSED",
 }
 
+## Mistakes that read as MAJOR (red). Everything else is MINOR (amber)
+## unless its severity is >= MAJOR_SEVERITY.
+const MAJOR_MISTAKES: Array[StringName] = [&"tissue_tear", &"nerve_burn", &"implant_drop", &"wrong_connection", &"bone_crack", &"overdose"]
+const MAJOR_SEVERITY := 1.3
+
 ## Sedation dose -> pain baseline mapping.
 const SEDATION_PAIN_BASELINE_MIN := 8.0
 const SEDATION_PAIN_BASELINE_MAX := 40.0
@@ -199,7 +206,7 @@ const TIME_PENALTY_MAX := 0.15
 ## Seconds over target for the full time penalty.
 const TIME_PENALTY_SPAN_SEC := 120.0
 const GRADE_THRESHOLDS := [[0.92, "S"], [0.8, "A"], [0.66, "B"], [0.5, "C"], [0.0, "D"]]
-const GRADE_REPUTATION := {"S": 8, "A": 6, "B": 4, "C": 2, "D": 0, "F": -6}
+const GRADE_REPUTATION := {"S": 6, "A": 5, "B": 3, "C": 2, "D": 1, "F": -5}
 const FAILED_XP_FRACTION := 0.25
 const CORRECT_DIAGNOSIS_XP_BONUS := 0.2
 const WRONG_DIAGNOSIS_PAY_MULT := 0.9

@@ -113,6 +113,8 @@ func _on_arrival_timer_timeout() -> void:
 
 func _next_customer() -> CustomerData:
 	var op := EventManager.operations
+	if op == 0 and TutorialManager.is_active():
+		return tutorial_customer()
 	for i in queue.size():
 		if int(queue[i]["due_op"]) <= op:
 			var entry: Dictionary = queue[i]
@@ -127,6 +129,16 @@ func _next_customer() -> CustomerData:
 		if not regulars.is_empty():
 			return get_customer(regulars[_rng.randi_range(0, regulars.size() - 1)])
 	return generator.generate()
+
+
+## The first patient: Mara, a simple NX-1 neural job with no surprises.
+func tutorial_customer() -> CustomerData:
+	var c := get_customer(&"mara_quill")
+	if c:
+		for cid in c.hidden_conditions.duplicate():
+			c.hidden_conditions.erase(cid)
+		c.patience = maxi(c.patience, 90)
+	return c
 
 
 ## Emergency walk-in (event): replaces whoever is waiting.
@@ -225,6 +237,8 @@ func record_outcome(c: CustomerData, result: SurgeryResult) -> Dictionary:
 
 ## Chance that a successful operation goes bad after the patient leaves.
 func get_post_op_risk(c: CustomerData, grade: String) -> float:
+	if not Difficulty.hidden_conditions_allowed() and c.hidden_conditions.is_empty():
+		return 0.0  # no post-op surprises while learning
 	var base := float(GameConfig.POST_OP_RISK_BY_GRADE.get(grade, 0.0))
 	return clampf(base + c.post_op_risk + ModifierManager.value(&"post_op.risk"), 0.0, 0.9)
 

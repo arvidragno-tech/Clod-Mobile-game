@@ -64,7 +64,7 @@ func on_operation_completed() -> void:
 func roll_random_event(force: bool = false) -> StringName:
 	if has_pending():
 		return pending_event
-	if not force and _rng.randf() > GameConfig.EVENT_CHANCE:
+	if not force and (not Difficulty.events_allowed() or _rng.randf() > GameConfig.EVENT_CHANCE):
 		return &""
 	var id := pick_event()
 	if id != &"":

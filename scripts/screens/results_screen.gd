@@ -133,5 +133,10 @@ func _animate() -> void:
 			_level_up.text = "LEVEL UP! NOW LV %d" % ProgressionManager.level
 			_level_up.visible = true
 			AudioManager.play_sfx(&"levelup", 0.0)
-			UIManager.flash(Palette.ACCENT, 0.2))
+			UIManager.flash(Palette.ACCENT, 0.2)
+			UIManager.haptic(&"success"))
+	if r.unlocked_tier > 0:
+		t.tween_interval(0.4)
+		t.tween_callback(func() -> void:
+			UIManager.celebrate(&"unlock", "TIER %d CHROME NOW IN SUPPLY" % r.unlocked_tier))
 	t.tween_callback(func() -> void: _continue.disabled = false)

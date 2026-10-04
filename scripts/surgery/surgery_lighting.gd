@@ -9,6 +9,8 @@ const BAYER := [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]]
 const BANDS := 5
 
 var emergency: bool = false
+## 0..1 master level (the lamps power up when the operation starts).
+var power: float = 1.0
 var _pool: ImageTexture
 var _time: float = 0.0
 
@@ -45,10 +47,10 @@ func _process(delta: float) -> void:
 func _draw() -> void:
 	var c := (size / 2.0).floor()
 	# Surgical lamp: warm-white pool on the field, slow subtle breathing.
-	var lamp := 0.10 + 0.01 * sin(_time * 0.8)
+	var lamp := (0.10 + 0.01 * sin(_time * 0.8)) * power
 	_light(c + Vector2(0, -6), 96.0, Color(0.9, 1.0, 0.97, lamp))
 	# Monitor spill from the right edge.
-	_light(Vector2(size.x + 8, size.y * 0.3), 70.0, Color(0.18, 0.9, 0.78, 0.07))
+	_light(Vector2(size.x + 8, size.y * 0.3), 70.0, Color(0.18, 0.9, 0.78, 0.07 * power))
 	if emergency:
 		# Rotating beacon: a red pool sweeping around the room edge.
 		var a := _time * 4.0
@@ -60,3 +62,15 @@ func _draw() -> void:
 
 func _light(center: Vector2, radius: float, color: Color) -> void:
 	draw_texture_rect(_pool, Rect2((center - Vector2.ONE * radius).floor(), Vector2.ONE * radius * 2.0), false, color)
+
+
+## Surgery start: the lamps flicker on in a few hard steps (no smooth fade).
+func power_up() -> void:
+	power = 0.0
+	if Settings.reduce_motion:
+		power = 1.0
+		return
+	var t := create_tween()
+	for v in [0.6, 0.1, 0.85, 0.3, 1.0]:
+		t.tween_property(self, "power", v, 0.0)
+		t.tween_interval(0.07)

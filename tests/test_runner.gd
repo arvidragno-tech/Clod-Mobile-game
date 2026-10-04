@@ -36,6 +36,7 @@ func _ready() -> void:
 	await get_tree().process_frame
 	print("viewport: ", get_viewport().get_visible_rect().size)
 	SaveManager.save_path = TEST_SAVE_PATH
+	SurgeryScreen.pause_on_suspend = false
 	SaveManager.delete_save()
 	await _run_all()
 
@@ -83,19 +84,37 @@ func _e2e() -> void:
 	EventManager.history.clear()
 	var start_money := EconomyManager.money
 	var start_xp := ProgressionManager.total_xp
+	var tutorial_seen: Array[String] = []
+	TutorialManager.step_changed.connect(func(s: Dictionary) -> void: tutorial_seen.append(str(s["id"])))
+	check(TutorialManager.is_active(), "new game starts the tutorial")
+	var waited := 0.0
+	while not CustomerManager.has_customer() and waited < 8.0:
+		await _seconds(0.2)
+		waited += 0.2
+	check(CustomerManager.has_customer() and CustomerManager.current_customer.character_id == &"mara_quill", "tutorial: first patient is the scripted easy job")
+	await _frames(10)
+	check(_find_visible("CoachCard") != null, "tutorial: coach mark shown in the clinic")
+	if not TutorialManager.current_step().is_empty():
+		tutorial_seen.append(str(TutorialManager.current_step()["id"]))
+	await _checkpoint("tutorial_clinic")
 
-	# Run 1: the Step 1 neural slice, played cleanly.
+	# Run 1: the tutorial job (Step 1 neural slice), played cleanly.
 	var r1 := await _play_customer(&"mara_quill", false)
 	check(r1 != null and r1.success, "run 1: neural implant succeeded")
+	check(_surgery_audio.get("profile", &"") == &"surgery" and _surgery_audio.get("music", &"") == &"surgery" and bool(_surgery_audio.get("layers", {}).get(&"hum", false)), "surgery switches to the surgery music and ambience mix")
 	if r1:
 		print("     run 1 grade=%s score=%.2f pay=%d xp=%d mistakes=%d time=%.0fs complications=%d/%d" % [r1.grade, r1.score, r1.pay, r1.xp, r1.mistakes, r1.elapsed_sec, r1.complications_handled, r1.complications_total])
 		check(r1.grade in ["S", "A", "B"], "run 1: clean play grades B or better (%s)" % r1.grade)
-		check(r1.complications_total >= 1 and r1.complications_handled == r1.complications_total, "run 1: complication happened and was handled")
+		check(r1.complications_total == 0, "run 1: tutorial job has no complications")
 	await _wait_results_ready()
 	await _checkpoint("results_clean")
 	await _click_named("ContinueButton", 10.0)
 	await _after_results()
 	check(EconomyManager.money > start_money and ProgressionManager.total_xp > start_xp, "money and XP increased")
+	await _frames(10)
+	for id in ["arrive", "intake", "diagnose", "plan", "tools", "cut", "install", "close", "payment", "upgrade"]:
+		check(tutorial_seen.has(id), "tutorial step '%s' shown" % id)
+	await _checkpoint("tutorial_upgrade")
 	check(SaveManager.has_save(), "game autosaved after surgery")
 
 	# Run 2: sloppy, wrong diagnosis, deliberate mistakes.
@@ -141,6 +160,22 @@ func _e2e() -> void:
 	await _click_named("BeginButton")
 	await _wait_screen(UIManager.SCREEN_SURGERY)
 	await _wait_stage_ready()
+	# App suspension freezes the patient until RESUME.
+	UIManager.current_screen.pause_operation()
+	var t_before := SurgeryManager.elapsed
+	await _seconds(0.6)
+	check(UIManager.current_screen.is_paused() and is_equal_approx(SurgeryManager.elapsed, t_before), "suspending the app pauses the operation")
+	await _checkpoint("surgery_paused")
+	await _click_named("ResumeSurgery")
+	await _frames(3)
+	check(SurgeryManager.is_running, "RESUME continues the operation")
+	# Abort asks first, and cancelling keeps the patient on the table.
+	await _click_named("AbortButton")
+	await _frames(3)
+	check(not SurgeryManager.is_running, "abort confirmation freezes vitals")
+	await _click_named("AbortCancel")
+	await _frames(3)
+	check(SurgeryManager.is_active and SurgeryManager.is_running, "cancelling abort keeps operating")
 	await _click_named("AbortButton")
 	await _click_dialog_button("ABORT")
 	await _wait_screen(UIManager.SCREEN_RESULTS, 10.0)
@@ -198,6 +233,7 @@ func _e2e() -> void:
 	SkillManager.add_points(1)
 	await _click_named("Nav_skills")
 	await _wait_screen(UIManager.SCREEN_SKILLS)
+	check(TutorialManager.completed and not TutorialManager.is_active(), "tutorial completes when the player opens SKILLS")
 	await _checkpoint("skills")
 	var rank := SkillManager.get_rank(&"speed")
 	await _click_named("Upgrade_speed")
@@ -227,6 +263,45 @@ func _e2e() -> void:
 	for i in range(1, 4):
 		await _click_named("DossierTab_%d" % i)
 		await _checkpoint("dossier_tab_%d" % i)
+	await _click_named("BackButton")
+	await _wait_screen(UIManager.SCREEN_CLINIC)
+
+	# Pause menu -> how to play -> settings (sliders, toggles) -> back.
+	await _frames(10)
+	await _click_named("MenuButton")
+	await _frames(10)
+	await _checkpoint("pause_menu")
+	await _click_named("PauseHelp")
+	await _frames(10)
+	await _checkpoint("how_to_play")
+	await _click_named("HelpClose")
+	await _frames(5)
+	await _click_named("MenuButton")
+	await _frames(5)
+	await _click_named("PauseSettings")
+	await _wait_screen(UIManager.SCREEN_SETTINGS)
+	await _frames(10)
+	await _checkpoint("settings")
+	var settings_path := Settings.path
+	Settings.path = "user://test_settings.cfg"
+	var slider := _find_visible("Slider_music_volume") as HSlider
+	if slider:
+		var r := slider.get_global_rect()
+		await _drag([r.position + Vector2(r.size.x * 0.8, r.size.y / 2), r.position + Vector2(r.size.x * 0.2, r.size.y / 2)])
+	check(Settings.music_volume < 0.4, "music slider drag changes volume (%.2f)" % Settings.music_volume)
+	var before := Settings.reduce_motion
+	await _click_named("Toggle_reduce_motion")
+	await _frames(5)
+	check(Settings.reduce_motion != before, "reduce-motion toggle works")
+	await _click_named("Choice_text_speed_3")
+	await _frames(5)
+	check(Settings.text_speed == 3, "text speed choice works")
+	await _click_named("Toggle_large_text")
+	await _frames(5)
+	await _checkpoint("settings_large_text")
+	Settings.reset_to_defaults()
+	DirAccess.remove_absolute(Settings.path)
+	Settings.path = settings_path
 	await _click_named("BackButton")
 	await _wait_screen(UIManager.SCREEN_CLINIC)
 
@@ -265,10 +340,14 @@ func _play_customer(id: StringName, sloppy: bool, reckless: bool = false) -> Sur
 	return await _play_current(sloppy, dx, reckless)
 
 
+var _surgery_audio: Dictionary = {}
+
+
 func _play_current(sloppy: bool, dx: StringName, reckless: bool = false) -> SurgeryResult:
 	await _to_plan(dx)
 	await _click_named("BeginButton")
 	await _wait_screen(UIManager.SCREEN_SURGERY)
+	_surgery_audio = AudioManager.get_debug_state()
 	var stage_count := SurgeryManager.get_stage_count()
 	for i in stage_count:
 		if not await _wait_stage_ready():
