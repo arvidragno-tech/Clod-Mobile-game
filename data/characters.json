@@ -30,27 +30,48 @@
     "kestrel_sight"
    ],
    "appearance": {
-    "build": "average",
-    "face": "narrow",
+    "v": 2,
+    "presentation": "femme",
+    "build": "slim",
+    "posture": "upright",
+    "face": "long",
+    "nose": "small",
+    "brows": "thin",
+    "age_look": "adult",
     "expr": "neutral",
-    "hair": "short",
-    "hair_back": "",
-    "outfit": "smuggler",
+    "outfit": "civilian",
+    "hair": "tied",
+    "hair_color": "black",
+    "skin": 2,
+    "iris": "hazel",
     "facial_hair": "",
-    "scar": "",
-    "tattoos": [],
-    "cyber": [],
+    "scars": [],
+    "tattoos": [
+     "neck_code"
+    ],
+    "makeup": [],
+    "piercings": [
+     "studs"
+    ],
+    "cyber": [
+     "optic",
+     "neck_ports"
+    ],
     "accessories": [
      "goggles"
     ],
-    "skin": 2,
-    "hair_color": "black",
-    "iris": "hazel",
+    "body_cyber": [
+     "eye"
+    ],
+    "body_acc": [
+     "backpack"
+    ],
     "cloth_a": "khaki",
     "cloth_b": "tan",
+    "cloth_c": "black",
     "metal": "chrome",
     "glow": "cyan",
-    "body_cyber": []
+    "rim": "8a6a3a"
    },
    "role": "regular",
    "story": false
@@ -87,28 +108,52 @@
     "kestrel_sight"
    ],
    "appearance": {
-    "build": "average",
-    "face": "broad",
-    "expr": "neutral",
-    "hair": "locs",
-    "hair_back": "locs",
-    "outfit": "bm_tech",
-    "facial_hair": "",
-    "scar": "",
-    "tattoos": [],
-    "cyber": [
-     "temple_port",
-     "circuit"
-    ],
-    "accessories": [],
+    "v": 2,
+    "presentation": "andro",
+    "build": "slim",
+    "posture": "slouch",
+    "face": "oval",
+    "nose": "straight",
+    "brows": "thin",
+    "age_look": "young",
+    "expr": "smirk",
+    "outfit": "netrunner",
+    "hair": "shaved",
+    "hair_color": "dye_cyan",
     "skin": 5,
-    "hair_color": "black",
-    "iris": "brown",
-    "cloth_a": "charcoal",
-    "cloth_b": "leather",
+    "iris": "dark",
+    "facial_hair": "",
+    "scars": [
+     "brow"
+    ],
+    "tattoos": [
+     "cheek_lines"
+    ],
+    "makeup": [
+     "liner"
+    ],
+    "piercings": [
+     "septum",
+     "brow_ring"
+    ],
+    "cyber": [
+     "temple_ports",
+     "neck_ports",
+     "cheek_leds"
+    ],
+    "accessories": [
+     "headset"
+    ],
+    "body_cyber": [],
+    "body_acc": [
+     "datapad"
+    ],
+    "cloth_a": "black",
+    "cloth_b": "charcoal",
+    "cloth_c": "bm_purple",
     "metal": "blackened",
     "glow": "magenta",
-    "body_cyber": []
+    "rim": "7a2a6a"
    },
    "role": "regular",
    "story": false
@@ -141,27 +186,45 @@
    "requested_cyberware": "nx1_neural_bridge",
    "existing_cyberware": [],
    "appearance": {
+    "v": 2,
+    "presentation": "masc",
     "build": "heavy",
-    "face": "broad",
-    "expr": "tired",
+    "posture": "slouch",
+    "face": "heavy",
+    "nose": "broad",
+    "brows": "heavy",
+    "age_look": "old",
+    "expr": "sad",
+    "outfit": "worker",
     "hair": "buzz",
-    "hair_back": "",
-    "outfit": "dock",
-    "facial_hair": "beard",
-    "scar": "",
+    "hair_color": "gray",
+    "skin": 1,
+    "iris": "blue",
+    "facial_hair": "full",
+    "scars": [
+     "burn"
+    ],
     "tattoos": [],
-    "cyber": [],
+    "makeup": [],
+    "piercings": [],
+    "cyber": [
+     "serial_marks"
+    ],
     "accessories": [
      "beanie"
     ],
-    "skin": 0,
-    "hair_color": "gray",
-    "iris": "gray",
-    "cloth_a": "slate",
-    "cloth_b": "hivis",
-    "metal": "chrome",
-    "glow": "cyan",
-    "body_cyber": []
+    "body_cyber": [
+     "arm_l"
+    ],
+    "body_acc": [
+     "toolbelt"
+    ],
+    "cloth_a": "work_blue",
+    "cloth_b": "safety",
+    "cloth_c": "work_brown",
+    "metal": "brass",
+    "glow": "amber",
+    "rim": "3b9da0"
    },
    "role": "regular",
    "story": false
@@ -197,28 +260,53 @@
     "nx1_neural_bridge"
    ],
    "appearance": {
-    "build": "slim",
+    "v": 2,
+    "presentation": "femme",
+    "build": "average",
+    "posture": "wide",
     "face": "round",
+    "nose": "small",
+    "brows": "thin",
+    "age_look": "adult",
     "expr": "smirk",
-    "hair": "long",
-    "hair_back": "long",
-    "outfit": "civilian",
-    "facial_hair": "",
-    "scar": "",
-    "tattoos": [],
-    "cyber": [],
-    "accessories": [
-     "nose_ring",
-     "earring"
-    ],
+    "outfit": "gang",
+    "hair": "bob",
+    "hair_color": "dye_red",
     "skin": 3,
-    "hair_color": "dye_magenta",
-    "iris": "green",
-    "cloth_a": "teal",
-    "cloth_b": "white",
+    "iris": "brown",
+    "facial_hair": "",
+    "scars": [
+     "lip"
+    ],
+    "tattoos": [
+     "tear",
+     "jaw_ink"
+    ],
+    "makeup": [
+     "lipstick",
+     "liner"
+    ],
+    "piercings": [
+     "lip_ring",
+     "ear_gauges"
+    ],
+    "cyber": [
+     "cheek_leds"
+    ],
+    "accessories": [
+     "choker",
+     "cigarette"
+    ],
+    "body_cyber": [],
+    "body_acc": [
+     "cigarette"
+    ],
+    "cloth_a": "black",
+    "cloth_b": "charcoal",
+    "cloth_c": "dirty_orange",
     "metal": "chrome",
-    "glow": "cyan",
-    "body_cyber": []
+    "glow": "red",
+    "rim": "8a2a3a"
    },
    "role": "regular",
    "story": false

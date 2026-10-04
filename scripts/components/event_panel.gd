@@ -34,7 +34,7 @@ func _build() -> void:
 	var who := CustomerManager.get_customer(char_id) if char_id != &"" else null
 	if who:
 		var portrait := PixelPortrait.new()
-		portrait.crop = Rect2i(8, 4, 48, 48)
+		portrait.framing = PixelPortrait.Framing.HEAD
 		head.add_child(portrait)
 		portrait.set_appearance(who.appearance, FactionManager.get_color(who.faction_id))
 	else:

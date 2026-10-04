@@ -89,8 +89,23 @@ func refresh_background() -> void:
 	_layout()
 
 
+## Feet sit this many art pixels above the bottom of the 40x80 body sprite.
+const BODY_FOOT_PAD := 3
+var _customer_glow: Texture2D
+var _customer_app: Dictionary = {}
+var _anim: Dictionary = {}
+
+
 func show_customer(customer: CustomerData, animate: bool) -> void:
-	_customer_tex = CharacterArt.body(customer.appearance) if not customer.appearance.is_empty() else null
+	_customer_app = CharacterAppearanceManager.normalize(customer.appearance)
+	var layers := CharacterArt.body_layers(_customer_app) if not _customer_app.is_empty() else [null, null]
+	_customer_tex = layers[0]
+	_customer_glow = layers[1]
+	CharacterAnimationManager.unregister(self)
+	var prof: StringName = CharacterPortraitManager.PROFILE_BY_PERSONALITY.get(customer.personality, &"calm")
+	if (_customer_app.get("body_acc", []) as Array).has("cigarette"):
+		prof = &"smoker"
+	_anim = CharacterAnimationManager.register(self, prof, not (_customer_app.get("body_cyber", []) as Array).is_empty())
 	_has_customer = true
 	_bubble.visible = true
 	if animate:
@@ -100,6 +115,7 @@ func show_customer(customer: CustomerData, animate: bool) -> void:
 
 
 func hide_customer() -> void:
+	CharacterAnimationManager.unregister(self)
 	_has_customer = false
 	_bubble.visible = false
 	queue_redraw()
@@ -109,7 +125,7 @@ func get_customer_rect() -> Rect2:
 	if _customer_tex == null:
 		return Rect2(_offset + CUSTOMER_FOOT * _scale - Vector2(16, 64) * _scale, Vector2(32, 64) * _scale)
 	var s := Vector2(_customer_tex.get_size()) * _scale
-	return Rect2(_offset + CUSTOMER_FOOT * _scale - Vector2(s.x / 2.0, s.y), s)
+	return Rect2(_offset + CUSTOMER_FOOT * _scale - Vector2(s.x / 2.0, s.y - BODY_FOOT_PAD * _scale), s)
 
 
 func _layout() -> void:
@@ -179,15 +195,7 @@ func _draw() -> void:
 		for k in 3:
 			var w := (14 - k * 4) * _scale
 			draw_rect(Rect2(foot.x - w / 2.0, foot.y - _scale + k * 0.0, w, _scale), Color(0, 0, 0, 0.25 + k * 0.15))
-		# Breathing: the upper body rises one art pixel on each inhale.
-		var inhale := 0.0 if Settings.reduce_motion else (1.0 if fmod(_time, 3.2) < 1.4 else 0.0)
-		var split := 0.62  # legs stay planted below this fraction
-		var tex_size := Vector2(_customer_tex.get_size())
-		var top_src := Rect2(0, 0, tex_size.x, floorf(tex_size.y * split))
-		var bot_src := Rect2(0, top_src.size.y, tex_size.x, tex_size.y - top_src.size.y)
-		var tint := Color(1, 1, 1, _customer_alpha)
-		draw_texture_rect_region(_customer_tex, Rect2(r.position + Vector2(0, bot_src.position.y * _scale), bot_src.size * _scale), bot_src, tint)
-		draw_texture_rect_region(_customer_tex, Rect2(r.position - Vector2(0, inhale * _scale), top_src.size * _scale), top_src, tint)
+		_draw_customer(r)
 	if zoomed:
 		# Zoom badge (top-right), drawn in whole pixels.
 		var badge := Rect2(size.x - 34, 6, 28, 14)
@@ -195,6 +203,41 @@ func _draw() -> void:
 		draw_string(get_theme_font(&"font", &"PixelLabel"), badge.position + Vector2(4, 11), "x2", HORIZONTAL_ALIGNMENT_LEFT, -1, 8, Palette.ACCENT)
 	if _flicker > 0.0 and fmod(_flicker * 40.0, 2.0) < 1.0:
 		draw_rect(Rect2(Vector2.ZERO, size), Color(0, 0, 0, 0.28))
+
+
+## Body in three bands so it can breathe and look around without
+## redrawing art: legs planted, torso rises 1 px on the inhale, head shifts
+## 1 px with the gaze and jitters with tremor. Emissive chrome flickers.
+func _draw_customer(r: Rect2) -> void:
+	var tex_size := Vector2(_customer_tex.get_size())
+	var inhale := float(_anim.get("breath", 0))
+	var gaze := str(_anim.get("gaze", "center"))
+	var head_dx := (-1.0 if gaze == "left" else (1.0 if gaze == "right" else 0.0))
+	var j: Vector2i = _anim.get("jitter", Vector2i.ZERO)
+	var lean := float(_anim.get("lean", 0))
+	var head_h := 19.0
+	var leg_y := 44.0
+	var bands := [
+		[Rect2(0, leg_y, tex_size.x, tex_size.y - leg_y), Vector2.ZERO],
+		[Rect2(0, head_h, tex_size.x, leg_y - head_h), Vector2(j.x * 0.0 + lean, -inhale)],
+		[Rect2(0, 0, tex_size.x, head_h), Vector2(head_dx + j.x + lean, -inhale)],
+	]
+	var tint := Color(1, 1, 1, _customer_alpha)
+	var glow_tint := Color(1, 1, 1, _customer_alpha * 0.5 * float(_anim.get("glow", 1.0)))
+	for band: Array in bands:
+		var src: Rect2 = band[0]
+		var off: Vector2 = band[1]
+		var dst := Rect2(r.position + (src.position + off) * _scale, src.size * _scale)
+		draw_texture_rect_region(_customer_tex, dst, src, tint)
+		if _customer_glow:
+			draw_texture_rect_region(_customer_glow, dst, src, glow_tint)
+	# Smoke curling up from a cigarette in the left hand.
+	if _anim.get("action", &"") == &"smoke" and (_customer_app.get("body_acc", []) as Array).has("cigarette"):
+		var t := float(_anim.get("action_t", 0.0))
+		var hand := r.position + Vector2(13, 43) * _scale
+		for k in 4:
+			var p := hand + Vector2(sin(t * 5.0 + k) * 1.2 + k * 0.4, -t * 14.0 - k * 3.0) * _scale
+			draw_rect(Rect2(p.floor(), Vector2(_scale, _scale)), Color(0.7, 0.72, 0.78, clampf(0.4 - t * 0.3 - k * 0.06, 0.0, 1.0)))
 
 
 func _gui_input(event: InputEvent) -> void:

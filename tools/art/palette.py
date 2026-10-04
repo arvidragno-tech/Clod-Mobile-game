@@ -85,6 +85,11 @@ CLOTH = {
     "brown": "5a3c28", "tan": "8c7050", "maroon": "5a1e28", "red": "8e2626", "teal": "1f4f52",
     "slate": "4a5668", "white": "c9cdd4", "gray": "70757e", "hivis": "c99a26", "purple": "3e2a52",
     "denim": "2f4566", "leather": "3a2a24", "green": "2f4a34", "drape": "2c4a4e",
+    # v2 occupational palettes (restrained, mostly desaturated)
+    "corp_white": "b9bfc8", "corp_gray": "5c626c", "cold_blue": "3a4c66", "gang_red": "6e1a1e",
+    "dirty_orange": "8a4a1e", "work_brown": "4e3a2a", "work_blue": "26324a", "safety": "b88a1e",
+    "scrub_green": "3e5a4a", "dirty_white": "a9a690", "bm_purple": "35223f", "dark_red": "4a1418",
+    "military_olive": "434a30", "muted_red": "6a2c2a", "rubber": "1e2024", "bone": "c8bea4",
 }
 METALS = {
     "chrome": "8e9aa8",      # tier 1-2 civilian/professional
@@ -98,6 +103,14 @@ GLOWS = {k: ACCENT[k] for k in ("cyan", "blue", "green", "amber", "red", "magent
 FIXED = ["0b0a10", "d9dee4", "15131a", "f6f8fb", "7c0f1e", "1c2534", "a9e9ff", "3b9da0"]
 
 RAMP_SKIN, RAMP_HAIR, RAMP_CLOTH_A, RAMP_CLOTH_B, RAMP_METAL, RAMP_GLOW, RAMP_IRIS, RAMP_FIXED = range(8)
+# v2 character ramps (encoding R = ramp * 16 allows up to 16 ramps):
+RAMP_CLOTH_C, RAMP_LEATHER, RAMP_GRIME, RAMP_BLOOD = range(8, 12)
+# Fixed material ramps shared by every character (not recoloured).
+MATERIALS = {
+    "leather": "3b2a24",   # worn dark leather, warm
+    "grime": "4a3f2c",     # dirt, grease, oil stains
+    "blood": "6e1018",     # dried to fresh blood
+}
 
 
 def glow_ramp(base_hex: str) -> list:
@@ -115,6 +128,7 @@ def export_json(path: str) -> None:
         "metal": {k: [rgb_to_hex(c) for c in ramp(v, 0.06, 1.1)] for k, v in METALS.items()},
         "glow": {k: [rgb_to_hex(c) for c in glow_ramp(v)] for k, v in GLOWS.items()},
         "fixed": FIXED,
+        "material": {k: [rgb_to_hex(c) for c in ramp(v, 0.07, 1.05)] for k, v in MATERIALS.items()},
     }
     with open(path, "w") as f:
         json.dump(data, f, indent=1)

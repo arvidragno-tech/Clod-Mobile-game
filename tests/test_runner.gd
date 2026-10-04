@@ -48,10 +48,17 @@ func _ready() -> void:
 func _run_all() -> void:
 	print("== UNIT / SYSTEM TESTS ==")
 	UnitTests.new().run(self)
+	if OS.get_cmdline_user_args().has("--unit-only"):
+		_finish()
+		return
 	print("== END-TO-END ==")
 	_main = (load("res://scenes/main/main.tscn") as PackedScene).instantiate()
 	add_child(_main)
 	await _e2e()
+	_finish()
+
+
+func _finish() -> void:
 	SaveManager.delete_save()
 	_clear_test_slots()
 	AudioManager.stop_all()

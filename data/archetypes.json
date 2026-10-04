@@ -905,6 +905,635 @@
    ],
    "pay_mult": 1.0,
    "min_rep": 20
+  },
+  {
+   "id": "club_performer",
+   "name": "Club Performer",
+   "occupations": [
+    "Dancer, Glow Strip",
+    "Club singer",
+    "Hologram model"
+   ],
+   "factions": {
+    "black_market": 2,
+    "independent_mercs": 1,
+    "street_gangs": 1
+   },
+   "outfits": [
+    "civilian"
+   ],
+   "hair": [
+    "long",
+    "short",
+    "tied",
+    "locs",
+    "undercut"
+   ],
+   "accessories": [
+    "none",
+    "earring",
+    "nose_ring"
+   ],
+   "cyber_visual": [
+    "none",
+    "none",
+    "temple_port"
+   ],
+   "facial_hair": [
+    "none"
+   ],
+   "tattoos": [
+    "none"
+   ],
+   "scars": [
+    "none"
+   ],
+   "cloth_a": [
+    "teal",
+    "denim",
+    "gray",
+    "purple"
+   ],
+   "cloth_b": [
+    "white",
+    "gray"
+   ],
+   "categories": {
+    "dermal": 3,
+    "eyes": 3,
+    "neural": 2
+   },
+   "wealth": [
+    1,
+    2
+   ],
+   "pain": [
+    0.6,
+    1.0
+   ],
+   "patience": [
+    50,
+    90
+   ],
+   "risk": [
+    0.1,
+    0.4
+   ],
+   "neural": [
+    85,
+    100
+   ],
+   "existing": [
+    0,
+    1
+   ],
+   "personalities": [
+    "smooth",
+    "chatty",
+    "nervous"
+   ],
+   "pay_mult": 1.05,
+   "min_rep": -100
+  },
+  {
+   "id": "security_officer",
+   "name": "Security Officer",
+   "occupations": [
+    "Aegis patrol officer",
+    "Arcology guard",
+    "Checkpoint warden"
+   ],
+   "factions": {
+    "corporate_security": 6
+   },
+   "outfits": [
+    "mercenary"
+   ],
+   "hair": [
+    "buzz",
+    "short",
+    "undercut",
+    "tied"
+   ],
+   "accessories": [
+    "headset",
+    "earring"
+   ],
+   "cyber_visual": [
+    "eye",
+    "jaw",
+    "visor",
+    "arm_shoulder"
+   ],
+   "facial_hair": [
+    "stubble",
+    "none",
+    "none"
+   ],
+   "tattoos": [
+    "none",
+    "neck_code"
+   ],
+   "scars": [
+    "cheek",
+    "brow",
+    "none"
+   ],
+   "cloth_a": [
+    "olive",
+    "charcoal",
+    "khaki"
+   ],
+   "cloth_b": [
+    "khaki",
+    "black",
+    "slate"
+   ],
+   "categories": {
+    "eyes": 3,
+    "arms": 2,
+    "spine": 2,
+    "dermal": 2
+   },
+   "wealth": [
+    2,
+    3
+   ],
+   "pain": [
+    1.0,
+    1.4
+   ],
+   "patience": [
+    40,
+    70
+   ],
+   "risk": [
+    0.5,
+    0.9
+   ],
+   "neural": [
+    70,
+    95
+   ],
+   "existing": [
+    1,
+    3
+   ],
+   "personalities": [
+    "stoic",
+    "hard",
+    "paranoid"
+   ],
+   "pay_mult": 1.15,
+   "min_rep": 5
+  },
+  {
+   "id": "veteran",
+   "name": "War Veteran",
+   "occupations": [
+    "Discharged trooper",
+    "Border-war veteran",
+    "Ex-company soldier"
+   ],
+   "factions": {
+    "independent_mercs": 4,
+    "street_gangs": 1
+   },
+   "outfits": [
+    "mercenary"
+   ],
+   "hair": [
+    "buzz",
+    "short",
+    "undercut",
+    "tied"
+   ],
+   "accessories": [
+    "headset",
+    "earring"
+   ],
+   "cyber_visual": [
+    "eye",
+    "jaw",
+    "visor",
+    "arm_shoulder"
+   ],
+   "facial_hair": [
+    "stubble",
+    "none",
+    "none"
+   ],
+   "tattoos": [
+    "none",
+    "neck_code"
+   ],
+   "scars": [
+    "cheek",
+    "brow",
+    "none"
+   ],
+   "cloth_a": [
+    "olive",
+    "charcoal",
+    "khaki"
+   ],
+   "cloth_b": [
+    "khaki",
+    "black",
+    "slate"
+   ],
+   "categories": {
+    "arms": 3,
+    "legs": 3,
+    "spine": 2,
+    "eyes": 2
+   },
+   "wealth": [
+    0,
+    1
+   ],
+   "pain": [
+    1.0,
+    1.4
+   ],
+   "patience": [
+    40,
+    70
+   ],
+   "risk": [
+    0.5,
+    0.9
+   ],
+   "neural": [
+    70,
+    95
+   ],
+   "existing": [
+    1,
+    3
+   ],
+   "personalities": [
+    "tired",
+    "stoic",
+    "hard"
+   ],
+   "pay_mult": 0.95,
+   "min_rep": -100
+  },
+  {
+   "id": "netrunner",
+   "name": "Netrunner",
+   "occupations": [
+    "Freelance netrunner",
+    "Data thief",
+    "Grid diver"
+   ],
+   "factions": {
+    "black_market": 3,
+    "independent_mercs": 2
+   },
+   "outfits": [
+    "smuggler"
+   ],
+   "hair": [
+    "short",
+    "long",
+    "locs",
+    "tied"
+   ],
+   "accessories": [
+    "hood",
+    "mask",
+    "goggles"
+   ],
+   "cyber_visual": [
+    "eye",
+    "temple_port",
+    "none"
+   ],
+   "facial_hair": [
+    "stubble",
+    "none"
+   ],
+   "tattoos": [
+    "none",
+    "face_lines"
+   ],
+   "scars": [
+    "brow",
+    "none"
+   ],
+   "cloth_a": [
+    "brown",
+    "khaki",
+    "leather"
+   ],
+   "cloth_b": [
+    "tan",
+    "khaki",
+    "brown"
+   ],
+   "categories": {
+    "neural": 5,
+    "eyes": 2,
+    "spine": 1
+   },
+   "wealth": [
+    1,
+    2
+   ],
+   "pain": [
+    0.9,
+    1.2
+   ],
+   "patience": [
+    30,
+    60
+   ],
+   "risk": [
+    0.5,
+    0.9
+   ],
+   "neural": [
+    70,
+    95
+   ],
+   "existing": [
+    1,
+    2
+   ],
+   "personalities": [
+    "paranoid",
+    "nervous",
+    "smooth"
+   ],
+   "pay_mult": 1.1,
+   "min_rep": -100
+  },
+  {
+   "id": "addict",
+   "name": "Burnout",
+   "occupations": [
+    "Chrome addict",
+    "Former courier",
+    "Unemployed"
+   ],
+   "factions": {
+    "street_gangs": 2,
+    "black_market": 2
+   },
+   "outfits": [
+    "civilian"
+   ],
+   "hair": [
+    "long",
+    "short",
+    "tied",
+    "locs",
+    "undercut"
+   ],
+   "accessories": [
+    "none",
+    "earring",
+    "nose_ring"
+   ],
+   "cyber_visual": [
+    "none",
+    "none",
+    "temple_port"
+   ],
+   "facial_hair": [
+    "none"
+   ],
+   "tattoos": [
+    "none"
+   ],
+   "scars": [
+    "none"
+   ],
+   "cloth_a": [
+    "teal",
+    "denim",
+    "gray",
+    "purple"
+   ],
+   "cloth_b": [
+    "white",
+    "gray"
+   ],
+   "categories": {
+    "neural": 3,
+    "dermal": 2,
+    "eyes": 1
+   },
+   "wealth": [
+    0,
+    0
+   ],
+   "pain": [
+    0.6,
+    1.0
+   ],
+   "patience": [
+    50,
+    90
+   ],
+   "risk": [
+    0.1,
+    0.4
+   ],
+   "neural": [
+    85,
+    100
+   ],
+   "existing": [
+    0,
+    1
+   ],
+   "personalities": [
+    "nervous",
+    "tired",
+    "paranoid"
+   ],
+   "pay_mult": 0.7,
+   "min_rep": -100
+  },
+  {
+   "id": "elder",
+   "name": "Retiree",
+   "occupations": [
+    "Retired dock worker",
+    "Old tailor",
+    "Former teacher"
+   ],
+   "factions": {
+    "street_gangs": 1,
+    "medical_authorities": 1,
+    "independent_mercs": 1
+   },
+   "outfits": [
+    "civilian"
+   ],
+   "hair": [
+    "long",
+    "short",
+    "tied",
+    "locs",
+    "undercut"
+   ],
+   "accessories": [
+    "none",
+    "earring",
+    "nose_ring"
+   ],
+   "cyber_visual": [
+    "none",
+    "none",
+    "temple_port"
+   ],
+   "facial_hair": [
+    "none"
+   ],
+   "tattoos": [
+    "none"
+   ],
+   "scars": [
+    "none"
+   ],
+   "cloth_a": [
+    "teal",
+    "denim",
+    "gray",
+    "purple"
+   ],
+   "cloth_b": [
+    "white",
+    "gray"
+   ],
+   "categories": {
+    "eyes": 3,
+    "internal": 2,
+    "respiratory": 2,
+    "legs": 2
+   },
+   "wealth": [
+    0,
+    1
+   ],
+   "pain": [
+    0.6,
+    1.0
+   ],
+   "patience": [
+    50,
+    90
+   ],
+   "risk": [
+    0.1,
+    0.4
+   ],
+   "neural": [
+    85,
+    100
+   ],
+   "existing": [
+    0,
+    1
+   ],
+   "personalities": [
+    "tired",
+    "calm",
+    "stoic"
+   ],
+   "pay_mult": 0.85,
+   "min_rep": -100
+  },
+  {
+   "id": "scavenger",
+   "name": "Tunnel Scavenger",
+   "occupations": [
+    "Tunnel scavenger",
+    "Scrap picker",
+    "Drowned-district diver"
+   ],
+   "factions": {
+    "street_gangs": 2,
+    "black_market": 2
+   },
+   "outfits": [
+    "dock"
+   ],
+   "hair": [
+    "buzz",
+    "short",
+    "bald"
+   ],
+   "accessories": [
+    "beanie",
+    "none"
+   ],
+   "cyber_visual": [
+    "arm_shoulder",
+    "respirator",
+    "none"
+   ],
+   "facial_hair": [
+    "beard",
+    "stubble",
+    "mustache"
+   ],
+   "tattoos": [
+    "none",
+    "neck_code"
+   ],
+   "scars": [
+    "cheek",
+    "none"
+   ],
+   "cloth_a": [
+    "slate",
+    "navy",
+    "olive"
+   ],
+   "cloth_b": [
+    "hivis"
+   ],
+   "categories": {
+    "respiratory": 3,
+    "eyes": 2,
+    "legs": 2
+   },
+   "wealth": [
+    0,
+    1
+   ],
+   "pain": [
+    0.7,
+    1.1
+   ],
+   "patience": [
+    45,
+    80
+   ],
+   "risk": [
+    0.2,
+    0.5
+   ],
+   "neural": [
+    75,
+    100
+   ],
+   "existing": [
+    0,
+    1
+   ],
+   "personalities": [
+    "paranoid",
+    "tired",
+    "calm"
+   ],
+   "pay_mult": 0.85,
+   "min_rep": -100
   }
  ]
 }

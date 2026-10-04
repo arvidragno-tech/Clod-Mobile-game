@@ -219,8 +219,63 @@ func _customer_generation() -> void:
 	var round_trip := CustomerData.from_save_dict(ca.to_save_dict())
 	check(round_trip.display_name == ca.display_name and round_trip.existing_cyberware == ca.existing_cyberware and round_trip.appearance == ca.appearance, "customer serialises losslessly")
 	var tex := CharacterArt.portrait(ca.appearance)
-	check(tex != null and tex.get_width() == 64, "portrait composites to 64x64")
-	check(CharacterArt.body(ca.appearance).get_height() == 64, "body sprite composites to 32x64")
+	check(tex != null and tex.get_width() == 96 and tex.get_height() == 112, "portrait composites to 96x112")
+	check(CharacterArt.body(ca.appearance).get_height() == 80, "body sprite composites to 40x80")
+	_character_system(gen)
+
+
+## Character art v2: cast, silhouettes, migration, visible consequences.
+func _character_system(gen: CustomerGenerator) -> void:
+	for id: StringName in CharacterManager.cast:
+		var app := CharacterManager.appearance(id)
+		check(CharacterArt.validate(app).is_empty(), "cast %s art parts exist %s" % [id, CharacterArt.validate(app)])
+		var c := CharacterManager.get_character(id)
+		check(c.background != "" and c.motivation != "" and c.arc != "" and c.silhouette != "", "cast %s has background, motivation, arc, silhouette" % id)
+	check(CharacterManager.cast.size() >= 10, "story cast loaded (%d)" % CharacterManager.cast.size())
+	# Silhouettes: occupation decides outfit + posture + kit.
+	var silhouettes := {}
+	var by_occ := {}
+	gen.rng.seed = 4242
+	for i in 200:
+		var c := gen.generate()
+		var a := c.appearance
+		silhouettes["%s|%s|%s" % [a.get("outfit"), a.get("posture"), a.get("build")]] = true
+		by_occ[str(c.archetype_id)] = a.get("outfit")
+	check(silhouettes.size() >= 30, "customers have many distinct silhouettes (%d)" % silhouettes.size())
+	var corp := CharacterAppearanceManager.generate({"occupation": "executive", "faction": "lyra_biocomp", "wealth": 3, "age": 45})
+	var gang := CharacterAppearanceManager.generate({"occupation": "gang_member", "faction": "street_gangs", "wealth": 0, "age": 24})
+	check(corp["outfit"] in ["executive", "corporate"] and corp["posture"] == "upright" and corp["metal"] != "brass", "executive reads clean, upright, discreet")
+	check(gang["outfit"] == "gang" and gang["posture"] in ["wide", "slouch"], "ganger reads asymmetric and aggressive")
+	var old := CharacterAppearanceManager.generate({"occupation": "elder", "age": 78})
+	check(old["age_look"] == "old", "age shows on the face")
+	# v1 appearances (old saves) still render.
+	var v1 := {"build": "heavy", "face": "broad", "expr": "hard", "hair": "long", "outfit": "dock", "facial_hair": "beard",
+		"scar": "cheek", "tattoos": ["gang_mark"], "cyber": ["eye", "circuit"], "accessories": ["earring", "beanie"],
+		"body_cyber": ["arm"], "skin": 3, "hair_color": "gray", "iris": "blue", "cloth_a": "navy", "cloth_b": "hivis"}
+	var v2 := CharacterAppearanceManager.normalize(v1)
+	check(int(v2["v"]) == 2 and v2["outfit"] == "worker" and v2["face"] == "square" and (v2["cyber"] as Array).has("optic"), "v1 appearance migrates to v2")
+	check(CharacterArt.validate(v2).is_empty(), "migrated appearance renders %s" % CharacterArt.validate(v2))
+	# Story consequences change how a character looks, and survive a save.
+	CharacterManager.reset_state()
+	CharacterManager.apply_appearance_event(&"teo_marr", "lose_eye")
+	check((CharacterManager.appearance(&"teo_marr")["cyber"] as Array).has("optic"), "losing an eye gives the character an optic")
+	var saved := CharacterManager.get_save_data()
+	CharacterManager.reset_state()
+	check(not (CharacterManager.appearance(&"teo_marr")["cyber"] as Array).has("optic"), "reset restores the base look")
+	CharacterManager.load_save_data(saved)
+	check((CharacterManager.appearance(&"teo_marr")["cyber"] as Array).has("optic"), "appearance changes persist through save/load")
+	CharacterManager.change_relationship(&"vesna_kalo", 30)
+	check(CharacterManager.relationship_state(&"vesna_kalo") == "transactional", "fixers stay transactional until trust is high")
+	CharacterManager.change_relationship(&"vesna_kalo", 40)
+	check(CharacterManager.relationship_state(&"vesna_kalo") == "loyal", "high trust turns loyal")
+	CharacterManager.reset_state()
+	# Compositing is cheap enough for live expression swaps.
+	var t0 := Time.get_ticks_usec()
+	for e in ["neutral", "angry", "smirk", "sad", "fear", "pain"]:
+		for g in ["center", "left", "right", "closed"]:
+			CharacterArt.portrait_layers(gang, e, g)
+	var ms := (Time.get_ticks_usec() - t0) / 1000.0
+	check(ms < 2500.0, "24 portrait variants composite quickly (%.0f ms)" % ms)
 
 
 func _learning_curve() -> void:

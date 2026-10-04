@@ -90,9 +90,12 @@ func _contact_card(c: CustomerData, role: String) -> Control:
 	var row := UIKit.hbox(10)
 	card.add_child(row)
 	var p := PixelPortrait.new()
-	p.crop = Rect2i(14, 6, 36, 36)
+	p.framing = PixelPortrait.Framing.HEAD
 	row.add_child(p)
-	p.set_appearance(c.appearance, FactionManager.get_color(c.faction_id))
+	if CharacterManager.has_character(c.id):
+		p.set_character(c.id)
+	else:
+		p.set_appearance(c.appearance, FactionManager.get_color(c.faction_id))
 	var v := UIKit.vbox(2)
 	UIKit.expand(v)
 	v.size_flags_vertical = Control.SIZE_SHRINK_CENTER

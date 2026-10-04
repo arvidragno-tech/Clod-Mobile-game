@@ -85,8 +85,9 @@ func on_enter(_params: Dictionary) -> void:
 	var wire := CustomerManager.get_customer(&"vesna_kalo")
 	if wire:
 		var p := PixelPortrait.new()
+		p.framing = PixelPortrait.Framing.BUST
 		sv.add_child(p)
-		p.set_appearance(wire.appearance, Palette.BRAND)
+		p.set_character(&"vesna_kalo")
 	sv.add_child(UIKit.label("\"Cash only. No refunds. No questions.\"", &"DimLabel", true, Color("ffb0cc")))
 	sv.add_child(UIKit.label("> ENCRYPTED FEED", &"SubHeaderLabel", false, Palette.BRAND))
 	_feed = UIKit.label("", &"MonoLabel", true, Color("ff7ab0"))

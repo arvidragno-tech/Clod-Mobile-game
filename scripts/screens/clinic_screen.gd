@@ -85,7 +85,7 @@ func _build() -> void:
 	var who := UIKit.hbox(14)
 	_info_box.add_child(who)
 	_portrait = PixelPortrait.new()
-	_portrait.crop = Rect2i(6, 2, 52, 52)
+	_portrait.framing = PixelPortrait.Framing.FACE
 	who.add_child(_portrait)
 	var text := UIKit.vbox(4)
 	UIKit.expand(text)

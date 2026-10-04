@@ -1,0 +1,1054 @@
+{
+ "version": 2,
+ "notes": "Data-driven look rules used by CharacterAppearanceManager. Occupation sets the silhouette (outfit, posture, accessories), faction tints palettes and rim light, wealth decides wear and cyber metal, age shifts features and hair. Weights are relative.",
+ "presentations": {
+  "masc": 4,
+  "femme": 4,
+  "andro": 2
+ },
+ "skin_weights": [
+  2,
+  2,
+  2,
+  2,
+  2,
+  2,
+  2
+ ],
+ "iris": [
+  "brown",
+  "dark",
+  "hazel",
+  "green",
+  "blue",
+  "gray"
+ ],
+ "natural_hair": [
+  "black",
+  "dark_brown",
+  "brown",
+  "auburn",
+  "blond"
+ ],
+ "dyed_hair": [
+  "dye_cyan",
+  "dye_magenta",
+  "dye_green",
+  "dye_blue",
+  "dye_red"
+ ],
+ "faces": {
+  "oval": 3,
+  "square": 2,
+  "long": 2,
+  "round": 2,
+  "gaunt": 1,
+  "heavy": 1
+ },
+ "noses": {
+  "straight": 4,
+  "broad": 2,
+  "hooked": 1,
+  "broken": 1,
+  "small": 2
+ },
+ "hair_by_presentation": {
+  "masc": {
+   "buzz": 4,
+   "short": 4,
+   "messy": 2,
+   "undercut": 2,
+   "slick": 2,
+   "receding": 1,
+   "mohawk": 1,
+   "locs": 1,
+   "bald": 2,
+   "topknot": 1
+  },
+  "femme": {
+   "long": 4,
+   "bob": 3,
+   "tied": 3,
+   "braids": 2,
+   "undercut": 1,
+   "shaved": 1,
+   "messy": 1,
+   "locs": 1,
+   "topknot": 1,
+   "short": 1
+  },
+  "andro": {
+   "short": 3,
+   "shaved": 2,
+   "undercut": 2,
+   "messy": 2,
+   "bob": 1,
+   "buzz": 2,
+   "mohawk": 1,
+   "slick": 1
+  }
+ },
+ "expr_by_personality": {
+  "calm": "neutral",
+  "hard": "angry",
+  "nervous": "fear",
+  "cocky": "smirk",
+  "tired": "sad",
+  "stoic": "neutral",
+  "desperate": "sad",
+  "friendly": "smirk",
+  "paranoid": "fear",
+  "cold": "neutral",
+  "volatile": "angry",
+  "aggressive": "angry",
+  "smooth": "smirk",
+  "chatty": "smirk"
+ },
+ "factions": {
+  "corporate_security": {
+   "glow": [
+    "blue",
+    "cyan"
+   ],
+   "rim": "4a6a9a",
+   "metal": [
+    "ceramic",
+    "chrome"
+   ],
+   "palette": {
+    "cloth_a": [
+     "corp_gray",
+     "cold_blue",
+     "black",
+     "corp_white"
+    ],
+    "cloth_b": [
+     "corp_white",
+     "corp_gray",
+     "black"
+    ],
+    "cloth_c": [
+     "black",
+     "cold_blue"
+    ]
+   }
+  },
+  "street_gangs": {
+   "glow": [
+    "red",
+    "magenta",
+    "amber"
+   ],
+   "rim": "8a2a3a",
+   "metal": [
+    "blackened",
+    "brass",
+    "chrome"
+   ],
+   "palette": {
+    "cloth_a": [
+     "black",
+     "charcoal",
+     "gang_red",
+     "dirty_orange"
+    ],
+    "cloth_b": [
+     "black",
+     "charcoal",
+     "dark_red"
+    ],
+    "cloth_c": [
+     "gang_red",
+     "dirty_orange",
+     "maroon"
+    ]
+   }
+  },
+  "black_market": {
+   "glow": [
+    "magenta",
+    "red"
+   ],
+   "rim": "7a2a6a",
+   "metal": [
+    "blackened",
+    "gunmetal"
+   ],
+   "palette": {
+    "cloth_a": [
+     "bm_purple",
+     "black",
+     "dark_red"
+    ],
+    "cloth_b": [
+     "black",
+     "bm_purple",
+     "charcoal"
+    ],
+    "cloth_c": [
+     "dark_red",
+     "maroon",
+     "bm_purple"
+    ]
+   }
+  },
+  "independent_mercs": {
+   "glow": [
+    "amber",
+    "green",
+    "red"
+   ],
+   "rim": "8a6a3a",
+   "metal": [
+    "gunmetal",
+    "chrome",
+    "brass"
+   ],
+   "palette": {
+    "cloth_a": [
+     "military_olive",
+     "charcoal",
+     "khaki",
+     "black"
+    ],
+    "cloth_b": [
+     "charcoal",
+     "black",
+     "khaki"
+    ],
+    "cloth_c": [
+     "black",
+     "muted_red",
+     "olive"
+    ]
+   }
+  },
+  "medical_authorities": {
+   "glow": [
+    "green",
+    "cyan"
+   ],
+   "rim": "3a8a7a",
+   "metal": [
+    "chrome",
+    "ceramic"
+   ],
+   "palette": {
+    "cloth_a": [
+     "dirty_white",
+     "scrub_green",
+     "slate"
+    ],
+    "cloth_b": [
+     "dirty_white",
+     "corp_gray"
+    ],
+    "cloth_c": [
+     "scrub_green",
+     "charcoal"
+    ]
+   }
+  },
+  "lyra_biocomp": {
+   "glow": [
+    "blue",
+    "cyan"
+   ],
+   "rim": "5a7aa8",
+   "metal": [
+    "ceramic"
+   ],
+   "palette": {
+    "cloth_a": [
+     "corp_white",
+     "corp_gray"
+    ],
+    "cloth_b": [
+     "corp_white",
+     "black"
+    ],
+    "cloth_c": [
+     "cold_blue",
+     "black"
+    ]
+   }
+  },
+  "none": {
+   "glow": [
+    "cyan",
+    "green",
+    "amber"
+   ],
+   "rim": "3b9da0",
+   "metal": [
+    "chrome",
+    "brass"
+   ],
+   "palette": {
+    "cloth_a": [
+     "work_brown",
+     "charcoal",
+     "denim",
+     "olive",
+     "slate"
+    ],
+    "cloth_b": [
+     "black",
+     "charcoal",
+     "tan"
+    ],
+    "cloth_c": [
+     "black",
+     "work_blue",
+     "brown"
+    ]
+   }
+  }
+ },
+ "occupations": {
+  "street_merc": {
+   "label": "Street mercenary",
+   "outfit": {
+    "mercenary": 3,
+    "military": 1
+   },
+   "builds": {
+    "muscular": 3,
+    "average": 2,
+    "heavy": 1
+   },
+   "postures": {
+    "wide": 3,
+    "upright": 2
+   },
+   "accessories": {
+    "headset": 2,
+    "dog_tags": 2,
+    "none": 3,
+    "bandana": 1
+   },
+   "body_acc": {
+    "rifle": 2,
+    "holster": 2,
+    "bandolier": 1,
+    "backpack": 1
+   },
+   "cyber": {
+    "optic": 3,
+    "jaw_plate": 2,
+    "visor": 1,
+    "spine_cables": 1,
+    "shoulder_chrome": 2,
+    "serial_marks": 1
+   },
+   "scar": 0.6,
+   "tattoo": 0.3,
+   "piercing": 0.15,
+   "makeup": 0.05,
+   "grime": 2
+  },
+  "gang_member": {
+   "label": "Rustline ganger",
+   "outfit": {
+    "gang": 5
+   },
+   "builds": {
+    "muscular": 2,
+    "average": 2,
+    "slim": 2,
+    "heavy": 1
+   },
+   "postures": {
+    "wide": 4,
+    "slouch": 2
+   },
+   "accessories": {
+    "bandana": 2,
+    "shades": 2,
+    "chain": 2,
+    "choker": 1,
+    "none": 2,
+    "cigarette": 2
+   },
+   "body_acc": {
+    "blade": 2,
+    "holster": 1,
+    "cigarette": 1
+   },
+   "cyber": {
+    "jaw_plate": 2,
+    "optic": 2,
+    "mouth_grille": 2,
+    "patched_implant": 2,
+    "face_half": 1,
+    "neck_ports": 1
+   },
+   "scar": 0.75,
+   "tattoo": 0.8,
+   "tattoos": [
+    "gang_throat",
+    "cheek_lines",
+    "tear",
+    "jaw_ink",
+    "forehead_glyph"
+   ],
+   "piercing": 0.6,
+   "makeup": 0.3,
+   "makeups": [
+    "warpaint",
+    "liner",
+    "smudge"
+   ],
+   "dye_chance": 0.45,
+   "grime": 2
+  },
+  "corporate": {
+   "label": "Corporate employee",
+   "outfit": {
+    "corporate": 4,
+    "executive": 1
+   },
+   "builds": {
+    "slim": 3,
+    "average": 3,
+    "heavy": 1
+   },
+   "postures": {
+    "upright": 5
+   },
+   "accessories": {
+    "glasses": 2,
+    "earpiece": 2,
+    "none": 4
+   },
+   "body_acc": {
+    "briefcase": 3,
+    "datapad": 2,
+    "none": 1
+   },
+   "cyber": {
+    "skin_seam": 3,
+    "twin_optics": 2,
+    "forehead_chip": 1,
+    "ear_module": 1
+   },
+   "scar": 0.03,
+   "tattoo": 0.02,
+   "piercing": 0.05,
+   "makeup": 0.25,
+   "makeups": [
+    "liner",
+    "lipstick"
+   ],
+   "faction_default": "corporate_security",
+   "grime": 0
+  },
+  "executive": {
+   "label": "Corporate executive",
+   "outfit": {
+    "executive": 3,
+    "corporate": 1
+   },
+   "builds": {
+    "slim": 3,
+    "average": 2
+   },
+   "postures": {
+    "upright": 5
+   },
+   "accessories": {
+    "earpiece": 2,
+    "none": 3,
+    "glasses": 1
+   },
+   "body_acc": {
+    "datapad": 1,
+    "none": 2
+   },
+   "cyber": {
+    "skin_seam": 4,
+    "twin_optics": 2,
+    "forehead_chip": 1
+   },
+   "scar": 0.0,
+   "tattoo": 0.0,
+   "piercing": 0.02,
+   "makeup": 0.3,
+   "makeups": [
+    "liner",
+    "lipstick"
+   ],
+   "wealth": 3,
+   "faction_default": "lyra_biocomp",
+   "grime": 0
+  },
+  "smuggler": {
+   "label": "Smuggler",
+   "outfit": {
+    "civilian": 2,
+    "dealer": 1,
+    "mercenary": 1
+   },
+   "builds": {
+    "slim": 3,
+    "average": 2
+   },
+   "postures": {
+    "slouch": 2,
+    "upright": 2
+   },
+   "accessories": {
+    "goggles": 2,
+    "scarf": 2,
+    "cigarette": 1,
+    "none": 2
+   },
+   "body_acc": {
+    "backpack": 3,
+    "holster": 1
+   },
+   "cyber": {
+    "optic": 1,
+    "neck_ports": 2,
+    "temple_ports": 1,
+    "cheek_leds": 1
+   },
+   "scar": 0.35,
+   "tattoo": 0.3,
+   "piercing": 0.3,
+   "makeup": 0.15,
+   "grime": 1
+  },
+  "dock_worker": {
+   "label": "Dock worker",
+   "outfit": {
+    "worker": 5
+   },
+   "builds": {
+    "heavy": 3,
+    "muscular": 3,
+    "average": 1
+   },
+   "postures": {
+    "slouch": 3,
+    "upright": 1
+   },
+   "accessories": {
+    "beanie": 3,
+    "cap": 2,
+    "none": 2
+   },
+   "body_acc": {
+    "toolbelt": 2,
+    "none": 2
+   },
+   "cyber": {
+    "neck_ports": 1,
+    "serial_marks": 1,
+    "shoulder_chrome": 2,
+    "patched_implant": 1
+   },
+   "scar": 0.4,
+   "tattoo": 0.25,
+   "piercing": 0.1,
+   "makeup": 0.0,
+   "grime": 3,
+   "faction_default": "none"
+  },
+  "bounty_hunter": {
+   "label": "Bounty hunter",
+   "outfit": {
+    "mercenary": 2,
+    "fixer": 1
+   },
+   "builds": {
+    "muscular": 2,
+    "average": 2,
+    "slim": 1
+   },
+   "postures": {
+    "upright": 2,
+    "wide": 2
+   },
+   "accessories": {
+    "shades": 2,
+    "headset": 1,
+    "none": 2
+   },
+   "body_acc": {
+    "holster": 2,
+    "rifle": 1,
+    "bandolier": 1
+   },
+   "cyber": {
+    "optic": 3,
+    "visor": 2,
+    "ear_module": 1
+   },
+   "scar": 0.55,
+   "tattoo": 0.2,
+   "piercing": 0.15,
+   "makeup": 0.05,
+   "grime": 1
+  },
+  "fixer": {
+   "label": "Fixer",
+   "outfit": {
+    "fixer": 4,
+    "dealer": 1
+   },
+   "builds": {
+    "average": 3,
+    "slim": 2,
+    "heavy": 1
+   },
+   "postures": {
+    "upright": 3,
+    "slouch": 1
+   },
+   "accessories": {
+    "shades": 3,
+    "chain": 2,
+    "earpiece": 1
+   },
+   "body_acc": {
+    "holster": 1,
+    "none": 2,
+    "cigarette": 1
+   },
+   "cyber": {
+    "cheek_leds": 1,
+    "ear_module": 2,
+    "temple_ports": 1,
+    "skin_seam": 1
+   },
+   "scar": 0.25,
+   "tattoo": 0.25,
+   "piercing": 0.4,
+   "makeup": 0.25,
+   "grime": 0
+  },
+  "criminal": {
+   "label": "Street criminal",
+   "outfit": {
+    "gang": 2,
+    "civilian": 2,
+    "addict": 1
+   },
+   "builds": {
+    "slim": 3,
+    "average": 2
+   },
+   "postures": {
+    "slouch": 3,
+    "wide": 1
+   },
+   "accessories": {
+    "hood": 2,
+    "bandana": 1,
+    "cigarette": 1,
+    "none": 2
+   },
+   "body_acc": {
+    "blade": 2,
+    "hood": 1
+   },
+   "cyber": {
+    "patched_implant": 2,
+    "optic": 1,
+    "neck_ports": 1
+   },
+   "scar": 0.5,
+   "tattoo": 0.5,
+   "piercing": 0.4,
+   "makeup": 0.15,
+   "dye_chance": 0.3,
+   "grime": 2
+  },
+  "civilian": {
+   "label": "Undercity resident",
+   "outfit": {
+    "civilian": 4,
+    "worker": 1,
+    "elder": 1
+   },
+   "builds": {
+    "slim": 2,
+    "average": 3,
+    "heavy": 2
+   },
+   "postures": {
+    "slouch": 2,
+    "upright": 2
+   },
+   "accessories": {
+    "beanie": 1,
+    "glasses": 1,
+    "scarf": 1,
+    "none": 4
+   },
+   "body_acc": {
+    "none": 3,
+    "backpack": 1
+   },
+   "cyber": {
+    "neck_ports": 1,
+    "patched_implant": 1,
+    "cheek_leds": 1
+   },
+   "scar": 0.15,
+   "tattoo": 0.15,
+   "piercing": 0.2,
+   "makeup": 0.2,
+   "dye_chance": 0.2,
+   "grime": 1,
+   "faction_default": "none"
+  },
+  "bm_tech": {
+   "label": "Black-market tech",
+   "outfit": {
+    "technician": 3,
+    "dealer": 1
+   },
+   "builds": {
+    "slim": 3,
+    "average": 2
+   },
+   "postures": {
+    "slouch": 3,
+    "upright": 1
+   },
+   "accessories": {
+    "goggles": 2,
+    "headlamp": 1,
+    "glasses": 1,
+    "none": 1
+   },
+   "body_acc": {
+    "toolbelt": 3,
+    "shoulder_lamp": 1,
+    "datapad": 1
+   },
+   "cyber": {
+    "twin_optics": 1,
+    "temple_ports": 2,
+    "ear_module": 1,
+    "neck_ports": 1
+   },
+   "scar": 0.3,
+   "tattoo": 0.3,
+   "piercing": 0.5,
+   "makeup": 0.1,
+   "dye_chance": 0.35,
+   "grime": 2
+  },
+  "club_performer": {
+   "label": "Club performer",
+   "outfit": {
+    "performer": 5
+   },
+   "builds": {
+    "slim": 4,
+    "average": 1
+   },
+   "postures": {
+    "upright": 2,
+    "wide": 1
+   },
+   "accessories": {
+    "choker": 2,
+    "none": 2
+   },
+   "body_acc": {
+    "none": 3
+   },
+   "cyber": {
+    "cheek_leds": 3,
+    "skin_seam": 1,
+    "twin_optics": 1
+   },
+   "scar": 0.1,
+   "tattoo": 0.3,
+   "piercing": 0.6,
+   "makeup": 0.85,
+   "makeups": [
+    "liner",
+    "lipstick",
+    "warpaint"
+   ],
+   "dye_chance": 0.6,
+   "grime": 0
+  },
+  "security_officer": {
+   "label": "Corporate security officer",
+   "outfit": {
+    "security": 5
+   },
+   "builds": {
+    "muscular": 3,
+    "average": 2,
+    "heavy": 1
+   },
+   "postures": {
+    "upright": 5
+   },
+   "accessories": {
+    "helmet": 2,
+    "earpiece": 3
+   },
+   "body_acc": {
+    "helmet": 1,
+    "holster": 2,
+    "rifle": 1
+   },
+   "cyber": {
+    "visor": 3,
+    "optic": 1,
+    "ear_module": 1,
+    "serial_marks": 1
+   },
+   "scar": 0.2,
+   "tattoo": 0.05,
+   "piercing": 0.0,
+   "makeup": 0.0,
+   "faction_default": "corporate_security",
+   "grime": 0
+  },
+  "veteran": {
+   "label": "War veteran",
+   "outfit": {
+    "military": 4,
+    "elder": 1
+   },
+   "builds": {
+    "heavy": 2,
+    "muscular": 2,
+    "average": 1
+   },
+   "postures": {
+    "upright": 2,
+    "hunched": 1
+   },
+   "accessories": {
+    "dog_tags": 3,
+    "none": 1
+   },
+   "body_acc": {
+    "cane": 1,
+    "none": 2
+   },
+   "cyber": {
+    "optic": 2,
+    "face_half": 1,
+    "shoulder_chrome": 2,
+    "spine_cables": 2,
+    "serial_marks": 2
+   },
+   "scar": 0.85,
+   "tattoo": 0.3,
+   "piercing": 0.0,
+   "makeup": 0.0,
+   "age": [
+    45,
+    70
+   ],
+   "grime": 1,
+   "faction_default": "independent_mercs"
+  },
+  "netrunner": {
+   "label": "Netrunner",
+   "outfit": {
+    "netrunner": 4,
+    "civilian": 1
+   },
+   "builds": {
+    "slim": 4,
+    "average": 1
+   },
+   "postures": {
+    "slouch": 3,
+    "hunched": 1
+   },
+   "accessories": {
+    "headset": 2,
+    "glasses": 1,
+    "none": 1
+   },
+   "body_acc": {
+    "datapad": 2,
+    "none": 1
+   },
+   "cyber": {
+    "temple_ports": 3,
+    "neck_ports": 3,
+    "forehead_chip": 1,
+    "spine_cables": 1
+   },
+   "scar": 0.1,
+   "tattoo": 0.3,
+   "piercing": 0.5,
+   "makeup": 0.2,
+   "dye_chance": 0.5,
+   "grime": 1
+  },
+  "addict": {
+   "label": "Burnout",
+   "outfit": {
+    "addict": 5
+   },
+   "builds": {
+    "slim": 5
+   },
+   "postures": {
+    "hunched": 3,
+    "slouch": 2
+   },
+   "accessories": {
+    "hood": 1,
+    "cigarette": 2,
+    "none": 2
+   },
+   "body_acc": {
+    "cigarette": 1,
+    "hood": 1,
+    "none": 1
+   },
+   "cyber": {
+    "patched_implant": 3,
+    "neck_ports": 2,
+    "cheek_leds": 1
+   },
+   "scar": 0.5,
+   "tattoo": 0.3,
+   "piercing": 0.3,
+   "makeup": 0.4,
+   "makeups": [
+    "smudge"
+   ],
+   "faces": {
+    "gaunt": 4,
+    "long": 1
+   },
+   "grime": 3,
+   "faction_default": "none"
+  },
+  "elder": {
+   "label": "Retiree",
+   "outfit": {
+    "elder": 5
+   },
+   "builds": {
+    "heavy": 2,
+    "slim": 2,
+    "average": 1
+   },
+   "postures": {
+    "hunched": 4,
+    "slouch": 1
+   },
+   "accessories": {
+    "glasses": 3,
+    "scarf": 2
+   },
+   "body_acc": {
+    "cane": 2,
+    "none": 1
+   },
+   "cyber": {
+    "optic": 1,
+    "patched_implant": 1
+   },
+   "scar": 0.2,
+   "tattoo": 0.1,
+   "piercing": 0.0,
+   "makeup": 0.0,
+   "age": [
+    62,
+    84
+   ],
+   "grime": 1,
+   "faction_default": "none"
+  },
+  "scavenger": {
+   "label": "Tunnel scavenger",
+   "outfit": {
+    "worker": 2,
+    "addict": 1,
+    "civilian": 1
+   },
+   "builds": {
+    "slim": 2,
+    "average": 2
+   },
+   "postures": {
+    "hunched": 2,
+    "slouch": 2
+   },
+   "accessories": {
+    "goggles": 2,
+    "respirator": 2,
+    "headlamp": 1
+   },
+   "body_acc": {
+    "backpack": 3,
+    "shoulder_lamp": 1
+   },
+   "cyber": {
+    "optic": 1,
+    "patched_implant": 2
+   },
+   "scar": 0.5,
+   "tattoo": 0.2,
+   "piercing": 0.2,
+   "makeup": 0.0,
+   "grime": 3,
+   "faction_default": "none"
+  }
+ },
+ "cyber_by_category": {
+  "eyes": {
+   "optic": 3,
+   "twin_optics": 1,
+   "visor": 1
+  },
+  "neural": {
+   "temple_ports": 2,
+   "neck_ports": 2,
+   "forehead_chip": 1,
+   "cheek_leds": 1
+  },
+  "arms": {
+   "shoulder_chrome": 1
+  },
+  "spine": {
+   "spine_cables": 1
+  },
+  "respiratory": {
+   "mouth_grille": 1
+  },
+  "dermal": {
+   "skin_seam": 1,
+   "serial_marks": 1
+  },
+  "legs": {},
+  "internal": {}
+ },
+ "body_cyber_by_category": {
+  "arms": {
+   "arm_r": 2,
+   "arm_l": 1
+  },
+  "legs": {
+   "legs": 1
+  },
+  "eyes": {
+   "eye": 1
+  },
+  "spine": {
+   "spine": 1
+  },
+  "respiratory": {
+   "jaw": 1
+  }
+ }
+}

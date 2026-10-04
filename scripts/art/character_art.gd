@@ -1,23 +1,24 @@
 class_name CharacterArt
 extends RefCounted
-## Builds unique character sprites from palette-indexed part layers
-## (tools/art/characters.py → data/character_parts.json). One portrait
-## (64x64) and one full body (32x64) per appearance, cached.
+## Composites character sprites from the v2 part atlases
+## (tools/art/characters2.py -> data/character_parts.json): a 96x112
+## portrait (bust) and a 40x80 in-room body. Every part is palette-indexed
+## and cropped to its bounding box, so a composite only touches the pixels
+## the parts cover (a few ms), which makes expression / gaze / blink
+## variants cheap. A second texture holds only the emissive cyberware
+## pixels so animation can flicker them.
 
-const PORTRAIT_SIZE := Vector2i(64, 64)
-const BODY_SIZE := Vector2i(32, 64)
-const CACHE_LIMIT := 48
-## Portrait-cyberware that has a matching body overlay.
-const BODY_CYBER_FROM_PORTRAIT := {"eye": "eye", "visor": "visor"}
+const CACHE_LIMIT := 96
+const GLOW_RAMP := 5
 
 static var _manifest: Dictionary = {}
-static var _layers: Dictionary = {}
+static var _atlases: Dictionary = {}  # "view/slot" -> PackedByteArray (RGBA8) + width
 static var _cache: Dictionary = {}
 static var _cache_order: Array[String] = []
 
 
 static func clear_cache() -> void:
-	_layers.clear()
+	_atlases.clear()
 	_cache.clear()
 	_cache_order.clear()
 
@@ -30,94 +31,187 @@ static func manifest() -> Dictionary:
 	return _manifest
 
 
-static func portrait(app: Dictionary) -> Texture2D:
-	return _fetch(&"portrait", app)
+static func size_of(view: StringName) -> Vector2i:
+	var s: Array = manifest().get("sizes", {}).get(String(view), [96, 112] if view == &"portrait" else [40, 80])
+	return Vector2i(int(s[0]), int(s[1]))
+
+
+## Portrait for an appearance. expr / gaze override the appearance's own.
+static func portrait(app: Dictionary, expr: String = "", gaze: String = "center") -> Texture2D:
+	return _fetch(&"portrait", app, expr, gaze)[0]
+
+
+## [texture, glow_texture] for animated portraits.
+static func portrait_layers(app: Dictionary, expr: String = "", gaze: String = "center") -> Array:
+	return _fetch(&"portrait", app, expr, gaze)
 
 
 static func body(app: Dictionary) -> Texture2D:
-	return _fetch(&"body", app)
+	return _fetch(&"body", app, "", "")[0]
 
 
-## Ids per slot that a given appearance uses in a view.
-static func parts_for(view: StringName, app: Dictionary) -> Dictionary:
+static func body_layers(app: Dictionary) -> Array:
+	return _fetch(&"body", app, "", "")
+
+
+## Part ids per slot an appearance uses in a view (v2 appearance schema,
+## see CharacterAppearanceManager).
+static func parts_for(view: StringName, app: Dictionary, expr: String = "", gaze: String = "center") -> Dictionary:
 	var build := str(app.get("build", "average"))
-	var face := str(app.get("face", "round"))
 	var out := {}
 	if view == &"portrait":
-		out["hair_back"] = [app.get("hair_back", "")]
+		var e := expr if expr != "" else str(app.get("expr", "neutral"))
+		var face := str(app.get("face", "oval"))
+		var hair := str(app.get("hair", "short"))
+		var covered := _covers_hair(app)
+		out["hair_back"] = [hair] if hair in ["long", "tied", "locs", "braids"] and not covered else []
 		out["body"] = [build]
 		out["outfit"] = ["%s_%s" % [app.get("outfit", "civilian"), build]]
-		out["head"] = ["%s_%s" % [face, app.get("expr", "neutral")]]
+		out["head"] = [face]
+		var age := str(app.get("age_look", "adult"))
+		out["age"] = [] if age == "young" else [age]
+		out["nose"] = [app.get("nose", "straight")]
+		out["mouth"] = [e]
+		out["brows"] = ["%s_%s" % [e, app.get("brows", "thin")]]
+		out["eyes"] = ["%s_%s" % [e, gaze]]
 		var fh := str(app.get("facial_hair", ""))
 		out["facial_hair"] = ["%s_%s" % [fh, face]] if fh != "" else []
-		out["scar"] = [app.get("scar", "")]
+		out["scar"] = app.get("scars", [])
 		out["tattoo"] = app.get("tattoos", [])
-		out["hair"] = [app.get("hair", "short")]
+		out["makeup"] = app.get("makeup", [])
+		out["piercing"] = app.get("piercings", [])
+		out["cyber_low"] = app.get("cyber", [])
 		out["cyber"] = app.get("cyber", [])
+		out["hair"] = [] if covered or hair == "bald" else [hair]
 		out["accessory"] = app.get("accessories", [])
 	else:
-		out["body"] = [build]
-		out["outfit"] = ["%s_%s" % [app.get("outfit", "civilian"), build]]
-		var cyber: Array = []
+		var key := "%s_%s" % [build, app.get("posture", "upright")]
+		out["body"] = [key]
+		out["outfit"] = ["%s_%s" % [app.get("outfit", "civilian"), key]]
+		var cy: Array = []
 		for c: Variant in app.get("body_cyber", []):
-			cyber.append("%s_%s" % [c, build])
-		for c: Variant in app.get("cyber", []):
-			if BODY_CYBER_FROM_PORTRAIT.has(str(c)):
-				cyber.append("%s_%s" % [BODY_CYBER_FROM_PORTRAIT[str(c)], build])
-		out["cyber"] = cyber
-		out["hair"] = [app.get("hair", "short")]
+			cy.append("%s_%s" % [c, key])
+		out["cyber"] = cy
+		var acc: Array = []
+		for a: Variant in app.get("body_acc", []):
+			acc.append("%s_%s" % [a, key])
+		out["acc"] = acc
+		var hair := str(app.get("hair", "short"))
+		var hooded := false
+		for a: Variant in app.get("body_acc", []):
+			hooded = hooded or str(a) in ["hood", "helmet"]
+		out["hair"] = [] if hooded or hair == "bald" else ["%s_%s" % [hair, key]]
 	return out
 
 
-static func _fetch(view: StringName, app: Dictionary) -> Texture2D:
-	var key := "%s|%s" % [view, JSON.stringify(app, "", true)]
+static func _covers_hair(app: Dictionary) -> bool:
+	for a: Variant in app.get("accessories", []):
+		if str(a) in ["hood", "helmet"]:
+			return true
+	return false
+
+
+static func _fetch(view: StringName, app: Dictionary, expr: String, gaze: String) -> Array:
+	var key := "%s|%s|%s|%s" % [view, expr, gaze, JSON.stringify(app, "", true)]
 	if _cache.has(key):
 		return _cache[key]
-	var tex := _build(view, app)
-	_cache[key] = tex
+	var res := _build(view, app, expr, gaze)
+	_cache[key] = res
 	_cache_order.append(key)
 	if _cache_order.size() > CACHE_LIMIT:
 		_cache.erase(_cache_order.pop_front())
-	return tex
+	return res
 
 
-static func _build(view: StringName, app: Dictionary) -> ImageTexture:
-	var size := PORTRAIT_SIZE if view == &"portrait" else BODY_SIZE
+static func _atlas(view: StringName, slot: String) -> Dictionary:
+	var k := "%s/%s" % [view, slot]
+	if not _atlases.has(k):
+		var path: String = manifest().get("atlases", {}).get(k, "")
+		var img: Image = PixelArt.image(path) if path != "" else null
+		if img:
+			img.convert(Image.FORMAT_RGBA8)
+			_atlases[k] = {"data": img.get_data(), "w": img.get_width()}
+		else:
+			_atlases[k] = {}
+	return _atlases[k]
+
+
+static func _build(view: StringName, app: Dictionary, expr: String, gaze: String) -> Array:
+	var size := size_of(view)
 	var m := manifest()
-	var view_parts: Dictionary = m.get("views", {}).get(String(view), {})
 	var order: Array = m.get("layer_order", {}).get(String(view), [])
+	var parts: Dictionary = m.get("parts", {}).get(String(view), {})
 	var out := PackedByteArray()
 	out.resize(size.x * size.y * 4)
+	var glow := PackedByteArray()
+	glow.resize(size.x * size.y * 4)
 	var pal := PixelArt.build_palette(app)
-	var wanted := parts_for(view, app)
+	var wanted := parts_for(view, app, expr, gaze)
 	for slot: Variant in order:
 		var ids: Array = wanted.get(str(slot), [])
-		var available: Dictionary = view_parts.get(str(slot), {})
+		if ids.is_empty():
+			continue
+		var available: Dictionary = parts.get(str(slot), {})
+		var atlas := _atlas(view, str(slot))
+		if atlas.is_empty():
+			continue
 		for pid: Variant in ids:
-			var path: String = available.get(str(pid), "")
-			if path.is_empty():
+			var r: Array = available.get(str(pid), [])
+			if r.size() < 6:
 				continue
-			var layer := _layer(path)
-			if layer and layer.get_width() == size.x and layer.get_height() == size.y:
-				PixelArt.blit_indexed(out, layer, pal)
-	return ImageTexture.create_from_image(Image.create_from_data(size.x, size.y, false, Image.FORMAT_RGBA8, out))
+			_blit(out, glow, size.x, atlas["data"], int(atlas["w"]), r, pal)
+	var tex := ImageTexture.create_from_image(Image.create_from_data(size.x, size.y, false, Image.FORMAT_RGBA8, out))
+	var gtex := ImageTexture.create_from_image(Image.create_from_data(size.x, size.y, false, Image.FORMAT_RGBA8, glow))
+	return [tex, gtex]
 
 
-static func _layer(path: String) -> Image:
-	if not _layers.has(path):
-		_layers[path] = PixelArt.image(path)
-	return _layers[path]
+## Copies one cropped part (atlas rect r = [ax, ay, w, h, ox, oy]) into the
+## composite, recolouring through the palette. Emissive (glow ramp) pixels
+## are mirrored into `glow`; any other pixel clears glow underneath it.
+static func _blit(out: PackedByteArray, glow: PackedByteArray, ow: int, src: PackedByteArray, sw: int, r: Array, pal: PackedByteArray) -> void:
+	var ax := int(r[0])
+	var ay := int(r[1])
+	var w := int(r[2])
+	var h := int(r[3])
+	var ox := int(r[4])
+	var oy := int(r[5])
+	for yy in h:
+		var si := ((ay + yy) * sw + ax) * 4
+		var di := ((oy + yy) * ow + ox) * 4
+		for xx in w:
+			if src[si + 3] > 0:
+				var ramp_i := clampi((src[si] + 8) >> 4, 0, PixelArt.RAMP_COUNT - 1)
+				var shade := clampi((src[si + 1] + 16) >> 5, 0, 7)
+				var p := (ramp_i * 8 + shade) * 4
+				out[di] = pal[p]
+				out[di + 1] = pal[p + 1]
+				out[di + 2] = pal[p + 2]
+				out[di + 3] = 255
+				if ramp_i == GLOW_RAMP and shade >= 3:
+					glow[di] = pal[p]
+					glow[di + 1] = pal[p + 1]
+					glow[di + 2] = pal[p + 2]
+					glow[di + 3] = 255
+				else:
+					glow[di + 3] = 0
+			si += 4
+			di += 4
 
 
-## Whether every part an appearance refers to exists (used by tests).
+## Missing part ids for an appearance (used by tests).
 static func validate(app: Dictionary) -> Array[String]:
 	var missing: Array[String] = []
-	var m := manifest()
+	var parts: Dictionary = manifest().get("parts", {})
 	for view: StringName in [&"portrait", &"body"]:
-		var view_parts: Dictionary = m.get("views", {}).get(String(view), {})
 		var wanted := parts_for(view, app)
 		for slot: Variant in wanted:
 			for pid: Variant in wanted[slot]:
-				if str(pid) != "" and not view_parts.get(str(slot), {}).has(str(pid)):
+				var slot_parts: Dictionary = parts.get(String(view), {}).get(str(slot), {})
+				# cyber ids live in either cyber or cyber_low
+				if str(slot) in ["cyber", "cyber_low"]:
+					var all_c: Dictionary = parts.get(String(view), {}).get("cyber", {}).duplicate()
+					all_c.merge(parts.get(String(view), {}).get("cyber_low", {}))
+					slot_parts = all_c
+				if str(pid) != "" and not slot_parts.has(str(pid)):
 					missing.append("%s/%s/%s" % [view, slot, pid])
 	return missing

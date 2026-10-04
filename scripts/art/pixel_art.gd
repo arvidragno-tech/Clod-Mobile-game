@@ -84,8 +84,17 @@ static func ramp(group: String, key: Variant) -> PackedColorArray:
 	return out
 
 
-## 8 ramps x 8 shades flattened as RGBA bytes for fast recolouring.
+const RAMP_COUNT := 16
+
+
+## 16 ramps x 8 shades flattened as RGBA bytes for fast recolouring.
+## 0 skin, 1 hair, 2 cloth A, 3 cloth B, 4 metal, 5 glow, 6 iris, 7 fixed,
+## 8 cloth C, 9 leather, 10 grime, 11 blood (12-15 unused).
 static func build_palette(app: Dictionary) -> PackedByteArray:
+	var fixed := ramp("fixed", 0)
+	if app.has("rim"):
+		fixed = fixed.duplicate()
+		fixed[7] = Color(str(app["rim"]))
 	var ramps: Array[PackedColorArray] = [
 		ramp("skin", app.get("skin", 2)),
 		ramp("hair", app.get("hair_color", "black")),
@@ -94,11 +103,17 @@ static func build_palette(app: Dictionary) -> PackedByteArray:
 		ramp("metal", app.get("metal", "chrome")),
 		ramp("glow", app.get("glow", "cyan")),
 		ramp("iris", app.get("iris", "brown")),
-		ramp("fixed", 0),
+		fixed,
+		ramp("cloth", app.get("cloth_c", app.get("cloth_b", "black"))),
+		ramp("material", "leather"),
+		ramp("material", "grime"),
+		ramp("material", "blood"),
 	]
+	while ramps.size() < RAMP_COUNT:
+		ramps.append(fixed)
 	var bytes := PackedByteArray()
-	bytes.resize(8 * 8 * 4)
-	for r in 8:
+	bytes.resize(RAMP_COUNT * 8 * 4)
+	for r in RAMP_COUNT:
 		for s in 8:
 			var c: Color = ramps[r][s] if s < ramps[r].size() else Color.MAGENTA
 			var i := (r * 8 + s) * 4
@@ -117,7 +132,7 @@ static func blit_indexed(out: PackedByteArray, layer: Image, pal: PackedByteArra
 	var i := 0
 	while i < n:
 		if src[i + 3] > 0:
-			var ramp_i := clampi((src[i] + 16) >> 5, 0, 7)
+			var ramp_i := clampi((src[i] + 8) >> 4, 0, RAMP_COUNT - 1)
 			var shade := clampi((src[i + 1] + 16) >> 5, 0, 7)
 			var p := (ramp_i * 8 + shade) * 4
 			out[i] = pal[p]

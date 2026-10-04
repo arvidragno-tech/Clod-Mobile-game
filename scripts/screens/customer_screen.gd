@@ -109,8 +109,15 @@ func _profile_card(c: CustomerData) -> Control:
 	v.add_child(row)
 	var p := PixelPortrait.new()
 	p.name = "Portrait"
-	row.add_child(p)
-	p.set_appearance(c.appearance, FactionManager.get_color(c.faction_id))
+	p.framing = PixelPortrait.Framing.BUST
+	p.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	v.add_child(p)
+	v.move_child(p, 0)
+	var look := CharacterPortraitManager.describe(c.id)
+	if not look.is_empty():
+		p.set_appearance(look["appearance"], look["accent"], look["backdrop"], look["profile"])
+	else:
+		p.set_appearance(c.appearance, FactionManager.get_color(c.faction_id))
 	var info := UIKit.vbox(4)
 	UIKit.expand(info)
 	info.size_flags_vertical = Control.SIZE_SHRINK_CENTER

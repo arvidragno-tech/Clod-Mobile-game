@@ -261,8 +261,9 @@ class Canvas:
                     continue
                 if self.indexed:
                     if palette_map is None:
-                        # Encoded form read by the game: R = ramp*32, G = shade*32.
-                        out[x, y] = (c[0] * 32, c[1] * 32, 0, 255)
+                        # Encoded form read by the game: R = ramp*16 (16 ramps),
+                        # G = shade*32 (8 shades).
+                        out[x, y] = (c[0] * 16, c[1] * 32, 0, 255)
                     else:
                         rgb = palette_map[c[0]][c[1]]
                         out[x, y] = (rgb[0], rgb[1], rgb[2], 255)

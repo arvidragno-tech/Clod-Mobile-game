@@ -8,12 +8,6 @@ const SCAN_REGIONS: Array[StringName] = [&"head", &"neck", &"chest", &"arms", &"
 const CATEGORY_REGION := {&"eyes": &"head", &"neural": &"neck", &"spine": &"neck", &"arms": &"arms", &"dermal": &"arms",
 	&"legs": &"legs", &"respiratory": &"chest", &"internal": &"chest"}
 const NORMAL_FINDINGS := ["No anomalies.", "Tissue within normal range.", "Healthy signal.", "Minor wear, nothing urgent."]
-const EXPR_BY_PERSONALITY := {&"hard": "hard", &"aggressive": "hard", &"stoic": "neutral", &"tired": "tired",
-	&"nervous": "tired", &"smooth": "smirk", &"chatty": "smirk", &"paranoid": "hard", &"calm": "neutral"}
-const GLOW_BY_FACTION := {&"black_market": "magenta", &"corporate_security": "blue", &"street_gangs": "red",
-	&"independent_mercs": "amber", &"medical_authorities": "green"}
-const NATURAL_HAIR := ["black", "black", "dark_brown", "dark_brown", "brown", "auburn", "blond", "gray"]
-const DYED_HAIR := ["dye_cyan", "dye_magenta", "dye_green", "dye_blue", "dye_red"]
 
 var rng: RandomNumberGenerator
 
@@ -231,69 +225,19 @@ func _build_history(c: CustomerData) -> void:
 	c.medical_history.append(str(pick(extras)))
 
 
+## Look from occupation (archetype), faction, wealth, age, personality and
+## the cyberware the customer really has (CharacterAppearanceManager rules).
 func build_appearance(c: CustomerData, arch: Dictionary) -> Dictionary:
-	var hair := str(pick(arch["hair"]))
-	var dyed := c.archetype_id in [&"gang_member", &"criminal", &"civilian", &"bm_tech", &"fixer"] and rng.randf() < 0.3
-	var a := {
-		"build": pick(["slim", "average", "average", "heavy"]),
-		"face": pick(["narrow", "broad", "round"]),
-		"expr": EXPR_BY_PERSONALITY.get(c.personality, "neutral"),
-		"hair": hair,
-		"hair_back": hair if hair in ["long", "locs"] else "",
-		"outfit": pick(arch["outfits"]),
-		"facial_hair": "",
-		"scar": "",
-		"tattoos": [],
-		"cyber": [],
-		"accessories": [],
-		"body_cyber": [],
-		"skin": rng.randi_range(0, 6),
-		"hair_color": pick(DYED_HAIR) if dyed else pick(NATURAL_HAIR),
-		"iris": pick(["brown", "dark", "hazel", "green", "blue", "gray"]),
-		"cloth_a": pick(arch["cloth_a"]),
-		"cloth_b": pick(arch["cloth_b"]),
-		"metal": "chrome",
-		"glow": GLOW_BY_FACTION.get(c.faction_id, "cyan"),
+	var occ := str(arch.get("look", arch["id"]))
+	var rules: Dictionary = CharacterAppearanceManager.rules.get("occupations", {}).get(occ, {})
+	if rules.has("age"):
+		var ar: Array = rules["age"]
+		c.age = rng.randi_range(int(ar[0]), int(ar[1]))
+	var ctx := {
+		"occupation": occ, "faction": String(c.faction_id), "wealth": c.wealth, "age": c.age,
+		"personality": String(c.personality), "cyberware": c.existing_cyberware,
 	}
-	var fh := str(pick(arch["facial_hair"]))
-	if fh != "none" and rng.randf() < 0.6:
-		a["facial_hair"] = fh
-	var sc := str(pick(arch["scars"]))
-	if sc != "none":
-		a["scar"] = sc
-	var tat := str(pick(arch["tattoos"]))
-	if tat != "none":
-		a["tattoos"] = [tat]
-	var acc := str(pick(arch["accessories"]))
-	if acc != "none":
-		a["accessories"] = [acc]
-	# Visible chrome follows the customer's real cyberware.
-	var top_tier := 1
-	for id in c.existing_cyberware:
-		var e := CyberwareManager.get_cyberware(id)
-		top_tier = maxi(top_tier, e.tier)
-		match e.category:
-			&"eyes":
-				a["cyber"].append("visor" if e.tier >= 3 and rng.randf() < 0.5 else "eye")
-			&"neural":
-				a["cyber"].append(pick(["temple_port", "circuit", "neck_ports"]))
-			&"arms":
-				a["cyber"].append("arm_shoulder")
-				a["body_cyber"].append("arm")
-			&"legs":
-				a["body_cyber"].append("legs")
-			&"respiratory":
-				a["cyber"].append("respirator")
-			&"dermal":
-				a["cyber"].append("cheek_mesh")
-	if a["cyber"].is_empty() and rng.randf() < 0.35:
-		var v := str(pick(arch["cyber_visual"]))
-		if v != "none":
-			a["cyber"].append(v)
-	a["metal"] = {1: "chrome", 2: "chrome", 3: "gunmetal", 4: "ceramic", 5: "blackened"}.get(top_tier, "chrome")
-	if a["cyber"].has("visor") and a["accessories"].has("shades"):
-		a["accessories"].erase("shades")
-	return a
+	return CharacterAppearanceManager.generate(ctx, rng)
 
 
 func _build_dialogue(c: CustomerData, context: Dictionary) -> String:

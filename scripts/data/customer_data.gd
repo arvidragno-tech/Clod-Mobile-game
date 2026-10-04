@@ -71,7 +71,7 @@ static func from_dict(d: Dictionary) -> CustomerData:
 	c.scan_findings = DataLoader.get_dict(d, "scan_findings")
 	for e: Variant in DataLoader.get_array(d, "existing_cyberware"):
 		c.existing_cyberware.append(StringName(str(e)))
-	c.appearance = DataLoader.get_dict(d, "appearance")
+	c.appearance = CharacterAppearanceManager.normalize(DataLoader.get_dict(d, "appearance"))
 	c.is_story = bool(d.get("story", false))
 	var mods := DataLoader.get_dict(d, "modifiers")
 	c.pay_multiplier = DataLoader.get_float(mods, "pay", 1.0)

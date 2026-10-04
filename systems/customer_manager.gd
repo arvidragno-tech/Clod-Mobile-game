@@ -74,6 +74,9 @@ func get_customer(id: StringName) -> CustomerData:
 
 
 func _finalize_character(c: CustomerData) -> void:
+	# Story cast look the same everywhere, including after story events.
+	if CharacterManager.has_character(c.id):
+		c.appearance = CharacterManager.appearance(c.id).duplicate(true)
 	var item := CyberwareManager.get_cyberware(c.requested_cyberware_id)
 	if item:
 		c.requested_surgery_id = item.install_surgery_id
