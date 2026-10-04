@@ -1,20 +1,23 @@
 extends BaseScreen
 ## Diagnose (scan regions, discover hidden conditions, pick a diagnosis),
 ## then plan: pick the implant unit, check tools / supplies / neural load
-## and the customer's consent, then begin.
+## and the customer's consent, then begin. PC layout: scanner | findings |
+## diagnosis, then plan summary + checks | implant units | begin.
 
 const MIN_SCANS_TO_DIAGNOSE := 2
 
 var _title: Label
 var _step: Label
-var _diagnose: VBoxContainer
-var _plan: VBoxContainer
+var _diagnose: HBoxContainer
+var _plan: HBoxContainer
 var _scan: ScanView
 var _findings: VBoxContainer
 var _hint: Label
 var _options: VBoxContainer
 var _confirm: Button
 var _plan_list: VBoxContainer
+var _plan_info: VBoxContainer
+var _panels: Array[Control] = []
 var _begin: Button
 var _selected: StringName = &""
 var _option_buttons: Dictionary = {}
@@ -26,10 +29,7 @@ func on_enter(_params: Dictionary) -> void:
 	if customer == null or surgery == null:
 		UIManager.go_to.call_deferred(UIManager.SCREEN_CLINIC)
 		return
-	var m := UIKit.full_rect(UIKit.margin(12, 8, 12, 12))
-	add_child(m)
-	var col := UIKit.vbox(8)
-	m.add_child(col)
+	var col := UIKit.workstation(self, &"clinic")
 	var header := UIKit.header("STEP 2 / 4 · DIAGNOSIS", "BODY SCAN", _on_back)
 	col.add_child(header)
 	_title = header.find_child("Title", true, false)
@@ -40,16 +40,26 @@ func on_enter(_params: Dictionary) -> void:
 	_update_hint()
 
 
+func get_panels() -> Array[Control]:
+	var out: Array[Control] = []
+	for c in _panels:
+		if c.is_visible_in_tree():
+			out.append(c)
+	return out
+
+
 func _build_diagnose(col: VBoxContainer, customer: CustomerData, surgery: SurgeryData) -> void:
-	_diagnose = UIKit.vbox(8)
+	_diagnose = UIKit.hbox(18)
 	UIKit.expand(_diagnose, true, true)
 	col.add_child(_diagnose)
-	var row := UIKit.hbox(8)
+	var row := UIKit.hbox(18)
 	UIKit.expand(row, true, true)
 	_diagnose.add_child(row)
 	var frame := UIKit.panel(&"AccentPanel")
-	frame.custom_minimum_size = Vector2(150, 200)
+	frame.custom_minimum_size = Vector2(400, 560)
+	frame.tooltip_text = "Click a body region to scan it"
 	row.add_child(frame)
+	_panels.append(frame)
 	_scan = ScanView.new()
 	_scan.name = "ScanView"
 	_scan.highlight_region = surgery.scan_region
@@ -58,6 +68,7 @@ func _build_diagnose(col: VBoxContainer, customer: CustomerData, surgery: Surger
 	var fc := UIKit.panel(&"CardPanel")
 	UIKit.expand(fc)
 	row.add_child(fc)
+	_panels.append(fc)
 	var sc := UIKit.scroll()
 	fc.add_child(sc)
 	_findings = UIKit.vbox(6)
@@ -66,43 +77,70 @@ func _build_diagnose(col: VBoxContainer, customer: CustomerData, surgery: Surger
 	_findings.add_child(UIKit.label("FINDINGS", &"SubHeaderLabel"))
 	var item := GameManager.get_requested_item()
 	_findings.add_child(UIKit.label("Site: %s (%s)" % [ScanView.REGION_LABELS.get(surgery.scan_region, "?"), item.category.to_upper() if item else "?"], &"DimLabel", true, Palette.BRAND, 13))
-	_hint = UIKit.label("", &"DimLabel")
-	_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_diagnose.add_child(_hint)
-	_options = UIKit.vbox(6)
-	_diagnose.add_child(_options)
+	var side := UIKit.panel(&"CardPanel")
+	side.custom_minimum_size.x = 460
+	_diagnose.add_child(side)
+	_panels.append(side)
+	var sv := UIKit.vbox(10)
+	side.add_child(sv)
+	sv.add_child(UIKit.label("DIAGNOSIS", &"SubHeaderLabel", false, Palette.ACCENT))
+	_hint = UIKit.label("", &"DimLabel", true)
+	sv.add_child(_hint)
+	_options = UIKit.vbox(8)
+	sv.add_child(_options)
+	sv.add_child(UIKit.expand(Control.new(), false, true))
 	var group := ButtonGroup.new()
 	for option in surgery.diagnosis_options:
 		var id := StringName(str(option.get("id", "")))
-		var b := UIKit.button(str(option.get("name", id)).to_upper(), &"", _on_option_pressed.bind(id), "Option_%s" % id)
+		var b := UIKit.button(str(option.get("name", id)).to_upper(), &"", _on_option_pressed.bind(id), "Option_%s" % id, 56)
 		b.toggle_mode = true
+		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		b.tooltip_text = str(option.get("description", option.get("hint", "")))
 		b.button_group = group
 		b.disabled = true
 		_options.add_child(b)
 		_option_buttons[id] = b
-	_confirm = UIKit.button("CONFIRM DIAGNOSIS", &"AccentButton", _on_confirm, "ConfirmButton", 54)
+	_confirm = UIKit.button("CONFIRM DIAGNOSIS   [ENTER]", &"AccentButton", _on_confirm, "ConfirmButton", 64)
 	_confirm.disabled = true
-	_diagnose.add_child(_confirm)
+	sv.add_child(_confirm)
 
 
 func _build_plan(col: VBoxContainer) -> void:
-	_plan = UIKit.vbox(8)
+	_plan = UIKit.hbox(18)
 	UIKit.expand(_plan, true, true)
 	col.add_child(_plan)
+	var info_panel := UIKit.panel(&"CardPanel")
+	info_panel.custom_minimum_size.x = 560
+	_plan.add_child(info_panel)
+	_panels.append(info_panel)
+	var isc := UIKit.scroll()
+	info_panel.add_child(isc)
+	_plan_info = UIKit.vbox(10)
+	UIKit.expand(_plan_info)
+	isc.add_child(_plan_info)
+	var list_panel := UIKit.panel(&"CardPanel")
+	UIKit.expand(list_panel, true, true)
+	_plan.add_child(list_panel)
+	_panels.append(list_panel)
 	var sc := UIKit.scroll()
-	_plan.add_child(sc)
-	_plan_list = UIKit.vbox(8)
+	list_panel.add_child(sc)
+	_plan_list = UIKit.vbox(10)
 	UIKit.expand(_plan_list)
 	sc.add_child(_plan_list)
-	var buttons := UIKit.hbox(10)
-	_plan.add_child(buttons)
-	var back := UIKit.button("RE-DIAGNOSE", &"GhostButton", _show_diagnose, "PlanBackButton", 56)
-	UIKit.expand(back)
-	buttons.add_child(back)
-	_begin = UIKit.button("BEGIN OPERATION", &"BrandButton", GameManager.begin_surgery, "BeginButton", 56)
-	UIKit.expand(_begin)
-	_begin.size_flags_stretch_ratio = 1.6
+	var side := UIKit.panel(&"AccentPanel")
+	side.custom_minimum_size.x = 400
+	_plan.add_child(side)
+	_panels.append(side)
+	var buttons := UIKit.vbox(12)
+	side.add_child(buttons)
+	buttons.add_child(UIKit.label("READY?", &"SubHeaderLabel", false, Palette.ACCENT))
+	buttons.add_child(UIKit.label("Operating starts the clock. Vitals drift while you work: keep COAG, SEDATE and STABIL in reach.", &"DimLabel", true))
+	buttons.add_child(UIKit.expand(Control.new(), false, true))
+	_begin = UIKit.button("BEGIN OPERATION   [ENTER]", &"BrandButton", GameManager.begin_surgery, "BeginButton", 72)
+	_begin.set_meta(&"default", true)
 	buttons.add_child(_begin)
+	var back := UIKit.button("RE-DIAGNOSE", &"GhostButton", _show_diagnose, "PlanBackButton", 52)
+	buttons.add_child(back)
 
 
 func _on_back() -> void:
@@ -144,11 +182,11 @@ func _update_hint() -> void:
 	for b: Button in _option_buttons.values():
 		b.disabled = not unlocked
 	if not unlocked:
-		_hint.text = "Tap regions to scan (%d/%d) · site in pink" % [count, MIN_SCANS_TO_DIAGNOSE]
+		_hint.text = "Click body regions to scan (%d/%d). The surgical site glows pink." % [count, MIN_SCANS_TO_DIAGNOSE]
 	elif _selected == &"":
-		_hint.text = "Choose a diagnosis"
+		_hint.text = "Pick the diagnosis the findings point to."
 	else:
-		_hint.text = "Diagnosis selected"
+		_hint.text = "Diagnosis selected. Confirm to plan the operation."
 	_confirm.disabled = _selected == &""
 
 
@@ -167,10 +205,13 @@ func _on_confirm() -> void:
 	_title.text = "OPERATION PLAN"
 	_build_plan_contents()
 	TutorialManager.notify("plan")
+	if not _begin.disabled:
+		_begin.grab_focus.call_deferred()
 
 
 func _build_plan_contents() -> void:
 	UIKit.clear(_plan_list)
+	UIKit.clear(_plan_info)
 	var surgery := GameManager.get_current_surgery()
 	var customer := GameManager.get_current_customer()
 	var item := GameManager.get_requested_item()
@@ -187,9 +228,9 @@ func _build_plan_contents() -> void:
 	var band := NeuralLoad.band(float(r["neural_after"]))
 	if NeuralLoad.band_index(float(r["neural_after"])) >= 3:
 		hv.add_child(UIKit.label("WARNING: %s load after install. Risk of neural break." % str(band["name"]), &"DimLabel", true, Palette.DANGER, 14))
-	_plan_list.add_child(head)
+	_plan_info.add_child(head)
 	# Implant choice
-	_plan_list.add_child(UIKit.label("IMPLANT UNIT", &"SubHeaderLabel"))
+	_plan_list.add_child(UIKit.label("IMPLANT UNIT · click to choose which unit goes in", &"SubHeaderLabel", false, Palette.ACCENT))
 	var opts := GameManager.get_implant_options()
 	var selected := GameManager.get_selected_implant()
 	if opts.is_empty():
@@ -199,17 +240,18 @@ func _build_plan_contents() -> void:
 	for i in opts.size():
 		_plan_list.add_child(_implant_option(i, opts[i], opts[i] == selected, item))
 	# Checks
-	_plan_list.add_child(UIKit.label("CHECKS", &"SubHeaderLabel"))
+	_plan_info.add_child(UIKit.label("CHECKS", &"SubHeaderLabel", false, Palette.ACCENT))
 	var missing: Array = r["missing_tools"]
 	_check("TOOLS", "READY" if missing.is_empty() else "MISSING " + ", ".join(missing), missing.is_empty())
 	_check("SUPPLIES", "%d / need %d" % [InventoryManager.supplies, surgery.supplies], bool(r["supplies_ok"]))
 	var refusal := "REFUSES: LOAD TOO HIGH" if GameManager.consent_risk_needed(float(r["neural_after"])) > 0.0 else "REFUSES THIS UNIT"
 	_check("CONSENT", "AGREES" if bool(r["accepts"]) else refusal, bool(r["accepts"]))
 	_check("REVEALED", "%d condition(s)" % customer.revealed_conditions.size(), customer.revealed_conditions.is_empty())
-	var stages: Array[String] = []
+	_plan_info.add_child(UIKit.label("PROCEDURE", &"SubHeaderLabel", false, Palette.ACCENT))
 	for k in surgery.stages.size():
-		stages.append("%d %s" % [k + 1, surgery.stages[k].title])
-	_plan_list.add_child(UIKit.label(" · ".join(stages), &"DimLabel", true, null, 13))
+		var st := surgery.stages[k]
+		var tool := "  [%s]" % String(st.tool_category).to_upper() if st.tool_category != &"" else ""
+		_plan_info.add_child(UIKit.label("%02d  %s%s" % [k + 1, st.title, tool], &"DimLabel"))
 	_begin.disabled = not bool(r["ok"])
 
 
@@ -220,8 +262,9 @@ func _implant_option(i: int, inst: ImplantInstance, selected: bool, requested: C
 	b.theme_type_variation = &"ToolButton"
 	b.toggle_mode = true
 	b.button_pressed = selected
-	b.focus_mode = Control.FOCUS_NONE
-	b.custom_minimum_size.y = 76
+	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	b.custom_minimum_size.y = 96
+	b.tooltip_text = "%s\n%s" % [data.display_name, data.description]
 	b.pressed.connect(func() -> void:
 		GameManager.select_implant(inst.uid)
 		_build_plan_contents())
@@ -246,10 +289,10 @@ func _implant_option(i: int, inst: ImplantInstance, selected: bool, requested: C
 func _check(caption: String, value: String, good: bool) -> void:
 	var row := UIKit.hbox(8)
 	var c := UIKit.label(caption, &"SubHeaderLabel")
-	c.custom_minimum_size.x = 92
+	c.custom_minimum_size.x = 150
 	row.add_child(c)
 	# Symbol + colour: "+" ready, "x" blocked (readable without colour).
 	var v := UIKit.label(("+ " if good else "x ") + value, &"MonoLabel", true, Palette.OK if good else Palette.WARN, 19)
 	UIKit.expand(v)
 	row.add_child(v)
-	_plan_list.add_child(row)
+	_plan_info.add_child(row)

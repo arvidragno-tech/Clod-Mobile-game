@@ -94,7 +94,7 @@ func _project(pos: Vector2) -> Array[float]:
 
 func _pointer_down(pos: Vector2) -> void:
 	_sync_path()
-	if pos.distance_to(_cut_head()) > _ui(GameConfig.TOUCH_SLOP) + _tolerance_art * _px():
+	if pos.distance_to(_cut_head()) > _ui(GameConfig.CLICK_SLOP) + _tolerance_art * _px():
 		if _progress_len <= 0.0:
 			hint.emit("Start the cut at the marker")
 		return

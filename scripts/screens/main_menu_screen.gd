@@ -1,31 +1,78 @@
 extends BaseScreen
-## Title screen: continue / new game / settings.
+## PC title screen: full-screen key art with the menu column on the darker
+## left third. Mouse or keyboard (arrows / WASD + Enter, ESC on dialogs).
 
 const FLICKER_MIN_SEC := 1.5
 const FLICKER_MAX_SEC := 5.0
 
-@onready var _continue_button: Button = %ContinueButton
-@onready var _new_game_button: Button = %NewGameButton
-@onready var _settings_button: Button = %SettingsButton
-@onready var _subtitle: Label = %Subtitle
-@onready var _version: Label = %Version
-
+var _subtitle: Label
 var _flicker_timer: float = 2.0
+var _menu: VBoxContainer
 
 
 func on_enter(_params: Dictionary) -> void:
-	var has_save := SaveManager.has_save()
-	_continue_button.visible = has_save
-	_new_game_button.theme_type_variation = &"Button" if has_save else &"AccentButton"
-	_new_game_button.text = "NEW GAME" if has_save else "START"
-	_continue_button.pressed.connect(GameManager.continue_game)
-	_new_game_button.pressed.connect(_on_new_game_pressed)
-	_settings_button.pressed.connect(func() -> void: UIManager.go_to(UIManager.SCREEN_SETTINGS, {"return_to": UIManager.SCREEN_MAIN_MENU}))
-	_version.text = "v%s" % ProjectSettings.get_setting("application/config/version", "0")
+	var backdrop := CityBackdrop.new()
+	backdrop.name = "Backdrop"
+	add_child(UIKit.full_rect(backdrop))
+	var m := UIKit.full_rect(UIKit.margin(140, 110, 140, 70))
+	add_child(m)
+	var row := UIKit.hbox(0)
+	m.add_child(row)
+	var col := UIKit.vbox(14)
+	col.custom_minimum_size.x = 560
+	row.add_child(col)
+	row.add_child(UIKit.expand(Control.new()))
+	col.add_child(UIKit.label("UNDERGROUND CYBER-SURGERY", &"SubHeaderLabel"))
+	var title := UIKit.label("UNDERCITY", &"TitleLabel")
+	col.add_child(title)
+	_subtitle = UIKit.label("RIPPER", &"TitleLabel")
+	_subtitle.add_theme_color_override(&"font_color", Palette.BRAND)
+	_subtitle.add_theme_color_override(&"font_shadow_color", Color(Palette.BRAND_DIM, 0.8))
+	_subtitle.add_theme_font_size_override(&"font_size", 96)
+	col.add_child(_subtitle)
+	col.add_child(UIKit.label("Cut clean. Get paid. Stay off the grid.", &"DimLabel"))
+	var spacer := Control.new()
+	spacer.custom_minimum_size.y = 40
+	col.add_child(spacer)
+	_menu = UIKit.vbox(10)
+	_menu.name = "Menu"
+	col.add_child(_menu)
+	var has_save := SaveManager.has_any_save()
+	if has_save:
+		var info := SaveManager.get_slot_info(SaveManager.latest_slot())
+		var cont := _item("CONTINUE", &"AccentButton", GameManager.continue_game, "ContinueButton")
+		cont.tooltip_text = "Slot %d · LV %d · %s" % [SaveManager.latest_slot(), int(info.get("level", 1)), EconomyManager.format_money(int(info.get("money", 0)))]
+		cont.set_meta(&"default", true)
+	var new_game := _item("NEW GAME", &"Button" if has_save else &"AccentButton", _on_new_game, "NewGameButton")
+	if not has_save:
+		new_game.set_meta(&"default", true)
+	var load := _item("LOAD GAME", &"Button", func() -> void: UIManager.go_to(UIManager.SCREEN_LOAD, {"mode": "load", "return_to": UIManager.SCREEN_MAIN_MENU}), "LoadButton")
+	load.disabled = not has_save
+	_item("SETTINGS", &"GhostButton", func() -> void: UIManager.go_to(UIManager.SCREEN_SETTINGS, {"return_to": UIManager.SCREEN_MAIN_MENU}), "SettingsButton")
+	_item("CONTROLS", &"GhostButton", func() -> void: UIManager.go_to(UIManager.SCREEN_SETTINGS, {"return_to": UIManager.SCREEN_MAIN_MENU, "tab": 2}), "ControlsButton")
+	_item("CREDITS", &"GhostButton", func() -> void: UIManager.go_to(UIManager.SCREEN_CREDITS), "CreditsButton")
+	_item("QUIT", &"DangerButton", _on_quit, "QuitButton")
+	col.add_child(UIKit.expand(Control.new(), false, true))
+	col.add_child(UIKit.label("v%s · WINDOWS PC · 1920×1080 · MOUSE + KEYBOARD" % ProjectSettings.get_setting("application/config/version", "0"), &"SubHeaderLabel"))
+	var keys := UIKit.label("[↑ ↓ / W S] select   [ENTER] confirm   [F9] quick load", &"SubHeaderLabel")
+	keys.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
+	keys.offset_left = -620
+	keys.offset_top = -60
+	keys.offset_right = -40
+	keys.offset_bottom = -30
+	keys.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	add_child(keys)
+
+
+func _item(text: String, style: StringName, cb: Callable, node_name: String) -> Button:
+	var b := UIKit.button(text, style, cb, node_name, 58)
+	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	_menu.add_child(b)
+	return b
 
 
 func _process(delta: float) -> void:
-	if Settings.reduce_motion:
+	if Settings.reduce_motion or _subtitle == null:
 		return
 	_flicker_timer -= delta
 	if _flicker_timer <= 0.0:
@@ -37,8 +84,18 @@ func _process(delta: float) -> void:
 		t.tween_property(_subtitle, "modulate:a", 1.0, 0.06)
 
 
-func _on_new_game_pressed() -> void:
-	if SaveManager.has_save():
-		UIManager.confirm("WIPE CLINIC?", "Starting over deletes your saved money, gear and reputation.", "WIPE", GameManager.start_new_game, true)
+func _on_new_game() -> void:
+	if SaveManager.has_any_save():
+		UIManager.go_to(UIManager.SCREEN_LOAD, {"mode": "new", "return_to": UIManager.SCREEN_MAIN_MENU})
 	else:
-		GameManager.start_new_game()
+		GameManager.start_new_game_in_slot(1)
+
+
+func _on_quit() -> void:
+	UIManager.confirm("QUIT TO DESKTOP?", "Your clinic is saved.", "QUIT", GameManager.quit_to_desktop, true)
+
+
+## ESC on the title screen asks to quit.
+func on_escape() -> bool:
+	_on_quit()
+	return true

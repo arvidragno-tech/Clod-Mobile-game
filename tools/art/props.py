@@ -272,3 +272,58 @@ def equipment_case(sc, x, y, color="cyan"):
     a.rect(x + 12, y + 3, 6, 4, env.C(env.MAT["steel"], 5))  # latch
     sc.emissive.rect(x + 3, y + 10, 5, 2, env.GLOW(color, 5))
     fx("led", x + 3, y + 10, 5, 1, color=color, rate=0.5)
+
+
+def desk(sc, x, w, tier, rng):
+    """Computer desk: keyboard, monitors (CRT -> flat -> holo), clutter."""
+    env = _env()
+    a = sc.albedo
+    top = env.FLOOR_Y - 26
+    m = env.MAT["wood"] if tier <= 1 else env.MAT["dark"]
+    a.shaded_poly([(x, top), (x + w, top), (x + w, top + 4), (x, top + 4)], m, 4.6, 2.4, 1, 1)
+    for lx in (x + 2, x + w - 4):
+        a.rect(lx, top + 4, 2, env.FLOOR_Y - top - 4, env.C(m, 2))
+    a.rect(x + 6, top - 2, 20, 2, env.C(env.MAT["dark"], 3))  # keyboard
+    for k in range(6):
+        a.set(x + 8 + k * 3, top - 2, env.C(env.MAT["steel"], 4))
+    if tier <= 1:
+        env.monitor(sc, x + w - 30, top - 22, 24, 20, "crt", "green", stand=False)
+        tape(sc, x + w - 29, top - 21, 4)
+        a.rect(x + 30, top - 5, 6, 5, env.C(env.R("6a3c26"), 4))  # cup
+    elif tier <= 3:
+        env.monitor(sc, x + 4, top - 24, 26, 18, "flat", "cyan", stand=False)
+        env.monitor(sc, x + 34, top - 26, 28, 20, "flat", "green" if tier == 2 else "cyan", stand=False)
+    else:
+        env.holo(sc, x + 8, top - 40, w - 16, 34, "blue" if tier == 4 else "cyan")
+    # Cable bundle down to the floor
+    a.polyline([(x + w - 6, top + 4), (x + w - 4, env.FLOOR_Y - 2), (x + w + 6, env.FLOOR_Y + 4)], (12, 12, 16, 255))
+
+
+def server_rack(sc, x, h=70):
+    """Rack of blinking compute (the clinic's diagnostics brain)."""
+    env = _env()
+    a = sc.albedo
+    y = env.FLOOR_Y - h
+    a.shaded_poly([(x, y), (x + 18, y), (x + 18, env.FLOOR_Y), (x, env.FLOOR_Y)], env.MAT["dark"], 4.2, 2.2, 1, 1)
+    for k, yy in enumerate(range(y + 4, env.FLOOR_Y - 4, 6)):
+        a.hline(x + 2, x + 15, yy, env.C(env.MAT["steel"], 3))
+        col = ["green", "cyan", "amber", "green"][k % 4]
+        sc.emissive.set(x + 3, yy + 2, env.GLOW(col, 6))
+        fx("led", x + 3, yy + 2, color=col, rate=0.6 + 0.37 * k)
+        for b in range(3):
+            sc.emissive.set(x + 7 + b * 2, yy + 2, env.GLOW("cyan", 2))
+    sc.light(x + 9, y + h / 2, pal.ACCENT["cyan"], 30, 0.3)
+
+
+def workbench(sc, x, w, rng):
+    """Cheap clinics: a bench covered in salvaged chrome being rebuilt."""
+    env = _env()
+    a = sc.albedo
+    top = env.FLOOR_Y - 22
+    a.shaded_poly([(x, top), (x + w, top), (x + w, top + 4), (x, top + 4)], env.MAT["wood"], 4.4, 2.4, 1, 1)
+    for lx in (x + 3, x + w - 5):
+        a.line(lx, top + 4, lx - 2, env.FLOOR_Y, env.C(env.MAT["wood"], 2))
+    for k in range(4):
+        discarded_implant(sc, x + 6 + k * 8, top - 2, rng, glow=(k == 1))
+    a.rect(x + w - 14, top - 8, 8, 8, env.C(env.MAT["steel"], 3))  # vise
+    sc.light(x + w / 2, top - 10, "ffcf8a", 26, 0.35)

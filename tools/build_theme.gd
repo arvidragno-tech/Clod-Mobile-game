@@ -7,15 +7,17 @@ extends SceneTree
 const P := preload("res://scripts/core/palette.gd")
 const OUT_PATH := "res://ui/theme/main_theme.tres"
 const FRAMES := "res://assets/sprites/ui/frames/"
-## Texture margins in texture pixels (= 2x art pixels).
-const PANEL_MARGIN := 12
-const BUTTON_MARGIN := 8
+## Texture margins in texture pixels (= 3x art pixels, the PC density).
+const PANEL_MARGIN := 18
+const BUTTON_MARGIN := 12
 
 var theme := Theme.new()
 var font_body: FontFile
 var font_body_bold: FontFile
 var font_title: FontFile
 var font_mono: FontFile
+## Keyboard focus ring: a hard 2 px cyan outline just outside the control.
+var focus_box := StyleBoxFlat.new()
 
 
 func _init() -> void:
@@ -23,8 +25,13 @@ func _init() -> void:
 	font_body_bold = load("res://assets/fonts/pixelify_sans_bold.woff2")
 	font_title = load("res://assets/fonts/silkscreen_bold.woff2")
 	font_mono = load("res://assets/fonts/vt323_regular.woff2")
+	focus_box.draw_center = false
+	focus_box.anti_aliasing = false
+	focus_box.border_color = P.ACCENT
+	focus_box.set_border_width_all(2)
+	focus_box.set_expand_margin_all(3)
 	theme.default_font = font_body
-	theme.default_font_size = 17
+	theme.default_font_size = 22
 	_build_panels()
 	_build_buttons()
 	_build_labels()
@@ -50,7 +57,7 @@ func tex_box(name: String, margin: int, content: Vector4) -> StyleBoxTexture:
 	return s
 
 
-func panel(type: StringName, frame: String, content := Vector4(12, 12, 12, 12)) -> void:
+func panel(type: StringName, frame: String, content := Vector4(18, 16, 18, 16)) -> void:
 	if type != &"PanelContainer" and type != &"Panel":
 		theme.set_type_variation(type, &"PanelContainer")
 	theme.set_stylebox(&"panel", type, tex_box(frame, PANEL_MARGIN, content))
@@ -60,24 +67,24 @@ func _build_panels() -> void:
 	panel(&"Panel", "panel")
 	panel(&"PanelContainer", "panel")
 	panel(&"AccentPanel", "panel_accent")
-	panel(&"CardPanel", "panel_card", Vector4(10, 8, 10, 8))
-	panel(&"DangerPanel", "panel_danger", Vector4(12, 8, 12, 8))
-	panel(&"ToastPanel", "panel_toast", Vector4(12, 8, 12, 8))
-	panel(&"HudPanel", "panel_hud", Vector4(8, 6, 8, 6))
+	panel(&"CardPanel", "panel_card", Vector4(14, 12, 14, 12))
+	panel(&"DangerPanel", "panel_danger", Vector4(16, 12, 16, 12))
+	panel(&"ToastPanel", "panel_toast", Vector4(18, 10, 18, 10))
+	panel(&"HudPanel", "panel_hud", Vector4(12, 9, 12, 9))
 	panel(&"BMPanel", "panel_bm")
-	panel(&"BMCardPanel", "panel_bm_card", Vector4(10, 8, 10, 8))
+	panel(&"BMCardPanel", "panel_bm_card", Vector4(14, 12, 14, 12))
 	panel(&"GreenPanel", "panel_green")
 	theme.set_type_variation(&"FlatPanel", &"PanelContainer")
 	theme.set_stylebox(&"panel", &"FlatPanel", StyleBoxEmpty.new())
 
 
-func button(type: StringName, frame: String, font: Color, font_pressed: Color, content := Vector4(14, 12, 14, 12)) -> void:
+func button(type: StringName, frame: String, font: Color, font_pressed: Color, content := Vector4(18, 10, 18, 10)) -> void:
 	if type != &"Button":
 		theme.set_type_variation(type, &"Button")
 	for state in ["normal", "hover", "pressed", "disabled"]:
 		theme.set_stylebox(StringName(state), type, tex_box("%s_%s" % [frame, state], BUTTON_MARGIN, content))
 	theme.set_stylebox(&"hover_pressed", type, tex_box(frame + "_pressed", BUTTON_MARGIN, content))
-	theme.set_stylebox(&"focus", type, StyleBoxEmpty.new())
+	theme.set_stylebox(&"focus", type, focus_box)
 	theme.set_color(&"font_color", type, font)
 	theme.set_color(&"font_hover_color", type, font)
 	theme.set_color(&"font_focus_color", type, font)
@@ -92,7 +99,7 @@ func button(type: StringName, frame: String, font: Color, font_pressed: Color, c
 func _build_buttons() -> void:
 	button(&"Button", "btn", P.TEXT, P.ACCENT)
 	theme.set_font(&"font", &"Button", font_title)
-	theme.set_font_size(&"font_size", &"Button", 16)
+	theme.set_font_size(&"font_size", &"Button", 24)
 	theme.set_constant(&"h_separation", &"Button", 8)
 	button(&"AccentButton", "btn_accent", P.TEXT_DARK, P.TEXT_DARK)
 	button(&"BrandButton", "btn_brand", P.TEXT_DARK, P.TEXT)
@@ -101,19 +108,19 @@ func _build_buttons() -> void:
 	# Square icon-sized danger button (abort): tight padding keeps it 44px.
 	button(&"CompactDangerButton", "btn_danger", P.TEXT, P.TEXT_DARK, Vector4(4, 4, 4, 4))
 	button(&"BMButton", "btn_bm", Color("ffb0cc"), P.TEXT_DARK)
-	button(&"ToolButton", "btn_tool", P.TEXT_DIM, P.ACCENT, Vector4(4, 4, 4, 4))
+	button(&"ToolButton", "btn_tool", P.TEXT_DIM, P.ACCENT, Vector4(6, 6, 6, 6))
 	theme.set_font(&"font", &"ToolButton", font_mono)
-	theme.set_font_size(&"font_size", &"ToolButton", 18)
-	button(&"QuickButton", "btn_quick", P.WARN, P.TEXT, Vector4(6, 4, 6, 6))
+	theme.set_font_size(&"font_size", &"ToolButton", 24)
+	button(&"QuickButton", "btn_quick", P.WARN, P.TEXT, Vector4(10, 6, 10, 8))
 	theme.set_font(&"font", &"QuickButton", font_body_bold)
-	theme.set_font_size(&"font_size", &"QuickButton", 13)
-	button(&"NavButton", "btn_ghost", P.TEXT_DIM, P.ACCENT, Vector4(2, 6, 2, 4))
+	theme.set_font_size(&"font_size", &"QuickButton", 18)
+	button(&"NavButton", "btn_ghost", P.TEXT_DIM, P.ACCENT, Vector4(14, 8, 14, 8))
 	theme.set_font(&"font", &"NavButton", font_body_bold)
-	theme.set_font_size(&"font_size", &"NavButton", 11)
-	theme.set_constant(&"h_separation", &"NavButton", 0)
-	button(&"TabButton", "btn_tool", P.TEXT_DIM, P.ACCENT, Vector4(6, 8, 6, 8))
+	theme.set_font_size(&"font_size", &"NavButton", 18)
+	theme.set_constant(&"h_separation", &"NavButton", 12)
+	button(&"TabButton", "btn_tool", P.TEXT_DIM, P.ACCENT, Vector4(12, 8, 12, 8))
 	theme.set_font(&"font", &"TabButton", font_body_bold)
-	theme.set_font_size(&"font_size", &"TabButton", 12)
+	theme.set_font_size(&"font_size", &"TabButton", 18)
 
 
 func label(type: StringName, font: Font, size: int, color: Color) -> void:
@@ -127,25 +134,25 @@ func label(type: StringName, font: Font, size: int, color: Color) -> void:
 func _build_labels() -> void:
 	theme.set_color(&"font_color", &"Label", P.TEXT)
 	theme.set_constant(&"line_spacing", &"Label", 2)
-	label(&"TitleLabel", font_title, 40, P.ACCENT)
+	label(&"TitleLabel", font_title, 72, P.ACCENT)
 	theme.set_color(&"font_shadow_color", &"TitleLabel", Color(P.ACCENT_DIM, 0.6))
 	theme.set_constant(&"shadow_offset_x", &"TitleLabel", 0)
-	theme.set_constant(&"shadow_offset_y", &"TitleLabel", 4)
-	label(&"HeaderLabel", font_title, 16, P.ACCENT)
-	label(&"SubHeaderLabel", font_body_bold, 12, P.TEXT_DIM)
-	label(&"DimLabel", null, 15, P.TEXT_DIM)
-	label(&"MonoLabel", font_mono, 22, P.TEXT)
-	label(&"BigMonoLabel", font_mono, 36, P.ACCENT)
+	theme.set_constant(&"shadow_offset_y", &"TitleLabel", 6)
+	label(&"HeaderLabel", font_title, 24, P.ACCENT)
+	label(&"SubHeaderLabel", font_body_bold, 16, P.TEXT_DIM)
+	label(&"DimLabel", null, 19, P.TEXT_DIM)
+	label(&"MonoLabel", font_mono, 28, P.TEXT)
+	label(&"BigMonoLabel", font_mono, 48, P.ACCENT)
 	# Silkscreen at its native 8px: used for text drawn inside the pixel field.
 	label(&"PixelLabel", font_title, 8, P.TEXT)
-	label(&"BMLabel", font_title, 16, P.BRAND)
+	label(&"BMLabel", font_title, 24, P.BRAND)
 	theme.set_font(&"normal_font", &"RichTextLabel", font_body)
 	theme.set_font(&"mono_font", &"RichTextLabel", font_mono)
 	theme.set_font(&"bold_font", &"RichTextLabel", font_body_bold)
 	theme.set_color(&"default_color", &"RichTextLabel", P.TEXT)
-	theme.set_font_size(&"normal_font_size", &"RichTextLabel", 16)
-	theme.set_font_size(&"bold_font_size", &"RichTextLabel", 16)
-	theme.set_font_size(&"mono_font_size", &"RichTextLabel", 20)
+	theme.set_font_size(&"normal_font_size", &"RichTextLabel", 21)
+	theme.set_font_size(&"bold_font_size", &"RichTextLabel", 21)
+	theme.set_font_size(&"mono_font_size", &"RichTextLabel", 26)
 
 
 func _build_misc() -> void:
@@ -160,7 +167,7 @@ func _build_misc() -> void:
 	theme.set_stylebox(&"background", &"ProgressBar", bar_bg)
 	theme.set_stylebox(&"fill", &"ProgressBar", bar_fill)
 	theme.set_font(&"font", &"ProgressBar", font_mono)
-	theme.set_font_size(&"font_size", &"ProgressBar", 16)
+	theme.set_font_size(&"font_size", &"ProgressBar", 20)
 
 	var sep := StyleBoxLine.new()
 	sep.color = P.LINE
@@ -174,12 +181,39 @@ func _build_misc() -> void:
 	grab.bg_color = P.LINE_HI
 	for s in ["grabber", "grabber_highlight", "grabber_pressed"]:
 		theme.set_stylebox(StringName(s), &"VScrollBar", grab)
+		theme.set_stylebox(StringName(s), &"HScrollBar", grab)
 	var track := StyleBoxFlat.new()
 	track.anti_aliasing = false
 	track.bg_color = Color(P.BG_1, 0.5)
 	track.content_margin_left = 2
 	track.content_margin_right = 2
 	theme.set_stylebox(&"scroll", &"VScrollBar", track)
+	theme.set_stylebox(&"scroll", &"HScrollBar", track)
+	# Tooltips (hover details on PC).
+	var tip := StyleBoxFlat.new()
+	tip.anti_aliasing = false
+	tip.bg_color = Color("0b0f16")
+	tip.border_color = P.ACCENT_DIM
+	tip.set_border_width_all(2)
+	tip.set_content_margin_all(10)
+	theme.set_stylebox(&"panel", &"TooltipPanel", tip)
+	theme.set_font_size(&"font_size", &"TooltipLabel", 18)
+	theme.set_color(&"font_color", &"TooltipLabel", P.TEXT)
+	# Dropdowns and checkboxes for the PC settings.
+	theme.set_font_size(&"font_size", &"OptionButton", 20)
+	theme.set_font(&"font", &"OptionButton", font_body_bold)
+	theme.set_font_size(&"font_size", &"PopupMenu", 20)
+	var popup := StyleBoxFlat.new()
+	popup.anti_aliasing = false
+	popup.bg_color = Color("0d1017")
+	popup.border_color = P.LINE_HI
+	popup.set_border_width_all(2)
+	popup.set_content_margin_all(6)
+	theme.set_stylebox(&"panel", &"PopupMenu", popup)
+	var hl := StyleBoxFlat.new()
+	hl.anti_aliasing = false
+	hl.bg_color = Color(P.ACCENT, 0.25)
+	theme.set_stylebox(&"hover", &"PopupMenu", hl)
 
 	# Pixel sliders (settings): thick track, chunky grabber, generous height.
 	var slider_track := tex_box("slider_track", 2, Vector4(0, 6, 0, 6))
@@ -193,5 +227,5 @@ func _build_misc() -> void:
 	theme.set_constant(&"center_grabber", &"HSlider", 0)
 	theme.set_constant(&"grabber_offset", &"HSlider", 0)
 
-	theme.set_constant(&"separation", &"VBoxContainer", 8)
-	theme.set_constant(&"separation", &"HBoxContainer", 8)
+	theme.set_constant(&"separation", &"VBoxContainer", 10)
+	theme.set_constant(&"separation", &"HBoxContainer", 10)

@@ -67,7 +67,7 @@ func _slider(parent: Control, caption: String, key: String) -> void:
 	s.max_value = 1.0
 	s.step = 0.05
 	s.value = float(Settings.get(key))
-	s.custom_minimum_size.y = GameConfig.MIN_TOUCH
+	s.custom_minimum_size.y = GameConfig.MIN_CONTROL
 	s.focus_mode = Control.FOCUS_NONE
 	UIKit.expand(s)
 	var pct := UIKit.label("%d%%" % roundi(s.value * 100), &"MonoLabel", false, Palette.ACCENT, 18)

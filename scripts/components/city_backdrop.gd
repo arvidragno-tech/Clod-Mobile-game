@@ -6,13 +6,13 @@ extends Control
 ## and steam from the street vent. All motion is in whole art pixels.
 
 const KEYART := "res://assets/sprites/ui/title_keyart.png"
-const DROP_COUNT := 60
+const DROP_COUNT := 140
 const DROP_SPEED := Vector2(-20.0, 260.0)  # art px / s
 ## Art-pixel anchors inside the key art.
-const CROSS := Rect2(86, 246, 14, 14)
-const DOOR_LIGHT := Rect2(82, 342, 20, 2)
-const VENT := Vector2(22, 316)
-const CUSTOMER_EYE := Vector2(142, 265)
+const CROSS := Rect2(446, 226, 14, 14)
+const DOOR_LIGHT := Rect2(442, 314, 20, 2)
+const VENT := Vector2(388, 290)
+const CUSTOMER_EYE := Vector2(512, 241)
 
 var _tex: Texture2D
 var _scale: float = 2.0
@@ -81,13 +81,13 @@ func _draw() -> void:
 	if _tex == null:
 		return
 	draw_texture_rect(_tex, Rect2(_offset, Vector2(_tex.get_size()) * _scale), false)
-	# Darken the sky behind the title block in hard dithered steps, so the
-	# wordmark and tagline read over the city.
-	var title_end := size.y * 0.52
-	var step := 4
-	for i in step:
-		var y0 := title_end * i / step
-		draw_rect(Rect2(0, floorf(y0), size.x, ceilf(title_end / step)), Color(0.02, 0.02, 0.05, 0.72 - i * 0.1))
+	# Darken the left third (menu column) in hard steps so the wordmark and
+	# menu read over the city; the alley stays bright on the right.
+	var col_end := size.x * 0.42
+	var steps := 5
+	for i in steps:
+		var x0 := col_end * i / steps
+		draw_rect(Rect2(floorf(x0), 0, ceilf(col_end / steps), size.y), Color(0.02, 0.02, 0.05, 0.78 - i * 0.13))
 	# Cross sign buzz: occasionally drops out for a few frames.
 	if not Settings.reduce_motion and fmod(_time, 5.3) < 0.12:
 		draw_rect(Rect2(_art(CROSS.position), CROSS.size * _scale), Color(0.02, 0.02, 0.04, 0.85))

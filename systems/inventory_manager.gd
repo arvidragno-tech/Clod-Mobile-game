@@ -8,6 +8,13 @@ var instances: Array[ImplantInstance] = []
 var supplies: int = 0
 var parts: int = 0
 var tokens: int = 0
+## Tool id -> condition 0..100. Instruments wear a little each operation and
+## lose a few percent of precision until serviced (Supply screen).
+var tool_condition: Dictionary = {}
+
+const WEAR_PER_OP := 3.0
+const WORN_PRECISION := 0.92  # precision factor at 0% condition
+const SERVICE_COST_PER_POINT := 0.6
 
 
 func _ready() -> void:
@@ -24,6 +31,7 @@ func _load_catalog() -> void:
 
 func reset_state() -> void:
 	owned_tools.clear()
+	tool_condition.clear()
 	for t: ToolData in tool_catalog.values():
 		if t.starter:
 			owned_tools.append(t.id)
@@ -112,6 +120,42 @@ func get_tool_modifiers() -> Dictionary:
 		for key: Variant in t.modifiers:
 			out[key] = float(out.get(key, 0.0)) + float(t.modifiers[key])
 	return out
+
+
+## Condition 0..100 of an owned tool (new tools are 100).
+func get_tool_condition(id: StringName) -> float:
+	return float(tool_condition.get(id, 100.0))
+
+
+## Precision factor from wear: 1.0 when new, WORN_PRECISION when worn out.
+func tool_condition_factor(id: StringName) -> float:
+	return lerpf(WORN_PRECISION, 1.0, get_tool_condition(id) / 100.0)
+
+
+## Wears the best tool of each category used in an operation.
+func wear_tools(categories: Array[StringName], amount: float = WEAR_PER_OP) -> void:
+	for category in categories:
+		var t := get_best_tool(category)
+		if t:
+			tool_condition[t.id] = maxf(0.0, get_tool_condition(t.id) - amount)
+	EventBus.inventory_changed.emit()
+
+
+func get_service_cost() -> int:
+	var missing := 0.0
+	for id in owned_tools:
+		missing += 100.0 - get_tool_condition(id)
+	return int(ceil(missing * SERVICE_COST_PER_POINT))
+
+
+## Restores every owned tool to 100%.
+func service_tools() -> bool:
+	var cost := get_service_cost()
+	if cost <= 0 or not EconomyManager.spend(cost):
+		return false
+	tool_condition.clear()
+	EventBus.inventory_changed.emit()
+	return true
 
 
 # --- Implants ----------------------------------------------------------------------
@@ -245,7 +289,10 @@ func get_save_data() -> Dictionary:
 	var inst := []
 	for i in instances:
 		inst.append(i.to_dict())
-	return {"owned_tools": tools, "instances": inst, "supplies": supplies, "parts": parts, "tokens": tokens}
+	var cond := {}
+	for id: StringName in tool_condition:
+		cond[String(id)] = snappedf(float(tool_condition[id]), 0.1)
+	return {"owned_tools": tools, "instances": inst, "supplies": supplies, "parts": parts, "tokens": tokens, "tool_condition": cond}
 
 
 func load_save_data(data: Dictionary) -> void:
@@ -261,6 +308,12 @@ func load_save_data(data: Dictionary) -> void:
 				var inst := ImplantInstance.from_dict(d)
 				if CyberwareManager.get_cyberware(inst.cyberware_id):
 					instances.append(inst)
+	var cond: Variant = data.get("tool_condition", {})
+	if typeof(cond) == TYPE_DICTIONARY:
+		for key: Variant in cond:
+			var sid := StringName(str(key))
+			if tool_catalog.has(sid):
+				tool_condition[sid] = clampf(float(cond[key]), 0.0, 100.0)
 	supplies = int(data.get("supplies", GameConfig.STARTING_SUPPLIES))
 	parts = int(data.get("parts", GameConfig.STARTING_PARTS))
 	tokens = int(data.get("tokens", GameConfig.STARTING_TOKENS))

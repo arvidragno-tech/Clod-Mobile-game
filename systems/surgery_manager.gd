@@ -256,6 +256,8 @@ func _finish(success: bool, reason: StringName) -> void:
 	r.implant_pay_mult = 1.0 + (implant.trait_effect("pay") if implant else 0.0)
 	r.implant_price = implant_item.price if implant_item else 0
 	SurgeryScoring.apply_rewards(r, surgery, customer)
+	if reason != &"aborted" or stage_index > 0:
+		InventoryManager.wear_tools(surgery.get_required_tool_categories())
 	last_result = r
 	session_finished.emit(r)
 
@@ -347,7 +349,7 @@ func get_tool_for_category(category: StringName) -> ToolData:
 ## Effective precision: tool x skills/clinic, divided by install difficulty.
 func get_tool_precision(category: StringName) -> float:
 	var t := get_tool_for_category(category)
-	var base := t.precision if t else 1.0
+	var base := (t.precision * InventoryManager.tool_condition_factor(t.id)) if t else 1.0
 	return maxf(0.3, base * mod_mult(&"surgery.precision") * Difficulty.assist() / get_difficulty_factor())
 
 

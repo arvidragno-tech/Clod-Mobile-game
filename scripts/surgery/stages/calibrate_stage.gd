@@ -38,19 +38,46 @@ func create_controls() -> Control:
 	_slider = TouchSlider.new()
 	_slider.name = "TuneSlider"
 	_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_slider.custom_minimum_size = Vector2(0, 56)
+	_slider.custom_minimum_size = Vector2(0, 64)
 	_slider.value = slider_value
 	_slider.value_changed.connect(func(v: float) -> void: slider_value = v)
 	row.add_child(_slider)
 	_lock_button = Button.new()
 	_lock_button.name = "LockButton"
-	_lock_button.text = "LOCK"
+	_lock_button.text = "LOCK  [%s]" % Controls.key_name("context")
 	_lock_button.theme_type_variation = &"AccentButton"
-	_lock_button.custom_minimum_size = Vector2(88, 56)
+	_lock_button.custom_minimum_size = Vector2(220, 64)
 	_lock_button.focus_mode = Control.FOCUS_NONE
 	_lock_button.pressed.connect(_lock)
 	row.add_child(_lock_button)
 	return row
+
+
+const KEY_NUDGE := 0.02
+
+
+func key_action(action: StringName, pressed: bool) -> bool:
+	if not pressed or is_finished:
+		return action in [&"context", &"interact", &"ui_left", &"ui_right"]
+	match action:
+		&"context", &"interact":
+			if _lock_button and not _lock_button.disabled:
+				_lock_button.pressed.emit()
+			return true
+		&"ui_left", &"ui_right":
+			var dir := -1.0 if action == &"ui_left" else 1.0
+			_slider.value = clampf(_slider.value + dir * KEY_NUDGE * Settings.mouse_sensitivity, 0.0, 1.0)
+			slider_value = _slider.value
+			return true
+	return false
+
+
+func wheel_steps(steps: int) -> bool:
+	if is_finished or _slider == null:
+		return false
+	_slider.value = clampf(_slider.value - steps * KEY_NUDGE * Settings.mouse_sensitivity, 0.0, 1.0)
+	slider_value = _slider.value
+	return true
 
 
 func get_autoplay_hints() -> Dictionary:

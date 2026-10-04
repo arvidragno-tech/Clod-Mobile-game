@@ -1,14 +1,15 @@
 extends Node
 ## Automated tests. Runs unit/system tests (tests/unit_tests.gd), then plays
-## the game end-to-end by injecting real pointer events (taps, drags, holds)
-## into the viewport, exactly like a finger on an iPhone would.
+## the game end-to-end by injecting real mouse and keyboard events (clicks,
+## drags, holds, hotkeys) into the viewport, exactly like a PC player would.
 ##
-## Headless:   godot --headless --path . res://tests/test_runner.tscn -- --viewport=360x780
-## With shots: xvfb-run godot --path . --rendering-driver opengl3 --resolution 360x780 \
+## Headless:   godot --headless --path . res://tests/test_runner.tscn -- --viewport=1920x1080
+## With shots: xvfb-run godot --path . --rendering-driver opengl3 --resolution 1920x1080 \
 ##               res://tests/test_runner.tscn -- --shots=/abs/dir
 ## Exit code 0 = all passed.
 
 const TEST_SAVE_PATH := "user://test_savegame.json"
+const TEST_SAVE_DIR := "user://test_saves"
 const STEP_TIMEOUT := 20.0
 const DRAG_STEP_PX := 6.0
 const UnitTests := preload("res://tests/unit_tests.gd")
@@ -22,16 +23,13 @@ var _handling_complication: bool = false
 
 
 func _ready() -> void:
-	# Pin the logical viewport to an iPhone size (headless windows are 64x64).
-	var viewport_size := Vector2i(360, 780)
+	# Pin the logical viewport (headless windows are 64x64). The design canvas
+	# is 1920x1080; smaller sizes emulate a window at that resolution.
+	var viewport_size := Vector2i(1920, 1080)
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--shots="):
 			_shots_dir = arg.trim_prefix("--shots=")
 			DirAccess.make_dir_recursive_absolute(_shots_dir)
-		elif arg.begins_with("--safe-area="):
-			# top,bottom insets in viewport units (e.g. iPhone 15: 54,31)
-			var tb := arg.trim_prefix("--safe-area=").split(",")
-			SafeAreaUtil.simulated = Rect2(0, float(tb[0]), 0, float(tb[1]))
 		elif arg.begins_with("--viewport="):
 			var parts := arg.trim_prefix("--viewport=").split("x")
 			viewport_size = Vector2i(int(parts[0]), int(parts[1]))
@@ -39,6 +37,8 @@ func _ready() -> void:
 	get_tree().root.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_KEEP
 	await get_tree().process_frame
 	print("viewport: ", get_viewport().get_visible_rect().size)
+	SaveManager.save_dir = TEST_SAVE_DIR
+	_clear_test_slots()
 	SaveManager.save_path = TEST_SAVE_PATH
 	SurgeryScreen.pause_on_suspend = false
 	SaveManager.delete_save()
@@ -53,6 +53,7 @@ func _run_all() -> void:
 	add_child(_main)
 	await _e2e()
 	SaveManager.delete_save()
+	_clear_test_slots()
 	AudioManager.stop_all()
 	await _frames(10)
 	print("")
@@ -64,6 +65,12 @@ func _run_all() -> void:
 		for f in _failures:
 			print("  - " + f)
 		get_tree().quit(1)
+
+
+func _clear_test_slots() -> void:
+	DirAccess.make_dir_recursive_absolute(TEST_SAVE_DIR)
+	for f in DirAccess.get_files_at(TEST_SAVE_DIR):
+		DirAccess.remove_absolute("%s/%s" % [TEST_SAVE_DIR, f])
 
 
 func check(condition: bool, message: String) -> void:
@@ -562,7 +569,7 @@ func _check_layout(label: String) -> void:
 		var r := b.get_global_rect()
 		if not view.encloses(r):
 			offenders.append("%s off-screen %s" % [b.name, r])
-		elif minf(r.size.x, r.size.y) < GameConfig.MIN_TOUCH - 4.0:
+		elif minf(r.size.x, r.size.y) < GameConfig.MIN_CONTROL - 4.0:
 			offenders.append("%s too small %s" % [b.name, r.size])
 	offenders.append_array(_horizontal_overflow(view))
 	check(offenders.is_empty(), "layout ok at '%s' %s" % [label, ", ".join(offenders)])

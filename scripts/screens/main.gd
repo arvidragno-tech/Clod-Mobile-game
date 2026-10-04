@@ -1,10 +1,7 @@
 extends Control
-## Root scene. Applies the iPhone safe area (notch / Dynamic Island / home
-## indicator) to the screen host and overlays, registers layers with
-## UIManager and opens the main menu.
+## Root scene (PC). Applies window/display settings and the pixel cursors,
+## registers the overlay layers with UIManager and opens the main menu.
 
-@onready var _safe_area: MarginContainer = %SafeArea
-@onready var _overlay_safe_area: MarginContainer = %OverlaySafeArea
 @onready var _screen_host: Control = %ScreenHost
 @onready var _fade: ColorRect = %Fade
 @onready var _flash: ColorRect = %Flash
@@ -18,26 +15,36 @@ func _ready() -> void:
 	SaveManager.save_failed.connect(func(reason: String) -> void:
 		UIManager.show_toast("SAVE FAILED (%s). Free some storage." % reason, &"danger"))
 	_apply_settings()
-	get_viewport().size_changed.connect(_apply_safe_area)
-	_apply_safe_area()
+	Settings.apply_display()
+	_apply_cursors()
 	UIManager.go_to(UIManager.SCREEN_MAIN_MENU)
 
 
-func _apply_safe_area() -> void:
-	var insets := SafeAreaUtil.get_insets(get_viewport())
-	for container: MarginContainer in [_safe_area, _overlay_safe_area]:
-		container.add_theme_constant_override(&"margin_left", int(insets.position.x))
-		container.add_theme_constant_override(&"margin_top", int(insets.position.y))
-		container.add_theme_constant_override(&"margin_right", int(insets.size.x))
-		container.add_theme_constant_override(&"margin_bottom", int(insets.size.y))
+## Pixel-art hardware cursors (2x art, hard edges): arrow, pointing hand for
+## anything clickable, crosshair for surgical work, grab while dragging.
+func _apply_cursors() -> void:
+	var hot: Dictionary = {}
+	var d: Variant = DataLoader.load_json("res://assets/sprites/ui/cursors/hotspots.json")
+	if d is Dictionary:
+		hot = d
+	var shapes := {"arrow": Input.CURSOR_ARROW, "hand": Input.CURSOR_POINTING_HAND, "cross": Input.CURSOR_CROSS,
+		"grab": Input.CURSOR_DRAG}
+	for name: String in shapes:
+		var tex := load("res://assets/sprites/ui/cursors/%s.png" % name) as Texture2D
+		if tex:
+			var h: Array = hot.get(name, [0, 0])
+			Input.set_custom_mouse_cursor(tex, shapes[name], Vector2(float(h[0]), float(h[1])))
+	Input.set_custom_mouse_cursor(load("res://assets/sprites/ui/cursors/grab.png"), Input.CURSOR_CAN_DROP, Vector2(16, 16))
 
 
 ## Text size / contrast on the shared theme; calmer CRT for accessibility.
 func _apply_settings() -> void:
 	Accessibility.apply(theme if theme else ThemeDB.get_project_theme())
+	Settings.apply_filter()
 	var crt := get_node_or_null("CrtLayer/CrtOverlay") as ColorRect
 	if crt and crt.material is ShaderMaterial:
 		var m := crt.material as ShaderMaterial
 		m.set_shader_parameter(&"noise_strength", 0.0 if Settings.reduce_motion else 0.025)
 		m.set_shader_parameter(&"scanline_strength", 0.035 if Settings.high_contrast else 0.07)
 		m.set_shader_parameter(&"vignette_strength", 0.2 if Settings.high_contrast else 0.35)
+		crt.visible = Settings.effects_quality > 0

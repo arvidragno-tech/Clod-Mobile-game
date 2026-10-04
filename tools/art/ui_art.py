@@ -5,7 +5,7 @@ from __future__ import annotations
 from . import palette as pal
 from .lib import Canvas, clamp
 
-SCALE = 2
+SCALE = 3
 
 
 def rgba(h, a=255):

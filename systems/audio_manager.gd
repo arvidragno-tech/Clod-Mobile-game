@@ -38,6 +38,7 @@ const SFX_PATHS := {
 	&"heartbeat": "res://audio/sfx/heartbeat.wav",
 	&"spark": "res://audio/sfx/spark.wav",
 	&"tutorial": "res://audio/sfx/tutorial.wav",
+	&"hover": "res://audio/sfx/hover.wav",
 }
 
 const MUSIC_PATHS := {
@@ -134,6 +135,7 @@ func _ensure_buses() -> void:
 
 ## Applies Settings volumes to the buses (linear 0..1 -> dB, 0 = mute).
 func apply_volumes() -> void:
+	_set_bus_volume(&"Master", Settings.master_volume)
 	_set_bus_volume(BUS_MUSIC, Settings.music_volume)
 	_set_bus_volume(BUS_AMBIENCE, Settings.ambience_volume)
 	_set_bus_volume(BUS_SFX, Settings.sfx_volume)

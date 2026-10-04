@@ -29,8 +29,9 @@ func _ready() -> void:
 		elif arg.begins_with("--monkey="):
 			monkey = int(arg.trim_prefix("--monkey="))
 	_rng.seed = 99
-	get_tree().root.content_scale_size = Vector2i(360, 780)
+	get_tree().root.content_scale_size = Vector2i(1920, 1080)
 	get_tree().root.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_KEEP
+	SaveManager.save_dir = "user://test_saves"
 	SaveManager.save_path = SAVE
 	SaveManager.delete_save()
 	Settings.path = "user://stability_settings.cfg"

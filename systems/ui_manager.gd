@@ -15,6 +15,10 @@ const SCREEN_SKILLS := &"skills"
 const SCREEN_UPGRADES := &"upgrades"
 const SCREEN_DOSSIER := &"dossier"
 const SCREEN_SETTINGS := &"settings"
+const SCREEN_INVENTORY := &"inventory"
+const SCREEN_DATABASE := &"database"
+const SCREEN_LOAD := &"load_game"
+const SCREEN_CREDITS := &"credits"
 
 const SCREEN_SCENES := {
 	SCREEN_MAIN_MENU: "res://scenes/main_menu/main_menu.tscn",
@@ -29,6 +33,10 @@ const SCREEN_SCENES := {
 	SCREEN_UPGRADES: "res://scenes/upgrades/upgrades_screen.tscn",
 	SCREEN_DOSSIER: "res://scenes/dossier/dossier_screen.tscn",
 	SCREEN_SETTINGS: "res://scenes/settings/settings_screen.tscn",
+	SCREEN_INVENTORY: "res://scenes/inventory/inventory_screen.tscn",
+	SCREEN_DATABASE: "res://scenes/database/database_screen.tscn",
+	SCREEN_LOAD: "res://scenes/load_game/load_game_screen.tscn",
+	SCREEN_CREDITS: "res://scenes/credits/credits_screen.tscn",
 }
 
 const DIALOG_SCENE := preload("res://ui/components/dialog.tscn")
@@ -268,10 +276,136 @@ func has_modal() -> bool:
 	return _modal_host != null and _modal_host.get_child_count() > 0
 
 
-## Every button in the game gets a click sound + haptic tick automatically.
+## Every button in the game gets a click sound, a hover tick and the hand
+## cursor automatically.
 func _on_node_added(node: Node) -> void:
 	if node is BaseButton and not node.has_meta(&"silent"):
-		(node as BaseButton).pressed.connect(_on_any_button_pressed)
+		var b := node as BaseButton
+		b.pressed.connect(_on_any_button_pressed)
+		b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		if b.focus_mode == Control.FOCUS_NONE and not b.has_meta(&"no_focus"):
+			b.focus_mode = Control.FOCUS_ALL
+		b.mouse_entered.connect(_on_button_hover.bind(b))
+
+
+func _on_button_hover(b: BaseButton) -> void:
+	if not b.disabled and b.is_visible_in_tree():
+		AudioManager.play_sfx(&"hover", 0.03)
+
+
+# --- Desktop input ----------------------------------------------------------------
+
+## Screens where the global hotkeys (I, J, B, M, C, F5/F9) navigate.
+const HUB_SCREENS := [SCREEN_CLINIC, SCREEN_SHOP, SCREEN_SKILLS, SCREEN_UPGRADES, SCREEN_DOSSIER, SCREEN_INVENTORY,
+	SCREEN_DATABASE, SCREEN_BLACK_MARKET, SCREEN_SETTINGS, SCREEN_CUSTOMER]
+
+
+func _input(event: InputEvent) -> void:
+	if event.is_echo() or not event.is_pressed():
+		return
+	# First arrow/WASD/Enter press puts keyboard focus on the screen.
+	if event.is_action("ui_up") or event.is_action("ui_down") or event.is_action("ui_left") or event.is_action("ui_right"):
+		var nav_ok := has_modal() or current_screen == null or not (current_screen is BaseScreen) or (current_screen as BaseScreen).keyboard_nav
+		if nav_ok and get_viewport().gui_get_focus_owner() == null:
+			focus_first()
+			get_viewport().set_input_as_handled()
+			return
+	if event.is_action("cycle_panel"):
+		if cycle_panels():
+			get_viewport().set_input_as_handled()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_echo() or not event.is_pressed() or _transitioning or current_screen == null:
+		return
+	if event.is_action("pause"):
+		get_viewport().set_input_as_handled()
+		_on_escape()
+		return
+	if has_modal():
+		return
+	var hub := HUB_SCREENS.has(current_screen_id)
+	var routes := {"inventory": SCREEN_INVENTORY, "journal": SCREEN_DOSSIER, "database": SCREEN_DATABASE, "map": SCREEN_UPGRADES}
+	for action: String in routes:
+		if event.is_action(action) and hub:
+			get_viewport().set_input_as_handled()
+			if current_screen_id != routes[action]:
+				go_to(routes[action])
+			return
+	if event.is_action("customer_info") and hub and CustomerManager.has_customer():
+		get_viewport().set_input_as_handled()
+		GameManager.open_customer()
+	elif event.is_action("quicksave") and hub:
+		get_viewport().set_input_as_handled()
+		GameManager.quick_save()
+	elif event.is_action("quickload") and (hub or current_screen_id == SCREEN_MAIN_MENU):
+		get_viewport().set_input_as_handled()
+		GameManager.quick_load()
+
+
+## ESC: close the dialog, else go back, else pause.
+func _on_escape() -> void:
+	if has_modal():
+		var m := _modal_host.get_child(_modal_host.get_child_count() - 1)
+		if m.has_method("on_escape"):
+			m.call("on_escape")
+		return
+	if current_screen.has_method("on_escape") and current_screen.call("on_escape"):
+		return
+	var back := current_screen.find_child("BackButton", true, false) as BaseButton
+	if back and back.is_visible_in_tree() and not back.disabled:
+		back.pressed.emit()
+		return
+	if current_screen_id != SCREEN_MAIN_MENU:
+		GameManager.open_pause_menu()
+
+
+## Gives keyboard focus to the screen's preferred control (meta "default").
+func focus_first() -> void:
+	var root: Node = _modal_host.get_child(_modal_host.get_child_count() - 1) if has_modal() else current_screen
+	if root == null:
+		return
+	for n in root.find_children("*", "Control", true, false):
+		var c := n as Control
+		if c.has_meta(&"default") and c.is_visible_in_tree() and c.focus_mode != Control.FOCUS_NONE:
+			c.grab_focus()
+			return
+	for n in root.find_children("*", "BaseButton", true, false):
+		var b := n as BaseButton
+		if b.is_visible_in_tree() and not b.disabled and b.focus_mode != Control.FOCUS_NONE:
+			b.grab_focus()
+			return
+
+
+## TAB: moves keyboard focus to the next panel registered by the screen
+## (screen.get_panels()). Returns false if the screen has none.
+func cycle_panels() -> bool:
+	if current_screen == null or has_modal() or not current_screen.has_method("get_panels"):
+		return false
+	var panels: Array = current_screen.call("get_panels")
+	panels = panels.filter(func(p: Variant) -> bool: return is_instance_valid(p) and (p as Control).is_visible_in_tree())
+	if panels.is_empty():
+		return false
+	var owner := get_viewport().gui_get_focus_owner()
+	var idx := -1
+	for i in panels.size():
+		if owner and (panels[i] == owner or (panels[i] as Node).is_ancestor_of(owner)):
+			idx = i
+	for k in panels.size():
+		var p: Control = panels[(idx + 1 + k) % panels.size()]
+		for n in p.find_children("*", "Control", true, false):
+			var c := n as Control
+			if c.is_visible_in_tree() and c.focus_mode == Control.FOCUS_ALL and not (c is BaseButton and (c as BaseButton).disabled):
+				c.grab_focus()
+				flash_panel(p)
+				return true
+	return false
+
+
+func flash_panel(p: Control) -> void:
+	var t := p.create_tween()
+	p.modulate = Color(1.25, 1.35, 1.35)
+	t.tween_property(p, "modulate", Color.WHITE, 0.25)
 
 
 func _on_any_button_pressed() -> void:

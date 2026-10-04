@@ -22,7 +22,7 @@ var _dragging: bool = false
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
-	custom_minimum_size.y = maxf(custom_minimum_size.y, GameConfig.MIN_TOUCH)
+	custom_minimum_size.y = maxf(custom_minimum_size.y, GameConfig.MIN_CONTROL)
 
 
 func _gui_input(event: InputEvent) -> void:

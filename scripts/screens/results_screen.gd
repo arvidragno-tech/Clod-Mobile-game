@@ -91,7 +91,8 @@ func _add_aftermath(r: SurgeryResult) -> void:
 	v.add_child(UIKit.label("AFTERMATH", &"SubHeaderLabel"))
 	for n in notes:
 		v.add_child(UIKit.label(n, &"", true, Palette.DANGER if n.begins_with("NEURAL") else Palette.TEXT, 15))
-	_verdict_card.get_parent().add_child(card)
+	card.custom_minimum_size.x = 520
+	%LeftCol.add_child(card)
 
 
 func _add_stat(caption: String, value: String, good: bool) -> void:
@@ -139,4 +140,11 @@ func _animate() -> void:
 		t.tween_interval(0.4)
 		t.tween_callback(func() -> void:
 			UIManager.celebrate(&"unlock", "TIER %d CHROME NOW IN SUPPLY" % r.unlocked_tier))
-	t.tween_callback(func() -> void: _continue.disabled = false)
+	t.tween_callback(func() -> void:
+		_continue.disabled = false
+		_continue.grab_focus())
+
+
+## ESC / ENTER skip the count-up, then continue.
+func on_escape() -> bool:
+	return true

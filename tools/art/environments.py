@@ -573,6 +573,144 @@ def clinic(tier: int) -> Canvas:
     return sc.render()
 
 
+# =============================================================================
+# PC widescreen clinic (400 x 224 art px = 1200 x 660 on screen at 3x)
+# =============================================================================
+
+WIDE_W, WIDE_H, WIDE_FLOOR = 400, 224, 162
+
+
+class _Size:
+    """Temporarily swaps the module canvas size (wall/floor/props read them)."""
+
+    def __init__(self, w, h, floor_y):
+        self.new = (w, h, floor_y)
+
+    def __enter__(self):
+        global W, H, FLOOR_Y
+        self.old = (W, H, FLOOR_Y)
+        W, H, FLOOR_Y = self.new
+
+    def __exit__(self, *exc):
+        global W, H, FLOOR_Y
+        W, H, FLOOR_Y = self.old
+
+
+def clinic_wide(tier: int) -> Canvas:
+    """One room with three readable zones: door + diagnostics on the left,
+    the operating table under the lamp in the centre, storage / computers /
+    cyberware on the right. Same building blocks and storytelling props as
+    the portrait tiers, laid out for 16:9."""
+    rng = random.Random(500 + tier)
+    props.reset_fx()
+    with _Size(WIDE_W, WIDE_H, WIDE_FLOOR):
+        amb = [(0.22, 0.22, 0.30), (0.25, 0.26, 0.34), (0.28, 0.30, 0.38), (0.33, 0.36, 0.44), (0.34, 0.37, 0.46), (0.38, 0.41, 0.50)][tier]
+        sc = LitScene(W, H, ambient=amb)
+        wall(sc, ["concrete", "tile", "panel", "clean", "hex", "clean"][tier], rng)
+        ceiling(sc, tier, rng)
+        floor(sc, ["concrete", "concrete", "tile", "tile", "metal", "metal"][tier], rng)
+        door(sc, tier)
+        cx = 200  # operating table centre
+        # --- signage
+        if tier == 0:
+            sc.albedo.rect(cx - 28, 22, 50, 12, C(MAT["dark"], 2))
+            neon(sc, cx - 20, 26, "DOC", "red", 0.6, frame=False)
+            props.graffiti(sc, 82, 70, "NO DOC", "magenta", rng)
+            props.graffiti(sc, 300, 56, "R4T", "cyan", rng)
+        elif tier == 1:
+            emblem_sign(sc, cx - 40, 16)
+            neon(sc, cx - 20, 18, "OPEN", "magenta", 0.65)
+            neon(sc, cx - 22, 28, "CLINIC", "cyan", 0.5, frame=False)
+            props.graffiti(sc, 300, 60, "R4T", "cyan", rng)
+        elif tier == 2:
+            emblem_sign(sc, cx - 48, 16)
+            neon(sc, cx - 28, 18, "UNDERCITY", "cyan", 0.55)
+            props.graffiti(sc, 96, 112, "XX", "magenta", rng)
+        else:
+            emblem_sign(sc, cx - 46, 16)
+            neon(sc, cx - 26, 18, "ELITE RIPPER" if tier == 5 else "RIPPER", "magenta", 0.5)
+            props.warning_label(sc, 352, 40, "BIO")
+        # --- left zone: power, diagnostics
+        props.power_box(sc, 56, 40, tier, sparks=tier == 0)
+        if tier <= 1:
+            monitor(sc, 84, 92, 24, 20, "crt", "cyan" if tier else "green")
+            iv_stand(sc, 130, 84)
+        elif tier == 2:
+            props.ecg_cart(sc, 92, tier)
+            iv_stand(sc, 130, 80)
+        else:
+            holo(sc, 78, 56, 34, 56, "blue" if tier == 4 else "cyan")
+            props.ecg_cart(sc, 122, tier)
+        # --- centre: table, lamp, arms
+        if tier == 0:
+            chair(sc, cx - 33, FLOOR_Y - 36, "improvised")
+            lamp(sc, cx, 60, "bulb")
+        elif tier == 1:
+            chair(sc, cx - 33, FLOOR_Y - 38, "dental")
+            lamp(sc, cx, 62, "bulb")
+        elif tier == 2:
+            chair(sc, cx - 35, FLOOR_Y - 38, "surgical")
+            lamp(sc, cx, 58, "surgical")
+        elif tier == 3:
+            chair(sc, cx - 35, FLOOR_Y - 38, "advanced")
+            robot_arm(sc, cx + 26, side=-1, reach=(-4, -12), kind="pro")
+            lamp(sc, cx, 54, "surgical")
+        elif tier == 4:
+            scanner_ring(sc, cx, FLOOR_Y - 50)
+            chair(sc, cx - 35, FLOOR_Y - 36, "advanced")
+            robot_arm(sc, cx - 30, side=1, reach=(4, -12), kind="pro")
+            robot_arm(sc, cx + 30, side=-1, reach=(-4, -10), kind="pro")
+            lamp(sc, cx, 50, "ring")
+        else:
+            scanner_ring(sc, cx, FLOOR_Y - 48)
+            chair(sc, cx - 35, FLOOR_Y - 34, "elite")
+            robot_arm(sc, cx - 30, side=1, reach=(4, -12), kind="pro")
+            robot_arm(sc, cx + 30, side=-1, reach=(-6, -10), kind="pro")
+            lamp(sc, cx, 50, "ring")
+            sc.albedo.rect(0, 14, W, 3, C(MAT["steel"], 5))
+        # --- right zone: computers, storage, cyberware
+        if tier <= 1:
+            props.workbench(sc, 252, 52, rng)
+            cabinet(sc, 338, 62, 28, 100, "jars", rng)
+        else:
+            props.desk(sc, 250, 70, tier, rng)
+            cabinet(sc, 334, 52, 30, 110, "jars" if tier == 2 else ("glass" if tier >= 4 else "implants"), rng)
+        if tier >= 2:
+            props.server_rack(sc, 372, 76 + tier * 4)
+        if tier == 5:
+            containment(sc, 304, 70)
+        props.vent(sc, 140 if tier < 3 else 290, 24 if tier < 3 else 30, tier=tier)
+        props.waste_bin(sc, 148, tier)
+        # --- floor storytelling
+        if tier <= 2:
+            props.blood(sc, cx - 6, FLOOR_Y + 14, 10 - tier * 2, 2, rng)
+            props.blood(sc, cx + 22, FLOOR_Y + 24, 4, 1, rng)
+        props.blood(sc, cx + 10, FLOOR_Y + 8 + tier, 2, 1, rng, fresh=True)
+        for k in range(3 - min(tier, 2)):
+            props.discarded_implant(sc, 120 + k * 9, FLOOR_Y + 10 + (k % 2) * 3, rng, glow=(k == 0))
+        if tier <= 3:
+            props.drain(sc, cx + 40, FLOOR_Y + 40)
+        if tier >= 1:
+            props.tool_cart(sc, cx + 54, FLOOR_Y + 2, tier)
+        props.floor_cables(sc, [(110, FLOOR_Y), (130, FLOOR_Y + 12), (cx - 10, FLOOR_Y + 14), (cx, FLOOR_Y)])
+        props.floor_cables(sc, [(300, FLOOR_Y), (280, FLOOR_Y + 16), (cx + 20, FLOOR_Y + 18)])
+        if tier <= 1:
+            props.hidden_compartment(sc, 228, 112, "panel")
+            props.box_stack(sc, 360, FLOOR_Y + 22, rng)
+            props.tape(sc, 86, 93)
+            puddle(sc, 60, FLOOR_Y + 46, 40, rng, [GLOW("magenta", 3), GLOW("cyan", 2)])
+        else:
+            props.hidden_compartment(sc, 300, FLOOR_Y + 44, "hatch")
+            props.equipment_case(sc, 356, FLOOR_Y + 36, "cyan" if tier < 5 else "magenta")
+        if tier <= 2:
+            props.steam(70 + tier * 40, 10)
+            props.steam(330, 10)
+        if tier >= 4:
+            for x in range(0, W):
+                sc.emissive.set(x, FLOOR_Y + 1, GLOW("blue", 3) if x % 4 else GLOW("blue", 5))
+        return sc.render()
+
+
 def black_market() -> Canvas:
     rng = random.Random(77)
     sc = LitScene(W, H, ambient=(0.16, 0.13, 0.22))
@@ -779,16 +917,237 @@ def title_scene() -> Canvas:
     return sc.render()
 
 
+def title_scene_wide() -> Canvas:
+    """PC main-menu key art, 640x360 art px (1920x1080 at 3x). The left
+    third stays dark for the menu; the alley, the stairwell to the clinic and
+    the waiting customer sit right of centre."""
+    Wt, Ht = 640, 360
+    rng = random.Random(4243)
+    sc = LitScene(Wt, Ht, ambient=(0.30, 0.27, 0.44))
+    a = sc.albedo
+    sky = R("1c1830", 0.05)
+    for y in range(Ht):
+        for x in range(Wt):
+            v = 1.1 + 1.7 * (y / 230.0) + (0.4 if bayer(x, y) < 0.25 else 0.0)
+            a.shade_px(x, y, sky, min(v, 3.4))
+    # Megastructure layers with lit floor strips.
+    for layer, (base, tone, density) in enumerate(((140, 1.2, 0.05), (185, 1.7, 0.08), (228, 2.2, 0.1))):
+        x = -6
+        while x < Wt:
+            w = rng.randrange(16, 40)
+            top = base - rng.randrange(20, 120) + layer * 10
+            for yy in range(top, Ht):
+                for xx in range(max(0, x), min(Wt, x + w)):
+                    a.shade_px(xx, yy, MAT["dark"], tone)
+            a.hline(max(0, x), min(Wt, x + w) - 1, top, C(sky, 4 + layer))
+            if layer < 2:
+                ax = x + w // 2
+                if 0 <= ax < Wt:
+                    a.vline(ax, max(0, top - rng.randrange(6, 22)), top, C(MAT["dark"], 1))
+                    sc.emissive.set(ax, max(0, top - 6), GLOW("red", 5))
+            for yy in range(top + 4, Ht - 110, 5):
+                if rng.random() < density * 4:
+                    col = rng.choice(["amber", "amber", "cyan", "magenta"])
+                    start = x + 2 + rng.randrange(0, max(1, w // 3))
+                    for xx in range(start, min(x + w - 2, start + rng.randrange(3, max(4, w - 4)))):
+                        if 0 <= xx < Wt and xx % 3 != 0:
+                            sc.emissive.set(xx, yy, GLOW(col, 1 + layer))
+            x += w + rng.randrange(0, 6)
+    # Holo billboard on a far tower (magenta ad, half broken).
+    for yy in range(96, 132):
+        for xx in range(520, 586):
+            if (yy + xx) % 3 == 0 and bayer(xx, yy) < 0.55:
+                sc.emissive.set(xx, yy, GLOW("magenta", 3))
+    text(sc.emissive, 530, 108, "CHROME", GLOW("magenta", 6))
+    text(sc.emissive, 534, 118, "ON CREDIT", GLOW("cyan", 5))
+    sc.light(553, 114, pal.ACCENT["magenta"], 90, 0.5)
+    sc.light(460, 230, pal.ACCENT["magenta"], 200, 0.35)
+    sc.light(250, 250, pal.ACCENT["cyan"], 140, 0.22)
+    # Near buildings framing the alley (hide the city behind them).
+    for x0, x1 in ((300, 372), (548, 640)):
+        for yy in range(150, Ht):
+            for xx in range(x0, x1):
+                sc.emissive.px[yy][xx] = None
+                v = 2.2 + rng.random() * 0.3 - (1.0 if yy % 18 == 0 else 0)
+                a.shade_px(xx, yy, MAT["concrete"], v)
+        for yy in range(166, 270, 26):
+            for wx in range(x0 + 8, x1 - 14, 22):
+                a.rect(wx, yy, 12, 14, C(MAT["dark"], 0))
+                for by in range(yy + 1, yy + 13, 2):
+                    a.hline(wx + 1, wx + 10, by, C(MAT["dark"], 2))
+                if rng.random() < 0.5:
+                    for by in range(yy + 2, yy + 12, 2):
+                        sc.emissive.hline(wx + 1, wx + 10, by, GLOW("amber", 2))
+    for yy in range(176, 280, 24):  # fire escape on the right building
+        a.hline(548, Wt - 1, yy, C(MAT["steel"], 3))
+        for xx in range(550, Wt, 4):
+            a.vline(xx, yy - 6, yy, C(MAT["steel"], 2))
+    # Vertical RIPPER blade on the left alley wall.
+    a.rect(352, 176, 13, 62, C(MAT["dark"], 0))
+    for i, ch in enumerate("RIPPER"):
+        text(sc.emissive, 356, 179 + i * 10, ch, GLOW("magenta", 6))
+    sc.light(358, 206, pal.ACCENT["magenta"], 70, 0.8)
+    # Medical cross over the stairwell (one dead tube).
+    cx, cy = 452, 232
+    a.rect(cx - 9, cy - 9, 19, 19, C(MAT["dark"], 0))
+    for d in range(-6, 7):
+        sc.emissive.set(cx + d, cy, GLOW("cyan", 6))
+        sc.emissive.set(cx + d, cy + 1, GLOW("cyan", 5))
+        if d != 3:
+            sc.emissive.set(cx, cy + d, GLOW("cyan", 6))
+            sc.emissive.set(cx + 1, cy + d, GLOW("cyan", 5))
+    sc.light(cx, cy, pal.ACCENT["cyan"], 60, 0.7)
+    # Street + stairwell down to the clinic door.
+    street_y = 276
+    for yy in range(street_y, Ht):
+        for xx in range(Wt):
+            sc.emissive.px[yy][xx] = None
+            a.shade_px(xx, yy, MAT["floor_c"], 2.6 + rng.random() * 0.3)
+    sx = 426
+    for k in range(6):
+        y = street_y + 6 + k * 6
+        a.rect(sx - k * 2, y, 52 + k * 4, 2, C(MAT["concrete"], 4))
+        a.rect(sx - k * 2, y + 2, 52 + k * 4, 4, C(MAT["concrete"], 2))
+    a.rect(sx - 8, street_y, 3, 40, C(MAT["steel"], 4))
+    a.rect(sx + 57, street_y, 3, 40, C(MAT["steel"], 4))
+    a.hline(sx - 8, sx + 59, street_y, C(MAT["steel"], 5))
+    a.shaded_poly([(sx + 10, 318), (sx + 42, 318), (sx + 42, 352), (sx + 10, 352)], MAT["rust"], 4.0, 2.2, 1, 1)
+    sc.emissive.rect(sx + 16, 314, 20, 2, GLOW("red", 6))
+    sc.light(sx + 26, 316, pal.ACCENT["red"], 54, 0.9, cone=(90, 70))
+    text(sc.emissive, sx + 19, 324, "DOC", GLOW("red", 5))
+    # The waiting customer under the sign: silhouette, one glowing optic.
+    fx_, fy = 510, 276
+    a.ellipse(fx_, fy - 34, 4, 5, (8, 8, 12, 255))
+    a.shaded_poly([(fx_ - 7, fy - 28), (fx_ + 7, fy - 28), (fx_ + 6, fy - 8), (fx_ - 6, fy - 8)], MAT["dark"], 1.5, 1, 1, 1)
+    a.rect(fx_ - 5, fy - 8, 4, 8, (8, 8, 12, 255))
+    a.rect(fx_ + 1, fy - 8, 4, 8, (8, 8, 12, 255))
+    sc.emissive.set(fx_ + 2, fy - 35, GLOW("red", 7))
+    for xx in range(fx_ - 8, fx_ + 9):
+        if bayer(xx, fy - 20) < 0.5:
+            sc.emissive.set(xx, fy - 29, GLOW("cyan", 2))
+    # Puddles, steam vent, trash.
+    for px_, py_, w_, cols in ((330, 344, 40, ["magenta", "magenta", "cyan"]), (520, 340, 46, ["cyan", "amber"]), (230, 350, 60, ["magenta"])):
+        puddle(sc, px_, py_, w_, rng, [GLOW(c, 4) for c in cols])
+    a.rect(380, 292, 16, 3, C(MAT["steel"], 3))
+    for xx in range(380, 396, 2):
+        a.set(xx, 293, (8, 8, 10, 255))
+    crate(sc, 590, 300, 30, 24, rng, label="magenta")
+    crate(sc, 600, 286, 20, 14, rng)
+    return sc.render()
+
+
+def surgery_backdrop_wide(level: int) -> Canvas:
+    """PC operating view (340x270 art px): wider table, instrument trays on
+    both sides, monitors and robotic arms around the 160x160 field."""
+    rng = random.Random(320 + level)
+    Wd, Hd = 340, 270
+    sc = LitScene(Wd, Hd, ambient=(0.20, 0.21, 0.28))
+    a = sc.albedo
+    fl = MAT["floor_c"] if level == 0 else MAT["floor_t"] if level == 1 else MAT["floor_m"]
+    for y in range(Hd):
+        for x in range(Wd):
+            v = 2.6 + rng.random() * 0.4
+            if level > 0 and (x % 20 == 0 or y % 20 == 0):
+                v -= 1.0
+            a.shade_px(x, y, fl, v)
+    tm = MAT["wood"] if level == 0 else MAT["steel"]
+    a.shaded_poly([(70, 0), (270, 0), (270, Hd), (70, Hd)], tm, 4.5, 3.0, 2.0, 1.2)
+    for y in range(0, Hd, 16):
+        a.rect(70, y, 3, 8, C(MAT["dark"], 2))
+        a.rect(267, y + 6, 3, 8, C(MAT["dark"], 2))
+    for y in range(4, Hd - 4):
+        for x in range(76, 264):
+            hx = 6 * 0.07 * math.cos(x * 0.07 + 2 * math.sin(y * 0.03))
+            a.shade_px(x, y, MAT["cloth"], 3.2 - hx * 0.6 + (0.4 if rng.random() < 0.03 else 0))
+    # Instrument trays left and right with glinting tools.
+    for tx in (10, 282):
+        a.shaded_poly([(tx, 150), (tx + 48, 150), (tx + 48, 236), (tx, 236)], MAT["steel"], 5, 3, 1, 1)
+        for k in range(6):
+            y = 158 + k * 12
+            a.line(tx + 4, y, tx + 40, y - 4, C(MAT["steel"], 6))
+            a.line(tx + 4, y + 1, tx + 18, y - 1, C(MAT["dark"], 2))
+    # Vitals monitor stack top-left, drip bag top-right.
+    if level >= 1:
+        monitor_x = 14
+        a.shaded_poly([(monitor_x, 20), (monitor_x + 44, 20), (monitor_x + 44, 58), (monitor_x, 58)], MAT["dark"], 5, 2, 1, 1)
+        for yy in range(24, 54):
+            for xx in range(monitor_x + 3, monitor_x + 41):
+                sc.emissive.set(xx, yy, (6, 18, 14, 255))
+        prev = None
+        for xx in range(monitor_x + 3, monitor_x + 41):
+            k = (xx - monitor_x) % 14
+            dy = {6: -2, 7: 5, 8: -7, 9: 6, 10: -1}.get(k, 0)
+            yy = 40 + dy
+            if prev is not None:
+                for yyy in range(min(prev, yy), max(prev, yy) + 1):
+                    sc.emissive.set(xx, yyy, GLOW("green", 6))
+            prev = yy
+        sc.light(monitor_x + 22, 40, pal.ACCENT["green"], 60, 0.4)
+    a.rect(300, 16, 12, 18, C(R("8ab0b8"), 5))
+    a.vline(306, 0, 16, C(MAT["steel"], 4))
+    sc.emissive.set(304, 30, GLOW("cyan", 3))
+    for k in range(3):
+        pts = [(Wd - 1, 70 + k * 40), (300 - k * 8, 100 + k * 30), (290, 160 + k * 20), (Wd - 1, 200 + k * 25)]
+        a.polyline(pts, C(MAT["dark"], 0))
+    if level >= 1:
+        sc.light(Wd + 10, 90, pal.ACCENT["cyan"], 110, 0.45)
+    if level >= 2:
+        for side, bx in ((1, 60), (-1, 280)):
+            a.capsule(bx, 6, bx + side * 30, 34, 5, MAT["white"], 1.5, 6)
+            a.sphere(bx + side * 30, 34, 5, 5, MAT["dark"], 1.5, 5)
+            a.capsule(bx + side * 30, 34, bx + side * 36, 60, 3.5, MAT["white"], 1.5, 6)
+            sc.emissive.set(bx + side * 30, 34, GLOW("cyan", 6))
+            sc.emissive.set(bx + side * 36, 64, GLOW("red", 6))
+    sc.light(170, 130, pal.ACCENT["white"], 190, 1.0)
+    if level == 0:
+        sc.light(170, 120, "ffcf8a", 150, 0.5)
+    return sc.render()
+
+
+def black_market_wide() -> Canvas:
+    """PC Undermarket banner (600x150 art px): steel grate, hooks of chrome,
+    magenta neon, a vendor booth."""
+    rng = random.Random(78)
+    with _Size(600, 150, 128):
+        sc = LitScene(W, H, ambient=(0.16, 0.13, 0.22))
+        wall(sc, "concrete", rng)
+        ceiling(sc, 0, rng)
+        floor(sc, "concrete", rng)
+        a = sc.albedo
+        for x in range(0, W, 6):
+            a.vline(x, 30, 104, C(MAT["steel"], 3))
+        for y in range(30, 104, 12):
+            a.hline(0, W - 1, y, C(MAT["steel"], 2))
+        a.shaded_poly([(0, 104), (W, 104), (W, 124), (0, 124)], MAT["dark"], 4, 2, 1, 1)
+        for x in range(0, W):
+            a.set(x, 104, (200, 160, 40, 255) if (x // 4) % 2 else (24, 20, 16, 255))
+        for k, x in enumerate(range(20, W - 10, 26)):
+            a.vline(x, 14, 46 + (k % 3) * 8, C(MAT["dark"], 3))
+            y = 48 + (k % 3) * 8
+            a.sphere(x, y, 4, 5, MAT["steel"], 1, 5.5)
+            sc.emissive.set(x, y, GLOW(rng.choice(["magenta", "magenta", "blue", "red"]), 6))
+        neon(sc, 60, 18, "NO NAMES", "magenta", 0.9)
+        neon(sc, 470, 20, "CASH ONLY", "red", 0.5, frame=False)
+        neon(sc, 262, 16, "UNDERMARKET", "magenta", 0.7)
+        monitor(sc, 520, 70, 28, 22, "crt", "magenta", stand=False)
+        monitor(sc, 160, 72, 24, 20, "crt", "magenta", stand=False)
+        crate(sc, 10, 100, 40, 26, rng, label="magenta")
+        crate(sc, 540, 104, 34, 22, rng, label="red")
+        sc.light(300, 70, pal.ACCENT["magenta"], 260, 0.55)
+        puddle(sc, 220, 136, 120, rng, [GLOW("magenta", 4), GLOW("magenta", 2)])
+        return sc.render()
+
+
 def generate():
     fx_all = {}
     for t, name in enumerate(CLINIC_TIERS):
-        clinic(t).save(f"clinic/clinic_t{t}_{name}.png")
+        clinic_wide(t).save(f"clinic/clinic_t{t}_{name}.png")
         fx_all[str(t)] = list(props.FX)
     root = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "data", "clinic_fx.json")
     with open(root, "w") as f:
         json.dump({"_doc": "Animation anchors per clinic tier (art px), generated by tools/art/environments.py", "tiers": fx_all}, f, indent=1)
-    black_market().save("blackmarket/den.png")
-    title_scene().save("ui/title_keyart.png")
+    black_market_wide().save("blackmarket/den.png")
+    title_scene_wide().save("ui/title_keyart.png")
     for lv in range(3):
-        surgery_backdrop(lv).save(f"surgery/backdrop_{lv}.png")
+        surgery_backdrop_wide(lv).save(f"surgery/backdrop_{lv}.png")
     print("environments: clinic x6, black market, surgery x3")

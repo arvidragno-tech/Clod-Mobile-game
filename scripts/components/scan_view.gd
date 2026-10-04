@@ -85,7 +85,7 @@ func _gui_input(event: InputEvent) -> void:
 		if d < best_dist:
 			best_dist = d
 			best = region
-	if best != &"" and best_dist <= GameConfig.MIN_TOUCH and not _scanned.has(best):
+	if best != &"" and best_dist <= GameConfig.MIN_CONTROL and not _scanned.has(best):
 		_scanning = best
 		_scan_t = 0.0
 		AudioManager.play_sfx(&"tool")

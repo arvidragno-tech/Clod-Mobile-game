@@ -26,7 +26,7 @@ func begin() -> void:
 func create_controls() -> Control:
 	_button = Button.new()
 	_button.name = "InfuseButton"
-	_button.text = "HOLD TO INFUSE"
+	_button.text = "HOLD TO INFUSE   [%s]" % Controls.key_name("context")
 	_button.theme_type_variation = &"AccentButton"
 	_button.custom_minimum_size = Vector2(0, 56)
 	_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -35,6 +35,16 @@ func create_controls() -> Control:
 	_button.button_down.connect(_on_hold_start)
 	_button.button_up.connect(_on_hold_end)
 	return _button
+
+
+func key_action(action: StringName, pressed: bool) -> bool:
+	if action != &"context" and action != &"interact":
+		return false
+	if pressed:
+		_on_hold_start()
+	else:
+		_on_hold_end()
+	return true
 
 
 func get_autoplay_hints() -> Dictionary:

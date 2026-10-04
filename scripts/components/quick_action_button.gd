@@ -16,7 +16,7 @@ func setup(id: StringName, label: String, icon_texture: Texture2D) -> void:
 	icon = icon_texture
 	expand_icon = false
 	theme_type_variation = &"QuickButton"
-	custom_minimum_size = Vector2(0, GameConfig.MIN_TOUCH)
+	custom_minimum_size = Vector2(0, GameConfig.MIN_CONTROL)
 	size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	focus_mode = Control.FOCUS_NONE
 	icon_alignment = HORIZONTAL_ALIGNMENT_LEFT

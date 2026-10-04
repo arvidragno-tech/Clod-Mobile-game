@@ -12,10 +12,10 @@ extends Control
 signal customer_tapped()
 
 ## Point (in background pixels) where the customer's feet stand.
-const CUSTOMER_FOOT := Vector2(27, 179)
+const CUSTOMER_FOOT := Vector2(27, 165)
 ## 0 = keep top edge, 1 = keep bottom edge when cropping vertically.
 const VERTICAL_FOCUS := 0.35
-const DUST_COUNT := 14
+const DUST_COUNT := 26
 const BUBBLE_BOB_PX := 2.0
 
 var _background: Texture2D
@@ -60,7 +60,7 @@ func _ready() -> void:
 	_bubble.visible = false
 	add_child(_bubble)
 	for i in DUST_COUNT:
-		_dust.append(Vector3(randf_range(60, 140), randf_range(60, 170), randf_range(0.0, TAU)))
+		_dust.append(Vector3(randf_range(150, 250), randf_range(50, 160), randf_range(0.0, TAU)))
 	EventBus.clinic_upgraded.connect(func(_t: int) -> void: refresh_background())
 	resized.connect(_layout)
 	refresh_background()
@@ -104,10 +104,9 @@ func _layout() -> void:
 	if _background == null or size.x <= 0.0:
 		return
 	var img := Vector2(_background.get_size())
-	# Exact pixel density; only scale up (integer) if the view is huge (iPad).
+	# Always the global pixel density (3x on the 1920x1080 canvas) so the room
+	# matches every other sprite; the panel frame absorbs any leftover space.
 	_scale = float(GameConfig.PIXEL_SCALE)
-	while img.x * _scale < size.x or img.y * _scale < size.y:
-		_scale += 1.0
 	if zoomed:
 		_scale *= 2.0
 	var drawn := img * _scale
@@ -140,7 +139,7 @@ func _process(delta: float) -> void:
 		d.y -= delta * 3.0
 		d.x += sin(_time * 0.7 + d.z) * delta * 2.0
 		if d.y < 50.0:
-			d.y = 175.0
+			d.y = 160.0
 		_dust[i] = d
 	if _bubble.visible:
 		_bubble.reset_size()
@@ -153,6 +152,7 @@ func _process(delta: float) -> void:
 func _draw() -> void:
 	if _background == null:
 		return
+	draw_rect(Rect2(Vector2.ZERO, size), Color(0.02, 0.02, 0.04))
 	draw_texture_rect(_background, Rect2(_offset, Vector2(_background.get_size()) * _scale), false)
 	_draw_fx()
 	# Dust motes catching the lamp light (one art pixel each).
@@ -190,7 +190,7 @@ func _gui_input(event: InputEvent) -> void:
 		if not mb.pressed:
 			_panning = false
 			return
-		if _has_customer and get_customer_rect().grow(GameConfig.TOUCH_SLOP).has_point(mb.position):
+		if _has_customer and get_customer_rect().grow(GameConfig.CLICK_SLOP).has_point(mb.position):
 			customer_tapped.emit()
 			accept_event()
 			return

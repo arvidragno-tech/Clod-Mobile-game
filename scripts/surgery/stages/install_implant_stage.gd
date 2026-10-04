@@ -39,15 +39,15 @@ func begin() -> void:
 func create_controls() -> Control:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override(&"separation", 8)
-	var left := _make_button("RotateLeft", "<<", &"Button")
+	var left := _make_button("RotateLeft", "<<  [%s]" % Controls.key_name("rotate_left"), &"Button")
 	left.pressed.connect(_rotate_step.bind(-1.0))
 	row.add_child(left)
-	_seat_button = _make_button("SeatButton", "SEAT IMPLANT", &"AccentButton")
+	_seat_button = _make_button("SeatButton", "SEAT IMPLANT   [%s]" % Controls.key_name("context"), &"AccentButton")
 	_seat_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_seat_button.disabled = true
 	_seat_button.pressed.connect(_seat)
 	row.add_child(_seat_button)
-	var right := _make_button("RotateRight", ">>", &"Button")
+	var right := _make_button("RotateRight", "[%s]  >>" % Controls.key_name("rotate_right"), &"Button")
 	right.pressed.connect(_rotate_step.bind(1.0))
 	row.add_child(right)
 	return row
@@ -58,9 +58,45 @@ func _make_button(node_name: String, text: String, variation: StringName) -> But
 	b.name = node_name
 	b.text = text
 	b.theme_type_variation = variation
-	b.custom_minimum_size = Vector2(64, 56)
+	b.custom_minimum_size = Vector2(170, 64)
 	b.focus_mode = Control.FOCUS_NONE
 	return b
+
+
+func key_action(action: StringName, pressed: bool) -> bool:
+	if not pressed:
+		return action in [&"rotate_left", &"rotate_right", &"context", &"interact"]
+	match action:
+		&"rotate_left":
+			_rotate_step(-1.0)
+			return true
+		&"rotate_right":
+			_rotate_step(1.0)
+			return true
+		&"context", &"interact":
+			_seat()
+			return true
+	return false
+
+
+## Wheel rotates the implant once it sits in the socket.
+func wheel_steps(steps: int) -> bool:
+	if phase != Phase.ROTATE or is_finished:
+		return false
+	_rotate_step(signf(steps))
+	return true
+
+
+## Right-click while carrying the implant puts it back on the tray.
+func cancel() -> bool:
+	if not _dragging:
+		return false
+	_dragging = false
+	is_pointer_down = false
+	site.implant_state = SurgicalSiteView.ImplantState.IN_TRAY
+	_return_tween = create_tween()
+	_return_tween.tween_property(site, "implant_pos", tray_pos(), RETURN_TWEEN_SEC)
+	return true
 
 
 func get_autoplay_hints() -> Dictionary:
@@ -107,7 +143,7 @@ func _pointer_move(pos: Vector2) -> void:
 		if pos.distance_to(center) < 3.0:
 			return
 		var a := (pos - center).angle()
-		site.implant_angle += wrapf(a - _last_angle, -PI, PI)
+		site.implant_angle += wrapf(a - _last_angle, -PI, PI) * Settings.mouse_sensitivity
 		_last_angle = a
 		_update_alignment()
 
@@ -116,12 +152,12 @@ func _pointer_up(pos: Vector2) -> void:
 	if _dragging:
 		_dragging = false
 		var socket_local := site.to_local_pos(site.socket_pos)
-		if pos.distance_to(socket_local) <= _snap_art * _px() + _ui(GameConfig.TOUCH_SLOP) * 0.5:
+		if pos.distance_to(socket_local) <= _snap_art * _px() + _ui(GameConfig.CLICK_SLOP) * 0.5:
 			site.implant_pos = site.socket_pos
 			site.implant_state = SurgicalSiteView.ImplantState.PLACED
 			phase = Phase.ROTATE
 			feedback.emit(&"clamp", socket_local)
-			hint.emit("Drag around the implant (or << >>) to align the notch")
+			hint.emit("Drag around the implant, scroll the wheel or press %s / %s to align the notch" % [Controls.key_name("rotate_left"), Controls.key_name("rotate_right")])
 			_update_alignment()
 			if _seat_button:
 				_seat_button.disabled = false

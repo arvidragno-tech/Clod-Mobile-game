@@ -200,7 +200,7 @@ func record_outcome(c: CustomerData, result: SurgeryResult) -> Dictionary:
 	var visits := maxi(c.visits, prior + 1)
 	var regular := visits >= GameConfig.REGULAR_VISITS
 	history.append({"uid": String(c.id), "name": c.get_display_title(), "faction": String(c.faction_id), "outcome": "success" if result.success else String(result.failure_reason),
-		"grade": result.grade, "op": EventManager.operations, "visits": visits, "regular": regular, "character": String(c.character_id)})
+		"grade": result.grade, "op": EventManager.operations, "surgery": result.surgery_name, "implant": result.implant_name, "visits": visits, "regular": regular, "character": String(c.character_id)})
 	if history.size() > 60:
 		history = history.slice(history.size() - 60)
 	notes["regular"] = regular
@@ -236,6 +236,18 @@ func record_outcome(c: CustomerData, result: SurgeryResult) -> Dictionary:
 
 
 ## Chance that a successful operation goes bad after the patient leaves.
+## Earlier operations on this customer (newest first) from the clinic log.
+func get_previous_operations(c: CustomerData) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	if c == null:
+		return out
+	for i in range(history.size() - 1, -1, -1):
+		var h: Dictionary = history[i]
+		if str(h.get("uid", "")) == String(c.id) or (c.character_id != &"" and str(h.get("character", "")) == String(c.character_id)):
+			out.append(h)
+	return out
+
+
 func get_post_op_risk(c: CustomerData, grade: String) -> float:
 	if not Difficulty.hidden_conditions_allowed() and c.hidden_conditions.is_empty():
 		return 0.0  # no post-op surprises while learning

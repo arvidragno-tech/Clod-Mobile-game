@@ -193,6 +193,7 @@ def make_sfx():
     write("sfx/purchase.wav", concat(tone(600, 600, 0.03, square, vol=0.12), tone(1568, 1568, 0.05, sine, vol=0.2), tone(2093, 2093, 0.16, sine, vol=0.22)))
     write("sfx/heartbeat.wav", concat(tone(60, 45, 0.09, sine, vol=0.6, release=0.5), silence(0.08), tone(55, 40, 0.11, sine, vol=0.45, release=0.5)))
     write("sfx/spark.wav", concat(noise(0.03, vol=0.35, lowpass=0.95, seed=41), noise(0.05, vol=0.2, lowpass=0.9, seed=42)))
+    write("sfx/hover.wav", tone(2600, 2400, 0.018, sine, vol=0.08, release=0.3))  # PC hover tick
     write("sfx/tutorial.wav", concat(tone(1046, 1046, 0.05, sine, vol=0.18), tone(1568, 1568, 0.09, sine, vol=0.18)))
     # One-shot ambient details (scheduled randomly by AudioManager).
     write("ambient/oneshots/drip.wav", concat(tone(1800, 900, 0.03, sine, vol=0.25, release=0.3), silence(0.15), tone(1500, 1000, 0.02, sine, vol=0.08)))

@@ -6,8 +6,9 @@ extends Control
 ##  - reports mistakes / effects / juice via signals (it never talks to
 ##    SurgeryManager or audio directly, which keeps stages reusable),
 ##  - emits stage_finished(quality, data) exactly once.
-## Input is handled as mouse events; on iOS touches arrive as emulated mouse
-## events (single-finger), which keeps desktop and device behaviour identical.
+## Input is mouse-first (left button = use the selected tool, drag = cut /
+## move, hover = highlight); key_action() / wheel_steps() / cancel() add the
+## keyboard and right-click / wheel alternatives on PC.
 
 signal stage_finished(quality: float, data: Dictionary)
 signal mistake(kind: StringName, severity: float, local_pos: Vector2)
@@ -34,6 +35,8 @@ var is_pointer_down: bool = false
 var context: Dictionary = {}
 ## UI units per local unit (the field renders in a scaled SubViewport).
 var view_scale: float = 1.0
+## Last pointer position over the field (local units), or INF when outside.
+var hover_pos: Vector2 = Vector2.INF
 
 var _wrong_tool_timer: float = 0.0
 var _cooldowns: Dictionary = {}
@@ -118,9 +121,62 @@ func _gui_input(event: InputEvent) -> void:
 		accept_event()
 		return
 	var mm := event as InputEventMouseMotion
-	if mm and is_pointer_down:
-		_pointer_move(mm.position)
-		accept_event()
+	if mm:
+		hover_pos = mm.position
+		if is_pointer_down:
+			_pointer_move(mm.position)
+			accept_event()
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_MOUSE_EXIT:
+		hover_pos = Vector2.INF
+
+
+## Keyboard alternative for the stage's on-screen controls (SPACE / E hold
+## to infuse, LOCK, rotate, SEAT...). Return true when consumed.
+func key_action(_action: StringName, _pressed: bool) -> bool:
+	return false
+
+
+## Mouse wheel while this stage is under the cursor; return true to consume
+## (e.g. rotate a held implant) instead of zooming the field.
+func wheel_steps(_steps: int) -> bool:
+	return false
+
+
+## Right-click: undo the in-progress gesture if the stage supports it.
+func cancel() -> bool:
+	return false
+
+
+## Points (local units) worth highlighting when the cursor is near them.
+func get_hover_targets() -> Array[Vector2]:
+	var out: Array[Vector2] = []
+	var h := get_autoplay_hints()
+	for key in ["targets", "path"]:
+		if h.has(key):
+			for p: Variant in h[key]:
+				if p is Vector2:
+					out.append(p)
+			if key == "path" and not out.is_empty():
+				out = [out[0]]
+	if h.has("pairs"):
+		for pair: Variant in h["pairs"]:
+			out.append(pair[0])
+			out.append(pair[1])
+	if h.has("implant") and h.get("phase", 0) == 0:
+		out.append(h["implant"])
+	return out
+
+
+## Hover colour for the field cursor: correct tool = cyan, wrong = amber.
+func hover_color() -> Color:
+	if not requires_tool():
+		return Palette.ACCENT
+	if selected_tool == stage.tool_category:
+		return Palette.OK
+	return Palette.WARN if selected_tool != &"" else Palette.TEXT_DIM
 
 
 func _pointer_down(_pos: Vector2) -> void:
@@ -176,7 +232,7 @@ func _ui(units: float) -> float:
 
 ## Hit radius for a touch target given its visual radius in design units.
 func _touch_radius(art_radius: float) -> float:
-	return maxf(art_radius * _px(), _ui(GameConfig.MIN_TOUCH * 0.5))
+	return maxf(art_radius * _px(), _ui(GameConfig.MIN_CONTROL * 0.5))
 
 
 ## Crisp 8px pixel font for labels drawn inside the field.

@@ -401,6 +401,8 @@ def generate():
     for fid in FACTIONS:
         emblem(fid).save(f"factions/{fid}.png")
     app_icon()
+    cursors()
+    windows_icon()
     print("tools:", len(TOOLS), "ui icons:", len(UI_ICONS), "emblems:", len(FACTIONS))
 
 
@@ -505,3 +507,121 @@ def app_icon():
     logo.paste(small, (15, 0))
     for scale, name in ((4, "launch@2x.png"), (6, "launch@3x.png")):
         logo.resize((64 * scale, 40 * scale), Image.NEAREST).save(os.path.join(ios, name), optimize=True)
+
+
+# --- Mouse cursors (PC) --------------------------------------------------------
+CURSOR_SHAPES = {
+    # 16x16 art, '#' = outline, '.' = fill, 'c' = cyan accent. Hotspots in art px.
+    "arrow": ([
+        "#...............",
+        "##..............",
+        "#c#.............",
+        "#cc#............",
+        "#ccc#...........",
+        "#cccc#..........",
+        "#ccccc#.........",
+        "#cccccc#........",
+        "#ccccccc#.......",
+        "#cccccccc#......",
+        "#ccccc#####.....",
+        "#cc#cc#.........",
+        "#c#.#cc#........",
+        "##..#cc#........",
+        "#....#cc#.......",
+        ".....####.......",
+    ], (0, 0)),
+    "hand": ([
+        ".....##.........",
+        "....#cc#........",
+        "....#cc#........",
+        "....#cc###......",
+        "....#cc#cc###...",
+        "..###cc#cc#cc#..",
+        ".#cc#cc#cc#cc##.",
+        ".#ccccccccccc#c#",
+        "..#cccccccccccc#",
+        "..#cccccccccccc#",
+        "...#ccccccccccc#",
+        "...#cccccccccc#.",
+        "....#ccccccccc#.",
+        "....#cccccccc#..",
+        ".....#cccccc#...",
+        ".....########...",
+    ], (5, 0)),
+    "cross": ([
+        ".......##.......",
+        ".......cc.......",
+        ".......cc.......",
+        ".......cc.......",
+        "................",
+        "................",
+        ".......##.......",
+        "#ccc..#..#..ccc#",
+        "#ccc..#..#..ccc#",
+        ".......##.......",
+        "................",
+        "................",
+        ".......cc.......",
+        ".......cc.......",
+        ".......cc.......",
+        ".......##.......",
+    ], (8, 8)),
+    "grab": ([
+        "................",
+        "................",
+        "....##.##.##....",
+        "...#cc#cc#cc#...",
+        "...#cc#cc#cc###.",
+        ".###cc#cc#cc#cc#",
+        "#cc#ccccccccc#c#",
+        "#cccccccccccccc#",
+        ".#ccccccccccccc#",
+        "..#cccccccccccc#",
+        "..#ccccccccccc#.",
+        "...#cccccccccc#.",
+        "....#ccccccccc#.",
+        "....#cccccccc#..",
+        ".....#########..",
+        "................",
+    ], (8, 8)),
+}
+
+
+def cursors():
+    """Pixel cursors at 2x (32x32 on screen at 1080p), hard edges only."""
+    import os
+    from PIL import Image
+    from .lib import SPRITES
+    out = os.path.join(SPRITES, "ui", "cursors")
+    os.makedirs(out, exist_ok=True)
+    cols = {"#": (8, 10, 14, 255), "c": (214, 246, 240, 255)}
+    hot = {}
+    for name, (rows, hotspot) in CURSOR_SHAPES.items():
+        img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+        for y, row in enumerate(rows):
+            for x, ch in enumerate(row):
+                if ch in cols:
+                    img.putpixel((x, y), cols[ch])
+        # Cyan tip highlight so the cursor reads on the dark UI.
+        if name == "arrow":
+            for y in range(2, 9):
+                img.putpixel((1, y), (46, 230, 200, 255))
+        img.resize((32, 32), Image.NEAREST).save(os.path.join(out, f"{name}.png"), optimize=True)
+        hot[name] = [hotspot[0] * 2, hotspot[1] * 2]
+    import json
+    with open(os.path.join(out, "hotspots.json"), "w") as f:
+        json.dump(hot, f)
+
+
+def windows_icon():
+    """Multi-size .ico for the Windows executable (nearest-neighbour)."""
+    import os
+    from PIL import Image
+    from .lib import SPRITES
+    src = Image.open(os.path.join(SPRITES, "ui", "app_icon.png")).convert("RGBA")  # 240 = 4x of the 60 px design
+    base = src.resize((60, 60), Image.NEAREST)
+    out = os.path.join(SPRITES, "..", "windows")
+    os.makedirs(out, exist_ok=True)
+    big = Image.new("RGBA", (256, 256), (9, 8, 14, 255))
+    big.paste(base.resize((240, 240), Image.NEAREST), (8, 8))
+    big.save(os.path.join(out, "app_icon.ico"), sizes=[(16, 16), (24, 24), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)])

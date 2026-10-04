@@ -31,7 +31,7 @@ mouse_filter = 2
 
 [node name="Panel" type="PanelContainer" parent="Center"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(300, 0)
+custom_minimum_size = Vector2(620, 0)
 layout_mode = 2
 theme_type_variation = &"AccentPanel"
 
@@ -55,7 +55,7 @@ autowrap_mode = 3
 
 [node name="Body" type="Label" parent="Center/Panel/Margin/VBox"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(268, 0)
+custom_minimum_size = Vector2(560, 0)
 layout_mode = 2
 text = "Body"
 autowrap_mode = 3

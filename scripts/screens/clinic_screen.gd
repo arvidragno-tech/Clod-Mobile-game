@@ -1,8 +1,8 @@
 extends BaseScreen
-## The player's hub: who's waiting, the clinic itself, rumors, incidents and
-## navigation to the shop, skills, clinic upgrades, dossier and black market.
-
-const PlayerHudScene := preload("res://ui/components/player_hud.tscn")
+## PC hub: the clinic room (1200x672, 3x pixel art) in the centre, the
+## customer at the door on the left with everything needed to decide at a
+## glance, live clinic status underneath, the workstation status bar on top
+## and section navigation on the left. Double-click the room to zoom.
 
 var _objective: Label
 var _objective_timer: float = 0.0
@@ -10,30 +10,34 @@ var _view: ClinicView
 var _card: PanelContainer
 var _portrait: PixelPortrait
 var _name: Label
+var _faction_tag: Label
+var _occupation: Label
+var _request_box: HBoxContainer
 var _request: Label
 var _offer: Label
-var _faction_tag: Label
+var _risk: Label
+var _load_meter: NeuralLoadMeter
 var _see_button: Button
 var _waiting: Label
-var _info_box: HBoxContainer
+var _info_box: VBoxContainer
 var _rumor: Label
 var _stock_label: Label
-var _nav: NavBar
+var _status_box: VBoxContainer
+var _factions_box: VBoxContainer
+var _nav: SideNav
 var _waiting_dots: float = 0.0
-var _rumor_scroll: float = 0.0
+var _panels: Array[Control] = []
 
 
 func on_enter(_params: Dictionary) -> void:
 	_build()
 	EventBus.customer_arrived.connect(_on_customer_arrived)
-	EventBus.inventory_changed.connect(_refresh_stock)
+	EventBus.inventory_changed.connect(_refresh_status)
+	EventBus.resources_changed.connect(_refresh_status)
 	EventBus.rumor_unlocked.connect(func(_id: StringName) -> void: _refresh_rumor())
 	StoryManager.update_rumors()
-	_refresh_stock()
+	_refresh_status()
 	_refresh_rumor()
-	_nav.set_locked(&"blackmarket", not BlackMarketManager.is_unlocked())
-	_nav.set_badge(&"skills", SkillManager.points > 0)
-	_nav.set_badge(&"upgrades", ClinicManager.get_upgrade_block_reason() == "")
 	if CustomerManager.has_customer():
 		_show_customer(CustomerManager.current_customer, false)
 	else:
@@ -44,97 +48,114 @@ func on_enter(_params: Dictionary) -> void:
 		CustomerManager.request_next_customer()
 
 
+func get_panels() -> Array:
+	return _panels
+
+
 func _build() -> void:
-	var m := UIKit.full_rect(UIKit.margin(10, 8, 10, 10))
-	add_child(m)
-	var col := UIKit.vbox(6)
-	m.add_child(col)
-	var top := UIKit.hbox(6)
-	col.add_child(top)
-	var hud := PlayerHudScene.instantiate()
-	UIKit.expand(hud)
-	top.add_child(hud)
-	var menu := UIKit.button("", &"GhostButton", _open_pause_menu, "MenuButton")
-	menu.icon = PixelArt.scaled("res://assets/sprites/ui/icons/menu.png")
-	menu.custom_minimum_size = Vector2(GameConfig.MIN_TOUCH, GameConfig.MIN_TOUCH)
-	menu.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	top.add_child(menu)
-	# Clinic view
+	var content := UIKit.workstation(self, &"clinic")
+	_nav = find_child("SideNav", true, false) as SideNav
+	# NEXT objective strip
+	var strip := UIKit.hbox(16)
+	content.add_child(strip)
+	_objective = UIKit.label("", &"MonoLabel", false, Palette.ACCENT)
+	_objective.name = "Objective"
+	_objective.clip_text = true
+	UIKit.expand(_objective)
+	strip.add_child(_objective)
+	strip.add_child(UIKit.label("[%s] customer  [%s] inventory  [%s] journal  [%s] quick save" % [Controls.key_name("customer_info"), Controls.key_name("inventory"), Controls.key_name("journal"), Controls.key_name("quicksave")], &"SubHeaderLabel"))
+	_refresh_objective()
+	var row := UIKit.hbox(16)
+	UIKit.expand(row, true, true)
+	content.add_child(row)
+	# --- Left: who's at the door
+	var left := UIKit.vbox(14)
+	left.custom_minimum_size.x = 420
+	row.add_child(left)
+	_card = UIKit.panel(&"AccentPanel")
+	_card.name = "CustomerCard"
+	UIKit.expand(_card, true, true)
+	left.add_child(_card)
+	_panels.append(_card)
+	var cv := UIKit.vbox(12)
+	_card.add_child(cv)
+	cv.add_child(UIKit.label("AT THE DOOR", &"SubHeaderLabel"))
+	_info_box = UIKit.vbox(10)
+	cv.add_child(_info_box)
+	var who := UIKit.hbox(14)
+	_info_box.add_child(who)
+	_portrait = PixelPortrait.new()
+	_portrait.crop = Rect2i(6, 2, 52, 52)
+	who.add_child(_portrait)
+	var text := UIKit.vbox(4)
+	UIKit.expand(text)
+	text.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	who.add_child(text)
+	_name = UIKit.label("", &"HeaderLabel", true)
+	text.add_child(_name)
+	_faction_tag = UIKit.label("", &"SubHeaderLabel", true)
+	text.add_child(_faction_tag)
+	_occupation = UIKit.label("", &"DimLabel", true)
+	text.add_child(_occupation)
+	_request_box = UIKit.hbox(12)
+	_info_box.add_child(_request_box)
+	_request = UIKit.label("", &"", true)
+	_offer = UIKit.label("", &"MonoLabel", false, Palette.WARN)
+	_info_box.add_child(_offer)
+	_risk = UIKit.label("", &"DimLabel", true)
+	_info_box.add_child(_risk)
+	_load_meter = NeuralLoadMeter.new()
+	_info_box.add_child(_load_meter)
+	_waiting = UIKit.label("Waiting for customers...", &"DimLabel")
+	_waiting.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_waiting.custom_minimum_size.y = 120
+	_waiting.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	cv.add_child(_waiting)
+	cv.add_child(UIKit.expand(Control.new(), false, true))
+	_see_button = UIKit.button("SEE CUSTOMER  [%s]" % Controls.key_name("customer_info"), &"AccentButton", GameManager.open_customer, "SeeButton", 56)
+	_see_button.set_meta(&"default", true)
+	cv.add_child(_see_button)
+	# --- Centre: the room + status cards
+	var centre := UIKit.vbox(14)
+	UIKit.expand(centre, true, true)
+	row.add_child(centre)
 	var frame := UIKit.panel(&"HudPanel")
-	UIKit.expand(frame, true, true)
-	col.add_child(frame)
+	frame.add_theme_stylebox_override(&"panel", StyleBoxEmpty.new())
+	frame.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	centre.add_child(frame)
 	_view = ClinicView.new()
 	_view.name = "ClinicView"
+	_view.custom_minimum_size = Vector2(1100, 640)
+	_view.tooltip_text = "Click the customer to see them · double-click to zoom · drag to look around"
 	frame.add_child(_view)
 	_view.customer_tapped.connect(GameManager.open_customer)
 	var overlay := UIKit.vbox(2)
 	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	overlay.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
-	overlay.offset_left = 6
-	overlay.offset_right = -6
-	overlay.offset_top = 6
+	overlay.offset_left = 12
+	overlay.offset_right = -12
+	overlay.offset_top = 10
 	_view.add_child(overlay)
 	var loc := UIKit.label("%s · SUBLEVEL 3" % ClinicManager.get_tier_name().to_upper(), &"SubHeaderLabel", false, Palette.TEXT)
 	loc.add_theme_color_override(&"font_outline_color", Palette.BG_0)
 	loc.add_theme_constant_override(&"outline_size", 4)
 	overlay.add_child(loc)
-	_rumor = UIKit.label("", &"MonoLabel", true, Palette.ACCENT, 17)
-	_rumor.clip_text = true
-	_rumor.add_theme_color_override(&"font_outline_color", Palette.BG_0)
-	_rumor.add_theme_constant_override(&"outline_size", 4)
-	overlay.add_child(_rumor)
-	_stock_label = UIKit.label("", &"MonoLabel", true, Palette.TEXT_DIM, 17)
-	_stock_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	_stock_label.add_theme_color_override(&"font_outline_color", Palette.BG_0)
-	_stock_label.add_theme_constant_override(&"outline_size", 4)
-	_stock_label.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-	_stock_label.offset_top = -26
-	_stock_label.offset_left = 6
-	_stock_label.offset_right = -6
-	_view.add_child(_stock_label)
-	# "NEXT" objective: always answers "what should I do now?"
-	_objective = UIKit.label("", &"MonoLabel", false, Palette.ACCENT, 18)
-	_objective.name = "Objective"
-	_objective.clip_text = true
-	_objective.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	col.add_child(_objective)
-	_refresh_objective()
-	# Customer card
-	_card = UIKit.panel(&"AccentPanel")
-	_card.name = "CustomerCard"
-	col.add_child(_card)
-	var cv := UIKit.vbox(8)
-	_card.add_child(cv)
-	_info_box = UIKit.hbox(10)
-	cv.add_child(_info_box)
-	_portrait = PixelPortrait.new()
-	_portrait.crop = Rect2i(14, 6, 36, 36)
-	_info_box.add_child(_portrait)
-	var text := UIKit.vbox(1)
-	UIKit.expand(text)
-	text.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	_info_box.add_child(text)
-	_name = UIKit.label("", &"HeaderLabel", true)
-	_name.clip_text = true
-	text.add_child(_name)
-	_faction_tag = UIKit.label("", &"SubHeaderLabel")
-	text.add_child(_faction_tag)
-	_request = UIKit.label("", &"", false, null, 15)
-	_request.clip_text = true
-	text.add_child(_request)
-	_offer = UIKit.label("", &"MonoLabel", true, Palette.WARN, 20)
-	text.add_child(_offer)
-	_waiting = UIKit.label("Waiting for customers...", &"DimLabel")
-	_waiting.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_waiting.custom_minimum_size.y = 72
-	_waiting.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	cv.add_child(_waiting)
-	_see_button = UIKit.button("SEE CUSTOMER", &"AccentButton", GameManager.open_customer, "SeeButton", 54)
-	cv.add_child(_see_button)
-	_nav = NavBar.new()
-	_nav.name = "NavBar"
-	col.add_child(_nav)
-	_nav.nav_pressed.connect(_on_nav)
+	var cards := UIKit.hbox(14)
+	UIKit.expand(cards, true, true)
+	centre.add_child(cards)
+	_status_box = UIKit.section(cards, "CLINIC STATUS")
+	(_status_box.get_parent() as Control).size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_panels.append(_status_box.get_parent())
+	_stock_label = UIKit.label("", &"MonoLabel")
+	_status_box.add_child(_stock_label)
+	var rumors := UIKit.section(cards, "STREET RUMOURS", &"CardPanel", "[%s] journal" % Controls.key_name("journal"))
+	(rumors.get_parent() as Control).size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	(rumors.get_parent() as Control).size_flags_stretch_ratio = 1.4
+	_rumor = UIKit.label("", &"DimLabel", true, Palette.ACCENT)
+	rumors.add_child(_rumor)
+	_factions_box = UIKit.section(cards, "FACTIONS")
+	(_factions_box.get_parent() as Control).size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_panels.append(_factions_box.get_parent())
 
 
 func _process(delta: float) -> void:
@@ -145,23 +166,6 @@ func _process(delta: float) -> void:
 	if _waiting and _waiting.visible:
 		_waiting_dots += delta * 2.0
 		_waiting.text = "Waiting for customers" + ".".repeat(int(_waiting_dots) % 4)
-
-
-func _on_nav(id: StringName) -> void:
-	match id:
-		&"supply":
-			GameManager.open_screen(UIManager.SCREEN_SHOP)
-		&"skills":
-			GameManager.open_screen(UIManager.SCREEN_SKILLS)
-		&"upgrades":
-			GameManager.open_screen(UIManager.SCREEN_UPGRADES)
-		&"dossier":
-			GameManager.open_screen(UIManager.SCREEN_DOSSIER)
-		&"blackmarket":
-			if BlackMarketManager.is_unlocked():
-				GameManager.open_screen(UIManager.SCREEN_BLACK_MARKET)
-			else:
-				UIManager.show_toast("No contact yet. Build street rep (%d) or find a fixer." % GameConfig.BLACK_MARKET_REPUTATION, &"warn")
 
 
 func _show_event() -> void:
@@ -176,7 +180,9 @@ func _show_event() -> void:
 
 
 func _after_event() -> void:
-	_nav.set_locked(&"blackmarket", not BlackMarketManager.is_unlocked())
+	if _nav:
+		_nav.refresh()
+	_refresh_status()
 	if CustomerManager.has_customer():
 		_show_customer(CustomerManager.current_customer, false)
 	else:
@@ -186,7 +192,6 @@ func _after_event() -> void:
 func _on_customer_arrived(customer: CustomerData) -> void:
 	_objective_timer = 0.0
 	AudioManager.play_sfx(&"customer")
-	UIManager.haptic(&"ui")
 	UIManager.show_toast("%s is at the door" % customer.display_name, &"danger" if customer.is_emergency else &"info")
 	_show_customer(customer, true)
 
@@ -199,11 +204,23 @@ func _show_customer(customer: CustomerData, animate: bool) -> void:
 	_name.text = customer.get_display_title()
 	_faction_tag.text = "%s%s" % ["EMERGENCY · " if customer.is_emergency else "", FactionManager.get_name_of(customer.faction_id).to_upper()]
 	_faction_tag.add_theme_color_override(&"font_color", Palette.DANGER if customer.is_emergency else FactionManager.get_color(customer.faction_id))
-	_request.text = "Wants: %s" % (item.display_name if item else "?")
+	_occupation.text = "%d yrs · %s" % [customer.age, customer.occupation.capitalize()]
+	UIKit.clear(_request_box)
+	if item:
+		_request_box.add_child(CyberwareIcon.make(item))
+		var rv := UIKit.vbox(2)
+		UIKit.expand(rv)
+		rv.add_child(UIKit.label("WANTS", &"SubHeaderLabel"))
+		rv.add_child(UIKit.label(item.display_name, &"", true))
+		rv.add_child(UIKit.label("T%d %s · difficulty %d/5" % [item.tier, item.category.to_upper(), item.install_difficulty], &"DimLabel", true))
+		_request_box.add_child(rv)
 	var expected := 0
 	if surgery and item:
 		expected = int(round((surgery.base_pay + item.price * GameConfig.IMPLANT_PRICE_MARKUP) * customer.pay_multiplier))
-	_offer.text = "Offers %s" % EconomyManager.format_money(expected)
+	_offer.text = "OFFERS %s" % EconomyManager.format_money(expected)
+	var risk_word := "LOW" if customer.complication_risk < 0.95 else ("HIGH" if customer.complication_risk > 1.1 else "MEDIUM")
+	_risk.text = "Risk: %s · patience %d · %s" % [risk_word, customer.patience, "known conditions: %d" % customer.revealed_conditions.size()]
+	_load_meter.set_load(NeuralLoad.compute(customer), NeuralLoad.projected(customer, ImplantInstance.create(item.id)) if item else NeuralLoad.compute(customer))
 	_waiting.visible = false
 	_info_box.visible = true
 	_see_button.visible = true
@@ -219,32 +236,30 @@ func _show_waiting() -> void:
 	_see_button.visible = false
 
 
-func _refresh_stock() -> void:
-	var n := InventoryManager.get_instances().size()
-	_stock_label.text = "CHROME IN STOCK: %d" % n
+func _refresh_status() -> void:
+	if _stock_label == null:
+		return
+	_stock_label.text = "CHROME IN STOCK: %d" % InventoryManager.get_instances().size()
+	for c in _status_box.get_children():
+		if c != _stock_label and c.get_index() > 1:
+			c.queue_free()
+	_status_box.add_child(UIKit.label("Supplies %d / %d · Parts %d · Tokens %d" % [InventoryManager.supplies, ClinicManager.get_supplies_capacity(), InventoryManager.parts, InventoryManager.tokens], &"DimLabel", true))
+	_status_box.add_child(UIKit.label("Facility: %s (chrome up to T%d)" % [ClinicManager.get_tier_name(), CyberwareManager.get_available_tier()], &"DimLabel", true))
+	_status_box.add_child(UIKit.label("Heat %d%s" % [roundi(FactionManager.heat), "  · inspections likely" if FactionManager.heat >= 35.0 else ""], &"DimLabel", true, Palette.DANGER if FactionManager.heat >= 35.0 else null))
+	UIKit.clear_after(_factions_box, 1)
+	for id: StringName in FactionManager.order:
+		var line := UIKit.hbox(8)
+		var n := UIKit.label(FactionManager.get_name_of(id), &"DimLabel")
+		UIKit.expand(n)
+		line.add_child(n)
+		var rep := FactionManager.get_rep(id)
+		line.add_child(UIKit.label("%+d" % rep, &"MonoLabel", false, Palette.OK if rep > 5 else (Palette.DANGER if rep < -5 else Palette.TEXT_DIM)))
+		_factions_box.add_child(line)
 
 
 func _refresh_rumor() -> void:
 	var r := StoryManager.get_latest_rumor()
-	_rumor.text = ("RUMOR: " + r) if r != "" else ""
-	_rumor.tooltip_text = r
-
-
-## Pause menu: settings, a short how-to-play recap, or save & quit.
-func _open_pause_menu() -> void:
-	var buttons: Array[Dictionary] = [
-		{"label": "RESUME", "style": &"AccentButton", "name": "PauseResume"},
-		{"label": "SETTINGS", "style": &"", "name": "PauseSettings", "callback": func() -> void:
-			UIManager.go_to(UIManager.SCREEN_SETTINGS, {"return_to": UIManager.SCREEN_CLINIC})},
-		{"label": "HOW TO PLAY", "style": &"", "name": "PauseHelp", "callback": _show_help},
-		{"label": "SAVE & QUIT", "style": &"GhostButton", "name": "PauseQuit", "callback": GameManager.quit_to_menu},
-	]
-	UIManager.show_dialog("CLINIC PAUSED", "Progress is saved automatically after every job, purchase and upgrade.", buttons)
-
-
-func _show_help() -> void:
-	var buttons: Array[Dictionary] = [{"label": "GOT IT", "style": &"AccentButton", "name": "HelpClose"}]
-	UIManager.show_dialog("HOW TO PLAY", TutorialManager.HELP_TEXT, buttons)
+	_rumor.text = r if r != "" else "Quiet night. Nothing on the wire."
 
 
 func _refresh_objective() -> void:

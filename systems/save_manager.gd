@@ -31,6 +31,68 @@ const SAVEABLE_SYSTEMS: Array[String] = [
 var autosave_enabled: bool = false
 var save_path: String = GameConfig.SAVE_PATH
 var last_saved_unix: int = 0
+## Active slot (1..SAVE_SLOTS); 0 = custom path (tests).
+var slot: int = 0
+## Folder holding the slot files (tests point this at a scratch folder).
+var save_dir: String = GameConfig.SAVE_DIR
+
+
+func _ready() -> void:
+	DirAccess.make_dir_recursive_absolute(save_dir)
+	_migrate_legacy_file()
+	use_slot(Settings.last_slot)
+
+
+func slot_path(n: int) -> String:
+	return "%s/slot_%d.json" % [save_dir, n]
+
+
+func use_slot(n: int) -> void:
+	slot = clampi(n, 1, GameConfig.SAVE_SLOTS)
+	save_path = slot_path(slot)
+	if Settings.last_slot != slot:
+		Settings.set_value("last_slot", slot)
+
+
+## Moves a pre-PC user://savegame.json (and backup) into slot 1 once.
+func _migrate_legacy_file() -> void:
+	if FileAccess.file_exists(GameConfig.SAVE_PATH) and not FileAccess.file_exists(slot_path(1)):
+		DirAccess.rename_absolute(GameConfig.SAVE_PATH, slot_path(1))
+		if FileAccess.file_exists(GameConfig.SAVE_PATH + ".bak"):
+			DirAccess.rename_absolute(GameConfig.SAVE_PATH + ".bak", slot_path(1) + ".bak")
+
+
+## Summary of a slot for the Load screen ({} if empty / unreadable).
+func get_slot_info(n: int) -> Dictionary:
+	var path := slot_path(n)
+	var data := _read_save(path)
+	if data.is_empty():
+		data = _read_save(path + ".bak")
+	if data.is_empty():
+		return {}
+	var meta: Dictionary = data.get("meta", {})
+	var sys: Dictionary = data.get("systems", {})
+	if meta.is_empty():
+		meta = {"money": int(sys.get("EconomyManager", {}).get("money", 0))}
+	meta["saved_at"] = int(data.get("saved_at", 0))
+	meta["version"] = int(data.get("version", 0))
+	return meta
+
+
+## Most recently written slot (0 if none).
+func latest_slot() -> int:
+	var best := 0
+	var best_t := -1
+	for n in range(1, GameConfig.SAVE_SLOTS + 1):
+		var info := get_slot_info(n)
+		if not info.is_empty() and int(info["saved_at"]) > best_t:
+			best_t = int(info["saved_at"])
+			best = n
+	return best
+
+
+func has_any_save() -> bool:
+	return latest_slot() > 0
 
 
 func _notification(what: int) -> void:
@@ -56,6 +118,10 @@ func save_game() -> bool:
 	var payload := {
 		"version": GameConfig.SAVE_VERSION,
 		"saved_at": last_saved_unix,
+		"meta": {
+			"money": EconomyManager.money, "level": ProgressionManager.level, "rep": ReputationManager.reputation,
+			"ops": EventManager.operations, "clinic": ClinicManager.get_tier_name(),
+		},
 		"systems": systems,
 	}
 	var tmp := _tmp_path()

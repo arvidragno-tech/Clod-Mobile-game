@@ -32,12 +32,105 @@ func start_new_game() -> void:
 	UIManager.go_to(UIManager.SCREEN_CLINIC)
 
 
+## Starts a new game in the given slot (1..3).
+func start_new_game_in_slot(n: int) -> void:
+	SaveManager.use_slot(n)
+	start_new_game()
+
+
+## Continue = the most recently saved slot.
 func continue_game() -> void:
+	var latest := SaveManager.latest_slot()
+	if latest > 0:
+		SaveManager.use_slot(latest)
 	if not SaveManager.load_game():
 		start_new_game()
 		return
 	_begin_play()
 	UIManager.go_to(UIManager.SCREEN_CLINIC)
+
+
+func load_slot(n: int) -> bool:
+	SaveManager.use_slot(n)
+	if not SaveManager.load_game():
+		UIManager.show_toast("Slot %d could not be loaded" % n, &"danger")
+		return false
+	_begin_play()
+	UIManager.go_to(UIManager.SCREEN_CLINIC)
+	return true
+
+
+## F5: save to the active slot (never mid-surgery).
+func quick_save() -> void:
+	if not is_running or SurgeryManager.is_active:
+		return
+	if SaveManager.save_game():
+		UIManager.show_toast("Saved to slot %d" % SaveManager.slot, &"success")
+
+
+## F9: reload the active slot (or the latest one from the main menu).
+func quick_load() -> void:
+	if SurgeryManager.is_active:
+		return
+	var n := SaveManager.slot if is_running else SaveManager.latest_slot()
+	if n <= 0 or SaveManager.get_slot_info(n).is_empty():
+		UIManager.show_toast("No save to load", &"warn")
+		return
+	load_slot(n)
+
+
+## Sidebar / hotkey navigation between workstation sections.
+func navigate(id: StringName) -> void:
+	match id:
+		&"clinic":
+			go_to_clinic()
+		&"inventory":
+			UIManager.go_to(UIManager.SCREEN_INVENTORY)
+		&"database":
+			UIManager.go_to(UIManager.SCREEN_DATABASE)
+		&"supply":
+			UIManager.go_to(UIManager.SCREEN_SHOP)
+		&"skills":
+			UIManager.go_to(UIManager.SCREEN_SKILLS)
+		&"upgrades":
+			UIManager.go_to(UIManager.SCREEN_UPGRADES)
+		&"dossier":
+			UIManager.go_to(UIManager.SCREEN_DOSSIER)
+		&"settings":
+			UIManager.go_to(UIManager.SCREEN_SETTINGS, {"return_to": UIManager.current_screen_id})
+		&"blackmarket":
+			if BlackMarketManager.is_unlocked():
+				UIManager.go_to(UIManager.SCREEN_BLACK_MARKET)
+			else:
+				AudioManager.play_sfx(&"denied")
+				UIManager.show_toast("No contact yet. Build street rep (%d) or find a fixer." % GameConfig.BLACK_MARKET_REPUTATION, &"warn")
+
+
+## ESC / MENU: pause menu with save, load, settings, how to play, quit.
+func open_pause_menu() -> void:
+	if UIManager.has_modal() or not is_running:
+		return
+	var buttons: Array[Dictionary] = [
+		{"label": "RESUME", "style": &"AccentButton", "name": "PauseResume"},
+		{"label": "SAVE GAME (SLOT %d)" % SaveManager.slot, "style": &"", "name": "PauseSave", "callback": quick_save},
+		{"label": "LOAD GAME", "style": &"", "name": "PauseLoad", "callback": func() -> void:
+			UIManager.go_to(UIManager.SCREEN_LOAD, {"return_to": UIManager.current_screen_id})},
+		{"label": "SETTINGS", "style": &"", "name": "PauseSettings", "callback": func() -> void:
+			UIManager.go_to(UIManager.SCREEN_SETTINGS, {"return_to": UIManager.current_screen_id})},
+		{"label": "HOW TO PLAY", "style": &"", "name": "PauseHelp", "callback": func() -> void:
+			var ok: Array[Dictionary] = [{"label": "GOT IT", "style": &"AccentButton", "name": "HelpClose"}]
+			UIManager.show_dialog("HOW TO PLAY", TutorialManager.HELP_TEXT, ok)},
+		{"label": "SAVE & MAIN MENU", "style": &"GhostButton", "name": "PauseQuit", "callback": quit_to_menu},
+		{"label": "SAVE & QUIT TO DESKTOP", "style": &"DangerButton", "name": "PauseExit", "callback": quit_to_desktop},
+	]
+	UIManager.show_dialog("CLINIC PAUSED", "Autosaves after every job, purchase and upgrade.  F5 quick save · F9 quick load.", buttons)
+
+
+func quit_to_desktop() -> void:
+	if is_running and not SurgeryManager.is_active:
+		SaveManager.save_game()
+	AudioManager.stop_all()
+	get_tree().quit()
 
 
 func quit_to_menu() -> void:

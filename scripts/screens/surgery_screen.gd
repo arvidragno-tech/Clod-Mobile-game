@@ -1,8 +1,15 @@
 class_name SurgeryScreen
 extends BaseScreen
-## The operating table. Hosts the current stage interaction on top of the
-## persistent SurgicalSiteView, shows vitals, the tool tray and emergency
-## quick actions, and turns SurgeryManager / stage events into feedback.
+## The operating table (PC workstation layout). Left: patient, vitals and the
+## procedure checklist. Centre: the zoomable operating field with the current
+## stage on top of the persistent SurgicalSiteView. Right: instrument rack,
+## emergency actions and the implant being installed. Bottom: key hints.
+## Turns SurgeryManager / stage events into feedback.
+##
+## Mouse: left = use tool / drag, right = put the tool down (or return a held
+## implant), wheel = zoom (or rotate / tune when the stage uses it).
+## Keys: 1-9 tools, Q/R cycle, Z/X/V emergency actions, SPACE/E stage action,
+## , . rotate, + - zoom, ESC pause.
 
 const QUICK_ICONS := {
 	&"coag": "res://assets/sprites/ui/icons/coag.png",
@@ -12,6 +19,10 @@ const QUICK_ICONS := {
 const BLEEDING_MISTAKES: Array[StringName] = [&"cut_deviation", &"tissue_tear", &"bad_stitch"]
 const BURN_SFX_INTERVAL := 0.15
 const MISTAKE_SHAKE := 5.0
+## Operating-field magnification (integer, art px -> screen px).
+const ZOOM_MIN := 3
+const ZOOM_MAX := 6
+const QUICK_KEYS := {&"coag": "quick_coag", &"sedate": "quick_sedate", &"stabilize": "quick_stabilize"}
 
 @onready var _stage_counter: Label = %StageCounter
 @onready var _stage_title: Label = %StageTitle
@@ -38,8 +49,20 @@ const MISTAKE_SHAKE := 5.0
 @onready var _complication_timer: ProgressBar = %ComplicationTimer
 @onready var _stamp: Label = %Stamp
 @onready var _controls_host: VBoxContainer = %ControlsHost
-@onready var _quick_row: HBoxContainer = %QuickRow
+@onready var _quick_row: VBoxContainer = %QuickRow
 @onready var _tool_tray: ToolTray = %ToolTray
+@onready var _procedure: Label = %Procedure
+@onready var _zoom_label: Label = %ZoomLabel
+@onready var _hover: FieldHover = %Hover
+@onready var _patient_box: VBoxContainer = %PatientBox
+@onready var _step_list: VBoxContainer = %StepList
+@onready var _tool_detail: Label = %ToolDetail
+@onready var _implant_box: VBoxContainer = %ImplantBox
+@onready var _key_hints: Label = %KeyHints
+
+## Current field magnification; set by the wheel / + - keys.
+var field_scale: int = 4
+var _user_zoomed: bool = false
 
 var current_stage: SurgeryStage = null
 var _quick_buttons: Dictionary = {}  # StringName -> QuickActionButton
@@ -51,11 +74,21 @@ func on_enter(_params: Dictionary) -> void:
 	if not SurgeryManager.is_active:
 		UIManager.go_to.call_deferred(UIManager.SCREEN_CLINIC)
 		return
+	keyboard_nav = false
 	_site.configure(SurgeryManager.customer, SurgeryManager.surgery, ClinicManager.get_surgery_backdrop_level())
-	_fx.unit_scale = 1.0 / GameConfig.PIXEL_SCALE
 	_tool_tray.build(_get_tray_categories())
 	_tool_tray.tool_selected.connect(_on_tool_selected)
+	_tool_tray.tool_hovered.connect(_show_tool_detail)
+	_abort.text = "ABORT"
+	_abort.tooltip_text = "Abort the operation (asks first)"
 	_build_quick_actions()
+	_build_side_panels()
+	_set_zoom(_fit_zoom(), true)
+	# Until the player zooms by hand, follow the largest magnification that
+	# fits (window resizes / resolution changes re-fit it).
+	_field_area.resized.connect(func() -> void:
+		if not _user_zoomed or field_scale > _fit_zoom():
+			_set_zoom(_fit_zoom(), true))
 	_abort.pressed.connect(_on_abort_pressed)
 	SurgeryManager.stage_started.connect(_on_stage_started)
 	SurgeryManager.mistake_made.connect(_on_mistake_made)
@@ -91,12 +124,36 @@ func _get_tray_categories() -> Array[StringName]:
 
 ## Field (pixel viewport) coordinates -> FieldArea UI coordinates.
 func field_to_area(p: Vector2) -> Vector2:
-	return _field_viewport.position + p * GameConfig.PIXEL_SCALE
+	return _field_viewport.position + p * field_scale
 
 
 ## Field coordinates -> global viewport coordinates (used by tests).
 func field_to_screen(p: Vector2) -> Vector2:
-	return _field_viewport.get_global_rect().position + p * GameConfig.PIXEL_SCALE
+	return _field_viewport.get_global_rect().position + p * field_scale
+
+
+## Largest magnification that still shows the whole 160 px field.
+func _fit_zoom() -> int:
+	var area := _field_area.size
+	if area.x <= 0.0:
+		return field_scale
+	var fit := floori(minf(area.x, area.y) / SurgicalSiteView.FIELD_SIZE)
+	return clampi(fit, ZOOM_MIN, ZOOM_MAX)
+
+
+## Changes the field magnification (never mid-gesture: positions would jump).
+func _set_zoom(z: int, force: bool = false) -> void:
+	z = clampi(z, ZOOM_MIN, ZOOM_MAX)
+	if (z == field_scale and not force) or (current_stage and current_stage.is_pointer_down):
+		return
+	field_scale = z
+	_field_viewport.stretch_shrink = z
+	_fx.unit_scale = 1.0 / z
+	if current_stage:
+		current_stage.view_scale = z
+	_zoom_label.text = "ZOOM %dx  [%s/%s]" % [z, Controls.key_name("zoom_out"), Controls.key_name("zoom_in")]
+	if not force:
+		AudioManager.play_sfx(&"hover", 0.0)
 
 
 func _build_quick_actions() -> void:
@@ -104,7 +161,9 @@ func _build_quick_actions() -> void:
 		var cfg: Dictionary = GameConfig.QUICK_ACTIONS[id]
 		var b := QuickActionButton.new()
 		var icon_path: String = QUICK_ICONS.get(id, "")
-		b.setup(id, str(cfg.get("label", id)), PixelArt.scaled(icon_path) if icon_path != "" else null)
+		b.setup(id, "%s   [%s]" % [str(cfg.get("label", id)), Controls.key_name(QUICK_KEYS.get(id, ""))], PixelArt.scaled(icon_path) if icon_path != "" else null)
+		b.custom_minimum_size.y = 58
+		b.tooltip_text = str(cfg.get("hint", "%s: emergency action with a cooldown" % str(cfg.get("label", id))))
 		b.pressed.connect(_on_quick_pressed.bind(id))
 		_quick_row.add_child(b)
 		_quick_buttons[id] = b
@@ -133,7 +192,8 @@ func _load_stage(index: int, stage_data: SurgeryStageData) -> void:
 	var category := stage_data.tool_category
 	stage.setup(stage_data, _site, SurgeryManager.customer,
 			SurgeryManager.get_tool_precision(category), SurgeryManager.get_tool_speed(category), SurgeryManager.get_stage_context())
-	stage.view_scale = GameConfig.PIXEL_SCALE
+	stage.view_scale = field_scale
+	stage.mouse_default_cursor_shape = Control.CURSOR_CROSS
 	stage.name = "Stage_%s" % stage_data.id
 	stage.stage_finished.connect(_on_stage_finished)
 	stage.mistake.connect(_on_stage_mistake)
@@ -142,6 +202,9 @@ func _load_stage(index: int, stage_data: SurgeryStageData) -> void:
 	stage.hint.connect(func(text: String) -> void: UIManager.show_toast(text, &"warn"))
 	_stage_host.add_child(stage)
 	current_stage = stage
+	_hover.stage = stage
+	_refresh_steps(index)
+	_show_tool_detail(category)
 	_site.set_focus(stage.get_focus())
 	stage.begin()
 	var controls := stage.create_controls()
@@ -153,7 +216,6 @@ func _load_stage(index: int, stage_data: SurgeryStageData) -> void:
 	var hint_button := _tool_tray.get_button(category)
 	if hint_button:
 		_tray_scroll.ensure_control_visible.call_deferred(hint_button)
-	_tray_scroll.visible = true
 	_instruction.get_parent().modulate.a = 0.0
 	create_tween().tween_property(_instruction.get_parent(), "modulate:a", 1.0, 0.25)
 
@@ -171,6 +233,166 @@ func _on_stage_finished(quality: float, data: Dictionary) -> void:
 func _on_tool_selected(category: StringName) -> void:
 	if current_stage:
 		current_stage.set_selected_tool(category)
+	if category != &"":
+		_show_tool_detail(category)
+
+
+# --- Side panels ---------------------------------------------------------------
+
+func _build_side_panels() -> void:
+	var c := SurgeryManager.customer
+	var surgery := SurgeryManager.surgery
+	_procedure.text = "%s  ·  %s" % [surgery.display_name.to_upper(), c.display_name if c else "?"]
+	# Patient
+	_patient_box.add_child(UIKit.label("PATIENT", &"SubHeaderLabel", false, Palette.ACCENT))
+	var row := UIKit.hbox(12)
+	_patient_box.add_child(row)
+	if c:
+		var portrait := PixelPortrait.new()
+		portrait.name = "Portrait"
+		row.add_child(portrait)
+		portrait.set_appearance(c.appearance, FactionManager.get_color(c.faction_id))
+		var info := UIKit.vbox(2)
+		info.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		UIKit.expand(info)
+		row.add_child(info)
+		info.add_child(UIKit.label(c.display_name.to_upper(), &"MonoLabel", true, Palette.ACCENT))
+		info.add_child(UIKit.label("%d yrs · %s" % [c.age, c.occupation.capitalize()], &"DimLabel", true))
+		info.add_child(UIKit.label(FactionManager.get_name_of(c.faction_id).to_upper(), &"SubHeaderLabel", true, FactionManager.get_color(c.faction_id)))
+	# Implant
+	var item := SurgeryManager.implant_item
+	_implant_box.add_child(UIKit.label("IMPLANT", &"SubHeaderLabel", false, Palette.ACCENT))
+	if item:
+		var irow := UIKit.hbox(12)
+		_implant_box.add_child(irow)
+		irow.add_child(CyberwareIcon.make(item))
+		var iv := UIKit.vbox(2)
+		UIKit.expand(iv)
+		iv.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		irow.add_child(iv)
+		iv.add_child(UIKit.label(item.display_name, &"", true, item.get_rarity_color(), 16))
+		iv.add_child(UIKit.label("T%d %s · DIFF %d/5" % [item.tier, item.get_tier_name(), item.install_difficulty], &"SubHeaderLabel", true))
+		var load := UIKit.label("NEURAL LOAD %d%% → %d%%" % [roundi(SurgeryManager.neural_load_before), roundi(SurgeryManager.neural_load_after)], &"SubHeaderLabel", true, NeuralLoad.band(SurgeryManager.neural_load_after)["color"])
+		_implant_box.add_child(load)
+		if SurgeryManager.implant and SurgeryManager.implant.source == &"black_market":
+			_implant_box.add_child(UIKit.label("BLACK-MARKET UNIT · unknown traits", &"SubHeaderLabel", true, Palette.BRAND))
+	else:
+		_implant_box.add_child(UIKit.label("No implant in this procedure.", &"DimLabel", true))
+	# Key hints
+	_key_hints.text = "[LMB] use tool / drag   [RMB] put tool down   [WHEEL] zoom   [1-%d] instruments   [%s/%s] cycle   [%s] [%s] [%s] emergency   [%s] action   [%s] pause" % [
+		mini(9, _tool_tray.categories.size()), Controls.key_name("tool_prev"), Controls.key_name("tool_next"),
+		Controls.key_name("quick_coag"), Controls.key_name("quick_sedate"), Controls.key_name("quick_stabilize"),
+		Controls.key_name("context"), Controls.key_name("pause")]
+
+
+## Procedure checklist: done (green), current (cyan, pulsing marker), next (dim).
+func _refresh_steps(current: int) -> void:
+	UIKit.clear(_step_list)
+	_step_list.add_child(UIKit.label("PROCEDURE", &"SubHeaderLabel", false, Palette.ACCENT))
+	var stages := SurgeryManager.surgery.stages
+	for i in stages.size():
+		var st: SurgeryStageData = stages[i]
+		var mark := "✓" if i < current else ("▶" if i == current else "·")
+		var color: Color = Palette.OK if i < current else (Palette.ACCENT if i == current else Palette.TEXT_DIM)
+		var tool := "  [%s]" % String(st.tool_category).to_upper() if st.tool_category != &"" else ""
+		var l := UIKit.label("%s %02d  %s%s" % [mark, i + 1, st.title, tool], &"DimLabel", false, color)
+		if i == current:
+			l.add_theme_font_size_override(&"font_size", UIKit.fs(15))
+		l.name = "Step_%d" % i
+		l.clip_text = true
+		l.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		_step_list.add_child(l)
+
+
+func _show_tool_detail(category: StringName) -> void:
+	if category == &"":
+		_tool_detail.text = ""
+		return
+	var t := InventoryManager.get_best_tool(category)
+	if t == null:
+		_tool_detail.text = "%s: not owned. Buy one at SUPPLY." % String(category).to_upper()
+		return
+	var needed := current_stage != null and current_stage.stage.tool_category == category
+	_tool_detail.text = "%s%s\n%s" % [t.display_name.to_upper(), "  ·  NEEDED NOW" if needed else "", t.description]
+
+
+# --- PC input ------------------------------------------------------------------
+
+## Wheel and right-click over the field are handled before the stage sees
+## them (the stage lives inside the field SubViewport).
+func _input(event: InputEvent) -> void:
+	if _ended or UIManager.has_modal() or not is_visible_in_tree():
+		return
+	var mb := event as InputEventMouseButton
+	if mb == null or not mb.pressed:
+		return
+	var over_field := _field_area.get_global_rect().has_point(mb.position)
+	match mb.button_index:
+		MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN:
+			if not over_field:
+				return
+			var steps := -1 if mb.button_index == MOUSE_BUTTON_WHEEL_UP else 1
+			if not (current_stage and current_stage.wheel_steps(steps)):
+				_user_zoomed = true
+				_set_zoom(field_scale - steps)
+			get_viewport().set_input_as_handled()
+		MOUSE_BUTTON_RIGHT:
+			_cancel()
+			get_viewport().set_input_as_handled()
+
+
+## Right-click: undo a held gesture, otherwise put the tool down.
+func _cancel() -> void:
+	if current_stage and current_stage.cancel():
+		AudioManager.play_sfx(&"denied", 0.0)
+		return
+	if _tool_tray.selected != &"":
+		_tool_tray.clear_selection()
+		AudioManager.play_sfx(&"tool", 0.0)
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if _ended or UIManager.has_modal() or not SurgeryManager.is_active:
+		return
+	var k := event as InputEventKey
+	if k == null:
+		return
+	# Stage actions get press AND release (hold-to-infuse) and echo (nudge).
+	for action: StringName in [&"context", &"interact", &"rotate_left", &"rotate_right", &"ui_left", &"ui_right"]:
+		if event.is_action(action):
+			if k.echo and action != &"ui_left" and action != &"ui_right":
+				get_viewport().set_input_as_handled()
+				return
+			if current_stage and current_stage.key_action(action, k.pressed):
+				get_viewport().set_input_as_handled()
+				return
+	if not k.pressed or k.echo:
+		return
+	for i in 9:
+		if event.is_action("tool_%d" % (i + 1)):
+			_tool_tray.select_index(i)
+			get_viewport().set_input_as_handled()
+			return
+	if event.is_action("tool_next") or event.is_action("tool_prev"):
+		_tool_tray.cycle(1 if event.is_action("tool_next") else -1)
+	elif event.is_action("zoom_in") or event.is_action("zoom_out"):
+		_user_zoomed = true
+		_set_zoom(field_scale + (1 if event.is_action("zoom_in") else -1))
+	else:
+		for id: StringName in QUICK_KEYS:
+			if event.is_action(QUICK_KEYS[id]):
+				_on_quick_pressed(id)
+				get_viewport().set_input_as_handled()
+				return
+		return
+	get_viewport().set_input_as_handled()
+
+
+## ESC during an operation pauses it (the patient is frozen).
+func on_escape() -> bool:
+	if not _ended:
+		pause_operation()
+	return true
 
 
 # --- Feedback ----------------------------------------------------------------
@@ -300,8 +522,10 @@ func _on_session_finished(result: SurgeryResult) -> void:
 	if current_stage:
 		current_stage.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		current_stage.is_finished = true
-	_tray_scroll.visible = false
+	_tool_tray.clear_selection()
 	_controls_host.visible = false
+	_hover.stage = null
+	_refresh_steps(SurgeryManager.surgery.stages.size() if result.success else SurgeryManager.stage_index)
 	_lighting.emergency = not result.success
 	for b: QuickActionButton in _quick_buttons.values():
 		b.disabled = true
@@ -386,8 +610,8 @@ func _update_vitals(immediate: bool) -> void:
 
 # --- App suspension ------------------------------------------------------------
 
-## iOS suspends the app on home-swipe / calls: freeze the patient and show a
-## pause card so nothing happens while the player is away.
+## Alt-Tab / minimising the window freezes the patient and shows a pause
+## card so nothing happens while the player is away.
 ## Tests disable this so a desktop focus change can't stall the bot.
 static var pause_on_suspend: bool = true
 

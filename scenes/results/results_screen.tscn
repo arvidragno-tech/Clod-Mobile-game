@@ -18,14 +18,14 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 12
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 12
-theme_override_constants/margin_bottom = 12
+theme_override_constants/margin_left = 120
+theme_override_constants/margin_top = 70
+theme_override_constants/margin_right = 120
+theme_override_constants/margin_bottom = 60
 
 [node name="VBox" type="VBoxContainer" parent="Margin"]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 22
 
 [node name="Titles" type="VBoxContainer" parent="Margin/VBox"]
 layout_mode = 2
@@ -39,144 +39,164 @@ text = "STEP 4 / 4 · DEBRIEF"
 [node name="Title" type="Label" parent="Margin/VBox/Titles"]
 layout_mode = 2
 theme_type_variation = &"HeaderLabel"
+theme_override_font_sizes/font_size = 40
 text = "OPERATION REPORT"
 
-[node name="Scroll" type="ScrollContainer" parent="Margin/VBox"]
+[node name="Body" type="HBoxContainer" parent="Margin/VBox"]
 layout_mode = 2
 size_flags_vertical = 3
-horizontal_scroll_mode = 0
+theme_override_constants/separation = 20
 
-[node name="Cards" type="VBoxContainer" parent="Margin/VBox/Scroll"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_constants/separation = 10
-
-[node name="VerdictCard" type="PanelContainer" parent="Margin/VBox/Scroll/Cards"]
+[node name="LeftCol" type="VBoxContainer" parent="Margin/VBox/Body"]
 unique_name_in_owner = true
-layout_mode = 2
-theme_type_variation = &"AccentPanel"
-
-[node name="HBox" type="HBoxContainer" parent="Margin/VBox/Scroll/Cards/VerdictCard"]
+custom_minimum_size = Vector2(520, 0)
 layout_mode = 2
 theme_override_constants/separation = 16
 
-[node name="Grade" type="Label" parent="Margin/VBox/Scroll/Cards/VerdictCard/HBox"]
+[node name="VerdictCard" type="PanelContainer" parent="Margin/VBox/Body/LeftCol"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(84, 84)
+layout_mode = 2
+size_flags_vertical = 3
+theme_type_variation = &"AccentPanel"
+
+[node name="HBox" type="VBoxContainer" parent="Margin/VBox/Body/LeftCol/VerdictCard"]
+layout_mode = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="Grade" type="Label" parent="Margin/VBox/Body/LeftCol/VerdictCard/HBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 220)
 layout_mode = 2
 theme_type_variation = &"TitleLabel"
-theme_override_font_sizes/font_size = 72
-text = "A"
+theme_override_font_sizes/font_size = 216
+text = "S"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="Info" type="VBoxContainer" parent="Margin/VBox/Scroll/Cards/VerdictCard/HBox"]
+[node name="Info" type="VBoxContainer" parent="Margin/VBox/Body/LeftCol/VerdictCard/HBox"]
 layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 4
-theme_override_constants/separation = 4
+theme_override_constants/separation = 6
 
-[node name="Verdict" type="Label" parent="Margin/VBox/Scroll/Cards/VerdictCard/HBox/Info"]
+[node name="Verdict" type="Label" parent="Margin/VBox/Body/LeftCol/VerdictCard/HBox/Info"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"HeaderLabel"
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 44
 text = "SUCCESS"
+horizontal_alignment = 1
 
-[node name="CustomerLine" type="Label" parent="Margin/VBox/Scroll/Cards/VerdictCard/HBox/Info"]
+[node name="CustomerLine" type="Label" parent="Margin/VBox/Body/LeftCol/VerdictCard/HBox/Info"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"DimLabel"
 text = "Customer · Surgery"
+horizontal_alignment = 1
 autowrap_mode = 3
 
-[node name="FailureText" type="Label" parent="Margin/VBox/Scroll/Cards/VerdictCard/HBox/Info"]
+[node name="FailureText" type="Label" parent="Margin/VBox/Body/LeftCol/VerdictCard/HBox/Info"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 15
-text = "Failure"
+theme_override_font_sizes/font_size = 24
+text = "Failure reason"
+horizontal_alignment = 1
 autowrap_mode = 3
 
-[node name="StatsCard" type="PanelContainer" parent="Margin/VBox/Scroll/Cards"]
+[node name="StatsCard" type="PanelContainer" parent="Margin/VBox/Body"]
 layout_mode = 2
+size_flags_horizontal = 3
 theme_type_variation = &"CardPanel"
 
-[node name="Stats" type="GridContainer" parent="Margin/VBox/Scroll/Cards/StatsCard"]
+[node name="VBox" type="VBoxContainer" parent="Margin/VBox/Body/StatsCard"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Caption" type="Label" parent="Margin/VBox/Body/StatsCard/VBox"]
+layout_mode = 2
+theme_type_variation = &"SubHeaderLabel"
+theme_override_colors/font_color = Color(0.180392, 0.901961, 0.784314, 1)
+text = "BREAKDOWN"
+
+[node name="Stats" type="GridContainer" parent="Margin/VBox/Body/StatsCard/VBox"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_constants/h_separation = 12
-theme_override_constants/v_separation = 2
+theme_override_constants/h_separation = 24
+theme_override_constants/v_separation = 10
 columns = 2
 
-[node name="RewardsCard" type="PanelContainer" parent="Margin/VBox/Scroll/Cards"]
+[node name="RewardsCard" type="PanelContainer" parent="Margin/VBox/Body"]
+custom_minimum_size = Vector2(480, 0)
 layout_mode = 2
 theme_type_variation = &"AccentPanel"
 
-[node name="VBox" type="VBoxContainer" parent="Margin/VBox/Scroll/Cards/RewardsCard"]
+[node name="VBox" type="VBoxContainer" parent="Margin/VBox/Body/RewardsCard"]
 layout_mode = 2
-theme_override_constants/separation = 4
+theme_override_constants/separation = 14
 
-[node name="Caption" type="Label" parent="Margin/VBox/Scroll/Cards/RewardsCard/VBox"]
+[node name="Caption" type="Label" parent="Margin/VBox/Body/RewardsCard/VBox"]
 layout_mode = 2
 theme_type_variation = &"SubHeaderLabel"
+theme_override_colors/font_color = Color(0.180392, 0.901961, 0.784314, 1)
 text = "PAYOUT"
 
-[node name="Row" type="HBoxContainer" parent="Margin/VBox/Scroll/Cards/RewardsCard/VBox"]
-layout_mode = 2
-
-[node name="Pay" type="Label" parent="Margin/VBox/Scroll/Cards/RewardsCard/VBox/Row"]
+[node name="Pay" type="Label" parent="Margin/VBox/Body/RewardsCard/VBox"]
 unique_name_in_owner = true
 layout_mode = 2
-size_flags_horizontal = 3
 theme_type_variation = &"BigMonoLabel"
 theme_override_colors/font_color = Color(1, 0.705882, 0.239216, 1)
+theme_override_font_sizes/font_size = 84
 text = "+0 cr"
 
-[node name="Xp" type="Label" parent="Margin/VBox/Scroll/Cards/RewardsCard/VBox/Row"]
+[node name="Xp" type="Label" parent="Margin/VBox/Body/RewardsCard/VBox"]
 unique_name_in_owner = true
 layout_mode = 2
-size_flags_horizontal = 3
 theme_type_variation = &"BigMonoLabel"
-theme_override_font_sizes/font_size = 28
+theme_override_colors/font_color = Color(0.180392, 0.901961, 0.784314, 1)
+theme_override_font_sizes/font_size = 48
 text = "+0 XP"
-horizontal_alignment = 1
 
-[node name="RepBox" type="VBoxContainer" parent="Margin/VBox/Scroll/Cards/RewardsCard/VBox/Row"]
+[node name="RepBox" type="HBoxContainer" parent="Margin/VBox/Body/RewardsCard/VBox"]
 layout_mode = 2
-theme_override_constants/separation = 0
+theme_override_constants/separation = 14
 
-[node name="RepCaption" type="Label" parent="Margin/VBox/Scroll/Cards/RewardsCard/VBox/Row/RepBox"]
+[node name="RepCaption" type="Label" parent="Margin/VBox/Body/RewardsCard/VBox/RepBox"]
+layout_mode = 2
+size_flags_vertical = 4
+theme_type_variation = &"SubHeaderLabel"
+text = "STREET REP"
+
+[node name="Rep" type="Label" parent="Margin/VBox/Body/RewardsCard/VBox/RepBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"BigMonoLabel"
+text = "+0"
+
+[node name="LevelCaption" type="Label" parent="Margin/VBox/Body/RewardsCard/VBox"]
 layout_mode = 2
 theme_type_variation = &"SubHeaderLabel"
-text = "REP"
-horizontal_alignment = 2
+text = "LEVEL PROGRESS"
 
-[node name="Rep" type="Label" parent="Margin/VBox/Scroll/Cards/RewardsCard/VBox/Row/RepBox"]
+[node name="LevelBar" type="ProgressBar" parent="Margin/VBox/Body/RewardsCard/VBox"]
 unique_name_in_owner = true
-layout_mode = 2
-theme_type_variation = &"MonoLabel"
-text = "+0"
-horizontal_alignment = 2
-
-[node name="LevelBar" type="ProgressBar" parent="Margin/VBox/Scroll/Cards/RewardsCard/VBox"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 6)
+custom_minimum_size = Vector2(0, 12)
 layout_mode = 2
 show_percentage = false
 
-[node name="LevelUp" type="Label" parent="Margin/VBox/Scroll/Cards/RewardsCard/VBox"]
+[node name="LevelUp" type="Label" parent="Margin/VBox/Body/RewardsCard/VBox"]
 unique_name_in_owner = true
-visible = false
 layout_mode = 2
 theme_type_variation = &"HeaderLabel"
 theme_override_colors/font_color = Color(1, 0.239216, 0.505882, 1)
 text = "LEVEL UP!"
 horizontal_alignment = 1
 
-[node name="ContinueButton" type="Button" parent="Margin/VBox"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 56)
+[node name="Footer" type="HBoxContainer" parent="Margin/VBox"]
 layout_mode = 2
-focus_mode = 0
+alignment = 1
+
+[node name="ContinueButton" type="Button" parent="Margin/VBox/Footer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(640, 68)
+layout_mode = 2
 theme_type_variation = &"AccentButton"
-text = "BACK TO CLINIC"
+text = "BACK TO CLINIC   [ENTER]"

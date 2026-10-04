@@ -31,7 +31,11 @@ const DATA_SURGERIES := "res://data/surgeries.json"
 const DATA_COMPLICATIONS := "res://data/complications.json"
 
 # --- Save --------------------------------------------------------------------
+## Legacy single-save path (pre-PC); migrated into slot 1 on first run.
 const SAVE_PATH := "user://savegame.json"
+## Save slots live in user://saves/ (%APPDATA%/UndercityRipper/saves on Windows).
+const SAVE_DIR := "user://saves"
+const SAVE_SLOTS := 3
 const SAVE_VERSION := 3
 
 # --- New game ----------------------------------------------------------------
@@ -215,15 +219,15 @@ const WRONG_DIAGNOSIS_PAY_MULT := 0.9
 # --- UI ----------------------------------------------------------------------
 ## Viewport units per art pixel. Every sprite, background and the surgical
 ## field render at exactly this scale (see docs/ART_BIBLE.md).
-const PIXEL_SCALE := 2
-## Minimum touch target in viewport units (360 units ≈ 390pt iPhone width).
-const MIN_TOUCH := 48.0
-const TOUCH_SLOP := 26.0
+const PIXEL_SCALE := 3
+## Minimum height of a clickable control at the 1920x1080 design size.
+const MIN_CONTROL := 40.0
+## Extra forgiveness (UI units) around small click targets.
+const CLICK_SLOP := 14.0
+## Text sizes from older layout code are multiplied by this for 1080p.
+const TEXT_SCALE := 1.4
 const SCREEN_FADE_OUT_SEC := 0.14
 const SCREEN_FADE_IN_SEC := 0.2
 const MAX_TOASTS := 2
 const TOAST_DURATION_SEC := 2.2
 const SHAKE_DURATION_SEC := 0.22
-const HAPTICS_MS := 25
-## Set to a non-zero inset to preview notch/home-indicator handling on desktop.
-const DEBUG_SIMULATED_SAFE_AREA := Rect2(0, 0, 0, 0)

@@ -40,7 +40,7 @@ func setup(title: String, body: String, buttons: Array[Dictionary]) -> void:
 		b.text = str(spec.get("label", "OK"))
 		b.theme_type_variation = spec.get("style", &"")
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		b.custom_minimum_size.y = GameConfig.MIN_TOUCH
+		b.custom_minimum_size.y = GameConfig.MIN_CONTROL
 		b.focus_mode = Control.FOCUS_NONE
 		var callback: Callable = spec.get("callback", Callable())
 		b.pressed.connect(_on_button_pressed.bind(callback))
@@ -49,9 +49,26 @@ func setup(title: String, body: String, buttons: Array[Dictionary]) -> void:
 	panel.pivot_offset = panel.size / 2.0
 	panel.scale = Vector2(0.92, 0.92)
 	modulate.a = 0.0
+	# Keyboard users land on the first (safe) choice.
+	var first := find_children("*", "Button", true, false)
+	if not first.is_empty():
+		(first[0] as Button).call_deferred("grab_focus")
 	var t := create_tween().set_parallel()
 	t.tween_property(self, "modulate:a", 1.0, 0.12)
 	t.tween_property(panel, "scale", Vector2.ONE, 0.16).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+## ESC: activates the dialog's safe choice (RESUME / CANCEL / GOT IT /
+## KEEP GOING...), i.e. the first button, unless the dialog is mandatory.
+var escape_allowed: bool = true
+
+
+func on_escape() -> void:
+	if not escape_allowed:
+		return
+	var buttons := find_children("*", "Button", true, false)
+	if not buttons.is_empty():
+		(buttons[0] as Button).pressed.emit()
 
 
 func _on_button_pressed(callback: Callable) -> void:

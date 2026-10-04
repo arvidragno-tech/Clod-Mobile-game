@@ -28,7 +28,7 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(0.027, 0.031, 0.047, 1)
 
-[node name="SafeArea" type="MarginContainer" parent="."]
+[node name="Frame" type="MarginContainer" parent="."]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
@@ -38,7 +38,7 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="ScreenHost" type="Control" parent="SafeArea"]
+[node name="ScreenHost" type="Control" parent="Frame"]
 unique_name_in_owner = true
 clip_contents = true
 layout_mode = 2
@@ -57,7 +57,7 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(1, 0.3, 0.3, 0)
 
-[node name="OverlaySafeArea" type="MarginContainer" parent="OverlayLayer"]
+[node name="Overlay" type="MarginContainer" parent="OverlayLayer"]
 unique_name_in_owner = true
 anchors_preset = 15
 anchor_right = 1.0
@@ -66,19 +66,19 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="ModalHost" type="Control" parent="OverlayLayer/OverlaySafeArea"]
+[node name="ModalHost" type="Control" parent="OverlayLayer/Overlay"]
 unique_name_in_owner = true
 layout_mode = 2
 mouse_filter = 2
 
-[node name="ToastMargin" type="MarginContainer" parent="OverlayLayer/OverlaySafeArea"]
+[node name="ToastMargin" type="MarginContainer" parent="OverlayLayer/Overlay"]
 layout_mode = 2
 mouse_filter = 2
-theme_override_constants/margin_left = 24
-theme_override_constants/margin_top = 64
-theme_override_constants/margin_right = 24
+theme_override_constants/margin_left = 1300
+theme_override_constants/margin_top = 96
+theme_override_constants/margin_right = 28
 
-[node name="ToastBox" type="VBoxContainer" parent="OverlayLayer/OverlaySafeArea/ToastMargin"]
+[node name="ToastBox" type="VBoxContainer" parent="OverlayLayer/Overlay/ToastMargin"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 0
