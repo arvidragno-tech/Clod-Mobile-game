@@ -21,7 +21,7 @@ func on_enter(_params: Dictionary) -> void:
 	_continue_button.pressed.connect(GameManager.continue_game)
 	_new_game_button.pressed.connect(_on_new_game_pressed)
 	_sound_button.pressed.connect(_on_sound_pressed)
-	_version.text = "v%s · STEP 1 VERTICAL SLICE" % ProjectSettings.get_setting("application/config/version", "0")
+	_version.text = "v%s · PRE-RELEASE BUILD" % ProjectSettings.get_setting("application/config/version", "0")
 	_refresh_sound_label()
 
 

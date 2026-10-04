@@ -5,15 +5,8 @@ extends HBoxContainer
 
 signal tool_selected(category: StringName)
 
-const ICONS := {
-	&"scalpel": "res://assets/sprites/tools/scalpel.png",
-	&"retractor": "res://assets/sprites/tools/retractor.png",
-	&"cautery": "res://assets/sprites/tools/cautery.png",
-	&"forceps": "res://assets/sprites/tools/forceps.png",
-	&"splicer": "res://assets/sprites/tools/splicer.png",
-	&"suture": "res://assets/sprites/tools/suture.png",
-}
-const BUTTON_SIZE := Vector2(52, 52)
+## Square, touch-sized, fits a 24px tool icon at 2x plus the frame.
+const BUTTON_SIZE := Vector2(56, 56)
 
 var selected: StringName = &""
 var _buttons: Dictionary = {}
@@ -34,11 +27,13 @@ func build(categories: Array[StringName]) -> void:
 		b.custom_minimum_size = BUTTON_SIZE
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b.focus_mode = Control.FOCUS_NONE
-		b.expand_icon = true
 		b.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		var tool := InventoryManager.get_best_tool(category)
-		var icon_path: String = tool.icon_path if tool else ICONS.get(category, "")
-		b.icon = load(icon_path) as Texture2D if ResourceLoader.exists(icon_path) else null
+		if tool:
+			b.icon = PixelArt.scaled(tool.icon_path)
+		else:
+			b.text = String(category).left(3).to_upper()
+			b.disabled = true
 		b.tooltip_text = tool.display_name if tool else String(category)
 		b.toggled.connect(_on_toggled.bind(category))
 		b.draw.connect(_draw_hint.bind(b, category))

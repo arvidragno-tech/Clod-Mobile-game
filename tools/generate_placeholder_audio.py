@@ -114,6 +114,11 @@ def main() -> None:
     write("sfx/customer_arrival.wav", concat(tone(220, 220, 0.12, vol=0.25), silence(0.05), tone(220, 220, 0.12, vol=0.25)))
     write("sfx/cash.wav", concat(tone(1568, 1568, 0.05, vol=0.2), tone(2093, 2093, 0.12, sine, vol=0.25)))
     write("sfx/level_up.wav", concat(*[tone(f, f, 0.07, vol=0.2) for f in (440, 554, 659, 880)], tone(1108, 1108, 0.25, sine, vol=0.25)))
+    # Step 2: bone drill grind (fast pulses over gritty noise), black-market
+    # glitch stinger, and a story-event chime.
+    write("sfx/drill.wav", mixdown(concat(*[tone(240, 210, 0.025, vol=0.22) for _ in range(8)]), noise(0.2, vol=0.18, lowpass=0.5, seed=7)))
+    write("sfx/glitch.wav", concat(tone(90, 60, 0.05, vol=0.3), noise(0.04, vol=0.25, lowpass=0.95, seed=8), tone(2400, 1800, 0.04, vol=0.15), noise(0.06, vol=0.2, lowpass=0.7, seed=9)))
+    write("sfx/event.wav", concat(tone(392, 392, 0.08, sine, vol=0.25), tone(587, 587, 0.08, sine, vol=0.25), tone(523, 523, 0.18, sine, vol=0.22)))
     write("ambient/clinic_hum.wav", ambient_hum())
 
 

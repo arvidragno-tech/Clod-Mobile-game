@@ -54,11 +54,44 @@ func _fill() -> void:
 	if r.success:
 		_add_stat("IMPLANT PERF", "%d%%" % roundi(r.implant_performance * 100.0), r.implant_performance >= 0.75)
 	_add_stat("DIAGNOSIS", "CORRECT" if r.diagnosis_correct else "WRONG", r.diagnosis_correct)
+	if r.implant_name != "":
+		_add_stat("IMPLANT", r.implant_name, not r.black_market_implant)
+	_add_stat("NEURAL LOAD", "%d%% %s" % [roundi(r.neural_load_after), NeuralLoad.band(r.neural_load_after)["name"]], r.neural_load_after < 70.0)
+	if r.faction_id != &"":
+		_add_stat(FactionManager.get_faction(r.faction_id).get("short", "FACTION"), "%+d · %s" % [r.faction_delta, FactionManager.get_standing(r.faction_id)], r.faction_delta >= 0)
+	if absf(r.heat_delta) >= 0.5:
+		_add_stat("HEAT", "%+d" % roundi(r.heat_delta), r.heat_delta <= 0.0)
+	_add_aftermath(r)
 	_pay.text = "+%s" % EconomyManager.format_money(0)
 	_xp.text = "+0 XP"
 	_rep.text = "%+d" % 0
 	_level_bar.value = ProgressionManager.get_level_progress() * 100.0
 	_level_up.visible = false
+
+
+func _add_aftermath(r: SurgeryResult) -> void:
+	var notes: Array[String] = []
+	if r.neural_break:
+		notes.append("NEURAL BREAK: the patient's chrome overloaded after they left. People will talk.")
+	if bool(r.consequences.get("post_op", false)):
+		notes.append("POST-OP: the wound is turning. Expect them back at your door.")
+	if bool(r.consequences.get("referral", false)):
+		notes.append("They'll send a friend your way.")
+	if bool(r.consequences.get("returning", false)):
+		notes.append("They'll be back for more chrome.")
+	if bool(r.consequences.get("regular", false)):
+		notes.append("REGULAR: loyal customer, pays better.")
+	if r.levels_gained > 0:
+		notes.append("+%d SKILL POINT%s to spend." % [r.levels_gained * GameConfig.SKILL_POINTS_PER_LEVEL, "S" if r.levels_gained > 1 else ""])
+	if notes.is_empty():
+		return
+	var card := UIKit.panel(&"DangerPanel" if r.neural_break else &"CardPanel")
+	var v := UIKit.vbox(4)
+	card.add_child(v)
+	v.add_child(UIKit.label("AFTERMATH", &"SubHeaderLabel"))
+	for n in notes:
+		v.add_child(UIKit.label(n, &"", true, Palette.DANGER if n.begins_with("NEURAL") else Palette.TEXT, 15))
+	_verdict_card.get_parent().add_child(card)
 
 
 func _add_stat(caption: String, value: String, good: bool) -> void:

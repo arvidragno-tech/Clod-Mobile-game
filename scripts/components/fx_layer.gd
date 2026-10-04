@@ -6,6 +6,12 @@ extends Control
 const FLOAT_TEXT_RISE := 36.0
 const FLOAT_TEXT_TIME := 0.9
 
+## Multiplies particle speeds / sizes (0.5 inside the 2x pixel viewport so
+## particles are exactly one art pixel).
+var unit_scale: float = 1.0
+## Hard cap on simultaneous particle emitters (mobile performance).
+const MAX_EMITTERS := 12
+
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -13,6 +19,11 @@ func _ready() -> void:
 
 ## Square "pixel" particles exploding from `pos` (local coordinates).
 func burst(pos: Vector2, color: Color, amount: int = 12, speed: float = 90.0, pixel_size: float = 3.0, gravity: float = 260.0) -> void:
+	if get_child_count() >= MAX_EMITTERS:
+		return
+	speed *= unit_scale
+	gravity *= unit_scale
+	pixel_size = maxf(1.0, roundf(pixel_size * unit_scale))
 	var p := CPUParticles2D.new()
 	p.position = pos
 	p.one_shot = true
