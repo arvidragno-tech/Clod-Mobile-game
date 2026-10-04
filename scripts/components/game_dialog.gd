@@ -26,7 +26,7 @@ func setup(title: String, body: String, buttons: Array[Dictionary]) -> void:
 		_body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		parent.add_child(sc)
 		parent.move_child(sc, idx)
-	# More than two choices stack vertically so each stays thumb-sized.
+	# More than two choices stack vertically so each label stays readable.
 	var container: BoxContainer = _buttons
 	if buttons.size() > 2:
 		container = VBoxContainer.new()

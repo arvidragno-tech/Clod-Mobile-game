@@ -419,6 +419,7 @@ var _surgery_audio: Dictionary = {}
 
 
 func _play_current(sloppy: bool, dx: StringName, reckless: bool = false) -> SurgeryResult:
+	GameManager.last_result = null  # never report a previous run's result
 	await _to_plan(dx)
 	await _click_named("BeginButton")
 	await _wait_screen(UIManager.SCREEN_SURGERY)
@@ -435,9 +436,11 @@ func _play_current(sloppy: bool, dx: StringName, reckless: bool = false) -> Surg
 		if reckless and stage is ConnectInterfaceStage:
 			await _click_named("Tool_splicer")
 			var attempts := 0
-			while SurgeryManager.is_active and attempts < 30:
+			# Drags cross more screen pixels at the PC field zoom (slower per
+			# attempt), so allow more attempts for the collapse to happen.
+			while SurgeryManager.is_active and attempts < 80:
 				var wrong: Array = stage.get_autoplay_hints()["wrong"]
-				await _drag([_fs(wrong[0]), _fs(wrong[1])])
+				await _drag([_fs(wrong[0]), _fs(wrong[1])], 30.0)
 				attempts += 1
 			break
 		await _play_stage(stage, sloppy)
@@ -769,13 +772,13 @@ func _tap(pos: Vector2) -> void:
 	await _frames(2)
 
 
-func _drag(points: Array[Vector2]) -> void:
+func _drag(points: Array[Vector2], step_px: float = DRAG_STEP_PX) -> void:
 	await _handle_complication()
 	await _press(points[0])
 	var last := points[0]
 	for i in range(1, points.size()):
 		var to := points[i]
-		var steps := maxi(int(last.distance_to(to) / DRAG_STEP_PX), 1)
+		var steps := maxi(int(last.distance_to(to) / step_px), 1)
 		for s in range(1, steps + 1):
 			var p := last.lerp(to, float(s) / steps)
 			_send_motion(p, p - last)

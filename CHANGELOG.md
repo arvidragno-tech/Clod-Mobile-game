@@ -51,6 +51,16 @@ the presentation, input and platform layers were rebuilt for desktop.
 - The end-to-end bot runs on the 1920×1080 canvas with mouse and keyboard events (hotkeys, ESC pause, F5, TAB, right-click compare, inventory and database screens).
 - New `tests/display_probe.tscn` drives the real window through all resolutions, window modes and a 5:4 letterbox, screenshots each, and checks that no button is off-screen.
 - The stability monkey also sends right-clicks, wheel and random hotkeys.
+- The E2E suite runs rendered under Xvfb: headless Godot measures fonts taller than the renderer, so its layout checks were not representative.
+- **Release smoke test:** `UndercityRipper.exe -- --smoke-test` starts a game in slot 3, opens every main screen, saves, reloads, verifies the save file and prints `SMOKE OK`. Verified on the exported .exe under Wine in a fresh profile.
+
+### Build and packaging
+- `export_presets.cfg` is now a **Windows Desktop** preset: x86_64, release, embedded .pck (single .exe), `.ico` icon and version resources (via rcedit), *Undercity: Ripper* 2.0.0.0.
+- `tools/package_windows.sh` exports and zips `UndercityRipper-<version>-windows-x64.zip` (exe, README.txt, font licences).
+
+### Performance
+- The black-market glitch pass is skipped entirely when effects are LOW or reduce motion is on (its screen-sampling shader was the most expensive pass); the encrypted feed scrambles at 20 Hz instead of every frame; the field hover overlay only redraws while the cursor is over the field.
+- Texture caches and custom cursors are released on exit.
 
 ## 1.0.0 — Production pass (Step 3)
 

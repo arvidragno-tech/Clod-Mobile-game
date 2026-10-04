@@ -65,6 +65,8 @@ func _smoke_test() -> void:
 
 
 func _exit_tree() -> void:
+	for shape in [Input.CURSOR_ARROW, Input.CURSOR_POINTING_HAND, Input.CURSOR_CROSS, Input.CURSOR_DRAG, Input.CURSOR_CAN_DROP]:
+		Input.set_custom_mouse_cursor(null, shape)
 	PixelArt.clear_cache()
 	CharacterArt.clear_cache()
 

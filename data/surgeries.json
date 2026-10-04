@@ -76,7 +76,7 @@
           "id": "expose",
           "type": "expose",
           "title": "EXPOSE INTERFACE",
-          "instruction": "Select RETRACTOR. Tap each clamp point to open the site.",
+          "instruction": "Select RETRACTOR. Click each clamp point to open the site.",
           "tool": "retractor",
           "params": {
             "clamps": [[0.33, 0.3],[0.67, 0.3],[0.33, 0.7],[0.67, 0.7]],
@@ -138,7 +138,7 @@
           "id": "close",
           "type": "close_incision",
           "title": "CLOSE INCISION",
-          "instruction": "Select SUTURE. Tap the stitch points in numbered order.",
+          "instruction": "Select SUTURE. Click the stitch points in numbered order.",
           "tool": "suture",
           "params": {
             "stitches": 6
@@ -225,7 +225,7 @@
           "id": "expose",
           "type": "expose",
           "title": "EXPOSE SITE",
-          "instruction": "Select RETRACTOR. Tap each clamp point to open the site.",
+          "instruction": "Select RETRACTOR. Click each clamp point to open the site.",
           "tool": "retractor",
           "params": {
             "clamps": [[0.34, 0.42],[0.66, 0.42],[0.34, 0.7],[0.66, 0.7]],
@@ -288,7 +288,7 @@
           "id": "close",
           "type": "close_incision",
           "title": "CLOSE INCISION",
-          "instruction": "Select SUTURE. Tap the stitch points in numbered order.",
+          "instruction": "Select SUTURE. Click the stitch points in numbered order.",
           "tool": "suture",
           "params": {
             "stitches": 7
@@ -375,7 +375,7 @@
           "id": "expose",
           "type": "expose",
           "title": "EXPOSE SITE",
-          "instruction": "Select RETRACTOR. Tap each clamp point to open the site.",
+          "instruction": "Select RETRACTOR. Click each clamp point to open the site.",
           "tool": "retractor",
           "params": {
             "clamps": [[0.37, 0.36],[0.63, 0.36],[0.37, 0.64],[0.63, 0.64]],
@@ -451,7 +451,7 @@
           "id": "close",
           "type": "close_incision",
           "title": "CLOSE INCISION",
-          "instruction": "Select SUTURE. Tap the stitch points in numbered order.",
+          "instruction": "Select SUTURE. Click the stitch points in numbered order.",
           "tool": "suture",
           "params": {
             "stitches": 6
@@ -538,7 +538,7 @@
           "id": "expose",
           "type": "expose",
           "title": "EXPOSE SITE",
-          "instruction": "Select RETRACTOR. Tap each clamp point to open the site.",
+          "instruction": "Select RETRACTOR. Click each clamp point to open the site.",
           "tool": "retractor",
           "params": {
             "clamps": [[0.34, 0.34],[0.66, 0.34],[0.34, 0.66],[0.66, 0.66]],
@@ -588,7 +588,7 @@
           "id": "close",
           "type": "close_incision",
           "title": "CLOSE INCISION",
-          "instruction": "Select SUTURE. Tap the stitch points in numbered order.",
+          "instruction": "Select SUTURE. Click the stitch points in numbered order.",
           "tool": "suture",
           "params": {
             "stitches": 7
@@ -675,7 +675,7 @@
           "id": "expose",
           "type": "expose",
           "title": "EXPOSE SITE",
-          "instruction": "Select RETRACTOR. Tap each clamp point to open the site.",
+          "instruction": "Select RETRACTOR. Click each clamp point to open the site.",
           "tool": "retractor",
           "params": {
             "clamps": [[0.34, 0.5],[0.66, 0.5],[0.5, 0.76]],
@@ -737,7 +737,7 @@
           "id": "close",
           "type": "close_incision",
           "title": "CLOSE INCISION",
-          "instruction": "Select SUTURE. Tap the stitch points in numbered order.",
+          "instruction": "Select SUTURE. Click the stitch points in numbered order.",
           "tool": "suture",
           "params": {
             "stitches": 5
@@ -824,7 +824,7 @@
           "id": "expose",
           "type": "expose",
           "title": "EXPOSE SITE",
-          "instruction": "Select RETRACTOR. Tap each clamp point to open the site.",
+          "instruction": "Select RETRACTOR. Click each clamp point to open the site.",
           "tool": "retractor",
           "params": {
             "clamps": [[0.38, 0.42],[0.62, 0.58]],
@@ -849,7 +849,7 @@
           "id": "close",
           "type": "close_incision",
           "title": "CLOSE INCISION",
-          "instruction": "Select SUTURE. Tap the stitch points in numbered order.",
+          "instruction": "Select SUTURE. Click the stitch points in numbered order.",
           "tool": "suture",
           "params": {
             "stitches": 4
@@ -936,7 +936,7 @@
           "id": "expose",
           "type": "expose",
           "title": "EXPOSE SITE",
-          "instruction": "Select RETRACTOR. Tap each clamp point to open the site.",
+          "instruction": "Select RETRACTOR. Click each clamp point to open the site.",
           "tool": "retractor",
           "params": {
             "clamps": [[0.35, 0.36],[0.65, 0.36],[0.35, 0.64],[0.65, 0.64]],
@@ -985,7 +985,7 @@
           "id": "close",
           "type": "close_incision",
           "title": "CLOSE INCISION",
-          "instruction": "Select SUTURE. Tap the stitch points in numbered order.",
+          "instruction": "Select SUTURE. Click the stitch points in numbered order.",
           "tool": "suture",
           "params": {
             "stitches": 6
@@ -1072,7 +1072,7 @@
           "id": "expose",
           "type": "expose",
           "title": "EXPOSE SITE",
-          "instruction": "Select RETRACTOR. Tap each clamp point to open the site.",
+          "instruction": "Select RETRACTOR. Click each clamp point to open the site.",
           "tool": "retractor",
           "params": {
             "clamps": [[0.42, 0.36],[0.72, 0.36],[0.44, 0.66],[0.74, 0.66]],
@@ -1134,7 +1134,7 @@
           "id": "close",
           "type": "close_incision",
           "title": "CLOSE INCISION",
-          "instruction": "Select SUTURE. Tap the stitch points in numbered order.",
+          "instruction": "Select SUTURE. Click the stitch points in numbered order.",
           "tool": "suture",
           "params": {
             "stitches": 7

@@ -74,9 +74,9 @@ mouse_filter = 2
 [node name="ToastMargin" type="MarginContainer" parent="OverlayLayer/Overlay"]
 layout_mode = 2
 mouse_filter = 2
-theme_override_constants/margin_left = 1300
-theme_override_constants/margin_top = 96
-theme_override_constants/margin_right = 28
+theme_override_constants/margin_left = 600
+theme_override_constants/margin_top = 150
+theme_override_constants/margin_right = 600
 
 [node name="ToastBox" type="VBoxContainer" parent="OverlayLayer/Overlay/ToastMargin"]
 unique_name_in_owner = true

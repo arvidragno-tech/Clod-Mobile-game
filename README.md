@@ -1,21 +1,23 @@
 # UNDERCITY: RIPPER
 
-An original 2D pixel-art cyberpunk surgery sim for iPhone. You run an
-underground clinic: take customers, diagnose them, install cyberware with
-your fingers, handle complications, get paid, and climb toward the black market.
+An original 2D pixel-art cyberpunk surgery sim for **Windows PC**, designed
+for **1920×1080** and played with **mouse and keyboard**. You run an
+underground clinic: take customers, diagnose them, install cyberware at a
+surgical workstation, handle complications, get paid, and climb toward the
+black market.
 
-**Status: 1.0.0, a production-ready build.** The game has:
+**Status: 2.0.0, the Windows PC version** (converted from the 1.0 iPhone
+build; all gameplay, progression and content carried over). The game has:
+- a desktop "medical workstation" UI: status bar, section nav, multi-panel screens
 - a guided first shift, then a gradual learning curve
 - 8 operations across 8 cyberware categories, with 27 implants (tiers 1–5)
-- procedural customers with hidden conditions, and a neural-load system
-- 21 upgradeable tools
-- 5 factions with heat
-- a black market with unknown properties
-- a 4-branch skill tree and 6 clinic tiers
-- 20 story and random events
-- a full settings and accessibility menu
-- a layered soundscape and haptics
-- detailed, animated pixel art at one consistent density
+- a surgery workstation with a zoomable operating field, an instrument rack with hotkeys and tool condition, and emergency actions on keys
+- procedural customers with hidden conditions, previous operations, and a neural-load system
+- a grid inventory with drag & drop, and a cyberware database with CURRENT vs NEW comparison
+- 21 upgradeable tools, 5 factions with heat, a black market with unknown properties
+- a 4-branch skill tree, 6 clinic tiers, 20 story and random events
+- 3 save slots, rebindable keys, window modes and resolutions, accessibility options
+- a layered soundscape and detailed, animated pixel art at one crisp density
 
 [CHANGELOG.md](CHANGELOG.md) lists the changes. Design and code are documented in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and [docs/ART_BIBLE.md](docs/ART_BIBLE.md).
 
@@ -27,38 +29,60 @@ your fingers, handle complications, get paid, and climb toward the black market.
 
 | | |
 |---|---|
-| Engine | **Godot 4.3 stable** (standard build, GDScript only, no C#). Newer 4.x versions should open the project and offer to upgrade it. |
-| Renderer | GL Compatibility (best fit for 2D on iPhone) |
-| Target | iPhone, portrait. Desktop runs for development. |
-| iOS export | macOS with Xcode, plus an Apple Developer account for on-device runs |
+| Engine | **Godot 4.3 stable**, standard build (GDScript only, not .NET). Newer 4.x versions should open the project and offer to upgrade it. |
+| Renderer | GL Compatibility (OpenGL 3.3; runs on any Windows GPU from the last decade) |
+| Target | **Windows 10/11, x86_64**, 1920×1080 primary, mouse + keyboard |
+| Supported windows | 1920×1080, 1600×900, 1366×768, 1280×720 windowed; borderless fullscreen; exclusive fullscreen |
+| Windows export | Godot 4.3 Windows export templates (from any OS: Windows, Linux or macOS) |
 
 ## Running the game
 
+### From source
 1. Install Godot 4.3 from <https://godotengine.org/download/archive/4.3-stable/>.
 2. Open Godot, choose **Import**, and select `project.godot` in this folder.
 3. Press **F5** (Run Project).
 
 From the command line: `godot --path .`
 
-The desktop window opens at iPhone proportions (390×844). **The mouse stands in
-for your finger.** On iOS, touches arrive as emulated mouse events, so desktop
-and device go through the same input path.
+The window opens at 1600×900 (windowed) the first time; change the window
+mode and resolution in **SETTINGS → GRAPHICS**.
+
+### Controls
+
+| Action | Mouse | Keyboard (default, rebindable) |
+|---|---|---|
+| Select / use the active tool | left click | ENTER / E |
+| Cut, move implants, connect wires | left drag | |
+| Put the tool down / cancel / compare | right click | |
+| Scroll lists, zoom the operating field | wheel | + / − |
+| Inspect | double click | F |
+| Pause / back | | ESC |
+| Cycle panels | | TAB |
+| Navigate menus | | WASD / arrows |
+| Contextual (hold to infuse, LOCK, SEAT) | | SPACE |
+| Previous / next tool | | Q / R |
+| Pick tool 1–9 | click the rack | 1–9 |
+| Emergency COAG / SEDATE / STABIL | click | Z / X / V |
+| Rotate implant | wheel when seated | , / . |
+| Inventory · customer · facility · journal · database | side nav | I · C · M · J · B |
+| Quick save / quick load | | F5 / F9 |
+
+Everything gives feedback: hover highlights and a hover tick on every
+control, a pointing-hand cursor on clickables, a crosshair over the operating
+field, a cyan focus frame for keyboard users, and tooltips.
 
 ### Playing a shift
 
 A new game starts a **10-step tutorial** on an easy first patient. Coach marks
-point at the control to use, and you can skip it at any time. The clinic menu
-(≡) has **HOW TO PLAY**, **SETTINGS** and **SAVE & QUIT**. The **NEXT** line
-under the clinic view always shows the most useful next step. Double-tap the
-clinic to zoom in on details (drag to pan).
+point at the control to use, and you can skip it at any time. **ESC** opens
+the pause menu (resume, save, load, settings, how to play, main menu, quit to
+desktop). The **NEXT** line above the clinic always shows the most useful next
+step. The clinic room is interactive: the diagnostics terminal, operating
+table, storage bench, supply cabinet and records server open their screens;
+wheel or double-click zooms into the room.
 
-1. **Clinic.** A customer shows up at the door, drawn with their own face, outfit and installed chrome. Tap them or **SEE CUSTOMER**. The nav bar opens **SUPPLY**, **SKILLS**, **CLINIC** (upgrades), **DOSSIER** (factions, contacts, rumours, records) and, once you have the contacts, the **MARKET**.
-2. **Customer file.** Shows who they are:
-   - faction, personality, wealth, patience and risk appetite
-   - their current neural load and their medical history
-   - what they want and what they'll pay
-
-   **ACCEPT JOB**, or decline (which costs a little rep and faction standing).
+1. **Clinic.** A customer shows up at the door, drawn with their own face, outfit and installed chrome. Click them, **SEE CUSTOMER** or press **C**. The left nav opens **INVENTORY**, **CYBERWARE DB**, **SUPPLY**, **SKILLS**, **FACILITY**, **JOURNAL** and, once you have the contacts, the **BLACK MARKET**.
+2. **Customer file.** A three-column dossier: identity and faction on the left; expandable **REQUEST**, **PAYMENT**, **RISK**, **MEDICAL HISTORY** and **PREVIOUS OPERATIONS** in the centre; neural load now vs after and the decision on the right. **ACCEPT JOB** (ENTER), or decline (which costs a little rep and faction standing).
 3. **Diagnosis.** Scan body regions (at least 2). Scans can reveal **hidden conditions** (rejection-prone, clotting disorder, neural scarring...), which change how the operation behaves. Then pick a diagnosis.
 4. **Plan.** Choose which implant unit to install: stock, buy now, a black-market unit, or a salvaged one. Review the checks:
    - required tools (e.g. a drill for limbs)
@@ -67,13 +91,13 @@ clinic to zoom in on details (drag to pan).
    - the customer's consent
 
    Then **BEGIN OPERATION**.
-5. **Surgery.** 8–9 stages depending on the procedure. Keep an eye on the vitals and neural sync, and use the emergency buttons.
+5. **Surgery.** 8–9 stages depending on the procedure, at the surgery workstation: patient, vitals, ECG and the procedure checklist on the left; the operating field in the centre; instruments (with hotkeys and condition), emergency actions and the implant on the right.
 6. **Results.** You get a grade (S–F), pay, XP, rep, a faction change and heat, plus consequences:
    - referral, a return visit, or becoming a regular
    - a post-op complication
    - a neural break
 
-   Then events may trigger. The game autosaves.
+   Then events may trigger. The game autosaves to the active slot.
 
 ---
 
@@ -98,20 +122,22 @@ The simulator found no dead ends: there are never more than 3 impossible jobs in
 
 ## Settings and accessibility
 
-The settings are stored in `user://settings.cfg`, separately from the save, so a new game keeps them:
-- **Audio:** music, ambience and effects volume (three audio buses)
-- **Feedback:** haptics on/off and screen shake on/off. Haptics come in tiers: UI tick, success, warning, mistake, critical and implant, each with its own strength.
-- **Text:** text speed (slow / normal / fast / instant typewriter) and large text (+2 pt on every theme text style)
+Settings are stored in `%APPDATA%\UndercityRipper\settings.cfg`, separately from the saves, so a new game keeps them:
+- **Graphics:** window mode (windowed / borderless / fullscreen), windowed resolution (1920×1080, 1600×900, 1366×768, 1280×720), VSync, texture filtering (nearest = crisp pixels, linear = soft), effects quality (LOW turns off the CRT overlay and signal glitches)
+- **Audio:** master, music, ambience and effects volume
+- **Controls:** every key binding (click, then press the new key; a key already in use is swapped onto the other action), mouse sensitivity (implant rotation drags, wheel tuning, key nudges), reset bindings
+- **Gameplay:** text speed (slow / normal / fast / instant typewriter), large text, screen shake
 - **Accessibility:**
   - high contrast: brighter secondary text and a lighter CRT overlay
   - reduce motion: no shake, flicker or glitch, and fewer particles
-  - colour-independent status everywhere: `!` on warning vitals, `+`/`x` on plan checks, neural bands named in text
+  - colour-independent status everywhere: `!` on warning vitals, `+`/`x` on plan checks, ▲ ▼ ? ✕ on comparisons, neural bands named in text
+- Haptics remain in the code for touch devices but are hidden on PC.
 
 ## Project structure
 
 ```
-project.godot            Engine config (portrait, stretch, autoloads, renderer)
-export_presets.cfg       iOS export preset (no signing secrets)
+project.godot            Engine config (1920x1080 canvas, stretch, autoloads, input, renderer, Windows icon, user dir)
+export_presets.cfg       Windows Desktop export preset (x86_64, embedded .pck, icon, version info)
 data/                    Game content as JSON (cyberware, tools, surgeries, complications, characters,
                          archetypes, names, dialogue, conditions, factions, skills, clinic tiers,
                          events, rumors, black market, palettes, character parts)
@@ -125,17 +151,17 @@ scripts/
   art/                   PixelArt (density helpers), CharacterArt (runtime palette compositing)
   ui/                    UIKit: code-built UI helpers
   screens/               One script per screen (+ BaseScreen, Main root)
-  components/            Reusable UI widgets (vital bar, tool tray, scan view, FX...)
-  util/                  Safe-area helper
-scenes/                  Screen scenes: main, main_menu, clinic, customer, diagnosis, surgery, results,
-                         shop, black_market, skills, upgrades, dossier
+  components/            Reusable UI widgets (status bar, side nav, item slot, tool rack, vital bar, scan view, FX...)
+scenes/                  Screen scenes: main, main_menu, load_game, credits, clinic, customer, diagnosis,
+                         surgery, results, shop, inventory, database, black_market, skills, upgrades,
+                         dossier, settings
 ui/
   theme/main_theme.tres  Global theme (generated by tools/build_theme.gd)
-  components/            Reusable UI scenes (player HUD, dialog)
-assets/                  Fonts (OFL), sprites (generated), CRT + black-market glitch shaders
+  components/            Reusable UI scenes (dialog)
+assets/                  Fonts (OFL), sprites (generated), cursors, Windows .ico, CRT + black-market glitch shaders
 audio/                   Placeholder SFX + ambient loop
 tools/                   Reproducible generators: art/ (pixel-art pipeline), audio, theme
-tests/                   Unit tests, end-to-end bot, compile check, perf probe
+tests/                   Unit tests, end-to-end bot, stability suite, display probe, compile check, perf probe
 docs/                    ARCHITECTURE.md, ART_BIBLE.md, screenshots (ignored by Godot)
 LICENSES/                Font licences (SIL OFL 1.1)
 ```
@@ -164,8 +190,9 @@ LICENSES/                Font licences (SIL OFL 1.1)
 | `ModifierManager` | One stat-modifier stack fed by skills, clinic, tools and events |
 | `SaveManager` | Versioned JSON save (v3, with a checksum; migrates v1 and v2) |
 | `AudioManager` | Music, ambience profiles and SFX on three buses |
-| `UIManager` | Navigation, toasts, dialogs, modals, shake, flash, haptic tiers, `celebrate()` feedback |
-| `Settings` | Player preferences (own file) |
+| `UIManager` | Navigation, hotkeys, ESC/pause routing, TAB panel cycling, keyboard focus, hover feedback, toasts, dialogs, shake, flash, `celebrate()` |
+| `Settings` | Player preferences (own file): display, audio, controls, gameplay |
+| `Controls` | Input actions with defaults, rebinding (conflict swap), key names for hints |
 | `TutorialManager` | First-shift coach marks |
 
 How the pieces talk to each other:
@@ -177,8 +204,8 @@ How the pieces talk to each other:
 ### Data-driven content
 
 JSON in `data/` loads into typed `Resource` classes. Godot treats `.json` as a
-resource, and the iOS preset also has an explicit `data/*.json` include filter,
-so exports pick the files up.
+resource, and the Windows preset also has an explicit `data/*.json` include
+filter, so exports pick the files up.
 
 Most new content is a data entry (the full table is in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#adding-content)):
 - **New implant:** an entry in `data/cyberware.json`. The icon is chosen by category and tier.
@@ -222,17 +249,17 @@ Stages never touch systems directly. They emit `mistake`, `effect_requested`,
 `feedback` and `stage_finished(quality, data)`, and `SurgeryScreen` routes those
 to `SurgeryManager`, the FX layer and audio.
 
-| # | Stage | Touch interaction | Mistakes and consequences |
+| # | Stage | Mouse / keyboard | Mistakes and consequences |
 |---|---|---|---|
 | 1 | Prepare patient | **Hold** INFUSE, release in the green band | Underdose: higher pain floor. Overdose: health and neural damage |
-| 2 | Incision | Tap **scalpel**, **drag** along the guide | Drifting off the line: bleeding, pain |
-| 3 | Expose interface | Tap **retractor**, **tap** the 4 clamp points | Jabbing tissue: tear, bleeding |
-| 4 | Remove damaged tissue | Tap **cautery**, **hold** on dark tissue | Touching nerves: neural damage (cautery also seals vessels) |
-| 4b | Drill anchors (limbs, spine) | Tap **drill**, **hold** on each anchor, release in the green depth band | Too shallow: loose anchor. Too deep: bone crack |
-| 5 | Install implant | Tap **forceps**, **drag** implant into the socket, **rotate** (drag around or `<<`/`>>`), SEAT | Misaligned seat: neural damage, lower implant performance |
-| 6 | Connect neural interface | Tap **splicer**, **drag** wires pin → matching terminal (colour *and* shape) | Bad splice: neural shock, pain |
-| 7 | Calibrate | **Slide** to match the waves, tap LOCK ×3 | Poor sync: neural damage, lower implant performance |
-| 8 | Close incision | Tap **suture**, **tap** stitch points in numbered order | Wrong order: bleeding, pain |
+| 2 | Incision | Pick the **scalpel** (click or its number key), **drag** along the guide | Drifting off the line: bleeding, pain |
+| 3 | Expose interface | Pick the **retractor**, **click** the 4 clamp points | Jabbing tissue: tear, bleeding |
+| 4 | Remove damaged tissue | Pick the **cautery**, **hold** the mouse button on dark tissue | Touching nerves: neural damage (cautery also seals vessels) |
+| 4b | Drill anchors (limbs, spine) | Pick the **drill**, **hold** on each anchor, release in the green depth band | Too shallow: loose anchor. Too deep: bone crack |
+| 5 | Install implant | Pick the **forceps**, **drag** the implant into the socket, **rotate** (drag around it, mouse wheel, or `,`/`.`), SEAT (SPACE); right-click returns a held implant | Misaligned seat: neural damage, lower implant performance |
+| 6 | Connect neural interface | Pick the **splicer**, **drag** wires pin → matching terminal (colour *and* shape) | Bad splice: neural shock, pain |
+| 7 | Calibrate | **Drag** the slider (or wheel / A-D) to match the waves, LOCK ×3 (SPACE) | Poor sync: neural damage, lower implant performance |
+| 8 | Close incision | Pick the **suture**, **click** stitch points in numbered order | Wrong order: bleeding, pain |
 
 Using the wrong tool is also a (rate-limited) mistake. Mistakes stack. Enough
 of them, especially on a sensitive patient, will crash the operation (the test
@@ -271,18 +298,16 @@ gives the grade (S/A/B/C/D, F on failure), pay, XP and reputation
 
 Details are in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#neural-load).
 
-## Touch controls and mobile UI
+## PC controls and desktop UI
 
-- **Portrait only.** The base viewport is 360×640 with `canvas_items` stretch and `expand` aspect, so taller iPhones (19.5:9 gives 360×780) get more room instead of black bars.
-- **Safe area.** `Main` reads `DisplayServer.get_display_safe_area()` and insets all screens and overlays, which keeps the notch, Dynamic Island and home indicator clear. To preview on desktop, set `GameConfig.DEBUG_SIMULATED_SAFE_AREA`.
-- **Touch targets.** Primary buttons are 48–56 units tall (52–60pt on iPhone), and nothing interactive is smaller than 44 units (about 48pt). Small visual targets (clamp points, pins, stitches) get enlarged hit areas resolved to the nearest target. The automated tests assert that every visible button is on-screen and at least 44 units at both 360×780 and 360×640 (iPhone SE).
-- **Layout.** Containers and anchors are used throughout. Screens that can run long scroll their middle section and keep the action buttons pinned.
-- **Feedback.**
-  - a correct action gets a cyan confirmation pulse; a minor mistake gets an amber warning; a major one gets red with a shake; a critical failure gets a flatline tone, a hard flash and the strongest haptic
-  - purchases, unlocks and upgrades share one celebration (`UIManager.celebrate`)
-  - haptics use `Input.vibrate_handheld(ms, amplitude)` on device
-- **Destructive actions confirm first:** abort (which also freezes the patient while you decide), wiping the save, resetting settings, and skipping the tutorial.
-- **Suspension.** Backgrounding the app mid-operation pauses it behind a RESUME card.
+- **One 1920×1080 canvas.** `canvas_items` stretch with `keep` aspect: every 16:9 window shows exactly the same layout, scaled uniformly; other aspect ratios get black bars (letterbox / pillarbox) instead of stretched pixels.
+- **Workstation shell.** Hub screens share a top status bar (credits, level/XP, rep, heat, supplies, parts, tokens, jobs, MENU) and a left section nav with hotkeys; the content area is laid out in panels (`UIKit.workstation`).
+- **Mouse first.** Hover highlight, hover tick, click sound and a pointing-hand cursor on every button; tooltips on stats and props; crosshair cursor over the operating field; grab cursor while dragging. Hit areas never need pixel-perfect clicks (small surgical targets resolve to the nearest target within a slop radius, and hovering shows which one).
+- **Keyboard everywhere.** The first arrow/WASD press focuses the screen's default control; TAB cycles the screen's panels; ENTER activates; ESC closes a dialog, otherwise goes back, otherwise opens the pause menu. In surgery the arrows/WASD are gameplay keys (calibration nudge), not focus navigation.
+- **Feedback.** A correct action gets a cyan/green pulse; a minor mistake gets amber; a major one red with a shake; a critical failure a flatline tone and a hard flash. Purchases, unlocks and upgrades share one celebration (`UIManager.celebrate`).
+- **Destructive actions confirm first:** abort (which also freezes the patient), overwriting or deleting a save slot, resetting settings, quitting, and skipping the tutorial.
+- **Focus loss.** Alt-Tab or minimising mid-operation pauses it behind a RESUME card.
+- **Converted from mobile:** the portrait 360×640 layout, safe-area insets, the bottom tab bar and phone HUD, tap/swipe wording and oversized touch targets were removed; touch emulation is off.
 
 ## Save system
 
@@ -295,8 +320,12 @@ Details are in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#neural-load).
   - story flags, contacts, rumours, pending event and timed modifiers
   - customer queue and history, and the waiting customer
   - records and settings
-- **Settings** are stored separately in `user://settings.cfg`.
-- **Where:** `user://savegame.json`. On iOS this is inside the app's sandbox, so it survives app restarts and updates.
+- **Settings** are stored separately in `settings.cfg`.
+- **Where:** `user://` is redirected to a per-user folder (`application/config/use_custom_user_dir`), so no admin rights are needed:
+  - Windows: `%APPDATA%\UndercityRipper\saves\slot_1.json` … `slot_3.json` (e.g. `C:\Users\<you>\AppData\Roaming\UndercityRipper\saves\`)
+  - Linux (from source): `~/.local/share/UndercityRipper/saves/`; macOS: `~/Library/Application Support/UndercityRipper/saves/`
+  - The LOAD GAME screen shows the full path.
+- **Slots:** 3 slots, each with a summary (level, credits, rep, jobs, facility, time saved). CONTINUE loads the most recently saved slot. A 1.x `savegame.json` is migrated into slot 1 on first launch.
 - **How:** each saveable system implements `get_save_data()`, `load_save_data()` and `reset_state()`. `SaveManager` collects them under a `version` field. It writes a temp file, keeps the previous save as `.bak` and then swaps the temp file in. Integrity and recovery:
 - Each file ends with an MD5 line over the JSON text, so tampered or truncated files are rejected.
 - A rejected main file falls back to the `.bak`.
@@ -306,7 +335,7 @@ Details are in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#neural-load).
 The format is version 3, and `_migrate()` upgrades older saves:
 - v1 → v2: stock becomes implant instances, veterans get clinic tier 1, and the waiting customer is kept.
 - v2 → v3: settings move out of the save, and veterans skip the tutorial.
-- **When:** after every operation, purchase and decline, and when the app is backgrounded or closed (`NOTIFICATION_APPLICATION_PAUSED` / `FOCUS_OUT` / `WM_CLOSE_REQUEST`). An operation in progress is never saved: if the app is killed mid-surgery, you reopen in the clinic, before the operation, with the same customer waiting.
+- **When:** after every operation, purchase and decline, on F5 / pause-menu SAVE, and when the window loses focus or closes (`FOCUS_OUT` / `WM_CLOSE_REQUEST`). An operation in progress is never saved: if the game is killed mid-surgery, you reopen in the clinic, before the operation, with the same customer waiting.
 
 ## Audio
 
@@ -314,15 +343,16 @@ The format is version 3, and `_migrate()` upgrades older saves:
 (standard library plus `ffmpeg` for OGG):
 - **Music:** three seamless loops (clinic, surgery, black market) that crossfade between screens.
 - **Ambience:** four layers (electrical hum, ventilation, CRT buzz, distant city) mixed per screen profile, plus random one-shots: drips, sirens, trains, servos, beeps.
-- **SFX hooks:** `click`, `tool`, `cut`, `burn`, `clamp`, `zap`, `stitch`, `implant`, `stage`, `mistake`, `warning`, `success`, `failure`, `customer`, `cash`, `levelup`, `drill`, `glitch`, `event`, `beep`, `servo`, `activate`, `critical`, `confirm`, `back`, `denied`, `unlock`, `purchase`, `heartbeat`, `spark`, `tutorial`.
+- **SFX hooks:** `click`, `hover`, `tool`, `cut`, `burn`, `clamp`, `zap`, `stitch`, `implant`, `stage`, `mistake`, `warning`, `success`, `failure`, `customer`, `cash`, `levelup`, `drill`, `glitch`, `event`, `beep`, `servo`, `activate`, `critical`, `confirm`, `back`, `denied`, `unlock`, `purchase`, `heartbeat`, `spark`, `tutorial`.
 
-Every button clicks automatically. Any file can be replaced 1:1 with final audio.
-On iOS the audio session uses Godot's default **Ambient** category, so the ring/silent switch mutes the game and it mixes with other apps.
+Every button clicks on press and ticks on hover. Four buses (Master, Music,
+Ambience, SFX) map to the four volume sliders. Any file can be replaced 1:1
+with final audio.
 
 ## Art pipeline
 
 All art is generated by a reproducible Python/Pillow pipeline in `tools/art/`
-at a single global density (1 art pixel = 2 UI units):
+at a single global density (1 art pixel = 3 canvas units on the 1920×1080 canvas):
 - hue-shifted 8-step ramps
 - Bayer dithering limited to shade transitions
 - shaded primitives with selective outlines
@@ -343,7 +373,7 @@ Any PNG can be replaced 1:1 by hand-made art of the same size.
 ## Tests
 
 ```sh
-tests/run_tests.sh            # compile check, balance sim, stability suite, unit + E2E at 360x780 and 360x640
+tests/run_tests.sh   # compile check, balance sim, stability suite, E2E (mouse + keyboard) and display probe
 ```
 
 - **Compile check:** loads every script and scene.
@@ -355,123 +385,115 @@ tests/run_tests.sh            # compile check, balance sim, stability suite, uni
   - events (including post-op complications), **black-market purchases**, study, sell and modify
   - death and failure
   - save round-trip, corrupt-save recovery and **v1 → v2 migration**
-- **End-to-end bot:** plays the game through real pointer events (taps, drags, holds):
-  1. clean neural install
+- **End-to-end bot** on the 1920×1080 canvas: plays the game through real mouse events (clicks, drags, holds, right-clicks) and key events:
+  1. clean neural install (the whole tutorial)
   2. sloppy run
   3. arm install that is blocked without a drill, buys the drill in the shop, then completes the anchor-drill stage
-  4. aborted op
+  4. aborted op (confirm dialog, pause/resume)
   5. reckless run that kills the patient
   6. optic install on a generated customer
 
-  It also covers the Wire story event, black-market buy/study/sell through the UI, a skill upgrade, a clinic upgrade, all dossier tabs and a reload. A layout guard asserts that every button is on-screen, at least 44 units, and that nothing overflows the screen width.
+  It also covers the Wire story event, black-market buy/study/sell, a skill upgrade, a clinic upgrade, all journal tabs, **I** (inventory: right-click compare, drag & drop onto a compare slot, tabs), **B** (database), **ESC** pause open/close, **F5** quick save, **TAB** focus, the settings tabs (graphics, audio slider drag, controls, gameplay toggles), and a reload. A layout guard asserts that every button is on-screen and nothing overflows the canvas. It runs rendered under Xvfb (headless Godot measures fonts differently).
+- **Display probe** (`tests/display_probe.tscn`, needs a display or Xvfb): drives the real window through 1920×1080, 1600×900, 1366×768, 1280×720 windowed, borderless, fullscreen and a 5:4 window; checks the window size/mode, the uniform 16:9 canvas, nearest filtering and that every button stays on-screen, with screenshots.
 - **Balance simulator** (`tests/balance_sim.tscn`): 40 jobs through the real economy for normal and struggling players. It asserts pacing milestones and that there are no dead ends.
 - **Stability suite** (`tests/stability_test.tscn`):
-  - a 30-shift soak through the real screens, with save → wipe → load every 5 shifts
-  - 3,000 random monkey inputs (taps, drags, long presses), after which the game must still navigate
+  - a soak through the real screens, with save → wipe → load every 5 shifts
+  - random monkey input: left clicks, drags, long presses, **right-clicks, wheel and random hotkeys**; afterwards the game must still navigate
   - rapid screen-change spam
   - 60 fuzzed save files (byte flips, truncation, garbage)
   - node and orphan leak checks
-- **Perf probe:** `xvfb-run -a godot --path . --rendering-driver opengl3 res://tests/perf_probe.tscn` prints load time, frame time, draw calls, nodes and memory per screen.
+- **Release smoke test:** the exported game itself accepts `--smoke-test` (`UndercityRipper.exe -- --smoke-test`): it starts a game in slot 3, opens every main screen, saves, reloads, checks the save file, writes screenshots to `%APPDATA%\UndercityRipper\smoke\`, prints `SMOKE OK` and quits.
+- **Perf probe:** `xvfb-run -a godot --path . --rendering-driver opengl3 --resolution 1920x1080 res://tests/perf_probe.tscn` prints load time, frame time, draw calls, nodes and memory per screen.
 
 With rendering, the bot also saves screenshots of each step:
-`xvfb-run godot --path . --rendering-driver opengl3 --resolution 360x780 res://tests/test_runner.tscn -- --shots=/abs/path`
+`xvfb-run -a -s "-screen 0 1920x1080x24" godot --path . --rendering-driver opengl3 --resolution 1920x1080 res://tests/test_runner.tscn -- --shots=/abs/path`
 
 ## Performance
 
-These numbers come from the perf probe (`tests/perf_probe.tscn`) running on a
-**software rasterizer** (llvmpipe, CPU-only) at 360×780. An iPhone GPU renders
-far faster, so treat them as upper bounds; on-device profiling is still to do
-(see the Xcode Instruments note below).
+These numbers come from the perf probe (`tests/perf_probe.tscn`) at
+**1920×1080 on a software rasterizer** (Mesa llvmpipe, CPU only, no GPU).
+Any Windows GPU renders far faster, so treat them as upper bounds.
 
-| Screen | Build ms | Avg frame ms | Draw calls | Nodes | Texture MB |
-|---|---|---|---|---|---|
-| Main menu | 82–88 | 10.4–10.8 | 48 | 70 | 12.4 |
-| Clinic (tier 0 / 5) | 48–99 | 10.1–11.6 | 66–68 | 121–123 | 8.4–12.4 |
-| Customer | 30–53 | 9.9–11.1 | 57 | 120 | 12.5 |
-| Diagnosis | 41–58 | 9.9–11.0 | 39 | 97 | 12.5 |
-| Surgery | 91–176 | 11.3–12.8 | 61 | 106 | 13.8 |
-| Shop / Skills / Upgrades / Dossier / Settings | 20–71 | 8.4–10.9 | 17–65 | 84–282 | 8.8–12.4 |
-| Black market (full-screen glitch shader) | 89–173 | 14.5–17.0 | 59 | 130 | 11.7 |
+| Screen | Build ms | Avg frame ms (HIGH) | Avg frame ms (LOW) | Draw calls | Nodes | Texture MB |
+|---|---|---|---|---|---|---|
+| Main menu (full-screen key art) | 200–240 | 34–37 | 30 | 58 | 78 | 35.8 |
+| Clinic (tier 0 / 5, animated room) | 160–260 | 32–35 | 28–30 | 125 | 202 | 20.5–35.8 |
+| Customer file | 200–220 | 32–35 | 29 | 164 | 258 | 36.1 |
+| Diagnosis / plan | 190–310 | 30–35 | 30 | 104 | 179 | 36.1 |
+| Surgery workstation | 280–470 | 33–40 | 33 | 134 | 221 | 38.2 |
+| Shop / inventory / database | 180–300 | 31–36 | 28–30 | 199–205 | 232–437 | 21–21.5 |
+| Skills / facility / journal / settings | 135–240 | 28–37 | 23–32 | 65–253 | 116–288 | 32–36 |
+| Black market (full-screen glitch shader) | 320–440 | 55–60 | 28–30 | 79 | 139 | 25–33 |
 
-Totals:
-- Static memory is 35–40 MB and texture memory peaks at about 14 MB.
-- The stability soak (30 operations) keeps the node count flat (112 → 112) with no orphan nodes.
+On llvmpipe the cost is dominated by filling 2 million pixels per frame on the
+CPU (the base 1080p canvas is ~23–28 ms by itself), so the numbers mostly
+measure the full-screen passes: **effects LOW** removes the CRT overlay and the
+black-market glitch pass (that screen drops from ~55 ms to ~28 ms). Static
+memory is 42–51 MB and texture memory peaks at about 38 MB. Over a 20-operation
+soak the node count stays flat (188 → 202 between screens).
 
-Design choices that keep it light:
-- Sprites are tiny and cached at 2×.
-- The surgical field is one SubViewport at half resolution.
-- Wound geometry is precomputed once per incision (29 ms → 6.6 ms after optimisation).
-- Character composites are cached (up to 48).
-- Particles are capped (12 emitters, halved with Reduce Motion).
-- Ambient animation draws a few pixels from precomputed anchors.
+Design choices that keep it light at 1080p:
+- One 1920×1080 canvas; pixel art is drawn from small textures scaled ×3 with nearest sampling (no large pre-scaled atlases, no mipmaps).
+- The operating field is one SubViewport at **1/zoom resolution** (about 250×170 art px), upscaled by the container.
+- Wound geometry is precomputed once per incision; character composites are cached (up to 48); caches are released on exit.
+- Particles are capped (12 emitters, halved with Reduce Motion); ambient room animation draws a few pixels from precomputed anchors.
+- The coach-mark placer re-evaluates at 4 Hz on a coarse grid, not per frame; screens rebuild only on state signals.
+- Effects quality LOW drops the full-screen CRT and glitch shaders (the most expensive pass on weak GPUs).
 - Audio is OGG streamed (about 1.7 MB in total).
 - There are no per-frame allocations in the vitals loop.
 
-**On device:** profile with Xcode → Product → Profile → *Time Profiler* / *Game
-Performance* on the oldest iPhone you support. Godot's debugger monitors also
-work over remote debug.
+On Windows, profile with Godot's **Debugger → Monitors / Profiler** over remote
+debug (`--remote-debug`), or with GPU tools such as PIX / RenderDoc.
 
-## Building for iPhone
+## Building for Windows
 
 ### 1. Required Godot version
 **Godot 4.3 stable**, standard build (not .NET), from
 <https://godotengine.org/download/archive/4.3-stable/>. The project uses the
-GL Compatibility renderer. 4.4+ will offer to upgrade the project; the iOS icon
-options changed in 4.4, so stay on 4.3 for the preset in this repo.
+GL Compatibility renderer. Later 4.x versions should work after the project
+upgrade prompt, but the preset in this repo is tested with 4.3.
 
-### 2. macOS and Xcode setup
-- A Mac running a macOS version supported by your Xcode.
-- A current **Xcode** (15 or newer) from the Mac App Store. Open it once to accept the licence and install the iOS platform components.
-- Command line tools: `xcode-select --install`.
-- An Apple ID. A free account can run builds on your own iPhone for 7 days; the **Apple Developer Program** is needed for TestFlight and the App Store.
+### 2. Run from source
+```sh
+godot --path .            # or open project.godot in the editor and press F5
+```
 
-### 3. iOS export templates
-In Godot: **Editor → Manage Export Templates → Download and Install** (4.3.stable).
-Offline, use **Install From File** with `Godot_v4.3-stable_export_templates.tpz`.
+### 3. Export a Windows build
+1. Install the export templates: **Editor → Manage Export Templates → Download and Install** (4.3.stable), or **Install From File** with `Godot_v4.3-stable_export_templates.tpz`.
+2. (Optional, recommended) Set up the icon/version embedding: **Editor → Editor Settings → Export → Windows → rcedit** pointing at [rcedit-x64.exe](https://github.com/electron/rcedit/releases). On Linux/macOS also set **Export → Windows → Wine** to your `wine64` binary. Without rcedit the build still works; only the .exe file icon and version info fall back to Godot's defaults (the window and taskbar icon still use the game icon).
+3. **Project → Export → Windows Desktop → Export Project…** to `build/windows/UndercityRipper.exe`. The preset is already configured:
+   - x86_64, release, `.pck` **embedded** in the .exe (one file)
+   - icon `assets/windows/app_icon.ico` (16–256 px)
+   - product name *Undercity: Ripper*, file/product version 2.0.0.0
+   - `tests/`, `tools/`, `scratchpad/`, `build/` excluded; `data/*.json` included
+4. Command-line equivalent (any OS):
+   ```sh
+   godot --headless --path . --export-release "Windows Desktop" build/windows/UndercityRipper.exe
+   ```
+5. Verify the build: `build/windows/UndercityRipper.exe -- --smoke-test` must print `SMOKE OK` (run from a console, or check `%APPDATA%\UndercityRipper\logs\godot.log`).
 
-### 4. Apple signing configuration
-1. Open **Project → Export → iOS**. The preset ships in `export_presets.cfg`; its icons, launch image, portrait orientation, version 1.0.0 (build 3) and arm64 are already set.
-2. Set **Application → App Store Team ID**. It's the 10-character Team ID from developer.apple.com → Membership, or from Xcode → Settings → Accounts.
-3. Replace the placeholder **Bundle Identifier** `com.example.undercityripper` with your own reverse-DNS ID (e.g. `com.yourstudio.undercityripper`). It must match an App ID in your developer account (Xcode can create it automatically).
-4. Choose how to sign:
-   - **Automatic signing (recommended):** leave the provisioning profile UUIDs empty, export the Xcode project, and let Xcode manage signing (step 6).
-   - **Manual signing:** fill in the provisioning profile UUIDs and signing identities in the preset.
-5. Keep your signing values out of git. Godot stores them in `.godot/export_credentials.cfg`, and `.godot/` is ignored.
+### 4. Where save files are stored
+`%APPDATA%\UndercityRipper\` (i.e. `C:\Users\<you>\AppData\Roaming\UndercityRipper\`):
+- `saves\slot_1.json` … `slot_3.json` (+ `.bak` backups)
+- `settings.cfg` (graphics, audio, key bindings, gameplay)
+- `logs\godot.log` (engine log, rotated)
 
-### 5. Build for a physical iPhone
-1. **Project → Export → iOS → Export Project…**
-2. Choose `build/ios/` (git-ignored) and name it `UndercityRipper`.
-3. Tick **Export Project Only** to get the Xcode project without running `xcodebuild`. Godot writes `UndercityRipper.xcodeproj` plus the game `.pck`.
-4. Scripted equivalent (macOS): `godot --headless --path . --export-debug "iOS" build/ios/UndercityRipper.ipa` (use `--export-release` for release). With *Export Project Only* enabled, it stops after writing the Xcode project into `build/ios/`.
+The folder is per-user and writable without admin rights; uninstalling the game does not delete it.
 
-### 6. Run through Xcode
-1. Connect the iPhone by USB (or pair it over Wi-Fi in Xcode) and trust the Mac.
-2. On the iPhone, enable **Settings → Privacy & Security → Developer Mode** (iOS 16+) and restart.
-3. Open `build/ios/UndercityRipper.xcodeproj`.
-4. Select the **UndercityRipper** target → **Signing & Capabilities**. Tick *Automatically manage signing* and pick your team.
-5. Pick your iPhone as the run destination and press **Run (⌘R)**.
-6. With a free Apple ID, the first launch asks you to trust the developer under **Settings → General → VPN & Device Management**.
+### 5. Package the game
+The export is a single self-contained `UndercityRipper.exe` (about 85 MB: engine + embedded game data). `tools/package_windows.sh` does steps 1–2 in one go (export + folder + zip). By hand:
+1. Create a folder `UndercityRipper-2.0.0-windows-x64/` containing `UndercityRipper.exe`, `README.txt` (controls + save location) and `LICENSES/` (font licences).
+2. Zip it: `UndercityRipper-2.0.0-windows-x64.zip`.
+3. Optional: sign the .exe with your code-signing certificate (Godot can do this at export with **osslsigncode** / **signtool** under *Codesign* in the preset; keep certificates and passwords out of git — Godot stores them in `.godot/export_credentials.cfg`, which is ignored). Unsigned builds show a SmartScreen "unknown publisher" prompt on first run.
+4. Optional: wrap the folder in an installer (Inno Setup / NSIS) that installs to `%LOCALAPPDATA%\Programs\UndercityRipper` and adds a Start-menu shortcut; no admin rights are needed because saves live in `%APPDATA%`.
 
-Checks on device:
-- portrait lock
-- safe areas (notch, Dynamic Island, home indicator)
-- haptics (Settings → Haptics)
-- the silent switch muting audio
-- the save surviving an app kill (swipe it away and relaunch)
+### 6. Distribute the executable
+- **itch.io:** upload the zip as a Windows build (or push with `butler push UndercityRipper-2.0.0-windows-x64 you/undercity-ripper:windows`).
+- **Steam:** add a Windows depot, upload the folder with SteamPipe (`steamcmd +run_app_build`), launch option `UndercityRipper.exe`.
+- **Direct download / GitHub Releases:** attach the zip to a release; mention that Windows SmartScreen may warn about unsigned builds.
+- Minimum spec: Windows 10 64-bit, OpenGL 3.3 GPU, 2 GB RAM, 200 MB disk.
 
-### 7. Create an App Store build
-1. In Xcode, set the run destination to **Any iOS Device (arm64)**.
-2. **Product → Archive**. When it finishes, the Organizer opens.
-3. **Distribute App → App Store Connect → Upload**. This needs a paid Developer Program membership and an app record in App Store Connect with the same bundle ID.
-4. In App Store Connect, add the build to **TestFlight** for testing, then fill in the store listing, privacy details, screenshots and age rating before submitting for review.
-5. For each new build, bump `application/version` (the build number) in the iOS preset; bump `short_version` for user-facing releases.
-
-The preset also handles three icon details:
-- The app icon is pixel art on a 60 px grid, so the 120/180 px icons are exact 2×/3× scales.
-- `icon_interpolation` is nearest-neighbour.
-- Every icon slot points at a pre-scaled PNG in `assets/ios/`.
-
-> No App Store submission has been made from this repository. The steps above are the procedure; signing and submission happen on your own Apple account.
+> This repository was built and checked from Linux: the Windows .exe was exported with the 4.3 templates, its icon and version resources were embedded with rcedit, and it was run under Wine (`--smoke-test` → `SMOKE OK`, save written to `AppData\Roaming\UndercityRipper\saves`). No test on physical Windows hardware has been made from here.
 
 ## Credits and licences
 

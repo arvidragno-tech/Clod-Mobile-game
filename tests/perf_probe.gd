@@ -2,9 +2,10 @@ extends Node
 ## Performance probe: visits every screen (and an active surgery) and reports
 ## screen load time, frame time, draw calls, node count and memory.
 ## Needs a real renderer (draw calls are 0 headless):
-##   xvfb-run -s "-screen 0 720x1560x24" godot --path . res://tests/perf_probe.tscn -- --viewport=360x780
-## Numbers come from a desktop/llvmpipe run and are only a relative guide for
-## iPhone budgets (see README "Performance").
+##   xvfb-run -s "-screen 0 1920x1080x24" godot --path . --rendering-driver opengl3 \
+##       --resolution 1920x1080 res://tests/perf_probe.tscn
+## Numbers from a CPU rasterizer (llvmpipe) are an upper bound; any real
+## Windows GPU is far faster (see README "Performance").
 
 const PERF_SAVE_PATH := "user://perf_savegame.json"
 const SAMPLE_FRAMES := 120
@@ -13,15 +14,18 @@ var _rows: Array[String] = []
 
 
 func _ready() -> void:
-	var vp := Vector2i(360, 780)
+	var vp := Vector2i(1920, 1080)
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--viewport="):
 			var parts := arg.trim_prefix("--viewport=").split("x")
 			vp = Vector2i(int(parts[0]), int(parts[1]))
+		elif arg.begins_with("--effects="):
+			Settings.effects_quality = int(arg.trim_prefix("--effects="))
 	get_tree().root.content_scale_size = vp
 	get_tree().root.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_KEEP
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 	Engine.max_fps = 0
+	SaveManager.save_dir = "user://test_saves"
 	SaveManager.save_path = PERF_SAVE_PATH
 	AudioManager.set_process(false)
 	var main := (load("res://scenes/main/main.tscn") as PackedScene).instantiate()
@@ -31,12 +35,15 @@ func _ready() -> void:
 	await _settle()
 	StoryManager.set_flag(&"bm_access")
 	EconomyManager.add_money(20000)
+	print("effects quality: ", Settings.EFFECTS_NAMES[Settings.effects_quality])
 	print("renderer: ", RenderingServer.get_video_adapter_name(), " / ", ProjectSettings.get_setting("rendering/renderer/rendering_method"))
 	print("%-14s %8s %8s %8s %7s %6s %8s %8s" % ["screen", "load ms", "avg ms", "max ms", "draws", "nodes", "mem MB", "tex MB"])
 	for tier in [0, 5]:
 		ClinicManager.tier = tier
 		await _measure(&"clinic", "clinic_t%d" % tier)
 	await _measure(&"shop", "shop")
+	await _measure(&"inventory", "inventory")
+	await _measure(&"database", "database")
 	await _measure(&"black_market", "black_market")
 	await _measure(&"clinic", "clinic")
 	await _measure(&"black_market", "black_mkt 2nd")

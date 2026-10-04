@@ -9,11 +9,16 @@ const SNAP_ART := 10.0
 
 var stage: SurgeryStage
 var _time: float = 0.0
+var _was_visible: bool = false
 
 
 func _process(delta: float) -> void:
 	_time += delta
-	queue_redraw()
+	# Only redraw while the cursor is over the field (or to clear it once).
+	var vis := stage != null and is_instance_valid(stage) and stage.hover_pos != Vector2.INF
+	if vis or _was_visible:
+		queue_redraw()
+	_was_visible = vis
 
 
 func _draw() -> void:

@@ -14,28 +14,36 @@ any existing franchise's logos, typography, characters or architecture.
 
 ## Pixel density
 
-**One global density: 1 art pixel = 2 UI units** (`GameConfig.PIXEL_SCALE`).
-The base viewport is 360 units wide, so the screen is 180 art pixels across.
-Nothing is ever drawn at a different scale. That rules out mixed-res sprites,
-smooth scaling and rotated pixel art in the UI.
+**One global density: 1 art pixel = 3 canvas units** (`GameConfig.PIXEL_SCALE`).
+The design canvas is 1920×1080, so the screen is 640×360 art pixels. The
+canvas is scaled uniformly to the window (`canvas_items`, aspect `keep`):
+integer-perfect at 1920×1080 (3 screen px per art px) and 1280×720 (2 px);
+1600×900 and 1366×768 are uniform fractional scales with nearest sampling,
+so pixels stay sharp (never blurred); other aspect ratios are letterboxed.
+Nothing is ever drawn at a different density inside the canvas. That rules
+out mixed-res sprites, smooth scaling and rotated pixel art in the UI. The
+only deliberate exception is the operating field, an integer zoom camera
+(3×–6×, default = largest that fits) over the 160 px surgical site.
 
 | Asset | Native size (art px) | Shown at |
 |---|---|---|
-| Clinic backgrounds | 180 × 250 | 2× |
-| Black-market den | 180 × 250 | 2× |
-| Surgery backdrop | 180 × 240 | 1× inside the 2× field viewport |
-| Surgical region close-ups | 160 × 160 | 1× inside the field viewport |
-| Character portraits | 64 × 64 | 2× |
-| Character bodies (clinic door) | 32 × 64 | 2× |
-| Cyberware icons | 32 × 32 | 2× (or 1× in field) |
-| Tool icons | 24 × 24 | 2× |
-| UI icons | 12 × 12 | 2× |
-| Faction emblems | 16 × 16 | 2× |
-| UI frames (9-slice) | drawn at 2× | 1× |
+| Clinic room (wide) | 400 × 224 | 3× (1200×672, cropped by its frame) |
+| Main-menu key art | 640 × 360 | 3× (full screen) |
+| Black-market den (wide) | 600 × 150 | 3× (header strip) |
+| Surgery backdrop (wide) | 340 × 270 | 1× inside the field viewport |
+| Surgical region close-ups | 160 × 160 | 1× inside the field viewport (3×–6× zoom) |
+| Character portraits | 64 × 64 | 3× |
+| Character bodies (clinic door) | 32 × 64 | 3× |
+| Cyberware icons | 32 × 32 | 3× (or 1× in field) |
+| Tool icons | 24 × 24 | 3× |
+| UI icons | 12 × 12 | 3× |
+| Faction emblems | 16 × 16 | 3× |
+| Mouse cursors | 16 × 16 | 2× hardware cursor (32 px) |
+| UI frames (9-slice) | drawn at 3× | 1× |
 
 How the density is enforced in the engine:
-- **The surgical field** renders in a `SubViewport` with `stretch_shrink = 2`, so field drawing happens at native art resolution and is then integer-scaled.
-- **Icons and backgrounds** go through `PixelArt.scaled(path)`, which does a nearest-neighbour ×2 upscale (cached), shown with `TEXTURE_FILTER_NEAREST`.
+- **The surgical field** renders in a `SubViewport` whose container uses `stretch_shrink` = the field zoom, so field drawing happens at native art resolution and is then integer-scaled.
+- **Icons and backgrounds** go through `PixelArt.scaled(path)`, which does a nearest-neighbour ×3 upscale (cached), shown with `TEXTURE_FILTER_NEAREST`; the root viewport's default canvas filter is nearest (Settings can switch to linear).
 - **Fonts:** Silkscreen at 8 px for text inside the field, and VT323 / Pixelify Sans for the UI.
 
 ## Semantic colour
@@ -104,8 +112,8 @@ Characters are composited at runtime from **palette-indexed parts**:
 
 ## UI
 
-- 9-slice pixel frames (panels, cards, HUD, toast, danger, black-market) and button styles with four states each, drawn at 2× (`tools/art/ui_art.py`). The theme is built by `tools/build_theme.gd`.
-- Touch targets are at least 44 UI units (the tests enforce this). Primary actions are 48–56 units.
+- 9-slice pixel frames (panels, cards, HUD, toast, danger, black-market) and button styles with four states each (normal / hover / pressed / disabled), drawn at 3× (`tools/art/ui_art.py`), plus a cyan keyboard-focus frame. The theme is built by `tools/build_theme.gd`.
+- Controls are at least 40 canvas units tall (the tests enforce on-screen placement); primary actions are 56–72. Desktop layouts use panels side by side instead of stacked cards.
 - Monitors use ECG strips, segmented meters and pixel fonts. Medical readouts use green, amber and red as above.
 
 ## FX
@@ -185,12 +193,11 @@ everything that isn't essential.
 ### App icon
 
 The icon is designed on a **60 px grid**:
-- iPhone 120/180 px are exact 2×/3× scales, and the App Store 1024 px is 17× with a 2 px bleed.
-- It uses big, high-contrast shapes (cyan implant, magenta-edged scalpel, blood drop) so it reads at 40 px.
-- iOS export uses nearest-neighbour scaling, with every size pre-rendered in `assets/ios/`.
+- `assets/windows/app_icon.ico` holds 16, 24, 32, 48, 64, 128 and 256 px images, nearest-scaled from the grid (240 px is an exact 4×; 1024 px is 17× with a 2 px bleed).
+- It uses big, high-contrast shapes (cyan implant, magenta-edged scalpel, blood drop) so it reads at 16–32 px in the taskbar.
 
 ### QA rules (checked in screenshots)
 
-- One density everywhere (1 art px = 2 UI units). The 3-unit procedural menu skyline was replaced for this reason.
+- One density everywhere (1 art px = 3 canvas units). Wide scenes (clinic, key art, den, surgery backdrop) were redrawn at the new width rather than stretched.
 - No anti-aliasing: every `StyleBoxFlat` has `anti_aliasing = false`, textures use the nearest filter, and soft shadows are not allowed.
 - Text never relies on colour alone.

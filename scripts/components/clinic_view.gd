@@ -40,8 +40,8 @@ var _time: float = 0.0
 var _flicker: float = 0.0
 var _next_flicker: float = 2.0
 var _dust: Array[Vector3] = []
-## Detail zoom: double-tap doubles the (integer) pixel scale around the
-## tapped point; drag pans while zoomed; double-tap again to reset.
+## Detail zoom: double-click or wheel doubles the (integer) pixel scale around the
+## clicked point; drag pans while zoomed; double-click, wheel down or right-click resets.
 var zoomed: bool = false
 var _zoom_focus := Vector2(90, 120)  # art px kept centred when zoomed
 var _last_tap_ms: int = -1000

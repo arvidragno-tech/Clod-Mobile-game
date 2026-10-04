@@ -47,8 +47,9 @@ Rules the code sticks to:
 | `SurgeryManager` | Runs one operation: stages, vitals, mistakes, complications, quick actions, result |
 | `SaveManager` | Versioned JSON save with backup, migration and autosave |
 | `AudioManager` | `play_sfx(id)` / `play_ambient(id)` hooks |
-| `UIManager` | Screen navigation (also switches the audio profile), toasts, dialogs, modals, shake, flash, haptic tiers, `celebrate(kind)` |
-| `Settings` | Player preferences in `user://settings.cfg` (volumes, haptics, shake, text speed, large text, high contrast, reduce motion); emits `changed` |
+| `UIManager` | Screen navigation (also switches the audio profile), global hotkeys (ESC routing, I/B/J/M/C, F5/F9), TAB panel cycling, keyboard focus bootstrap, hover sound + cursor on every button, toasts, dialogs, modals, shake, flash, `celebrate(kind)` |
+| `Settings` | Player preferences in `user://settings.cfg` (window mode, resolution, VSync, filtering, effects quality, volumes incl. master, key bindings, mouse sensitivity, shake, text speed, large text, high contrast, reduce motion); `apply_display()`; emits `changed` |
+| `Controls` | InputMap actions with defaults (`ACTIONS`), rebinding with conflict swap, WASD on the ui_* actions, key names for on-screen hints |
 | `TutorialManager` | First-shift coach marks; advances on screen, plan and stage-type contexts; saved with the game |
 | `GameManager` | The loop: customer → diagnosis → plan → surgery → results, and applying rewards and consequences |
 
@@ -140,7 +141,8 @@ The plan screen shows a before → after load meter, and the consent line reads 
 - **Stages** are registered by `type` in `surgery_stage_registry.gd`:
   - `anesthesia`, `incision`, `expose`, `remove_tissue`, `anchor_drill`, `install_implant`, `connect_interface`, `calibrate`, `close_incision`
   - A new surgery is a data entry that reuses these types with its own params.
-- **Site framing.** `SurgicalSiteView` renders the operating field at native art resolution inside a `SubViewport` (`stretch_shrink = 2`), so stage drawing is pixel-exact at the global density.
+- **Site framing.** `SurgicalSiteView` renders the operating field at native art resolution inside a `SubViewport` whose container `stretch_shrink` is the field zoom (3×–6×, wheel / + −), so stage drawing is pixel-exact. `SurgeryScreen.field_to_screen()` converts field to screen coordinates at the current zoom; stages get `view_scale` for UI-sized hit radii.
+- **PC input on stages.** `SurgeryStage` adds `hover_pos` (drives the `FieldHover` reticle and target brackets), `key_action(action, pressed)` (SPACE/E hold-to-infuse, LOCK, SEAT, rotate, nudge), `wheel_steps()` (rotate / tune instead of zoom) and `cancel()` (right-click returns a held implant). `SurgeryScreen` routes 1–9 / Q / R to the instrument rack and Z / X / V to the emergency actions.
   - Stages work in normalised field coordinates and convert with `to_local_pos()` / `to_norm()`.
   - The field can move when the layout changes, so stages must not cache local positions without re-syncing.
 - **Context.** `SurgeryManager.get_stage_context()` passes difficulty, neural load, alignment and sync multipliers, and the implant icon to every stage.
@@ -199,3 +201,15 @@ Version 3 (`GameConfig.SAVE_VERSION`):
 | Hidden condition | Add to `data/conditions.json` with `modifiers`, `hint` and `reveal_regions` |
 | Archetype | Add to `data/archetypes.json` with outfits, factions, request categories and wealth |
 | Modifier key | Read it with `ModifierManager`, add a label in `UIKit.MODIFIER_LABELS`, and list it above |
+
+## Desktop UI (PC)
+
+- **Canvas.** `project.godot` sets a 1920×1080 viewport with `canvas_items` stretch and `keep` aspect. Every screen is laid out for that canvas; window size only changes the uniform scale (and letterbox bars).
+- **Workstation shell.** `UIKit.workstation(screen, nav_id)` builds the shared frame for hub screens: `StatusBar` (top: credits, level, rep, heat, resources, MENU) + `SideNav` (left: sections with hotkeys and badges) + a content column. Sub-screens (customer, diagnosis) keep the shell so the player never loses context; full-screen states (main menu, settings, results, surgery, black market) draw their own layout.
+- **Panels.** Screens return their main panels from `get_panels()`; TAB (`UIManager.cycle_panels`) focuses the first control of the next panel and flashes its frame.
+- **Escape routing.** `UIManager._on_escape`: an open dialog gets `on_escape()` (presses its first, safe button), else the screen's `on_escape()` (surgery pauses, settings cancels a pending rebind, main menu asks to quit), else its `BackButton`, else the pause menu.
+- **Keyboard focus.** Buttons are focusable and show a cyan frame; the first arrow/WASD press focuses the control with meta `default`. Screens that use the arrows for gameplay set `keyboard_nav = false` (surgery).
+- **Comparisons.** `Compare` builds CURRENT vs NEW tables for cyberware (tier, performance, neural load, difficulty, risk, condition, price) and tools; rows are tagged BETTER / WORSE / SAME / UNKNOWN (hidden traits) / INCOMPATIBLE (different body slot), each with a symbol.
+- **Inventory grid.** `ItemSlot` is a drawn 112 px cell supporting hover, click, double-click (inspect → database), right-click (set CURRENT) and Godot drag & drop (`_get_drag_data` / `_drop_data`): dropping on another slot swaps storage order (saved), dropping on a COMPARE slot loads the comparison.
+- **Save slots.** `SaveManager.save_dir` + `slot_path(n)`; `use_slot(n)` switches the active file and remembers it in `Settings.last_slot`; `get_slot_info(n)` reads the `meta` summary without loading the slot.
+- **Instrument wear.** `InventoryManager.tool_condition` (0–100 per tool id, saved), `wear_tools()` after each operation, `tool_condition_factor()` feeds `SurgeryManager.get_tool_precision()`, `service_tools()` restores everything for credits.

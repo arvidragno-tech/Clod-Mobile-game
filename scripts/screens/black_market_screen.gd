@@ -25,6 +25,7 @@ var _feed_progress: float = 0.0
 var _feed_index: int = 0
 var _hex: Label
 var _time: float = 0.0
+var _feed_tick: float = 0.0
 var _panels: Array[Control] = []
 
 
@@ -99,7 +100,10 @@ func on_enter(_params: Dictionary) -> void:
 	var mat := ShaderMaterial.new()
 	mat.shader = load("res://assets/shaders/bm_glitch.gdshader")
 	glitch.material = mat
-	mat.set_shader_parameter(&"intensity", 0.0 if Settings.reduce_motion or Settings.effects_quality == 0 else 0.6)
+	var intensity := 0.0 if Settings.reduce_motion or Settings.effects_quality == 0 else (0.35 if Settings.effects_quality == 1 else 0.6)
+	mat.set_shader_parameter(&"intensity", intensity)
+	# The shader samples the whole screen: skip the pass entirely when off.
+	glitch.visible = intensity > 0.0
 	add_child(UIKit.full_rect(glitch))
 	EventBus.money_changed.connect(func(_a: int, _d: int) -> void: _rebuild())
 	EventBus.inventory_changed.connect(_rebuild)
@@ -126,6 +130,11 @@ func _process(delta: float) -> void:
 		return
 	_time += delta
 	_feed_progress += delta * (60.0 if Settings.reduce_motion else 22.0)
+	# Re-scramble at 20 Hz, not every frame (each change re-shapes the text).
+	_feed_tick -= delta
+	if _feed_tick > 0.0:
+		return
+	_feed_tick = 0.05
 	var n := mini(int(_feed_progress), _feed_target.length())
 	var tail := ""
 	for i in range(n, _feed_target.length()):
@@ -133,7 +142,7 @@ func _process(delta: float) -> void:
 	_feed.text = _feed_target.substr(0, n) + tail
 	if _feed_progress > _feed_target.length() + 90.0:
 		_next_feed()
-	if fmod(_time, 0.25) < delta:
+	if fmod(_time, 0.25) < 0.05:
 		_hex.text = "  SESSION 0x%08X  ·  ROUTE %d HOPS  ·  TRACE %s" % [randi(), 3 + randi() % 6, "CLEAN" if FactionManager.heat < 35.0 else "WARM"]
 
 
