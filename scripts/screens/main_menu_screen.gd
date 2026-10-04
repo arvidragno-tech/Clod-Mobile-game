@@ -1,12 +1,12 @@
 extends BaseScreen
-## Title screen: continue / new game / sound toggle.
+## Title screen: continue / new game / settings.
 
 const FLICKER_MIN_SEC := 1.5
 const FLICKER_MAX_SEC := 5.0
 
 @onready var _continue_button: Button = %ContinueButton
 @onready var _new_game_button: Button = %NewGameButton
-@onready var _sound_button: Button = %SoundButton
+@onready var _settings_button: Button = %SettingsButton
 @onready var _subtitle: Label = %Subtitle
 @onready var _version: Label = %Version
 
@@ -20,12 +20,13 @@ func on_enter(_params: Dictionary) -> void:
 	_new_game_button.text = "NEW GAME" if has_save else "START"
 	_continue_button.pressed.connect(GameManager.continue_game)
 	_new_game_button.pressed.connect(_on_new_game_pressed)
-	_sound_button.pressed.connect(_on_sound_pressed)
+	_settings_button.pressed.connect(func() -> void: UIManager.go_to(UIManager.SCREEN_SETTINGS, {"return_to": UIManager.SCREEN_MAIN_MENU}))
 	_version.text = "v%s · PRE-RELEASE BUILD" % ProjectSettings.get_setting("application/config/version", "0")
-	_refresh_sound_label()
 
 
 func _process(delta: float) -> void:
+	if Settings.reduce_motion:
+		return
 	_flicker_timer -= delta
 	if _flicker_timer <= 0.0:
 		_flicker_timer = randf_range(FLICKER_MIN_SEC, FLICKER_MAX_SEC)
@@ -41,14 +42,3 @@ func _on_new_game_pressed() -> void:
 		UIManager.confirm("WIPE CLINIC?", "Starting over deletes your saved money, gear and reputation.", "WIPE", GameManager.start_new_game, true)
 	else:
 		GameManager.start_new_game()
-
-
-func _on_sound_pressed() -> void:
-	var enabled := not AudioManager.sfx_enabled
-	AudioManager.set_sfx_enabled(enabled)
-	AudioManager.set_ambient_enabled(enabled)
-	_refresh_sound_label()
-
-
-func _refresh_sound_label() -> void:
-	_sound_button.text = "SOUND: %s" % ("ON" if AudioManager.sfx_enabled else "OFF")

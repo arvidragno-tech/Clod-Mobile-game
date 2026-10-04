@@ -21,6 +21,10 @@ func set_base_text(t: String) -> void:
 
 
 func _process(delta: float) -> void:
+	if Settings.reduce_motion:
+		if text != base_text:
+			text = base_text
+		return
 	_timer -= delta
 	if _timer > 0.0:
 		return

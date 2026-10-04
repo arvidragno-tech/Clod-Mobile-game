@@ -150,10 +150,12 @@ func _build_labels() -> void:
 
 func _build_misc() -> void:
 	var bar_bg := StyleBoxFlat.new()
+	bar_bg.anti_aliasing = false
 	bar_bg.bg_color = P.BG_1
 	bar_bg.border_color = P.LINE
 	bar_bg.set_border_width_all(1)
 	var bar_fill := StyleBoxFlat.new()
+	bar_fill.anti_aliasing = false
 	bar_fill.bg_color = P.ACCENT
 	theme.set_stylebox(&"background", &"ProgressBar", bar_bg)
 	theme.set_stylebox(&"fill", &"ProgressBar", bar_fill)
@@ -167,14 +169,29 @@ func _build_misc() -> void:
 	theme.set_constant(&"separation", &"HSeparator", 8)
 
 	var grab := StyleBoxFlat.new()
+
+	grab.anti_aliasing = false
 	grab.bg_color = P.LINE_HI
 	for s in ["grabber", "grabber_highlight", "grabber_pressed"]:
 		theme.set_stylebox(StringName(s), &"VScrollBar", grab)
 	var track := StyleBoxFlat.new()
+	track.anti_aliasing = false
 	track.bg_color = Color(P.BG_1, 0.5)
 	track.content_margin_left = 2
 	track.content_margin_right = 2
 	theme.set_stylebox(&"scroll", &"VScrollBar", track)
+
+	# Pixel sliders (settings): thick track, chunky grabber, generous height.
+	var slider_track := tex_box("slider_track", 2, Vector4(0, 6, 0, 6))
+	var fill := tex_box("slider_fill", 2, Vector4(0, 6, 0, 6))
+	theme.set_stylebox(&"slider", &"HSlider", slider_track)
+	theme.set_stylebox(&"grabber_area", &"HSlider", fill)
+	theme.set_stylebox(&"grabber_area_highlight", &"HSlider", fill)
+	theme.set_icon(&"grabber", &"HSlider", load(FRAMES + "grabber_normal.png"))
+	theme.set_icon(&"grabber_highlight", &"HSlider", load(FRAMES + "grabber_hover.png"))
+	theme.set_icon(&"grabber_disabled", &"HSlider", load(FRAMES + "grabber_normal.png"))
+	theme.set_constant(&"center_grabber", &"HSlider", 0)
+	theme.set_constant(&"grabber_offset", &"HSlider", 0)
 
 	theme.set_constant(&"separation", &"VBoxContainer", 8)
 	theme.set_constant(&"separation", &"HBoxContainer", 8)

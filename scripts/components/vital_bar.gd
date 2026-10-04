@@ -61,9 +61,10 @@ func _draw() -> void:
 	var label_font := get_theme_font(&"font", &"SubHeaderLabel")
 	var value_font := get_theme_font(&"font", &"MonoLabel")
 	var blink_on := warning and fmod(_time * BLINK_HZ, 1.0) < 0.5
-	var label_color := Palette.DANGER if blink_on else Palette.TEXT_DIM
-	draw_string(label_font, Vector2(0, 12), label_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, label_color)
-	var readout := "%d%s" % [roundi(_display_value), suffix]
+	var label_color := Palette.DANGER if blink_on else Accessibility.dim()
+	# Colour-independent: a warning also prefixes the caption with "!".
+	draw_string(label_font, Vector2(0, 12), ("! " if warning else "") + label_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, label_color)
+	var readout := ("%d%s" % [roundi(_display_value), suffix]) + (" !" if warning else "")
 	var value_color := Palette.DANGER if warning else Palette.TEXT
 	draw_string(value_font, Vector2(0, 15), readout, HORIZONTAL_ALIGNMENT_RIGHT, size.x, 20, value_color)
 

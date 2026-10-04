@@ -12,8 +12,17 @@ func setup(title: String, body: String, buttons: Array[Dictionary]) -> void:
 	_title.text = title
 	_body.text = body
 	_body.visible = not body.is_empty()
+	# More than two choices stack vertically so each stays thumb-sized.
+	var container: BoxContainer = _buttons
+	if buttons.size() > 2:
+		container = VBoxContainer.new()
+		container.add_theme_constant_override(&"separation", 8)
+		_buttons.add_child(container)
+		container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	for spec in buttons:
 		var b := Button.new()
+		if spec.has("name"):
+			b.name = str(spec["name"])
 		b.text = str(spec.get("label", "OK"))
 		b.theme_type_variation = spec.get("style", &"")
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -21,7 +30,7 @@ func setup(title: String, body: String, buttons: Array[Dictionary]) -> void:
 		b.focus_mode = Control.FOCUS_NONE
 		var callback: Callable = spec.get("callback", Callable())
 		b.pressed.connect(_on_button_pressed.bind(callback))
-		_buttons.add_child(b)
+		container.add_child(b)
 	var panel := %Panel as Control
 	panel.pivot_offset = panel.size / 2.0
 	panel.scale = Vector2(0.92, 0.92)

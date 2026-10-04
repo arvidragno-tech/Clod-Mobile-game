@@ -137,4 +137,43 @@ def generate():
                         outline_only=(name == "btn_ghost"))
             cv.save(f"ui/frames/{name}_{state}.png", scale=SCALE)
             n += 1
-    print("ui frames:", n)
+    for state, (body, edge, core) in {"normal": ("4c5868", "1b222c", "2ee6c8"), "hover": ("6c7a8c", "1b222c", "8ff5e4")}.items():
+        grabber(body, edge, core).save(f"ui/frames/grabber_{state}.png", scale=SCALE)
+        n += 1
+    track(False).save("ui/frames/slider_track.png", scale=SCALE)
+    track(True).save("ui/frames/slider_fill.png", scale=SCALE)
+    print("ui frames:", n + 2)
+
+
+def grabber(body, edge, core):
+    """8x12 slider knob: bevelled metal with a cyan status LED."""
+    cv = Canvas(8, 12)
+    for y in range(12):
+        for x in range(8):
+            if (x in (0, 7) and y in (0, 11)):
+                continue
+            border = x in (0, 7) or y in (0, 11)
+            cv.set(x, y, rgba(edge if border else body))
+    for y in range(1, 11):
+        cv.set(1, y, rgba("bcc6d2"))
+    for x in range(2, 6):
+        cv.set(x, 10, rgba("232a34"))
+    cv.set(3, 4, rgba(core)); cv.set(4, 4, rgba(core))
+    cv.set(3, 5, rgba(core)); cv.set(4, 5, rgba(core))
+    for y in (7, 8):
+        for x in (2, 5):
+            cv.set(x, y, rgba("232a34"))
+    return cv
+
+
+def track(filled):
+    """6x4 9-slice slider track; the filled part glows cyan."""
+    cv = Canvas(6, 4)
+    for y in range(4):
+        for x in range(6):
+            if filled:
+                c = "2ee6c8" if y in (1, 2) else "1a7d70"
+            else:
+                c = "0d1017" if y in (1, 2) else "2a3646"
+            cv.set(x, y, rgba(c))
+    return cv

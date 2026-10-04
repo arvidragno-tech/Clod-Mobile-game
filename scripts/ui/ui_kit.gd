@@ -35,9 +35,9 @@ static func label(text: String, variation: StringName = &"", wrap: bool = false,
 	if wrap:
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	if color != null:
-		l.add_theme_color_override(&"font_color", color)
+		l.add_theme_color_override(&"font_color", Accessibility.text_color(color))
 	if size > 0:
-		l.add_theme_font_size_override(&"font_size", size)
+		l.add_theme_font_size_override(&"font_size", size + Settings.font_bonus())
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return l
 
@@ -143,6 +143,7 @@ static func meter(ratio: float, color: Color, height: float = 6.0) -> ProgressBa
 	p.step = 0.001
 	p.value = ratio
 	var fill := StyleBoxFlat.new()
+	fill.anti_aliasing = false
 	fill.bg_color = color
 	p.add_theme_stylebox_override(&"fill", fill)
 	p.mouse_filter = Control.MOUSE_FILTER_IGNORE

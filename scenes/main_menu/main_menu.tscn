@@ -94,13 +94,13 @@ layout_mode = 2
 focus_mode = 0
 text = "NEW GAME"
 
-[node name="SoundButton" type="Button" parent="Margin/VBox/Buttons"]
+[node name="SettingsButton" type="Button" parent="Margin/VBox/Buttons"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 focus_mode = 0
 theme_type_variation = &"GhostButton"
-text = "SOUND: ON"
+text = "SETTINGS"
 
 [node name="Version" type="Label" parent="Margin/VBox"]
 unique_name_in_owner = true
