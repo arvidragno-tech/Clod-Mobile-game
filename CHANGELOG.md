@@ -29,6 +29,7 @@ All notable changes to *UNDERCITY: RIPPER*. Versions follow the iOS
   - lamps flicker on at surgery start
   - neural signals travel along exposed nerves, and the wound flushes with each heartbeat
 - **Short-screen framing:** the surgical field frames each stage's region of interest on short phones.
+- **Detail zoom:** double-tap the clinic for a pixel-perfect 2× view (drag to pan, double-tap to reset).
 - **Clinic "NEXT" line**, so the player always knows what to do next.
 - **Game-feel moments:** one consistent celebration for purchases, black-market buys, tool upgrades, unlocks and clinic upgrades. Newly unlocked chrome tiers are announced on the report.
 - **Post-op complications:** sloppy work or hidden conditions can bring a patient back (story event).

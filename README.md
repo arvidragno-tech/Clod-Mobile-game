@@ -49,7 +49,8 @@ and device go through the same input path.
 A new game starts a **10-step tutorial** on an easy first patient. Coach marks
 point at the control to use, and you can skip it at any time. The clinic menu
 (≡) has **HOW TO PLAY**, **SETTINGS** and **SAVE & QUIT**. The **NEXT** line
-under the clinic view always shows the most useful next step.
+under the clinic view always shows the most useful next step. Double-tap the
+clinic to zoom in on details (drag to pan).
 
 1. **Clinic.** A customer shows up at the door, drawn with their own face, outfit and installed chrome. Tap them or **SEE CUSTOMER**. The nav bar opens **SUPPLY**, **SKILLS**, **CLINIC** (upgrades), **DOSSIER** (factions, contacts, rumours, records) and, once you have the contacts, the **MARKET**.
 2. **Customer file.** Shows who they are:
