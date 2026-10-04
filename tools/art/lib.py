@@ -352,10 +352,13 @@ class LitScene:
         self.lights.append(l)
         return l
 
-    def render(self) -> Canvas:
+    def render(self, region=None) -> Canvas:
+        """Lit image. region=(x0, y0, x1, y1) limits the work to a box
+        (pixels outside stay black), used to diff overlays cheaply."""
         out = Canvas(self.w, self.h, fill=(0, 0, 0, 255))
-        for y in range(self.h):
-            for x in range(self.w):
+        x0, y0, x1, y1 = region if region else (0, 0, self.w, self.h)
+        for y in range(max(0, y0), min(self.h, y1)):
+            for x in range(max(0, x0), min(self.w, x1)):
                 a = self.albedo.px[y][x]
                 e = self.emissive.px[y][x]
                 if self.unlit.px[y][x] is not None:

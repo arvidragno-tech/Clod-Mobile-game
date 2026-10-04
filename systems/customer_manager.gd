@@ -92,6 +92,9 @@ func _finalize_character(c: CustomerData) -> void:
 func request_next_customer(delay: float = GameConfig.CUSTOMER_ARRIVAL_DELAY_SEC) -> void:
 	if has_customer() or is_customer_pending():
 		return
+	# Nobody new after closing time (the night's books come first).
+	if BusinessManager.is_day_full():
+		return
 	if delay <= 0.0:
 		_on_arrival_timer_timeout()
 	else:

@@ -77,7 +77,7 @@ func pick_event() -> StringName:
 	var weights: Array[float] = []
 	for id in order:
 		var e: Dictionary = events[id]
-		var w := float(e.get("weight", 0))
+		var w := float(e.get("weight", 0)) * WorldManager.event_weight(id)
 		if w > 0.0 and is_eligible(id):
 			pool.append(id)
 			weights.append(w)
@@ -119,6 +119,12 @@ func conditions_met(c: Dictionary) -> bool:
 	if c.has("min_level") and ProgressionManager.level < int(c["min_level"]):
 		return false
 	if c.has("min_tier") and ClinicManager.tier < int(c["min_tier"]):
+		return false
+	if c.has("district") and WorldManager.current_district_id() != StringName(str(c["district"])):
+		return false
+	if c.has("min_day") and BusinessManager.day < int(c["min_day"]):
+		return false
+	if c.has("act") and StoryManager.act < int(c["act"]):
 		return false
 	if c.has("flag") and not StoryManager.has_flag(StringName(str(c["flag"]))):
 		return false
@@ -183,9 +189,9 @@ func apply_outcomes(o: Dictionary) -> String:
 	if o.has("money"):
 		var m := int(o["money"])
 		if m >= 0:
-			EconomyManager.add_money(m)
+			EconomyManager.add_money(m, &"events")
 		else:
-			EconomyManager.spend(mini(-m, EconomyManager.money))
+			EconomyManager.spend(mini(-m, EconomyManager.money), &"events")
 	if o.has("reputation"):
 		ReputationManager.change(int(o["reputation"]))
 	var fac: Dictionary = o.get("faction", {})

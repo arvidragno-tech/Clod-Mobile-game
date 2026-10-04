@@ -27,6 +27,8 @@ var _factions_box: VBoxContainer
 var _nav: SideNav
 var _waiting_dots: float = 0.0
 var _panels: Array[Control] = []
+var _loc: Label
+var _close_button: Button
 
 
 func on_enter(_params: Dictionary) -> void:
@@ -34,6 +36,7 @@ func on_enter(_params: Dictionary) -> void:
 	EventBus.customer_arrived.connect(_on_customer_arrived)
 	EventBus.inventory_changed.connect(_refresh_status)
 	EventBus.resources_changed.connect(_refresh_status)
+	EventBus.day_started.connect(func(_d: int) -> void: _refresh_status())
 	EventBus.rumor_unlocked.connect(func(_id: StringName) -> void: _refresh_rumor())
 	StoryManager.update_rumors()
 	_refresh_status()
@@ -138,7 +141,8 @@ func _build() -> void:
 	overlay.offset_right = -12
 	overlay.offset_top = 10
 	_view.add_child(overlay)
-	var loc := UIKit.label("%s · SUBLEVEL 3" % ClinicManager.get_tier_name().to_upper(), &"SubHeaderLabel", false, Palette.TEXT)
+	var loc := UIKit.label("%s · %s · DAY %d" % [ClinicManager.get_tier_name().to_upper(), WorldManager.district_name().to_upper(), BusinessManager.day], &"SubHeaderLabel", false, Palette.TEXT)
+	_loc = loc
 	loc.add_theme_color_override(&"font_outline_color", Palette.BG_0)
 	loc.add_theme_constant_override(&"outline_size", 4)
 	overlay.add_child(loc)
@@ -150,6 +154,9 @@ func _build() -> void:
 	_panels.append(_status_box.get_parent())
 	_stock_label = UIKit.label("", &"MonoLabel")
 	_status_box.add_child(_stock_label)
+	_close_button = UIKit.button("CLOSE FOR THE NIGHT", &"GhostButton", _close_day, "CloseDayButton", 40)
+	_close_button.tooltip_text = "End the business day: pay rent, running costs and salaries, see the ledger."
+	_status_box.add_child(_close_button)
 	var rumors := UIKit.section(cards, "STREET RUMOURS", &"CardPanel", "[%s] journal" % Controls.key_name("journal"))
 	(rumors.get_parent() as Control).size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	(rumors.get_parent() as Control).size_flags_stretch_ratio = 1.4
@@ -167,7 +174,7 @@ func _process(delta: float) -> void:
 		_refresh_objective()
 	if _waiting and _waiting.visible:
 		_waiting_dots += delta * 2.0
-		_waiting.text = "Waiting for customers" + ".".repeat(int(_waiting_dots) % 4)
+		_waiting.text = ("Door's locked. Close up for the night." if BusinessManager.is_day_full() else "Waiting for customers") + ".".repeat(int(_waiting_dots) % 4)
 
 
 func _show_event() -> void:
@@ -193,6 +200,7 @@ func _after_event() -> void:
 
 func _on_customer_arrived(customer: CustomerData) -> void:
 	_objective_timer = 0.0
+	_refresh_status()
 	AudioManager.play_sfx(&"customer")
 	UIManager.show_toast("%s is at the door" % customer.display_name, &"danger" if customer.is_emergency else &"info")
 	_show_customer(customer, true)
@@ -231,6 +239,11 @@ func _show_customer(customer: CustomerData, animate: bool) -> void:
 		create_tween().tween_property(_card, "modulate:a", 1.0, 0.25)
 
 
+func _close_day() -> void:
+	GameManager.close_for_the_night()
+	_refresh_status()
+
+
 func _show_waiting() -> void:
 	_view.hide_customer()
 	_waiting.visible = true
@@ -243,20 +256,33 @@ func _refresh_status() -> void:
 		return
 	_stock_label.text = "CHROME IN STOCK: %d" % InventoryManager.get_instances().size()
 	for c in _status_box.get_children():
-		if c != _stock_label and c.get_index() > 1:
+		if c != _stock_label and c != _close_button and c.get_index() > 2:
 			c.queue_free()
+	var full := BusinessManager.is_day_full()
+	_close_button.disabled = CustomerManager.has_customer() or SurgeryManager.is_active
+	_close_button.theme_type_variation = &"AccentButton" if full else &"GhostButton"
+	_status_box.add_child(UIKit.label("DAY %d · jobs %d/%d · tonight's bill %d%s" % [BusinessManager.day, BusinessManager.jobs_today, BusinessManager.capacity(),
+		BusinessManager.projected_total(), ("  · DEBT %d" % BusinessManager.debt) if BusinessManager.debt > 0 else ""], &"DimLabel", true, Palette.WARN if BusinessManager.debt > 0 else null))
+	if _loc:
+		_loc.text = "%s · %s · DAY %d" % [ClinicManager.get_tier_name().to_upper(), WorldManager.district_name().to_upper(), BusinessManager.day]
 	_status_box.add_child(UIKit.label("Supplies %d / %d · Parts %d · Tokens %d" % [InventoryManager.supplies, ClinicManager.get_supplies_capacity(), InventoryManager.parts, InventoryManager.tokens], &"DimLabel", true))
-	_status_box.add_child(UIKit.label("Facility: %s (chrome up to T%d)" % [ClinicManager.get_tier_name(), CyberwareManager.get_available_tier()], &"DimLabel", true))
 	_status_box.add_child(UIKit.label("Heat %d%s" % [roundi(FactionManager.heat), "  · inspections likely" if FactionManager.heat >= 35.0 else ""], &"DimLabel", true, Palette.DANGER if FactionManager.heat >= 35.0 else null))
 	UIKit.clear_after(_factions_box, 1)
+	var grid := GridContainer.new()
+	grid.columns = 2
+	grid.add_theme_constant_override(&"h_separation", 18)
+	_factions_box.add_child(grid)
 	for id: StringName in FactionManager.order:
-		var line := UIKit.hbox(8)
-		var n := UIKit.label(FactionManager.get_name_of(id), &"DimLabel")
+		var line := UIKit.hbox(6)
+		UIKit.expand(line)
+		var n := UIKit.label(str(FactionManager.factions[id].get("short", id)), &"DimLabel")
+		n.tooltip_text = FactionManager.get_name_of(id)
+		n.mouse_filter = Control.MOUSE_FILTER_PASS
 		UIKit.expand(n)
 		line.add_child(n)
 		var rep := FactionManager.get_rep(id)
 		line.add_child(UIKit.label("%+d" % rep, &"MonoLabel", false, Palette.OK if rep > 5 else (Palette.DANGER if rep < -5 else Palette.TEXT_DIM)))
-		_factions_box.add_child(line)
+		grid.add_child(line)
 
 
 func _refresh_rumor() -> void:

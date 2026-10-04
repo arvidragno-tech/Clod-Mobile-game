@@ -13,7 +13,9 @@ const ITEMS := [
 	[&"database", "CYBERWARE DB", "res://assets/sprites/ui/icons/neural.png", "database"],
 	[&"supply", "SUPPLY", "res://assets/sprites/ui/icons/supply.png", ""],
 	[&"skills", "SKILLS", "res://assets/sprites/ui/icons/skills.png", ""],
-	[&"upgrades", "FACILITY", "res://assets/sprites/ui/icons/upgrade.png", "map"],
+	[&"upgrades", "FACILITY", "res://assets/sprites/ui/icons/upgrade.png", "facility"],
+	[&"business", "BUSINESS", "res://assets/sprites/ui/icons/money.png", "business"],
+	[&"map", "CITY MAP", "res://assets/sprites/ui/icons/rep.png", "map"],
 	[&"dossier", "JOURNAL", "res://assets/sprites/ui/icons/dossier.png", "journal"],
 	[&"blackmarket", "BLACK MARKET", "res://assets/sprites/ui/icons/blackmarket.png", ""],
 	[&"settings", "SETTINGS", "res://assets/sprites/ui/icons/lock.png", ""],
@@ -26,7 +28,7 @@ var _buttons: Dictionary = {}
 func _ready() -> void:
 	theme_type_variation = &"HudPanel"
 	custom_minimum_size.x = 250
-	var col := UIKit.vbox(6)
+	var col := UIKit.vbox(4)
 	add_child(col)
 	for item: Array in ITEMS:
 		var b := Button.new()
@@ -36,7 +38,7 @@ func _ready() -> void:
 		b.icon = PixelArt.scaled(item[2])
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		b.theme_type_variation = &"NavButton"
-		b.custom_minimum_size = Vector2(0, 52)
+		b.custom_minimum_size = Vector2(0, 46)
 		b.toggle_mode = true
 		b.pressed.connect(func() -> void: nav_pressed.emit(item[0]))
 		col.add_child(b)
@@ -62,7 +64,8 @@ func refresh() -> void:
 		bm.modulate = Color(1, 1, 1, 0.45) if locked else Color.WHITE
 		bm.tooltip_text = "No contact yet. Build street rep (%d) or meet a fixer." % GameConfig.BLACK_MARKET_REPUTATION if locked else "The Undermarket"
 	_badge(&"skills", SkillManager.points > 0, "%d skill point(s) to spend" % SkillManager.points)
-	_badge(&"upgrades", ClinicManager.get_upgrade_block_reason() == "", "Clinic upgrade available")
+	_badge(&"upgrades", ClinicManager.get_upgrade_block_reason() == "", "A new clinic is within reach")
+	_badge(&"business", BusinessManager.debt > 0 or BusinessManager.is_day_full(), "Debt %d" % BusinessManager.debt if BusinessManager.debt > 0 else "Day's work done: close for the night")
 
 
 func _badge(id: StringName, on: bool, tip: String) -> void:

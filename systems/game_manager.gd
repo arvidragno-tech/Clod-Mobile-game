@@ -96,6 +96,10 @@ func navigate(id: StringName) -> void:
 			UIManager.go_to(UIManager.SCREEN_UPGRADES)
 		&"dossier":
 			UIManager.go_to(UIManager.SCREEN_DOSSIER)
+		&"business":
+			UIManager.go_to(UIManager.SCREEN_BUSINESS)
+		&"map":
+			UIManager.go_to(UIManager.SCREEN_MAP)
 		&"settings":
 			UIManager.go_to(UIManager.SCREEN_SETTINGS, {"return_to": UIManager.current_screen_id})
 		&"blackmarket":
@@ -160,6 +164,19 @@ func _begin_play() -> void:
 
 func go_to_clinic() -> void:
 	UIManager.go_to(UIManager.SCREEN_CLINIC)
+	if BusinessManager.is_day_full() and not CustomerManager.has_customer() and not EventManager.has_pending():
+		close_for_the_night()
+
+
+## Ends the business day: settles rent, salaries and upkeep and shows the
+## night's ledger. Also offered as a button on the clinic screen.
+func close_for_the_night() -> void:
+	if SurgeryManager.is_active or CustomerManager.has_customer():
+		return
+	var report := BusinessManager.end_day()
+	SaveManager.save_game()
+	UIManager.show_day_report(report)
+	CustomerManager.request_next_customer()
 
 
 ## The single most useful next step for the player (clinic "NEXT" line).
@@ -172,8 +189,12 @@ func get_next_objective() -> Dictionary:
 		return {"text": "See %s at the door%s" % [c.display_name, " (EMERGENCY)" if c.is_emergency else ""], "kind": &"warn" if c.is_emergency else &"info"}
 	if SkillManager.points > 0:
 		return {"text": "Spend %d skill point%s in SKILLS" % [SkillManager.points, "s" if SkillManager.points > 1 else ""], "kind": &"info"}
+	if BusinessManager.is_day_full():
+		return {"text": "Day's work done: CLOSE FOR THE NIGHT", "kind": &"info"}
+	if BusinessManager.debt >= BusinessManager.DEBT_WARNING:
+		return {"text": "You owe %d: pay it down in BUSINESS" % BusinessManager.debt, "kind": &"warn"}
 	if ClinicManager.get_upgrade_block_reason() == "":
-		return {"text": "Clinic upgrade ready: open CLINIC", "kind": &"info"}
+		return {"text": "A new clinic is within reach: open PROPERTY", "kind": &"info"}
 	if InventoryManager.supplies < 2:
 		return {"text": "Supplies low: restock in SUPPLY", "kind": &"warn"}
 	return {"text": "Waiting for the next customer", "kind": &"info"}
@@ -359,7 +380,7 @@ func abort_surgery() -> void:
 func _on_surgery_finished(result: SurgeryResult) -> void:
 	var c := SurgeryManager.customer
 	_apply_patience(result, c)
-	EconomyManager.add_money(result.pay)
+	EconomyManager.add_money(result.pay, &"revenue")
 	var tier_before := CyberwareManager.get_available_tier()
 	result.levels_gained = ProgressionManager.add_xp(result.xp)
 	if CyberwareManager.get_available_tier() > tier_before:
@@ -372,6 +393,8 @@ func _on_surgery_finished(result: SurgeryResult) -> void:
 			c.existing_cyberware.append(result.implant_id)
 		result.consequences = CustomerManager.record_outcome(c, result)
 	CustomerManager.dismiss_current()
+	BusinessManager.record_job()
+	WorldManager.add_influence()
 	EventManager.on_operation_completed()
 	BlackMarketManager.on_operation_completed()
 	if result.neural_break:

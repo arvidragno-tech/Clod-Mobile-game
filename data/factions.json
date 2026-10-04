@@ -60,6 +60,19 @@
     "black_market"
    ],
    "starting_rep": 0
+  },
+  {
+   "id": "lyra_biocomp",
+   "name": "Lyra Biocomp",
+   "short": "LYRA",
+   "color": "9fc8e8",
+   "emblem": "res://assets/sprites/factions/lyra_biocomp.png",
+   "description": "Neural-lattice manufacturer that owns the Exclusion Zone and half the medical patents in Caldera. Courteous, patient, and always collecting data.",
+   "rivals": [
+    "street_gangs",
+    "black_market"
+   ],
+   "starting_rep": 0
   }
  ]
 }

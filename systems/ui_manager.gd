@@ -19,6 +19,8 @@ const SCREEN_INVENTORY := &"inventory"
 const SCREEN_DATABASE := &"database"
 const SCREEN_LOAD := &"load_game"
 const SCREEN_CREDITS := &"credits"
+const SCREEN_BUSINESS := &"business"
+const SCREEN_MAP := &"map"
 
 const SCREEN_SCENES := {
 	SCREEN_MAIN_MENU: "res://scenes/main_menu/main_menu.tscn",
@@ -37,6 +39,8 @@ const SCREEN_SCENES := {
 	SCREEN_DATABASE: "res://scenes/database/database_screen.tscn",
 	SCREEN_LOAD: "res://scenes/load_game/load_game_screen.tscn",
 	SCREEN_CREDITS: "res://scenes/credits/credits_screen.tscn",
+	SCREEN_BUSINESS: "res://scenes/business/business_screen.tscn",
+	SCREEN_MAP: "res://scenes/map/map_screen.tscn",
 }
 
 const DIALOG_SCENE := preload("res://ui/components/dialog.tscn")
@@ -249,6 +253,28 @@ func show_dialog(title: String, body: String, buttons: Array[Dictionary]) -> Gam
 	return dialog
 
 
+## The night's books after closing (BusinessManager.end_day report).
+func show_day_report(report: Dictionary) -> void:
+	var lines: Array[String] = []
+	var ledger: Dictionary = report.get("ledger", {})
+	var keys := ledger.keys()
+	keys.sort_custom(func(x: Variant, y: Variant) -> bool: return int(ledger[x]) > int(ledger[y]))
+	for k: Variant in keys:
+		if int(ledger[k]) != 0:
+			lines.append("%-22s %+6d" % [BusinessManager.label(StringName(str(k))), int(ledger[k])])
+	if lines.is_empty():
+		lines.append("A quiet day. Nothing changed hands.")
+	lines.append("")
+	lines.append("PROFIT  %+d      CASH  %d" % [int(report.get("profit", 0)), int(report.get("money", 0))])
+	if int(report.get("debt", 0)) > 0:
+		lines.append("DEBT    %d  (8%% a day)" % int(report["debt"]))
+	for n: Variant in report.get("notes", []):
+		lines.append("· " + str(n))
+	var ok: Array[Dictionary] = [{"label": "OPEN UP · DAY %d" % (int(report.get("day", 1)) + 1), "style": &"AccentButton", "name": "DayReportClose"}]
+	AudioManager.play_sfx(&"cash", 0.0)
+	show_dialog("NIGHT %d · %s" % [int(report.get("day", 1)), str(report.get("clinic", "")).to_upper()], "\n".join(lines), ok)
+
+
 func confirm(title: String, body: String, confirm_label: String, on_confirm: Callable, danger: bool = false) -> void:
 	var buttons: Array[Dictionary] = [
 		{"label": "CANCEL", "style": &"GhostButton", "callback": Callable()},
@@ -297,7 +323,7 @@ func _on_button_hover(b: BaseButton) -> void:
 
 ## Screens where the global hotkeys (I, J, B, M, C, F5/F9) navigate.
 const HUB_SCREENS := [SCREEN_CLINIC, SCREEN_SHOP, SCREEN_SKILLS, SCREEN_UPGRADES, SCREEN_DOSSIER, SCREEN_INVENTORY,
-	SCREEN_DATABASE, SCREEN_BLACK_MARKET, SCREEN_SETTINGS, SCREEN_CUSTOMER]
+	SCREEN_DATABASE, SCREEN_BLACK_MARKET, SCREEN_SETTINGS, SCREEN_CUSTOMER, SCREEN_BUSINESS, SCREEN_MAP]
 
 
 func _input(event: InputEvent) -> void:
@@ -325,7 +351,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if has_modal():
 		return
 	var hub := HUB_SCREENS.has(current_screen_id)
-	var routes := {"inventory": SCREEN_INVENTORY, "journal": SCREEN_DOSSIER, "database": SCREEN_DATABASE, "map": SCREEN_UPGRADES}
+	var routes := {"inventory": SCREEN_INVENTORY, "journal": SCREEN_DOSSIER, "database": SCREEN_DATABASE, "map": SCREEN_MAP, "facility": SCREEN_UPGRADES, "business": SCREEN_BUSINESS}
 	for action: String in routes:
 		if event.is_action(action) and hub:
 			get_viewport().set_input_as_handled()

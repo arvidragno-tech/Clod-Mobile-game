@@ -19,7 +19,10 @@ const DATA_DIALOGUE := "res://data/dialogue.json"
 const DATA_CONDITIONS := "res://data/conditions.json"
 const DATA_FACTIONS := "res://data/factions.json"
 const DATA_SKILLS := "res://data/skills.json"
-const DATA_CLINIC_TIERS := "res://data/clinic_tiers.json"
+const DATA_CLINICS := "res://data/clinics.json"
+const DATA_CLINIC_UPGRADES := "res://data/clinic_upgrades.json"
+const DATA_CLINIC_OVERLAYS := "res://data/clinic_overlays.json"
+const DATA_DISTRICTS := "res://data/districts.json"
 const DATA_EVENTS := "res://data/events.json"
 const DATA_RUMORS := "res://data/rumors.json"
 const DATA_BLACK_MARKET := "res://data/black_market.json"
@@ -36,7 +39,7 @@ const SAVE_PATH := "user://savegame.json"
 ## Save slots live in user://saves/ (%APPDATA%/UndercityRipper/saves on Windows).
 const SAVE_DIR := "user://saves"
 const SAVE_SLOTS := 3
-const SAVE_VERSION := 3
+const SAVE_VERSION := 4
 
 # --- New game ----------------------------------------------------------------
 const STARTING_MONEY := 300

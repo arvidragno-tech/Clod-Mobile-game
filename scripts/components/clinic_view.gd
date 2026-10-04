@@ -60,6 +60,7 @@ const FX_COLORS := {
 	"magenta": Color("ff3d81"), "blue": Color("3a8cff"), "white": Color("e8fff8"), "dark": Color("4c5868"),
 }
 static var _fx_data: Dictionary = {}
+var _overlays: Array = []  # [Texture2D, Vector2 art px]
 
 
 func _ready() -> void:
@@ -74,6 +75,7 @@ func _ready() -> void:
 	for i in DUST_COUNT:
 		_dust.append(Vector3(randf_range(150, 250), randf_range(50, 160), randf_range(0.0, TAU)))
 	EventBus.clinic_upgraded.connect(func(_t: int) -> void: refresh_background())
+	EventBus.clinic_upgrade_installed.connect(func(_c: StringName, _l: int) -> void: refresh_background())
 	resized.connect(_layout)
 	refresh_background()
 
@@ -82,8 +84,16 @@ func refresh_background() -> void:
 	_background = PixelArt.tex(ClinicManager.get_background_path())
 	if _fx_data.is_empty():
 		var d: Variant = DataLoader.load_json(GameConfig.DATA_CLINIC_FX)
-		_fx_data = d.get("tiers", {}) if d is Dictionary else {}
-	_fx = _fx_data.get(str(ClinicManager.tier), [])
+		_fx_data = d.get("clinics", {}) if d is Dictionary else {}
+	_fx = (_fx_data.get(ClinicManager.clinic_id(), []) as Array).duplicate()
+	# Installed upgrades are drawn as pre-lit overlay sprites with their own
+	# animation anchors (tools/art/clinics.py).
+	_overlays.clear()
+	for o: Dictionary in ClinicManager.get_overlays():
+		var tex := PixelArt.tex(str(o["path"]))
+		if tex:
+			_overlays.append([tex, Vector2(float(o["x"]), float(o["y"]))])
+		_fx.append_array(o.get("fx", []))
 	_puffs.clear()
 	_sparks.clear()
 	_layout()
@@ -182,6 +192,9 @@ func _draw() -> void:
 		return
 	draw_rect(Rect2(Vector2.ZERO, size), Color(0.02, 0.02, 0.04))
 	draw_texture_rect(_background, Rect2(_offset, Vector2(_background.get_size()) * _scale), false)
+	for o: Array in _overlays:
+		var t: Texture2D = o[0]
+		draw_texture_rect(t, Rect2(_offset + (o[1] as Vector2) * _scale, Vector2(t.get_size()) * _scale), false)
 	_draw_fx()
 	_draw_hotspot()
 	# Dust motes catching the lamp light (one art pixel each).

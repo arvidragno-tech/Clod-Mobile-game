@@ -247,9 +247,10 @@ const MODIFIER_LABELS := {
 	"diagnosis.reveal": "condition reveal", "pay": "pay", "price.buy": "shop prices", "bm.price": "market prices",
 	"bm.modify": "study/modify cost", "bm.stock": "market offers", "faction.gain": "faction rep gains",
 	"heat.gain": "heat gained", "supplies.use": "supplies used", "xp": "XP", "post_op.risk": "post-op risk",
-	"customer.quality": "customer wealth",
+	"customer.quality": "customer wealth", "staff.stress": "staff stress", "staff.skill": "staff skill",
+	"reputation.daily": "reputation per day",
 }
-const ABSOLUTE_MODIFIERS := ["coag.heal", "bm.stock", "customer.quality"]
+const ABSOLUTE_MODIFIERS := ["coag.heal", "bm.stock", "customer.quality", "reputation.daily"]
 
 
 ## "+12% precision, -10% emergency cooldowns"

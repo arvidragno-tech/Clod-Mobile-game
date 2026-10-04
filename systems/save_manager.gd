@@ -18,6 +18,9 @@ const SAVEABLE_SYSTEMS: Array[String] = [
 	"FactionManager",
 	"SkillManager",
 	"ClinicManager",
+	"WorldManager",
+	"BusinessManager",
+	"CharacterManager",
 	"CyberwareManager",
 	"InventoryManager",
 	"StoryManager",
@@ -223,7 +226,7 @@ func _migrate(data: Dictionary) -> Dictionary:
 		inv.erase("implant_stock")
 		inv["supplies"] = GameConfig.STARTING_SUPPLIES
 		systems["InventoryManager"] = inv
-		systems["ClinicManager"] = {"tier": 1}
+		systems["ClinicManager"] = {"tier": 1}  # legacy tier index (mapped in v4)
 		var ops := 0
 		for rec: Variant in systems.get("ProgressionManager", {}).get("surgery_records", {}).values():
 			ops += int(rec.get("completed", 0)) + int(rec.get("failed", 0))
@@ -238,6 +241,13 @@ func _migrate(data: Dictionary) -> Dictionary:
 		# new, so existing players count as having finished it.
 		systems.erase("AudioManager")
 		systems["TutorialManager"] = {"completed": true, "active": false, "step": -1}
+		data["systems"] = systems
+	if version < 4:
+		# v3 -> v4: six clinic tiers became seven purchasable clinics in
+		# districts (ClinicManager maps the old tier); business days, the
+		# world, characters, staff, story acts and quests are new and start
+		# from their defaults.
+		systems["ClinicManager"] = ClinicManager.migrate_legacy(systems.get("ClinicManager", {}))
 		data["systems"] = systems
 	data["version"] = GameConfig.SAVE_VERSION
 	return data

@@ -1,0 +1,305 @@
+{
+ "_doc": "Districts of Caldera (WorldManager). customers = archetype weights; map = normalized map position.",
+ "city": "Caldera",
+ "districts": [
+  {
+   "id": "undercity",
+   "name": "The Sump",
+   "label": "UNDERCITY",
+   "map": [
+    0.3,
+    0.8
+   ],
+   "description": "Sublevels 1-6 under the old flood walls. Pumps that never stop, rooms rented by the hour, and nobody asks where the blood came from.",
+   "architecture": "Poured concrete, flood stains, stacked container housing, pump stations.",
+   "lighting": "Single bulbs, failing fluorescents, the sodium glow of the pump houses.",
+   "palette": [
+    "2a2c30",
+    "4a4c52",
+    "6a3c26",
+    "b8902c"
+   ],
+   "population": "Pump crews, runaways, addicts, Rustline lookouts.",
+   "factions": {
+    "street_gangs": 3,
+    "black_market": 1
+   },
+   "customers": {
+    "gang_member": 3,
+    "addict": 3,
+    "scavenger": 3,
+    "civilian": 2,
+    "criminal": 2,
+    "street_merc": 1
+   },
+   "events": [
+    "emergency_patient",
+    "power_outage",
+    "stolen_cyberware",
+    "rook_request"
+   ],
+   "danger": 3,
+   "heat_mult": 0.8,
+   "wealth": 0.75,
+   "unlock": {
+    "level": 1,
+    "reputation": -100
+   }
+  },
+  {
+   "id": "industrial",
+   "name": "Furnace Line",
+   "label": "INDUSTRIAL BELT",
+   "map": [
+    0.18,
+    0.48
+   ],
+   "description": "Smelters and print-foundries ringing the caldera wall. Shifts run around the clock and so do the injuries.",
+   "architecture": "Riveted steel, I-beams, gantries, corrugated sheds, slag heaps.",
+   "lighting": "Orange furnace glow, caged sodium lamps, welding flashes.",
+   "palette": [
+    "3a2a20",
+    "6a3c26",
+    "b8902c",
+    "4a5a6a"
+   ],
+   "population": "Foundry crews, haulers, union bosses, contract security.",
+   "factions": {
+    "independent_mercs": 2,
+    "street_gangs": 1,
+    "corporate_security": 1
+   },
+   "customers": {
+    "dock_worker": 4,
+    "veteran": 2,
+    "street_merc": 2,
+    "scavenger": 1,
+    "security_officer": 1
+   },
+   "events": [
+    "equipment_failure",
+    "power_outage",
+    "emergency_patient"
+   ],
+   "danger": 2,
+   "heat_mult": 0.9,
+   "wealth": 0.9,
+   "unlock": {
+    "level": 2,
+    "reputation": 5
+   }
+  },
+  {
+   "id": "market",
+   "name": "Glow Strip",
+   "label": "NIGHT MARKET",
+   "map": [
+    0.52,
+    0.62
+   ],
+   "description": "A canal of stalls under tarps, where chrome changes hands three times before dawn. The Undermarket's front window.",
+   "architecture": "Tarp roofs, shipping crates, strung cable, stall cages.",
+   "lighting": "Hand-painted signs, a few dying tubes, lanterns, phone screens.",
+   "palette": [
+    "2e2030",
+    "5a2a3a",
+    "6e1018",
+    "9a6a8a"
+   ],
+   "population": "Stallholders, smugglers, performers, tourists slumming it.",
+   "factions": {
+    "black_market": 3,
+    "street_gangs": 1,
+    "independent_mercs": 1
+   },
+   "customers": {
+    "smuggler": 3,
+    "bm_tech": 3,
+    "club_performer": 2,
+    "criminal": 2,
+    "fixer": 1,
+    "civilian": 1
+   },
+   "events": [
+    "bm_deal",
+    "stolen_cyberware",
+    "defective_implant",
+    "suspicious_customer"
+   ],
+   "danger": 2,
+   "heat_mult": 1.15,
+   "wealth": 1.0,
+   "unlock": {
+    "level": 3,
+    "reputation": 12
+   }
+  },
+  {
+   "id": "entertainment",
+   "name": "Velvet Tier",
+   "label": "ENTERTAINMENT",
+   "map": [
+    0.72,
+    0.44
+   ],
+   "description": "Clubs, sensory parlours and private rooms stacked over the canal. Everyone wants to look new by midnight.",
+   "architecture": "Mirrored cladding over old brick, velvet ropes, service corridors.",
+   "lighting": "Warm club light leaking from doors, cheap holo-billboards, dark alleys behind.",
+   "palette": [
+    "2a1a24",
+    "5a2a3a",
+    "c8a070",
+    "3a2a3a"
+   ],
+   "population": "Performers, bouncers, dealers, executives off the record.",
+   "factions": {
+    "street_gangs": 1,
+    "black_market": 2,
+    "corporate_security": 1
+   },
+   "customers": {
+    "club_performer": 4,
+    "executive": 1,
+    "addict": 2,
+    "criminal": 1,
+    "civilian": 1
+   },
+   "events": [
+    "refused_payment",
+    "suspicious_customer"
+   ],
+   "danger": 2,
+   "heat_mult": 1.0,
+   "wealth": 1.2,
+   "unlock": {
+    "level": 4,
+    "reputation": 18
+   }
+  },
+  {
+   "id": "oldcity",
+   "name": "Old Caldera",
+   "label": "OLD CITY",
+   "map": [
+    0.46,
+    0.36
+   ],
+   "description": "The original city above the flood line: tenements, churches turned clinics, families who remember the drowning.",
+   "architecture": "Brick tenements, iron balconies, tiled stairwells, patched domes.",
+   "lighting": "Warm windows, old streetlamps, the occasional cold clinic tube.",
+   "palette": [
+    "3a3430",
+    "5a5448",
+    "7a6a52",
+    "3c4a50"
+   ],
+   "population": "Old families, retirees, fixers, netrunners in rented attics.",
+   "factions": {
+    "medical_authorities": 2,
+    "independent_mercs": 1,
+    "street_gangs": 1
+   },
+   "customers": {
+    "civilian": 3,
+    "elder": 3,
+    "fixer": 2,
+    "netrunner": 2,
+    "veteran": 1
+   },
+   "events": [
+    "inspector_visit",
+    "hartmann_offer"
+   ],
+   "danger": 1,
+   "heat_mult": 1.0,
+   "wealth": 1.1,
+   "unlock": {
+    "level": 5,
+    "reputation": 25
+   }
+  },
+  {
+   "id": "corporate",
+   "name": "Meridian Heights",
+   "label": "CORPORATE",
+   "map": [
+    0.62,
+    0.18
+   ],
+   "description": "The arcology terraces. Clean air is billed by the lungful and security knows your face before you do.",
+   "architecture": "White composite, glass bridges, checkpoints, sealed gardens.",
+   "lighting": "Cold, even daylight panels; nothing is ever dark, nothing is ever warm.",
+   "palette": [
+    "c8ccd2",
+    "5a6474",
+    "1c2a36",
+    "9fc8e8"
+   ],
+   "population": "Executives, contract staff, security, Lyra researchers.",
+   "factions": {
+    "corporate_security": 3,
+    "lyra_biocomp": 2,
+    "medical_authorities": 1
+   },
+   "customers": {
+    "corporate": 3,
+    "executive": 3,
+    "security_officer": 3,
+    "netrunner": 1
+   },
+   "events": [
+    "corporate_surveillance",
+    "inspector_visit"
+   ],
+   "danger": 1,
+   "heat_mult": 1.4,
+   "wealth": 1.6,
+   "unlock": {
+    "level": 7,
+    "reputation": 40
+   }
+  },
+  {
+   "id": "restricted",
+   "name": "Lyra Exclusion Zone",
+   "label": "RESTRICTED ZONE",
+   "map": [
+    0.86,
+    0.24
+   ],
+   "description": "A quarantined research campus on the drowned district's edge. Officially a biohazard site. Unofficially, where THREAD was grown.",
+   "architecture": "Sealed labs, decontamination locks, flooded lower floors, fences.",
+   "lighting": "Emergency strips, cold lab light, searchlights on the water.",
+   "palette": [
+    "1c2232",
+    "2a3040",
+    "6a8aa8",
+    "6e1018"
+   ],
+   "population": "Lyra staff, contractors, test subjects who never left.",
+   "factions": {
+    "lyra_biocomp": 3,
+    "corporate_security": 2,
+    "independent_mercs": 1
+   },
+   "customers": {
+    "netrunner": 2,
+    "bounty_hunter": 2,
+    "veteran": 2,
+    "executive": 1,
+    "security_officer": 2
+   },
+   "events": [
+    "corporate_surveillance",
+    "equipment_failure"
+   ],
+   "danger": 3,
+   "heat_mult": 1.6,
+   "wealth": 1.4,
+   "unlock": {
+    "level": 10,
+    "reputation": 60
+   }
+  }
+ ]
+}

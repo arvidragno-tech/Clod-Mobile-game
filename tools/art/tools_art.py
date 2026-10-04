@@ -370,11 +370,19 @@ def emblem(fid) -> Canvas:
         cv.sphere(8, 8, 7, 7, WHITE, 2.5, 6.5)
         cv.rect(6, 3, 4, 10, c(G["green"], 4))
         cv.rect(3, 6, 10, 4, c(G["green"], 4))
+    elif fid == "lyra_biocomp":  # pale lattice thread in a cold square
+        cv.shaded_poly([(2, 2), (14, 2), (14, 14), (2, 14)], pal.ramp("1e2a38"), 4.5, 2, 1, 1)
+        for y in range(3, 14):
+            dx = round(math.sin(y * 0.9) * 3)
+            cv.set(8 + dx, y, c(WHITE, 6))
+            cv.set(8 - dx, y, c(G["cyan"], 4))
+            if y % 3 == 0:
+                cv.hline(8 - abs(dx), 8 + abs(dx), y, c(WHITE, 3))
     cv.selective_outline()
     return cv
 
 
-FACTIONS = ["street_gangs", "corporate_security", "independent_mercs", "black_market", "medical_authorities"]
+FACTIONS = ["street_gangs", "corporate_security", "independent_mercs", "black_market", "medical_authorities", "lyra_biocomp"]
 
 TOOLS = {
     # id: (category, tier)

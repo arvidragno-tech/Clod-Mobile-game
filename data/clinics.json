@@ -1,0 +1,226 @@
+{
+ "_doc": "Purchasable clinics (ClinicManager). rent/operating_cost are per day; surgery_capacity = jobs per day; reputation = daily reputation from the address.",
+ "clinics": [
+  {
+   "id": "backalley",
+   "name": "Back-Alley Room",
+   "district": "undercity",
+   "price": 0,
+   "rent": 20,
+   "operating_cost": 10,
+   "security": 1,
+   "staff_capacity": 0,
+   "surgery_capacity": 3,
+   "upgrade_slots": 3,
+   "black_market_access": 1,
+   "reputation": 0,
+   "description": "A rented storeroom behind a noodle bar: a door on sawhorses, a bulb, a bucket. It's a start.",
+   "min_level": 1,
+   "min_reputation": -100,
+   "max_cyberware_tier": 2,
+   "supplies_capacity": 12,
+   "surgery_backdrop": 0,
+   "modifiers": {
+    "complication.chance": 0.08,
+    "post_op.risk": 0.05
+   },
+   "features": [
+    "Improvised table",
+    "Dead CRT stack",
+    "Stained mattress"
+   ],
+   "index": 0,
+   "background": "res://assets/sprites/clinic/clinic_backalley.png"
+  },
+  {
+   "id": "undercity",
+   "name": "Undercity Clinic",
+   "district": "undercity",
+   "price": 700,
+   "rent": 45,
+   "operating_cost": 15,
+   "security": 1,
+   "staff_capacity": 1,
+   "surgery_capacity": 4,
+   "upgrade_slots": 5,
+   "black_market_access": 1,
+   "reputation": 2,
+   "description": "A tiled room off a pump station with a real dental chair and a sign that half works.",
+   "min_level": 2,
+   "min_reputation": 3,
+   "max_cyberware_tier": 2,
+   "supplies_capacity": 18,
+   "surgery_backdrop": 1,
+   "modifiers": {},
+   "features": [
+    "Dental chair",
+    "Sharps box",
+    "Hidden wall stash"
+   ],
+   "index": 1,
+   "background": "res://assets/sprites/clinic/clinic_undercity.png"
+  },
+  {
+   "id": "industrial",
+   "name": "Furnace Line Clinic",
+   "district": "industrial",
+   "price": 1800,
+   "rent": 80,
+   "operating_cost": 30,
+   "security": 2,
+   "staff_capacity": 2,
+   "surgery_capacity": 4,
+   "upgrade_slots": 6,
+   "black_market_access": 1,
+   "reputation": 4,
+   "description": "An old foundry first-aid bay: chain hoist for limb work, sodium light, an encrypted terminal left by the last tenant.",
+   "min_level": 3,
+   "min_reputation": 12,
+   "max_cyberware_tier": 3,
+   "supplies_capacity": 24,
+   "surgery_backdrop": 1,
+   "modifiers": {
+    "complication.chance": -0.05,
+    "pay": 0.05
+   },
+   "features": [
+    "Chain hoist",
+    "Encrypted terminal",
+    "Coolant line (leaking)"
+   ],
+   "index": 2,
+   "background": "res://assets/sprites/clinic/clinic_industrial.png"
+  },
+  {
+   "id": "nightmarket",
+   "name": "Glow Strip Clinic",
+   "district": "market",
+   "price": 3000,
+   "rent": 110,
+   "operating_cost": 35,
+   "security": 1,
+   "staff_capacity": 2,
+   "surgery_capacity": 5,
+   "upgrade_slots": 7,
+   "black_market_access": 3,
+   "reputation": 5,
+   "description": "A tarp-walled stall clinic over the canal. Cheap parts on hooks, Undermarket contacts next door, sweeps every other week.",
+   "min_level": 4,
+   "min_reputation": 18,
+   "max_cyberware_tier": 3,
+   "supplies_capacity": 28,
+   "surgery_backdrop": 1,
+   "modifiers": {
+    "bm.price": -0.1,
+    "pay": 0.08,
+    "heat.gain": 0.15
+   },
+   "features": [
+    "Limb rack",
+    "Undermarket access",
+    "Tarp walls"
+   ],
+   "index": 3,
+   "background": "res://assets/sprites/clinic/clinic_nightmarket.png"
+  },
+  {
+   "id": "professional",
+   "name": "Old Caldera Practice",
+   "district": "oldcity",
+   "price": 4200,
+   "rent": 150,
+   "operating_cost": 50,
+   "security": 3,
+   "staff_capacity": 3,
+   "surgery_capacity": 5,
+   "upgrade_slots": 8,
+   "black_market_access": 2,
+   "reputation": 7,
+   "description": "A former parish infirmary: proper lamp, a surgical arm, clean tiles - mostly. Respectable enough that inspectors knock first.",
+   "min_level": 5,
+   "min_reputation": 25,
+   "max_cyberware_tier": 3,
+   "supplies_capacity": 32,
+   "surgery_backdrop": 2,
+   "modifiers": {
+    "complication.chance": -0.1,
+    "surgery.precision": 0.08,
+    "pay": 0.1
+   },
+   "features": [
+    "Surgical arm",
+    "Vitals cart",
+    "Tiled theatre"
+   ],
+   "index": 4,
+   "background": "res://assets/sprites/clinic/clinic_professional.png"
+  },
+  {
+   "id": "corporate",
+   "name": "Meridian Heights Suite",
+   "district": "corporate",
+   "price": 8500,
+   "rent": 320,
+   "operating_cost": 90,
+   "security": 4,
+   "staff_capacity": 4,
+   "surgery_capacity": 6,
+   "upgrade_slots": 10,
+   "black_market_access": 1,
+   "reputation": 10,
+   "description": "A leased suite two floors under a Lyra office. Twin arms, scanner ring, cold light - and cameras you didn't install.",
+   "min_level": 7,
+   "min_reputation": 40,
+   "max_cyberware_tier": 4,
+   "supplies_capacity": 40,
+   "surgery_backdrop": 2,
+   "modifiers": {
+    "complication.chance": -0.15,
+    "surgery.precision": 0.12,
+    "quick.cooldown": -0.1,
+    "pay": 0.2,
+    "heat.gain": -0.1
+   },
+   "features": [
+    "Scanner ring",
+    "Twin surgical arms",
+    "Holo diagnostics"
+   ],
+   "index": 5,
+   "background": "res://assets/sprites/clinic/clinic_corporate.png"
+  },
+  {
+   "id": "elite",
+   "name": "Exclusion Zone Facility",
+   "district": "restricted",
+   "price": 16000,
+   "rent": 600,
+   "operating_cost": 160,
+   "security": 5,
+   "staff_capacity": 6,
+   "surgery_capacity": 6,
+   "upgrade_slots": 14,
+   "black_market_access": 3,
+   "reputation": 15,
+   "description": "A decommissioned Lyra lab: glass second theatre, containment tank, everything you could want. Nobody says why it was abandoned.",
+   "min_level": 10,
+   "min_reputation": 60,
+   "max_cyberware_tier": 5,
+   "supplies_capacity": 60,
+   "surgery_backdrop": 2,
+   "modifiers": {
+    "complication.chance": -0.2,
+    "surgery.precision": 0.18,
+    "quick.cooldown": -0.15,
+    "pay": 0.3
+   },
+   "features": [
+    "Second theatre",
+    "Containment tank",
+    "Lattice-grade scanner"
+   ],
+   "index": 6,
+   "background": "res://assets/sprites/clinic/clinic_elite.png"
+  }
+ ]
+}

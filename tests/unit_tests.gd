@@ -20,6 +20,7 @@ func run(runner: Node) -> void:
 	_modifiers_and_skills()
 	_factions_and_heat()
 	_clinic_upgrade()
+	_business_and_world()
 	_events()
 	_black_market()
 	_failure_and_death()
@@ -168,9 +169,9 @@ func _data_integrity() -> void:
 		var c := CustomerManager.get_customer(id)
 		check(CharacterArt.validate(c.appearance).is_empty(), "character %s art parts exist %s" % [id, CharacterArt.validate(c.appearance)])
 		check(CyberwareManager.is_valid(c.requested_cyberware_id), "character %s requests valid chrome" % id)
-	check(FactionManager.order.size() == 5, "5 factions")
+	check(FactionManager.order.size() == 6, "6 factions (incl. Lyra Biocomp)")
 	check(SkillManager.order.size() >= 12, "skill tree loaded (%d)" % SkillManager.order.size())
-	check(ClinicManager.tiers.size() == 6, "6 clinic tiers")
+	check(ClinicManager.tiers.size() == 7, "7 purchasable clinics")
 	check(EventManager.order.size() >= 12, "events loaded (%d)" % EventManager.order.size())
 
 
@@ -254,7 +255,7 @@ func _character_system(gen: CustomerGenerator) -> void:
 		"body_cyber": ["arm"], "skin": 3, "hair_color": "gray", "iris": "blue", "cloth_a": "navy", "cloth_b": "hivis"}
 	var v2 := CharacterAppearanceManager.normalize(v1)
 	check(int(v2["v"]) == 2 and v2["outfit"] == "worker" and v2["face"] == "square" and (v2["cyber"] as Array).has("optic"), "v1 appearance migrates to v2")
-	check(CharacterArt.validate(v2).is_empty(), "migrated appearance renders %s" % CharacterArt.validate(v2))
+	check(CharacterArt.validate(v2).is_empty(), "migrated appearance renders %s" % [CharacterArt.validate(v2)])
 	# Story consequences change how a character looks, and survive a save.
 	CharacterManager.reset_state()
 	CharacterManager.apply_appearance_event(&"teo_marr", "lose_eye")
@@ -412,14 +413,91 @@ func _factions_and_heat() -> void:
 
 func _clinic_upgrade() -> void:
 	SaveManager.reset_all()
-	check(ClinicManager.tier == 0 and ClinicManager.get_tier_name() == "Basement Hole", "start in the basement")
-	check(ClinicManager.get_upgrade_block_reason() != "", "upgrade blocked at start")
+	check(ClinicManager.tier == 0 and ClinicManager.clinic_id() == "backalley", "start in the back-alley room")
+	check(ClinicManager.get_upgrade_block_reason() != "", "next clinic blocked at start")
 	EconomyManager.add_money(1000)
 	ProgressionManager.add_xp(ProgressionManager.xp_required_for_level(2))
 	ReputationManager.change(5)
-	check(ClinicManager.upgrade() and ClinicManager.tier == 1, "upgrade to Backroom Clinic")
-	check(ClinicManager.get_background_path().contains("t1"), "clinic art changes with tier")
-	check(ClinicManager.get_surgery_backdrop_level() == 1, "surgery backdrop improves with tier")
+	check(ClinicManager.upgrade() and ClinicManager.tier == 1, "buy and move to the Undercity Clinic")
+	check(ClinicManager.get_background_path().contains("undercity"), "clinic art changes with the clinic")
+	check(ClinicManager.get_surgery_backdrop_level() == 1, "surgery backdrop improves with the clinic")
+	check(ClinicManager.owns(0) and ClinicManager.owns(1), "the old room is still owned")
+	check(ClinicManager.move_to(0) and ClinicManager.tier == 0 and ClinicManager.move_to(1), "move between owned clinics")
+	# Upgrades: slots, levels, modifiers, overlays.
+	EconomyManager.add_money(5000)
+	var prec := ModifierManager.value(&"surgery.precision")
+	check(ClinicManager.install(&"surgery") and ClinicManager.upgrade_level(&"surgery") == 1, "install a surgery upgrade")
+	check(ModifierManager.value(&"surgery.precision") > prec, "upgrade modifiers apply")
+	check(ClinicManager.get_overlays().size() == 1, "installed upgrade has a room overlay")
+	for o: Dictionary in ClinicManager.get_overlays():
+		check(ResourceLoader.exists(str(o["path"])), "overlay sprite exists")
+	var all_ok := true
+	for cid: String in ["backalley", "undercity", "industrial", "nightmarket", "professional", "corporate", "elite"]:
+		for cat in ClinicManager.CATEGORIES:
+			for lv in 3:
+				if not ClinicManager.overlays.has("%s/%s/%d" % [cid, cat, lv + 1]):
+					all_ok = false
+	check(all_ok, "every clinic x category x level has an overlay")
+	check(ClinicManager.install(&"security") and ClinicManager.security_rating() == int(ClinicManager.get_tier_data()["security"]) + 1, "security upgrade raises security")
+	ClinicManager.install(&"customer")
+	ClinicManager.install(&"diagnostics")
+	ClinicManager.install(&"staff")
+	check(ClinicManager.used_slots() == 5 and ClinicManager.install_block_reason(&"surgery") != "", "upgrade slots are limited (5 at the Undercity Clinic)")
+	check(ClinicManager.install_block_reason(&"black_market") != "", "no free slot for black market gear")
+	# Save round trip + legacy migration.
+	var d := ClinicManager.get_save_data()
+	ClinicManager.reset_state()
+	ClinicManager.load_save_data(d)
+	check(ClinicManager.tier == 1 and ClinicManager.upgrade_level(&"surgery") == 1 and ClinicManager.owns(0), "clinics and upgrades persist")
+	ClinicManager.load_save_data({"tier": 3})
+	check(ClinicManager.clinic_id() == "professional", "legacy tier 3 maps to the Old Caldera Practice")
+	ClinicManager.load_save_data({"tier": 5})
+	check(ClinicManager.clinic_id() == "elite" and ClinicManager.owns(0), "legacy tier 5 maps to the elite facility")
+	SaveManager.reset_all()
+
+
+func _business_and_world() -> void:
+	SaveManager.reset_all()
+	check(BusinessManager.day == 1 and BusinessManager.capacity() == 3, "day 1, three jobs a day in the back alley")
+	EconomyManager.add_money(200, &"revenue")
+	EconomyManager.spend(70, &"supplies")
+	check(int(BusinessManager.today.get(&"revenue", 0)) == 200 and int(BusinessManager.today.get(&"supplies", 0)) == -70, "ledger records categories")
+	for i in 3:
+		BusinessManager.record_job()
+	check(BusinessManager.is_day_full(), "day is full after capacity jobs")
+	var money := EconomyManager.money
+	var bill := BusinessManager.projected_total()
+	check(bill == 30, "back-alley nightly bill is rent 20 + running 10")
+	var rep := BusinessManager.end_day()
+	check(BusinessManager.day == 2 and BusinessManager.jobs_today == 0, "closing starts day 2")
+	check(EconomyManager.money == money - bill, "rent and running costs are paid")
+	check(int(rep["ledger"].get(&"rent", 0)) == -20 and int(rep["profit"]) == 200 - 70 - 30, "night report shows rent and profit")
+	EconomyManager.spend(EconomyManager.money)
+	BusinessManager.end_day()
+	check(BusinessManager.debt == 30, "unpaid bills become debt")
+	BusinessManager.end_day()
+	check(BusinessManager.debt > 60, "debt accrues interest")
+	EconomyManager.add_money(500)
+	BusinessManager.pay_debt()
+	check(BusinessManager.debt == 0, "debt can be paid off")
+	var d := BusinessManager.get_save_data()
+	BusinessManager.reset_state()
+	BusinessManager.load_save_data(d)
+	check(BusinessManager.day == 4 and BusinessManager.history.size() == 3, "business days persist")
+	# World
+	check(WorldManager.districts.size() == 7, "7 districts")
+	check(WorldManager.current_district_id() == &"undercity", "start in the Sump (Undercity)")
+	check(WorldManager.customer_weight("addict") > WorldManager.customer_weight("executive"), "Undercity draws addicts, not executives")
+	check(not WorldManager.is_district_unlocked(&"corporate"), "corporate district locked at start")
+	WorldManager.add_influence()
+	check(WorldManager.get_influence(&"undercity") == 1, "work builds district influence")
+	var gen := CustomerGenerator.new()
+	var execs := 0
+	for i in 200:
+		var c := gen.generate()
+		if c.archetype_id in [&"corporate", &"executive"]:
+			execs += 1
+	check(execs < 30, "few corporate walk-ins in the Sump (%d/200)" % execs)
 	SaveManager.reset_all()
 
 
@@ -617,7 +695,7 @@ func _save_migration_v1() -> void:
 	check(EconomyManager.money == 777 and ReputationManager.reputation == 9 and ProgressionManager.level == 2, "v1 progress kept")
 	check(InventoryManager.get_implant_count(&"nx1_neural_bridge") == 2, "v1 implant stock -> units")
 	check(InventoryManager.owns_tool(&"scalpel_mono"), "v1 tools kept")
-	check(ClinicManager.tier == 1, "v1 clinic becomes the Backroom tier")
+	check(ClinicManager.clinic_id() == "undercity", "v1 clinic becomes the Undercity Clinic")
 	check(EventManager.operations == 3, "v1 operation count derived")
 	check(CustomerManager.current_customer != null and CustomerManager.current_customer.character_id == &"juno_reyes", "v1 waiting customer restored")
 	SaveManager.delete_save()

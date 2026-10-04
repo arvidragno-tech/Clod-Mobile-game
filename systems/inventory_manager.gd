@@ -97,7 +97,7 @@ func buy_tool(id: StringName) -> bool:
 	var t := get_tool(id)
 	if t == null or owns_tool(id) or t.unlock_level > ProgressionManager.level:
 		return false
-	if not EconomyManager.spend(tool_price(t)):
+	if not EconomyManager.spend(tool_price(t), &"tools"):
 		return false
 	owned_tools.append(id)
 	EventBus.inventory_changed.emit()
@@ -151,7 +151,7 @@ func get_service_cost() -> int:
 ## Restores every owned tool to 100%.
 func service_tools() -> bool:
 	var cost := get_service_cost()
-	if cost <= 0 or not EconomyManager.spend(cost):
+	if cost <= 0 or not EconomyManager.spend(cost, &"tools"):
 		return false
 	tool_condition.clear()
 	EventBus.inventory_changed.emit()
@@ -240,7 +240,7 @@ func buy_implant(id: StringName) -> bool:
 	var item := CyberwareManager.get_cyberware(id)
 	if item == null or item.black_market or not CyberwareManager.is_tier_available(item.tier):
 		return false
-	if not EconomyManager.spend(implant_price(item)):
+	if not EconomyManager.spend(implant_price(item), &"cyberware"):
 		return false
 	return add_implant(id)
 
@@ -255,7 +255,7 @@ func add_supplies(n: int) -> void:
 func buy_supply_pack() -> bool:
 	if supplies >= ClinicManager.get_supplies_capacity():
 		return false
-	if not EconomyManager.spend(int(round(GameConfig.SUPPLY_PACK_PRICE * ModifierManager.mult(&"price.buy")))):
+	if not EconomyManager.spend(int(round(GameConfig.SUPPLY_PACK_PRICE * ModifierManager.mult(&"price.buy"))), &"supplies"):
 		return false
 	add_supplies(GameConfig.SUPPLY_PACK_SIZE)
 	return true

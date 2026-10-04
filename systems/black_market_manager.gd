@@ -98,7 +98,7 @@ func buy(index: int) -> bool:
 	if not is_unlocked() or index < 0 or index >= stock.size():
 		return false
 	var offer: Dictionary = stock[index]
-	if not EconomyManager.spend(int(offer["price"])):
+	if not EconomyManager.spend(int(offer["price"]), &"black_market"):
 		return false
 	stock.remove_at(index)
 	InventoryManager.add_instance(offer["instance"])
@@ -114,7 +114,7 @@ func sell(uid: String) -> int:
 		return 0
 	var value := sell_value(inst)
 	InventoryManager.remove_instance(uid)
-	EconomyManager.add_money(value)
+	EconomyManager.add_money(value, &"black_market")
 	if InventoryManager.tokens < 99 and inst.source == &"black_market":
 		InventoryManager.add_tokens(1)
 	EventBus.black_market_changed.emit()
@@ -128,7 +128,7 @@ func study(uid: String) -> bool:
 		return false
 	if InventoryManager.parts >= study_cost_parts():
 		InventoryManager.add_parts(-study_cost_parts())
-	elif not EconomyManager.spend(int(config.get("study_cost_money", 120))):
+	elif not EconomyManager.spend(int(config.get("study_cost_money", 120)), &"black_market"):
 		return false
 	for t in inst.traits:
 		if not inst.revealed.has(t):

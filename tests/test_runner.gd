@@ -268,11 +268,38 @@ func _e2e() -> void:
 	await _click_named("Nav_upgrades")
 	await _wait_screen(UIManager.SCREEN_UPGRADES)
 	await _checkpoint("upgrades")
+	await _click_named("FacilityTab_1")
+	await _frames(3)
+	await _checkpoint("property")
 	await _click_named("UpgradeClinic")
 	check(ClinicManager.tier == tier + 1, "upgraded the clinic via the UI")
+	# Facility upgrade (visible overlay in the room).
+	await _click_named("FacilityTab_0")
+	await _frames(3)
+	EconomyManager.add_money(400)
+	await _frames(4)
+	await _click_named("Install_surgery")
+	check(ClinicManager.upgrade_level(&"surgery") == 1, "installed a surgery upgrade via the UI")
+	await _checkpoint("facility_installed")
 	await _click_named("BackButton")
 	await _wait_screen(UIManager.SCREEN_CLINIC)
 	await _checkpoint("clinic_upgraded")
+	# Business ledger and the city map.
+	await _click_named("Nav_business")
+	await _wait_screen(UIManager.SCREEN_BUSINESS)
+	await _checkpoint("business")
+	await _key(KEY_M)
+	await _wait_screen(UIManager.SCREEN_MAP)
+	await _checkpoint("city_map")
+	var map := _find_visible("CityMap") as CityMapView
+	check(map != null, "city map view present")
+	if map:
+		var mp: Array = WorldManager.get_district(&"market")["map"]
+		await _tap(map.get_global_rect().position + Vector2(float(mp[0]) * 320.0, float(mp[1]) * 180.0).floor() * GameConfig.PIXEL_SCALE)
+		check(map.selected == &"market", "clicking a district selects it")
+		await _checkpoint("city_map_market")
+	await _click_named("BackButton")
+	await _wait_screen(UIManager.SCREEN_CLINIC)
 
 	# Dossier tabs
 	await _click_named("Nav_dossier")

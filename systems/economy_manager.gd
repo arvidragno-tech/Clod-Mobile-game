@@ -16,19 +16,25 @@ func can_afford(amount: int) -> bool:
 	return money >= amount
 
 
-func add_money(amount: int) -> void:
+## category tags the movement for the business ledger (BusinessManager):
+## revenue, staff_revenue, black_market, clinics, upgrades, supplies,
+## cyberware, tools, rent, salaries, security, bribes, debt, other.
+func add_money(amount: int, category: StringName = &"other") -> void:
 	if amount == 0:
 		return
 	money += amount
 	EventBus.money_changed.emit(money, amount)
+	EventBus.transaction.emit(category, amount)
 
 
 ## Returns false (and changes nothing) if the player cannot afford it.
-func spend(amount: int) -> bool:
+func spend(amount: int, category: StringName = &"other") -> bool:
 	if amount < 0 or not can_afford(amount):
 		return false
 	money -= amount
 	EventBus.money_changed.emit(money, -amount)
+	if amount > 0:
+		EventBus.transaction.emit(category, -amount)
 	return true
 
 
