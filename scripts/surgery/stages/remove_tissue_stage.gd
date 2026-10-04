@@ -33,7 +33,7 @@ func begin() -> void:
 
 func _generate_nodes(count: int) -> Array[Dictionary]:
 	var nodes: Array[Dictionary] = []
-	var art := float(SurgicalSiteView.ART_SIZE)
+	var art := float(SurgicalSiteView.DESIGN_GRID)
 	var margin := (NODE_RADIUS_ART + 1.0) / art
 	for attempt in PLACEMENT_ATTEMPTS:
 		if nodes.size() >= count:
@@ -114,8 +114,8 @@ func _draw() -> void:
 	for n in site.damaged_nodes:
 		var c := site.to_local_pos(n["pos"])
 		var r := (NODE_RADIUS_ART + 1.5) * _px()
-		draw_arc(c, r + pulse * 2.0, 0, TAU, 16, Color(Palette.WARN, 0.6), 1.5)
+		draw_arc(c.floor(), r + roundf(pulse * 2.0), 0, TAU, 16, Color(Palette.WARN, 0.7), 1.0)
 	if _burning and is_pointer_down:
 		var reach := (NODE_RADIUS_ART + BURN_REACH_ART) * _px()
-		draw_arc(_pointer, reach * 0.5, 0, TAU, 16, Palette.DANGER, 2.0)
-		draw_rect(Rect2(_pointer - Vector2(2, 2), Vector2(4, 4)), Palette.WARN)
+		draw_arc(_pointer.floor(), reach * 0.5, 0, TAU, 16, Palette.DANGER, 1.0)
+		draw_rect(Rect2(_pointer.floor() - Vector2(1, 1), Vector2(3, 3)), Palette.WARN)

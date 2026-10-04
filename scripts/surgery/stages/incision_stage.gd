@@ -10,6 +10,8 @@ const DEVIATION_COOLDOWN := 0.35
 const CUT_FEEDBACK_EVERY_ART := 4.0
 
 var path_local: Array[Vector2] = []
+var _norm_path: Array[Vector2] = []
+var _origin: Vector2 = Vector2.INF
 var _total_len: float = 0.0
 var _progress_len: float = 0.0
 var _cutting: bool = false
@@ -23,17 +25,35 @@ var _time: float = 0.0
 
 func begin() -> void:
 	var norm_path := stage.param_vec2_array("path")
-	site.incision_path = norm_path
+	site.set_incision_path(norm_path)
 	_tolerance_art = stage.param_float("tolerance_px", 3.0) * tool_precision
+	_norm_path = norm_path
+	_sync_path()
+
+
+## Rebuilds the local-space path if the field moved (the field area resizes
+## when the previous stage's controls are removed). Progress is kept as a
+## length, which is unaffected by translation.
+func _sync_path() -> void:
+	var origin := site.to_local_pos(Vector2.ZERO)
+	if origin == _origin:
+		return
+	_origin = origin
 	path_local.clear()
-	for p in norm_path:
+	for p in _norm_path:
 		path_local.append(site.to_local_pos(p))
 	_total_len = 0.0
 	for i in range(path_local.size() - 1):
 		_total_len += path_local[i].distance_to(path_local[i + 1])
 
 
+func _stage_process(delta: float) -> void:
+	_sync_path()
+	_incision_process(delta)
+
+
 func get_autoplay_hints() -> Dictionary:
+	_sync_path()
 	return {"path": path_local}
 
 
@@ -73,7 +93,8 @@ func _project(pos: Vector2) -> Array[float]:
 
 
 func _pointer_down(pos: Vector2) -> void:
-	if pos.distance_to(_cut_head()) > GameConfig.TOUCH_SLOP + _tolerance_art * _px():
+	_sync_path()
+	if pos.distance_to(_cut_head()) > _ui(GameConfig.TOUCH_SLOP) + _tolerance_art * _px():
 		if _progress_len <= 0.0:
 			hint.emit("Start the cut at the marker")
 		return
@@ -118,7 +139,7 @@ func _pointer_up(_pos: Vector2) -> void:
 	_cutting = false
 
 
-func _stage_process(delta: float) -> void:
+func _incision_process(delta: float) -> void:
 	_time += delta
 	queue_redraw()
 
@@ -126,9 +147,9 @@ func _stage_process(delta: float) -> void:
 func _draw() -> void:
 	if path_local.size() < 2:
 		return
-	var px := _px()
-	# Dotted guide line on the art-pixel grid
-	var dash := px * 2.0
+	var px := 1.0
+	# Dotted guide line, one art pixel per dot
+	var dash := 3.0
 	var travelled := 0.0
 	for i in range(path_local.size() - 1):
 		var a := path_local[i]
@@ -138,18 +159,18 @@ func _draw() -> void:
 		while t < seg:
 			var p := a.lerp(b, t / seg)
 			if fmod(travelled + t, dash * 2.0) < dash and travelled + t > _progress_len:
-				draw_rect(Rect2((p - Vector2(px, px) * 0.5).round(), Vector2(px, px)), Color(Palette.ACCENT, 0.85))
+				draw_rect(Rect2(p.floor(), Vector2(1, 1)), Color(Palette.ACCENT, 0.9))
 			t += px
 		travelled += seg
 	# Tolerance corridor (subtle)
 	var corridor := Color(Palette.ACCENT, 0.07)
 	for i in range(path_local.size() - 1):
-		draw_line(path_local[i], path_local[i + 1], corridor, _tolerance_art * px * 2.0)
+		draw_line(path_local[i], path_local[i + 1], corridor, _tolerance_art * _px() * 2.0)
 	# Cut head / start marker
 	var head := _cut_head()
 	var pulse := 0.5 + 0.5 * sin(_time * 6.0)
-	draw_arc(head, (4.0 + pulse * 2.0) * px * 0.75, 0, TAU, 20, Palette.WARN, 2.0)
-	draw_rect(Rect2(head - Vector2(px, px) * 0.5, Vector2(px, px)), Palette.WARN)
+	draw_arc(head.floor(), 5.0 + roundf(pulse * 2.0), 0, TAU, 20, Palette.WARN, 1.0)
+	draw_rect(Rect2(head.floor() - Vector2(1, 1), Vector2(2, 2)), Palette.WARN)
 	# End marker
-	var end := path_local[path_local.size() - 1]
-	draw_rect(Rect2(end - Vector2(px, px), Vector2(px, px) * 2.0), Palette.ACCENT, false, 2.0)
+	var end := path_local[path_local.size() - 1].floor()
+	draw_rect(Rect2(end - Vector2(2, 2), Vector2(5, 5)), Palette.ACCENT, false, 1.0)

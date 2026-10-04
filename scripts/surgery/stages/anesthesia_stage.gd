@@ -84,16 +84,16 @@ func _evaluate() -> void:
 
 
 func _gauge_rect() -> Rect2:
-	var field := site.get_field_rect()
-	var w := GAUGE_WIDTH_ART * _px()
-	return Rect2(field.end.x - w - 3.0 * _px(), field.position.y + field.size.y * 0.15, w, field.size.y * 0.7)
+	var field := site.get_visible_field_rect()
+	var w := 10.0
+	return Rect2(Vector2(field.end.x - w - 8.0, field.position.y + field.size.y * 0.15).floor(), Vector2(w, field.size.y * 0.7).floor())
 
 
 func _draw() -> void:
 	if site == null:
 		return
 	var r := _gauge_rect()
-	draw_rect(r.grow(4.0), Color(Palette.BG_0, 0.85))
+	draw_rect(r.grow(3.0), Color(Palette.BG_0, 0.85))
 	draw_rect(r, Palette.BG_1)
 	var zone_top := r.end.y - r.size.y * zone_max / 100.0
 	var zone_bottom := r.end.y - r.size.y * zone_min / 100.0
@@ -107,12 +107,12 @@ func _draw() -> void:
 	elif dose >= zone_min:
 		fill_color = Palette.OK
 	# Segmented fill
-	var seg := maxf(_px() * 2.0, 4.0)
+	var seg := 3.0
 	var y := r.end.y - seg
 	while y >= r.end.y - fill_h - 0.5:
-		draw_rect(Rect2(r.position.x + 2, y + 1, r.size.x - 4, seg - 2), fill_color)
+		draw_rect(Rect2(r.position.x + 2, y + 1, r.size.x - 4, seg - 1), fill_color)
 		y -= seg
-	draw_rect(r, Palette.LINE_HI, false, 2.0)
-	var font := get_theme_font(&"font", &"MonoLabel")
-	draw_string(font, Vector2(r.position.x - 20, r.position.y - 10), "DOSE", HORIZONTAL_ALIGNMENT_CENTER, r.size.x + 40, 18, Palette.TEXT_DIM)
-	draw_string(font, Vector2(r.position.x - 60, r.end.y - fill_h + 6), "%d%%" % roundi(dose), HORIZONTAL_ALIGNMENT_RIGHT, 52, 22, fill_color)
+	draw_rect(r, Palette.LINE_HI, false, 1.0)
+	var font := _pixel_font()
+	draw_string(font, Vector2(r.position.x - 20, r.position.y - 5), "DOSE", HORIZONTAL_ALIGNMENT_CENTER, r.size.x + 40, PIXEL_FONT_SIZE, Palette.TEXT_DIM)
+	draw_string(font, Vector2(r.position.x - 34, r.end.y - fill_h + 3), "%d%%" % roundi(dose), HORIZONTAL_ALIGNMENT_RIGHT, 30, PIXEL_FONT_SIZE, fill_color)

@@ -62,7 +62,8 @@ func current_target() -> float:
 
 
 func current_sync() -> float:
-	return clampf(1.0 - absf(slider_value - current_target()) / SYNC_RANGE, 0.0, 1.0)
+	var sync_range := SYNC_RANGE * float(context.get("sync_range_mult", 1.0))
+	return clampf(1.0 - absf(slider_value - current_target()) / sync_range, 0.0, 1.0)
 
 
 func _new_round() -> void:
@@ -106,31 +107,31 @@ func _stage_process(delta: float) -> void:
 func _draw() -> void:
 	if site == null:
 		return
-	var field := site.get_field_rect()
-	var panel := Rect2(field.position.x + 8, field.position.y + field.size.y * 0.18, field.size.x - 16, field.size.y * 0.64)
+	var field := site.get_visible_field_rect()
+	var panel := Rect2(Vector2(field.position.x + 6, field.position.y + field.size.y * 0.2).floor(), Vector2(field.size.x - 12, field.size.y * 0.6).floor())
 	draw_rect(panel, Color(Palette.BG_0, 0.9))
-	draw_rect(panel, Palette.ACCENT_DIM, false, 2.0)
-	var px := _px()
+	draw_rect(panel, Palette.ACCENT_DIM, false, 1.0)
+	var px := 1.0
 	var mid := panel.get_center().y
 	var amp := panel.size.y * 0.22
 	_draw_wave(panel, mid, amp, current_target(), 0.0, Color(Palette.TEXT_DIM, 0.8), px)
 	var sync := current_sync()
 	var wave_color := Palette.DANGER.lerp(Palette.OK, sync)
 	_draw_wave(panel, mid, amp * 0.9, slider_value, 0.3, wave_color, px)
-	var font := get_theme_font(&"font", &"MonoLabel")
-	draw_string(font, panel.position + Vector2(8, 22), "BAND %d/%d" % [mini(round_index + 1, rounds), rounds], HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Palette.TEXT_DIM)
-	draw_string(font, panel.position + Vector2(0, 22), "SYNC %d%%" % roundi(sync * 100.0), HORIZONTAL_ALIGNMENT_RIGHT, panel.size.x - 8, 22, wave_color)
+	var font := _pixel_font()
+	draw_string(font, panel.position + Vector2(4, 10), "BAND %d/%d" % [mini(round_index + 1, rounds), rounds], HORIZONTAL_ALIGNMENT_LEFT, -1, PIXEL_FONT_SIZE, Palette.TEXT_DIM)
+	draw_string(font, panel.position + Vector2(0, 10), "SYNC %d%%" % roundi(sync * 100.0), HORIZONTAL_ALIGNMENT_RIGHT, panel.size.x - 4, PIXEL_FONT_SIZE, wave_color)
 	# Sync meter
-	var meter := Rect2(panel.position.x + 8, panel.end.y - 16, panel.size.x - 16, 8)
+	var meter := Rect2(panel.position.x + 4, panel.end.y - 7, panel.size.x - 8, 3)
 	draw_rect(meter, Palette.BG_1)
 	draw_rect(Rect2(meter.position, Vector2(meter.size.x * sync, meter.size.y)), wave_color)
 	var good_x := meter.position.x + meter.size.x * good_sync
-	draw_rect(Rect2(good_x, meter.position.y - 3, 2, meter.size.y + 6), Palette.OK)
+	draw_rect(Rect2(floorf(good_x), meter.position.y - 1, 1, meter.size.y + 2), Palette.OK)
 
 
 func _draw_wave(panel: Rect2, mid: float, amp: float, freq_norm: float, phase: float, color: Color, px: float) -> void:
 	var freq := lerpf(FREQ_MIN, FREQ_MAX, freq_norm)
-	var step := maxf(px, 3.0)
+	var step := 1.0
 	var x := panel.position.x + 6.0
 	while x < panel.end.x - 6.0:
 		var t := (x - panel.position.x) / panel.size.x

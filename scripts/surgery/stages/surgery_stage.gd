@@ -29,17 +29,23 @@ var tool_precision: float = 1.0
 var tool_speed: float = 1.0
 var is_finished: bool = false
 var is_pointer_down: bool = false
+## Extra tuning from SurgeryManager.get_stage_context() (difficulty, neural
+## load, alignment / sync multipliers, implant icon).
+var context: Dictionary = {}
+## UI units per local unit (the field renders in a scaled SubViewport).
+var view_scale: float = 1.0
 
 var _wrong_tool_timer: float = 0.0
 var _cooldowns: Dictionary = {}
 
 
-func setup(p_stage: SurgeryStageData, p_site: SurgicalSiteView, p_customer: CustomerData, precision: float, speed: float) -> void:
+func setup(p_stage: SurgeryStageData, p_site: SurgicalSiteView, p_customer: CustomerData, precision: float, speed: float, p_context: Dictionary = {}) -> void:
 	stage = p_stage
 	site = p_site
 	customer = p_customer
 	tool_precision = precision
 	tool_speed = speed
+	context = p_context
 
 
 func _ready() -> void:
@@ -148,6 +154,19 @@ func _px() -> float:
 	return site.art_px()
 
 
-## Hit radius for a touch target given its visual radius in art px.
+## Converts UI units (GameConfig touch sizes) into this stage's local units.
+func _ui(units: float) -> float:
+	return units / maxf(view_scale, 0.001)
+
+
+## Hit radius for a touch target given its visual radius in design units.
 func _touch_radius(art_radius: float) -> float:
-	return maxf(art_radius * _px(), GameConfig.MIN_TOUCH * 0.5)
+	return maxf(art_radius * _px(), _ui(GameConfig.MIN_TOUCH * 0.5))
+
+
+## Crisp 8px pixel font for labels drawn inside the field.
+func _pixel_font() -> Font:
+	return get_theme_font(&"font", &"PixelLabel")
+
+
+const PIXEL_FONT_SIZE := 8

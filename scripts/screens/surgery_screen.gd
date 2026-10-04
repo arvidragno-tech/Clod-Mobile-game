@@ -4,9 +4,9 @@ extends BaseScreen
 ## quick actions, and turns SurgeryManager / stage events into feedback.
 
 const QUICK_ICONS := {
-	&"coag": "res://assets/sprites/tools/quick_coag.png",
-	&"sedate": "res://assets/sprites/tools/quick_sedate.png",
-	&"stabilize": "res://assets/sprites/tools/quick_stabilize.png",
+	&"coag": "res://assets/sprites/ui/icons/coag.png",
+	&"sedate": "res://assets/sprites/ui/icons/sedate.png",
+	&"stabilize": "res://assets/sprites/ui/icons/stabilize.png",
 }
 const BLEEDING_MISTAKES: Array[StringName] = [&"cut_deviation", &"tissue_tear", &"bad_stitch"]
 const BURN_SFX_INTERVAL := 0.15
@@ -23,9 +23,15 @@ const MISTAKE_HAPTIC_MS := 40
 @onready var _neural_bar: VitalBar = %NeuralBar
 @onready var _instruction: Label = %Instruction
 @onready var _field_area: Control = %FieldArea
+@onready var _field_viewport: SubViewportContainer = %FieldViewport
 @onready var _site: SurgicalSiteView = %SiteView
 @onready var _stage_host: Control = %StageHost
 @onready var _fx: FxLayer = %Fx
+@onready var _fx_text: FxLayer = %FxText
+@onready var _lighting: SurgeryLighting = %Lighting
+@onready var _ecg: EcgStrip = %Ecg
+@onready var _neural_load: Label = %NeuralLoad
+@onready var _tray_scroll: ScrollContainer = %TrayScroll
 @onready var _complication_banner: PanelContainer = %ComplicationBanner
 @onready var _complication_title: Label = %ComplicationTitle
 @onready var _complication_text: Label = %ComplicationText
@@ -45,8 +51,9 @@ func on_enter(_params: Dictionary) -> void:
 	if not SurgeryManager.is_active:
 		UIManager.go_to.call_deferred(UIManager.SCREEN_CLINIC)
 		return
-	_site.configure(SurgeryManager.customer)
-	_tool_tray.build(SurgeryManager.surgery.get_required_tool_categories())
+	_site.configure(SurgeryManager.customer, SurgeryManager.surgery, ClinicManager.get_surgery_backdrop_level())
+	_fx.unit_scale = 1.0 / GameConfig.PIXEL_SCALE
+	_tool_tray.build(_get_tray_categories())
 	_tool_tray.tool_selected.connect(_on_tool_selected)
 	_build_quick_actions()
 	_abort.pressed.connect(_on_abort_pressed)
@@ -72,12 +79,27 @@ func on_exit() -> void:
 				sig.disconnect(c["callable"])
 
 
+## Surgery tool categories plus any extra tool the implant needs (drill).
+func _get_tray_categories() -> Array[StringName]:
+	return SurgeryManager.surgery.get_required_tool_categories()
+
+
+## Field (pixel viewport) coordinates -> FieldArea UI coordinates.
+func field_to_area(p: Vector2) -> Vector2:
+	return _field_viewport.position + p * GameConfig.PIXEL_SCALE
+
+
+## Field coordinates -> global viewport coordinates (used by tests).
+func field_to_screen(p: Vector2) -> Vector2:
+	return _field_viewport.get_global_rect().position + p * GameConfig.PIXEL_SCALE
+
+
 func _build_quick_actions() -> void:
 	for id: StringName in GameConfig.QUICK_ACTIONS:
 		var cfg: Dictionary = GameConfig.QUICK_ACTIONS[id]
 		var b := QuickActionButton.new()
 		var icon_path: String = QUICK_ICONS.get(id, "")
-		b.setup(id, str(cfg.get("label", id)), load(icon_path) as Texture2D if icon_path != "" else null)
+		b.setup(id, str(cfg.get("label", id)), PixelArt.scaled(icon_path) if icon_path != "" else null)
 		b.pressed.connect(_on_quick_pressed.bind(id))
 		_quick_row.add_child(b)
 		_quick_buttons[id] = b
@@ -105,7 +127,8 @@ func _load_stage(index: int, stage_data: SurgeryStageData) -> void:
 		return
 	var category := stage_data.tool_category
 	stage.setup(stage_data, _site, SurgeryManager.customer,
-			SurgeryManager.get_tool_precision(category), SurgeryManager.get_tool_speed(category))
+			SurgeryManager.get_tool_precision(category), SurgeryManager.get_tool_speed(category), SurgeryManager.get_stage_context())
+	stage.view_scale = GameConfig.PIXEL_SCALE
 	stage.name = "Stage_%s" % stage_data.id
 	stage.stage_finished.connect(_on_stage_finished)
 	stage.mistake.connect(_on_stage_mistake)
@@ -121,7 +144,10 @@ func _load_stage(index: int, stage_data: SurgeryStageData) -> void:
 	_controls_host.visible = controls != null
 	_tool_tray.clear_selection()
 	_tool_tray.set_hint(category)
-	_tool_tray.visible = true
+	var hint_button := _tool_tray.get_button(category)
+	if hint_button:
+		_tray_scroll.ensure_control_visible.call_deferred(hint_button)
+	_tray_scroll.visible = true
 	_instruction.get_parent().modulate.a = 0.0
 	create_tween().tween_property(_instruction.get_parent(), "modulate:a", 1.0, 0.25)
 
@@ -130,7 +156,7 @@ func _on_stage_finished(quality: float, data: Dictionary) -> void:
 	AudioManager.play_sfx(&"stage", 0.0)
 	var label := "CLEAN" if quality >= 0.85 else ("OK" if quality >= 0.55 else "ROUGH")
 	var color := Palette.OK if quality >= 0.85 else (Palette.ACCENT if quality >= 0.55 else Palette.WARN)
-	_fx.float_text(_site.get_field_rect().get_center(), label, color, true)
+	_fx_text.float_text(field_to_area(_site.get_visible_field_rect().get_center()), label, color, true)
 	await get_tree().create_timer(GameConfig.STAGE_CLEAR_DELAY_SEC).timeout
 	if SurgeryManager.is_active and not _ended:
 		SurgeryManager.complete_stage(quality, data)
@@ -145,7 +171,7 @@ func _on_tool_selected(category: StringName) -> void:
 
 func _on_stage_mistake(kind: StringName, severity: float, local_pos: Vector2) -> void:
 	SurgeryManager.report_mistake(kind, severity)
-	_fx.float_text(local_pos + Vector2(0, -16), GameConfig.MISTAKE_LABELS.get(kind, "MISTAKE"), Palette.DANGER)
+	_fx_text.float_text(field_to_area(local_pos) + Vector2(0, -16), GameConfig.MISTAKE_LABELS.get(kind, "MISTAKE"), Palette.DANGER)
 	if BLEEDING_MISTAKES.has(kind):
 		_fx.burst(local_pos, Palette.BLOOD, 14, 110.0, 3.0)
 	else:
@@ -185,8 +211,13 @@ func _on_stage_feedback(kind: StringName, local_pos: Vector2) -> void:
 			UIManager.flash(Palette.ACCENT, 0.15)
 			UIManager.haptic(30)
 		&"good":
-			_fx.float_text(local_pos + Vector2(0, -24), "LOCKED", Palette.OK)
+			_fx_text.float_text(field_to_area(local_pos) + Vector2(0, -24), "LOCKED", Palette.OK)
 			AudioManager.play_sfx(&"tool", 0.0)
+		&"drill":
+			_fx.burst(local_pos, Palette.METAL, 3, 70.0, 2.0, 120.0)
+			if _burn_sfx_cooldown <= 0.0:
+				_burn_sfx_cooldown = BURN_SFX_INTERVAL
+				AudioManager.play_sfx(&"drill", 0.15)
 		&"bad":
 			_fx.burst(local_pos, Palette.DANGER, 10, 90.0, 2.0, 60.0)
 			AudioManager.play_sfx(&"zap", 0.1)
@@ -201,8 +232,8 @@ func _on_vital_warning(vital: StringName) -> void:
 func _on_quick_pressed(id: StringName) -> void:
 	if SurgeryManager.use_quick_action(id):
 		var b: QuickActionButton = _quick_buttons[id]
-		var pos := b.get_global_rect().get_center() - _fx.get_global_rect().position
-		_fx.burst(pos, Palette.WARN, 8, 80.0, 2.0)
+		var pos := b.get_global_rect().get_center() - _fx_text.get_global_rect().position
+		_fx_text.burst(pos, Palette.WARN, 8, 80.0, 2.0)
 
 
 func _on_complication_started(c: ComplicationData) -> void:
@@ -217,17 +248,19 @@ func _on_complication_started(c: ComplicationData) -> void:
 	UIManager.haptic(60)
 	if _quick_buttons.has(c.counter_action):
 		(_quick_buttons[c.counter_action] as QuickActionButton).urgent = true
+	_lighting.emergency = true
 
 
 func _on_complication_resolved(c: ComplicationData, handled: bool) -> void:
 	_complication_banner.visible = false
+	_lighting.emergency = false
 	for b: QuickActionButton in _quick_buttons.values():
 		b.urgent = false
 	if _ended:
 		return
 	if handled:
 		UIManager.show_toast("%s contained" % c.title, &"success")
-		_fx.float_text(_site.get_field_rect().get_center(), "CONTAINED", Palette.OK, true)
+		_fx_text.float_text(field_to_area(_site.get_visible_field_rect().get_center()), "CONTAINED", Palette.OK, true)
 	else:
 		UIManager.show_toast("%s: too slow!" % c.title, &"danger")
 		AudioManager.play_sfx(&"mistake")
@@ -240,8 +273,9 @@ func _on_session_finished(result: SurgeryResult) -> void:
 	if current_stage:
 		current_stage.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		current_stage.is_finished = true
-	_tool_tray.visible = false
+	_tray_scroll.visible = false
 	_controls_host.visible = false
+	_lighting.emergency = not result.success
 	for b: QuickActionButton in _quick_buttons.values():
 		b.disabled = true
 	_abort.disabled = true
@@ -255,7 +289,7 @@ func _on_session_finished(result: SurgeryResult) -> void:
 		_stamp.text = "OPERATION\nCOMPLETE"
 		_stamp.add_theme_color_override(&"font_color", Palette.OK)
 		AudioManager.play_sfx(&"success", 0.0)
-		_fx.burst(_site.get_field_rect().get_center(), Palette.ACCENT, 30, 160.0, 3.0, 120.0)
+		_fx.burst(_site.get_visible_field_rect().get_center(), Palette.ACCENT, 30, 160.0, 3.0, 120.0)
 	else:
 		_stamp.text = "PATIENT\nCRASHED" if result.failure_reason != &"aborted" else "OPERATION\nABORTED"
 		_stamp.add_theme_color_override(&"font_color", Palette.DANGER)
@@ -297,3 +331,9 @@ func _update_vitals(immediate: bool) -> void:
 	_neural_bar.set_warning(SurgeryManager.is_warning_active(&"neural"))
 	_site.bleed_intensity = v.bleed_rate if v.wound_open else 0.0
 	_site.blood_level = v.blood_loss
+	_ecg.health = v.health
+	_ecg.heart_rate = 64.0 + v.pain * 0.5 + v.blood_loss * 0.8
+	_ecg.flatline = v.health <= 0.0
+	var load := SurgeryManager.neural_load_after
+	_neural_load.text = "LOAD %d%%" % roundi(load)
+	_neural_load.add_theme_color_override(&"font_color", NeuralLoad.band(load)["color"])

@@ -1,10 +1,13 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scripts/screens/surgery_screen.gd" id="1_surg"]
 [ext_resource type="Script" path="res://scripts/components/vital_bar.gd" id="2_vital"]
 [ext_resource type="Script" path="res://scripts/surgery/surgical_site_view.gd" id="3_site"]
 [ext_resource type="Script" path="res://scripts/components/fx_layer.gd" id="4_fx"]
 [ext_resource type="Script" path="res://scripts/components/tool_tray.gd" id="5_tray"]
+[ext_resource type="Script" path="res://scripts/surgery/surgery_lighting.gd" id="6_light"]
+[ext_resource type="Script" path="res://scripts/components/ecg_strip.gd" id="7_ecg"]
+[ext_resource type="Script" path="res://scripts/components/neural_load_meter.gd" id="8_nl"]
 
 [node name="SurgeryScreen" type="Control"]
 layout_mode = 3
@@ -62,20 +65,41 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(44, 44)
 layout_mode = 2
 focus_mode = 0
-theme_type_variation = &"GhostButton"
+theme_type_variation = &"CompactDangerButton"
 text = "X"
 
 [node name="Vitals" type="PanelContainer" parent="Margin/VBox"]
 layout_mode = 2
 theme_type_variation = &"HudPanel"
 
-[node name="Grid" type="GridContainer" parent="Margin/VBox/Vitals"]
+[node name="VBox" type="VBoxContainer" parent="Margin/VBox/Vitals"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="EcgRow" type="HBoxContainer" parent="Margin/VBox/Vitals/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Ecg" type="Control" parent="Margin/VBox/Vitals/VBox/EcgRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+script = ExtResource("7_ecg")
+
+[node name="NeuralLoad" type="Label" parent="Margin/VBox/Vitals/VBox/EcgRow"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MonoLabel"
+theme_override_font_sizes/font_size = 17
+text = "LOAD 0%"
+
+[node name="Grid" type="GridContainer" parent="Margin/VBox/Vitals/VBox"]
 layout_mode = 2
 theme_override_constants/h_separation = 14
 theme_override_constants/v_separation = 4
 columns = 2
 
-[node name="HealthBar" type="Control" parent="Margin/VBox/Vitals/Grid"]
+[node name="HealthBar" type="Control" parent="Margin/VBox/Vitals/VBox/Grid"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -83,7 +107,7 @@ script = ExtResource("2_vital")
 label_text = "HEALTH"
 bar_color = Color(0.427451, 1, 0.541176, 1)
 
-[node name="BloodBar" type="Control" parent="Margin/VBox/Vitals/Grid"]
+[node name="BloodBar" type="Control" parent="Margin/VBox/Vitals/VBox/Grid"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -93,7 +117,7 @@ bar_color = Color(1, 0.301961, 0.301961, 1)
 invert_warning = true
 suffix = "%"
 
-[node name="PainBar" type="Control" parent="Margin/VBox/Vitals/Grid"]
+[node name="PainBar" type="Control" parent="Margin/VBox/Vitals/VBox/Grid"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -102,7 +126,7 @@ label_text = "PAIN"
 bar_color = Color(1, 0.705882, 0.239216, 1)
 invert_warning = true
 
-[node name="NeuralBar" type="Control" parent="Margin/VBox/Vitals/Grid"]
+[node name="NeuralBar" type="Control" parent="Margin/VBox/Vitals/VBox/Grid"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -112,7 +136,7 @@ bar_color = Color(0.180392, 0.901961, 0.784314, 1)
 
 [node name="InstructionPanel" type="PanelContainer" parent="Margin/VBox"]
 layout_mode = 2
-theme_type_variation = &"CardPanel"
+theme_type_variation = &"HudPanel"
 
 [node name="Instruction" type="Label" parent="Margin/VBox/InstructionPanel"]
 unique_name_in_owner = true
@@ -124,13 +148,34 @@ autowrap_mode = 3
 [node name="FieldArea" type="Control" parent="Margin/VBox"]
 unique_name_in_owner = true
 clip_contents = true
-custom_minimum_size = Vector2(0, 200)
+custom_minimum_size = Vector2(0, 168)
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="SiteView" type="Control" parent="Margin/VBox/FieldArea"]
+[node name="FieldViewport" type="SubViewportContainer" parent="Margin/VBox/FieldArea"]
 unique_name_in_owner = true
+texture_filter = 1
 layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+stretch = true
+stretch_shrink = 2
+
+[node name="Viewport" type="SubViewport" parent="Margin/VBox/FieldArea/FieldViewport"]
+unique_name_in_owner = true
+handle_input_locally = false
+snap_2d_transforms_to_pixel = true
+snap_2d_vertices_to_pixel = true
+canvas_item_default_texture_filter = 0
+size = Vector2i(172, 124)
+render_target_update_mode = 4
+
+[node name="SiteView" type="Control" parent="Margin/VBox/FieldArea/FieldViewport/Viewport"]
+unique_name_in_owner = true
+layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -139,9 +184,9 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("3_site")
 
-[node name="StageHost" type="Control" parent="Margin/VBox/FieldArea"]
+[node name="StageHost" type="Control" parent="Margin/VBox/FieldArea/FieldViewport/Viewport"]
 unique_name_in_owner = true
-layout_mode = 1
+layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -149,7 +194,29 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="Fx" type="Control" parent="Margin/VBox/FieldArea"]
+[node name="Fx" type="Control" parent="Margin/VBox/FieldArea/FieldViewport/Viewport"]
+unique_name_in_owner = true
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("4_fx")
+
+[node name="Lighting" type="Control" parent="Margin/VBox/FieldArea/FieldViewport/Viewport"]
+unique_name_in_owner = true
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("6_light")
+
+[node name="FxText" type="Control" parent="Margin/VBox/FieldArea"]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
@@ -231,7 +298,14 @@ unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="ToolTray" type="HBoxContainer" parent="Margin/VBox"]
+[node name="TrayScroll" type="ScrollContainer" parent="Margin/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+vertical_scroll_mode = 0
+
+[node name="ToolTray" type="HBoxContainer" parent="Margin/VBox/TrayScroll"]
 unique_name_in_owner = true
 layout_mode = 2
+size_flags_horizontal = 3
 script = ExtResource("5_tray")

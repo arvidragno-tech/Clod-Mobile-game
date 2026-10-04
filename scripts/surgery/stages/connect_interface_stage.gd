@@ -133,10 +133,11 @@ func _draw() -> void:
 	if _active_pin >= 0:
 		var from := pin_local(_active_pin)
 		var color := Palette.SPLICE_COLORS[_active_pin]
-		var steps := int(from.distance_to(_drag_pos) / px)
+		var steps := int(from.distance_to(_drag_pos))
 		for s in steps:
 			var p := from.lerp(_drag_pos, float(s) / maxf(steps, 1))
-			draw_rect(Rect2((p / px).floor() * px, Vector2(px, px)), color)
+			draw_rect(Rect2(p.floor(), Vector2(2, 2)), color.darkened(0.4))
+			draw_rect(Rect2(p.floor(), Vector2(1, 1)), color)
 
 
 ## Colour + shape marker: 0 = triangle, 1 = diamond, 2 = square.
@@ -144,10 +145,11 @@ func _draw_mark(center: Vector2, color_index: int, dimmed: bool, terminal: bool)
 	var color := Palette.SPLICE_COLORS[color_index]
 	if dimmed:
 		color = color.darkened(0.5)
-	var r := MARK_RADIUS_ART * _px() * (1.3 if terminal else 0.9)
+	var r := roundf(MARK_RADIUS_ART * _px() * (1.1 if terminal else 0.8))
+	center = center.floor()
 	if terminal and not dimmed:
 		var pulse := 0.5 + 0.5 * sin(_time * 5.0 + color_index)
-		draw_arc(center, r + 4.0 + pulse * 2.0, 0, TAU, 20, Color(color, 0.5), 1.5)
+		draw_arc(center, r + 3.0 + roundf(pulse * 2.0), 0, TAU, 20, Color(color, 0.6), 1.0)
 	var pts: PackedVector2Array
 	match color_index:
 		0:

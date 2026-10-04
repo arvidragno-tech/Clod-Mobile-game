@@ -3,7 +3,8 @@ extends SurgeryStage
 ## Drag the implant from the tray into the socket, rotate it until the key
 ## notch lines up with the slot, then press SEAT.
 
-const TRAY_POS := Vector2(0.5, 0.88)
+## Tray sits just above the bottom of the visible field.
+const TRAY_MARGIN := 22.0
 const IMPLANT_HALF_ART := 8.0
 const ROTATE_STEP_DEG := 15.0
 const RETURN_TWEEN_SEC := 0.2
@@ -17,16 +18,18 @@ var _dragging: bool = false
 var _rotating: bool = false
 var _last_angle: float = 0.0
 var _seat_button: Button
+var _return_tween: Tween
 var _rng := RandomNumberGenerator.new()
 
 
 func begin() -> void:
 	_snap_art = stage.param_float("snap_px", 9.0) * tool_precision
-	_tolerance_deg = stage.param_float("align_tolerance_deg", 12.0) * tool_precision
+	_tolerance_deg = stage.param_float("align_tolerance_deg", 12.0) * tool_precision * float(context.get("alignment_mult", 1.0))
 	site.socket_pos = stage.param_vec2("socket", Vector2(0.5, 0.5))
 	site.show_socket = true
+	site.set_implant_icon(str(context.get("implant_icon", "")))
 	site.implant_state = SurgicalSiteView.ImplantState.IN_TRAY
-	site.implant_pos = TRAY_POS
+	site.implant_pos = tray_pos()
 	_rng.randomize()
 	var offset := _rng.randf_range(60.0, 150.0) * (1.0 if _rng.randf() < 0.5 else -1.0)
 	site.implant_angle = deg_to_rad(offset)
@@ -70,6 +73,11 @@ func get_autoplay_hints() -> Dictionary:
 	}
 
 
+func tray_pos() -> Vector2:
+	var vis := site.get_visible_field_rect()
+	return site.to_norm(Vector2(vis.get_center().x, vis.end.y - TRAY_MARGIN))
+
+
 func _angle_error() -> float:
 	return wrapf(site.implant_angle, -PI, PI)
 
@@ -96,7 +104,7 @@ func _pointer_move(pos: Vector2) -> void:
 		site.implant_pos = site.to_norm(pos)
 	elif _rotating:
 		var center := site.to_local_pos(site.implant_pos)
-		if pos.distance_to(center) < 6.0:
+		if pos.distance_to(center) < 3.0:
 			return
 		var a := (pos - center).angle()
 		site.implant_angle += wrapf(a - _last_angle, -PI, PI)
@@ -108,7 +116,7 @@ func _pointer_up(pos: Vector2) -> void:
 	if _dragging:
 		_dragging = false
 		var socket_local := site.to_local_pos(site.socket_pos)
-		if pos.distance_to(socket_local) <= _snap_art * _px() + GameConfig.TOUCH_SLOP * 0.5:
+		if pos.distance_to(socket_local) <= _snap_art * _px() + _ui(GameConfig.TOUCH_SLOP) * 0.5:
 			site.implant_pos = site.socket_pos
 			site.implant_state = SurgicalSiteView.ImplantState.PLACED
 			phase = Phase.ROTATE
@@ -121,7 +129,8 @@ func _pointer_up(pos: Vector2) -> void:
 			if site.is_inside_opening(site.to_norm(pos)):
 				mistake.emit(&"implant_drop", 1.0, pos)
 			site.implant_state = SurgicalSiteView.ImplantState.IN_TRAY
-			create_tween().tween_property(site, "implant_pos", TRAY_POS, RETURN_TWEEN_SEC)
+			_return_tween = create_tween()
+			_return_tween.tween_property(site, "implant_pos", tray_pos(), RETURN_TWEEN_SEC)
 	_rotating = false
 
 
@@ -159,6 +168,11 @@ func _seat() -> void:
 
 
 func _stage_process(_delta: float) -> void:
+	# Keep the resting implant docked to the visible field edge: the field
+	# can shrink after begin() when this stage's control row is added.
+	if site.implant_state == SurgicalSiteView.ImplantState.IN_TRAY and not is_pointer_down \
+			and (_return_tween == null or not _return_tween.is_running()):
+		site.implant_pos = tray_pos()
 	queue_redraw()
 
 
@@ -168,12 +182,12 @@ func _draw() -> void:
 	var socket := site.to_local_pos(site.socket_pos)
 	if phase == Phase.PLACE:
 		var r := _snap_art * _px()
-		draw_arc(socket, r, 0, TAU, 24, Color(Palette.ACCENT, 0.5 if not _dragging else 0.9), 2.0)
+		draw_arc(socket.floor(), r, 0, TAU, 24, Color(Palette.ACCENT, 0.5 if not _dragging else 0.9), 1.0)
 	elif phase == Phase.ROTATE:
 		# Show where the notch is vs where it must go.
 		var radius := (IMPLANT_HALF_ART + 5.0) * _px()
 		var target := socket + Vector2.UP * radius
 		var notch := socket + Vector2.UP.rotated(site.implant_angle) * radius
-		draw_line(socket, target, Color(Palette.OK, 0.5), 2.0)
-		draw_rect(Rect2(target - Vector2(4, 4), Vector2(8, 8)), Palette.OK, false, 2.0)
-		draw_rect(Rect2(notch - Vector2(3, 3), Vector2(6, 6)), Palette.OK if site.implant_aligned else Palette.WARN)
+		draw_line(socket.floor(), target.floor(), Color(Palette.OK, 0.5), 1.0)
+		draw_rect(Rect2(target.floor() - Vector2(3, 3), Vector2(7, 7)), Palette.OK, false, 1.0)
+		draw_rect(Rect2(notch.floor() - Vector2(2, 2), Vector2(5, 5)), Palette.OK if site.implant_aligned else Palette.WARN)

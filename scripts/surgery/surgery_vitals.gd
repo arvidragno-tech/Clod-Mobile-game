@@ -19,6 +19,7 @@ var pain_baseline_penalty: float = 0.0
 var bleed_multiplier: float = 1.0
 var pain_multiplier: float = 1.0
 var neural_multiplier: float = 1.0
+var health_drain_multiplier: float = 1.0
 
 
 func configure_for(customer: CustomerData) -> void:
@@ -27,6 +28,7 @@ func configure_for(customer: CustomerData) -> void:
 	bleed_multiplier = customer.bleed_multiplier
 	pain_multiplier = 1.0 / maxf(customer.pain_tolerance, 0.1)
 	neural_multiplier = customer.neural_sensitivity
+	health_drain_multiplier = customer.health_drain_multiplier
 
 
 func get_pain_baseline() -> float:
@@ -49,7 +51,7 @@ func tick(delta: float) -> void:
 		bleed_rate = maxf(GameConfig.OPEN_WOUND_BLEED_RATE, bleed_rate - GameConfig.CLOT_RATE_PER_SEC * delta)
 	# Heavy blood loss drains health.
 	var excess_blood := maxf(0.0, blood_loss - GameConfig.BLOOD_LOSS_SAFE)
-	health -= excess_blood * GameConfig.HEALTH_DRAIN_PER_BLOOD * delta
+	health -= excess_blood * GameConfig.HEALTH_DRAIN_PER_BLOOD * health_drain_multiplier * delta
 	# Pain settles toward the sedation baseline.
 	pain = move_toward(pain, get_pain_baseline(), GameConfig.PAIN_SETTLE_RATE * delta)
 	# Sustained pain destabilises the neural link; calm patients slowly recover.

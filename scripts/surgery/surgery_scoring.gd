@@ -44,8 +44,10 @@ static func apply_rewards(result: SurgeryResult, surgery: SurgeryData, customer:
 	result.grade = grade_for_score(result.score)
 	if not result.diagnosis_correct:
 		pay_mult *= GameConfig.WRONG_DIAGNOSIS_PAY_MULT
-	result.pay = int(round(surgery.base_pay * pay_mult * (0.5 + result.score)))
-	var xp_mult := 0.5 + result.score
+	pay_mult *= result.implant_pay_mult * ModifierManager.mult(&"pay")
+	var base_pay := surgery.base_pay + result.implant_price * GameConfig.IMPLANT_PRICE_MARKUP
+	result.pay = int(round(base_pay * pay_mult * (0.5 + result.score)))
+	var xp_mult := (0.5 + result.score) * (1.0 + 0.15 * (result.install_difficulty - 1)) * ModifierManager.mult(&"xp")
 	if result.diagnosis_correct:
 		xp_mult += GameConfig.CORRECT_DIAGNOSIS_XP_BONUS
 	result.xp = int(round(surgery.base_xp * xp_mult))

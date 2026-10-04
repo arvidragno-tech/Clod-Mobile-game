@@ -12,6 +12,7 @@ const STAGE_TYPES := {
 	&"connect_interface": preload("res://scripts/surgery/stages/connect_interface_stage.gd"),
 	&"calibrate": preload("res://scripts/surgery/stages/calibrate_stage.gd"),
 	&"close_incision": preload("res://scripts/surgery/stages/close_incision_stage.gd"),
+	&"anchor_drill": preload("res://scripts/surgery/stages/anchor_drill_stage.gd"),
 }
 
 

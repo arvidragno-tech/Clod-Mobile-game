@@ -77,5 +77,5 @@ func _draw() -> void:
 			continue
 		var p := site.to_local_pos(clamp_points[i])
 		var r := _radius_art * _px() * 0.6
-		draw_arc(p, r + pulse * 3.0, 0, TAU, 20, Palette.WARN, 2.0)
-		draw_rect(Rect2(p - Vector2(3, 3), Vector2(6, 6)), Palette.WARN)
+		draw_arc(p.floor(), r + roundf(pulse * 2.0), 0, TAU, 20, Palette.WARN, 1.0)
+		draw_rect(Rect2(p.floor() - Vector2(1, 1), Vector2(3, 3)), Palette.WARN)

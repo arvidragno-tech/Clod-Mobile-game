@@ -16,18 +16,31 @@ var _time: float = 0.0
 
 func begin() -> void:
 	var count := stage.param_int("stitches", 6)
-	var path := site.incision_path
-	var y0 := path[0].y
-	var y1 := path[path.size() - 1].y
 	points.clear()
 	for i in count:
 		var t := (i + 0.5) / count
-		var y := lerpf(y0, y1, t)
 		var side := -1.0 if i % 2 == 0 else 1.0
-		points.append(Vector2(site.incision_x_at(y) + side * SIDE_OFFSET_ART / SurgicalSiteView.ART_SIZE, y))
+		var sample := _sample_path(site.incision_path, t)
+		var normal := Vector2(-sample[1].y, sample[1].x)
+		points.append(sample[0] + normal * side * SIDE_OFFSET_ART / SurgicalSiteView.DESIGN_GRID)
 	# Retractors come out; the wound relaxes.
 	site.clamps.clear()
 	create_tween().tween_property(site, "opening", LOOSEN_OPENING, 0.3)
+
+
+## Returns [point, unit tangent] at fraction t (by arc length) of a polyline.
+static func _sample_path(path: Array[Vector2], t: float) -> Array[Vector2]:
+	var total := 0.0
+	for i in range(path.size() - 1):
+		total += path[i].distance_to(path[i + 1])
+	var target := t * total
+	for i in range(path.size() - 1):
+		var l := path[i].distance_to(path[i + 1])
+		if target <= l or i == path.size() - 2:
+			var dir := (path[i + 1] - path[i]).normalized()
+			return [path[i].lerp(path[i + 1], clampf(target / maxf(l, 0.0001), 0.0, 1.0)), dir]
+		target -= l
+	return [path[0], Vector2.DOWN]
 
 
 func get_autoplay_hints() -> Dictionary:
@@ -72,14 +85,14 @@ func _stage_process(delta: float) -> void:
 func _draw() -> void:
 	if site == null:
 		return
-	var font := get_theme_font(&"font", &"MonoLabel")
+	var font := _pixel_font()
 	var pulse := 0.5 + 0.5 * sin(_time * 6.0)
 	for i in range(next_index, points.size()):
 		var p := site.to_local_pos(points[i])
 		var is_next := i == next_index
 		var color := Palette.WARN if is_next else Color(Palette.TEXT_DIM, 0.8)
-		var r := POINT_RADIUS_ART * _px() * 0.7 + (pulse * 2.0 if is_next else 0.0)
-		draw_arc(p, r, 0, TAU, 16, color, 2.0)
+		var r := roundf(POINT_RADIUS_ART * _px() * 0.6 + (pulse * 2.0 if is_next else 0.0))
+		draw_arc(p.floor(), r, 0, TAU, 16, color, 1.0)
 		var side := -1.0 if i % 2 == 0 else 1.0
-		var label_pos := p + Vector2(side * (r + 12.0) - 5.0, 6.0)
-		draw_string(font, label_pos, str(i + 1), HORIZONTAL_ALIGNMENT_LEFT, -1, 20, color)
+		var label_pos := p.floor() + Vector2(side * (r + 6.0) - 3.0, 4.0)
+		draw_string(font, label_pos, str(i + 1), HORIZONTAL_ALIGNMENT_LEFT, -1, PIXEL_FONT_SIZE, color)
