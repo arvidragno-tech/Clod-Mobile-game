@@ -1,0 +1,218 @@
+{
+ "layer_order": {
+  "portrait": [
+   "hair_back",
+   "body",
+   "outfit",
+   "head",
+   "facial_hair",
+   "scar",
+   "tattoo",
+   "cyber_low",
+   "hair",
+   "cyber",
+   "accessory"
+  ],
+  "body": [
+   "body",
+   "outfit",
+   "cyber",
+   "hair"
+  ]
+ },
+ "views": {
+  "portrait": {
+   "body": {
+    "slim": "res://assets/sprites/characters/portrait/body/slim.png",
+    "average": "res://assets/sprites/characters/portrait/body/average.png",
+    "heavy": "res://assets/sprites/characters/portrait/body/heavy.png"
+   },
+   "head": {
+    "narrow_neutral": "res://assets/sprites/characters/portrait/head/narrow_neutral.png",
+    "narrow_hard": "res://assets/sprites/characters/portrait/head/narrow_hard.png",
+    "narrow_smirk": "res://assets/sprites/characters/portrait/head/narrow_smirk.png",
+    "narrow_tired": "res://assets/sprites/characters/portrait/head/narrow_tired.png",
+    "broad_neutral": "res://assets/sprites/characters/portrait/head/broad_neutral.png",
+    "broad_hard": "res://assets/sprites/characters/portrait/head/broad_hard.png",
+    "broad_smirk": "res://assets/sprites/characters/portrait/head/broad_smirk.png",
+    "broad_tired": "res://assets/sprites/characters/portrait/head/broad_tired.png",
+    "round_neutral": "res://assets/sprites/characters/portrait/head/round_neutral.png",
+    "round_hard": "res://assets/sprites/characters/portrait/head/round_hard.png",
+    "round_smirk": "res://assets/sprites/characters/portrait/head/round_smirk.png",
+    "round_tired": "res://assets/sprites/characters/portrait/head/round_tired.png"
+   },
+   "hair": {
+    "buzz": "res://assets/sprites/characters/portrait/hair/buzz.png",
+    "short": "res://assets/sprites/characters/portrait/hair/short.png",
+    "undercut": "res://assets/sprites/characters/portrait/hair/undercut.png",
+    "long": "res://assets/sprites/characters/portrait/hair/long.png",
+    "tied": "res://assets/sprites/characters/portrait/hair/tied.png",
+    "mohawk": "res://assets/sprites/characters/portrait/hair/mohawk.png",
+    "locs": "res://assets/sprites/characters/portrait/hair/locs.png",
+    "slick": "res://assets/sprites/characters/portrait/hair/slick.png",
+    "bald": "res://assets/sprites/characters/portrait/hair/bald.png"
+   },
+   "hair_back": {
+    "long": "res://assets/sprites/characters/portrait/hair_back/long.png",
+    "locs": "res://assets/sprites/characters/portrait/hair_back/locs.png"
+   },
+   "outfit": {
+    "mercenary_slim": "res://assets/sprites/characters/portrait/outfit/mercenary_slim.png",
+    "mercenary_average": "res://assets/sprites/characters/portrait/outfit/mercenary_average.png",
+    "mercenary_heavy": "res://assets/sprites/characters/portrait/outfit/mercenary_heavy.png",
+    "gang_slim": "res://assets/sprites/characters/portrait/outfit/gang_slim.png",
+    "gang_average": "res://assets/sprites/characters/portrait/outfit/gang_average.png",
+    "gang_heavy": "res://assets/sprites/characters/portrait/outfit/gang_heavy.png",
+    "corporate_slim": "res://assets/sprites/characters/portrait/outfit/corporate_slim.png",
+    "corporate_average": "res://assets/sprites/characters/portrait/outfit/corporate_average.png",
+    "corporate_heavy": "res://assets/sprites/characters/portrait/outfit/corporate_heavy.png",
+    "smuggler_slim": "res://assets/sprites/characters/portrait/outfit/smuggler_slim.png",
+    "smuggler_average": "res://assets/sprites/characters/portrait/outfit/smuggler_average.png",
+    "smuggler_heavy": "res://assets/sprites/characters/portrait/outfit/smuggler_heavy.png",
+    "dock_slim": "res://assets/sprites/characters/portrait/outfit/dock_slim.png",
+    "dock_average": "res://assets/sprites/characters/portrait/outfit/dock_average.png",
+    "dock_heavy": "res://assets/sprites/characters/portrait/outfit/dock_heavy.png",
+    "bounty_slim": "res://assets/sprites/characters/portrait/outfit/bounty_slim.png",
+    "bounty_average": "res://assets/sprites/characters/portrait/outfit/bounty_average.png",
+    "bounty_heavy": "res://assets/sprites/characters/portrait/outfit/bounty_heavy.png",
+    "fixer_slim": "res://assets/sprites/characters/portrait/outfit/fixer_slim.png",
+    "fixer_average": "res://assets/sprites/characters/portrait/outfit/fixer_average.png",
+    "fixer_heavy": "res://assets/sprites/characters/portrait/outfit/fixer_heavy.png",
+    "criminal_slim": "res://assets/sprites/characters/portrait/outfit/criminal_slim.png",
+    "criminal_average": "res://assets/sprites/characters/portrait/outfit/criminal_average.png",
+    "criminal_heavy": "res://assets/sprites/characters/portrait/outfit/criminal_heavy.png",
+    "civilian_slim": "res://assets/sprites/characters/portrait/outfit/civilian_slim.png",
+    "civilian_average": "res://assets/sprites/characters/portrait/outfit/civilian_average.png",
+    "civilian_heavy": "res://assets/sprites/characters/portrait/outfit/civilian_heavy.png",
+    "bm_tech_slim": "res://assets/sprites/characters/portrait/outfit/bm_tech_slim.png",
+    "bm_tech_average": "res://assets/sprites/characters/portrait/outfit/bm_tech_average.png",
+    "bm_tech_heavy": "res://assets/sprites/characters/portrait/outfit/bm_tech_heavy.png",
+    "medical_slim": "res://assets/sprites/characters/portrait/outfit/medical_slim.png",
+    "medical_average": "res://assets/sprites/characters/portrait/outfit/medical_average.png",
+    "medical_heavy": "res://assets/sprites/characters/portrait/outfit/medical_heavy.png",
+    "boss_slim": "res://assets/sprites/characters/portrait/outfit/boss_slim.png",
+    "boss_average": "res://assets/sprites/characters/portrait/outfit/boss_average.png",
+    "boss_heavy": "res://assets/sprites/characters/portrait/outfit/boss_heavy.png"
+   },
+   "facial_hair": {
+    "stubble_narrow": "res://assets/sprites/characters/portrait/facial_hair/stubble_narrow.png",
+    "stubble_broad": "res://assets/sprites/characters/portrait/facial_hair/stubble_broad.png",
+    "stubble_round": "res://assets/sprites/characters/portrait/facial_hair/stubble_round.png",
+    "beard_narrow": "res://assets/sprites/characters/portrait/facial_hair/beard_narrow.png",
+    "beard_broad": "res://assets/sprites/characters/portrait/facial_hair/beard_broad.png",
+    "beard_round": "res://assets/sprites/characters/portrait/facial_hair/beard_round.png",
+    "mustache_narrow": "res://assets/sprites/characters/portrait/facial_hair/mustache_narrow.png",
+    "mustache_broad": "res://assets/sprites/characters/portrait/facial_hair/mustache_broad.png",
+    "mustache_round": "res://assets/sprites/characters/portrait/facial_hair/mustache_round.png"
+   },
+   "scar": {
+    "cheek": "res://assets/sprites/characters/portrait/scar/cheek.png",
+    "brow": "res://assets/sprites/characters/portrait/scar/brow.png",
+    "lip": "res://assets/sprites/characters/portrait/scar/lip.png"
+   },
+   "tattoo": {
+    "neck_code": "res://assets/sprites/characters/portrait/tattoo/neck_code.png",
+    "face_lines": "res://assets/sprites/characters/portrait/tattoo/face_lines.png",
+    "gang_mark": "res://assets/sprites/characters/portrait/tattoo/gang_mark.png",
+    "tear": "res://assets/sprites/characters/portrait/tattoo/tear.png"
+   },
+   "cyber": {
+    "eye": "res://assets/sprites/characters/portrait/cyber/eye.png",
+    "visor": "res://assets/sprites/characters/portrait/cyber/visor.png",
+    "jaw": "res://assets/sprites/characters/portrait/cyber/jaw.png",
+    "temple_port": "res://assets/sprites/characters/portrait/cyber/temple_port.png",
+    "circuit": "res://assets/sprites/characters/portrait/cyber/circuit.png",
+    "neck_ports": "res://assets/sprites/characters/portrait/cyber/neck_ports.png",
+    "skull_plate": "res://assets/sprites/characters/portrait/cyber/skull_plate.png",
+    "cheek_mesh": "res://assets/sprites/characters/portrait/cyber/cheek_mesh.png",
+    "arm_shoulder": "res://assets/sprites/characters/portrait/cyber/arm_shoulder.png",
+    "dermal": "res://assets/sprites/characters/portrait/cyber/dermal.png",
+    "respirator": "res://assets/sprites/characters/portrait/cyber/respirator.png"
+   },
+   "accessory": {
+    "earring": "res://assets/sprites/characters/portrait/accessory/earring.png",
+    "shades": "res://assets/sprites/characters/portrait/accessory/shades.png",
+    "goggles": "res://assets/sprites/characters/portrait/accessory/goggles.png",
+    "headset": "res://assets/sprites/characters/portrait/accessory/headset.png",
+    "mask": "res://assets/sprites/characters/portrait/accessory/mask.png",
+    "nose_ring": "res://assets/sprites/characters/portrait/accessory/nose_ring.png",
+    "beanie": "res://assets/sprites/characters/portrait/accessory/beanie.png",
+    "hood": "res://assets/sprites/characters/portrait/accessory/hood.png",
+    "cap": "res://assets/sprites/characters/portrait/accessory/cap.png"
+   }
+  },
+  "body": {
+   "body": {
+    "slim": "res://assets/sprites/characters/body/body/slim.png",
+    "average": "res://assets/sprites/characters/body/body/average.png",
+    "heavy": "res://assets/sprites/characters/body/body/heavy.png"
+   },
+   "hair": {
+    "buzz": "res://assets/sprites/characters/body/hair/buzz.png",
+    "short": "res://assets/sprites/characters/body/hair/short.png",
+    "undercut": "res://assets/sprites/characters/body/hair/undercut.png",
+    "long": "res://assets/sprites/characters/body/hair/long.png",
+    "tied": "res://assets/sprites/characters/body/hair/tied.png",
+    "mohawk": "res://assets/sprites/characters/body/hair/mohawk.png",
+    "locs": "res://assets/sprites/characters/body/hair/locs.png",
+    "slick": "res://assets/sprites/characters/body/hair/slick.png",
+    "bald": "res://assets/sprites/characters/body/hair/bald.png"
+   },
+   "outfit": {
+    "mercenary_slim": "res://assets/sprites/characters/body/outfit/mercenary_slim.png",
+    "mercenary_average": "res://assets/sprites/characters/body/outfit/mercenary_average.png",
+    "mercenary_heavy": "res://assets/sprites/characters/body/outfit/mercenary_heavy.png",
+    "gang_slim": "res://assets/sprites/characters/body/outfit/gang_slim.png",
+    "gang_average": "res://assets/sprites/characters/body/outfit/gang_average.png",
+    "gang_heavy": "res://assets/sprites/characters/body/outfit/gang_heavy.png",
+    "corporate_slim": "res://assets/sprites/characters/body/outfit/corporate_slim.png",
+    "corporate_average": "res://assets/sprites/characters/body/outfit/corporate_average.png",
+    "corporate_heavy": "res://assets/sprites/characters/body/outfit/corporate_heavy.png",
+    "smuggler_slim": "res://assets/sprites/characters/body/outfit/smuggler_slim.png",
+    "smuggler_average": "res://assets/sprites/characters/body/outfit/smuggler_average.png",
+    "smuggler_heavy": "res://assets/sprites/characters/body/outfit/smuggler_heavy.png",
+    "dock_slim": "res://assets/sprites/characters/body/outfit/dock_slim.png",
+    "dock_average": "res://assets/sprites/characters/body/outfit/dock_average.png",
+    "dock_heavy": "res://assets/sprites/characters/body/outfit/dock_heavy.png",
+    "bounty_slim": "res://assets/sprites/characters/body/outfit/bounty_slim.png",
+    "bounty_average": "res://assets/sprites/characters/body/outfit/bounty_average.png",
+    "bounty_heavy": "res://assets/sprites/characters/body/outfit/bounty_heavy.png",
+    "fixer_slim": "res://assets/sprites/characters/body/outfit/fixer_slim.png",
+    "fixer_average": "res://assets/sprites/characters/body/outfit/fixer_average.png",
+    "fixer_heavy": "res://assets/sprites/characters/body/outfit/fixer_heavy.png",
+    "criminal_slim": "res://assets/sprites/characters/body/outfit/criminal_slim.png",
+    "criminal_average": "res://assets/sprites/characters/body/outfit/criminal_average.png",
+    "criminal_heavy": "res://assets/sprites/characters/body/outfit/criminal_heavy.png",
+    "civilian_slim": "res://assets/sprites/characters/body/outfit/civilian_slim.png",
+    "civilian_average": "res://assets/sprites/characters/body/outfit/civilian_average.png",
+    "civilian_heavy": "res://assets/sprites/characters/body/outfit/civilian_heavy.png",
+    "bm_tech_slim": "res://assets/sprites/characters/body/outfit/bm_tech_slim.png",
+    "bm_tech_average": "res://assets/sprites/characters/body/outfit/bm_tech_average.png",
+    "bm_tech_heavy": "res://assets/sprites/characters/body/outfit/bm_tech_heavy.png",
+    "medical_slim": "res://assets/sprites/characters/body/outfit/medical_slim.png",
+    "medical_average": "res://assets/sprites/characters/body/outfit/medical_average.png",
+    "medical_heavy": "res://assets/sprites/characters/body/outfit/medical_heavy.png",
+    "boss_slim": "res://assets/sprites/characters/body/outfit/boss_slim.png",
+    "boss_average": "res://assets/sprites/characters/body/outfit/boss_average.png",
+    "boss_heavy": "res://assets/sprites/characters/body/outfit/boss_heavy.png"
+   },
+   "cyber": {
+    "arm_slim": "res://assets/sprites/characters/body/cyber/arm_slim.png",
+    "arm_average": "res://assets/sprites/characters/body/cyber/arm_average.png",
+    "arm_heavy": "res://assets/sprites/characters/body/cyber/arm_heavy.png",
+    "legs_slim": "res://assets/sprites/characters/body/cyber/legs_slim.png",
+    "legs_average": "res://assets/sprites/characters/body/cyber/legs_average.png",
+    "legs_heavy": "res://assets/sprites/characters/body/cyber/legs_heavy.png",
+    "eye_slim": "res://assets/sprites/characters/body/cyber/eye_slim.png",
+    "eye_average": "res://assets/sprites/characters/body/cyber/eye_average.png",
+    "eye_heavy": "res://assets/sprites/characters/body/cyber/eye_heavy.png",
+    "visor_slim": "res://assets/sprites/characters/body/cyber/visor_slim.png",
+    "visor_average": "res://assets/sprites/characters/body/cyber/visor_average.png",
+    "visor_heavy": "res://assets/sprites/characters/body/cyber/visor_heavy.png",
+    "spine_slim": "res://assets/sprites/characters/body/cyber/spine_slim.png",
+    "spine_average": "res://assets/sprites/characters/body/cyber/spine_average.png",
+    "spine_heavy": "res://assets/sprites/characters/body/cyber/spine_heavy.png"
+   }
+  }
+ }
+}

@@ -33,3 +33,4 @@ Thumbs.db
 # Test / tooling output
 /tests/output/
 __pycache__/
+/scratchpad/
