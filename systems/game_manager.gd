@@ -126,9 +126,16 @@ func open_pause_menu() -> void:
 	UIManager.show_dialog("CLINIC PAUSED", "Autosaves after every job, purchase and upgrade.  F5 quick save · F9 quick load.", buttons)
 
 
+## Tests turn this off so random input can't close the game under them.
+var quit_enabled: bool = true
+
+
 func quit_to_desktop() -> void:
 	if is_running and not SurgeryManager.is_active:
 		SaveManager.save_game()
+	if not quit_enabled:
+		UIManager.go_to(UIManager.SCREEN_MAIN_MENU)
+		return
 	AudioManager.stop_all()
 	get_tree().quit()
 

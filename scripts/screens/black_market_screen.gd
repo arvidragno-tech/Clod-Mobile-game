@@ -3,14 +3,29 @@ extends BaseScreen
 ## properties. Distinct identity: darker, magenta light, corrupted text,
 ## tape-patched panels and a signal-tear shader.
 
-const TABS := ["OFFERS", "STASH", "CASES"]
+const TABS := ["/OFFERS", "/STASH", "/CASES"]
 const DEN := "res://assets/sprites/blackmarket/den.png"
 ## Part of the den art shown as the header strip (art pixels).
-const DEN_CROP := Rect2(0, 30, 180, 96)
+const DEN_CROP := Rect2(0, 44, 600, 74)
+const GLYPHS := "#$%&*+=?@ABCDEF0123456789/<>[]{}"
+const FEED := [
+	"SHIPMENT: military optics, serials ground off. Ask twice, price doubles.",
+	"AEGIS SWEEP: patrols on sublevel 2 tonight. Keep heat low.",
+	"WIRE: 'Unknown properties are a feature, ripper. STUDY before you install.'",
+	"RUMOUR: a prototype spine is moving through the flood tunnels.",
+	"NOTICE: no refunds. no names. no traces.",
+]
 
-var _list: VBoxContainer
+var _list: GridContainer
 var _money: Label
 var _tab: int = 0
+var _feed: Label
+var _feed_target: String = ""
+var _feed_progress: float = 0.0
+var _feed_index: int = 0
+var _hex: Label
+var _time: float = 0.0
+var _panels: Array[Control] = []
 
 
 func on_enter(_params: Dictionary) -> void:
@@ -22,28 +37,69 @@ func on_enter(_params: Dictionary) -> void:
 	var bg := ColorRect.new()
 	bg.color = Color("08050a")
 	add_child(UIKit.full_rect(bg))
-	var m := UIKit.full_rect(UIKit.margin(10, 8, 10, 10))
+	var m := UIKit.full_rect(UIKit.margin(40, 24, 40, 24))
 	add_child(m)
-	var col := UIKit.vbox(8)
+	var col := UIKit.vbox(12)
 	m.add_child(col)
-	col.add_child(UIKit.header("UNDERMARKET · FLOOD TUNNELS", "BLACK MARKET", GameManager.go_to_clinic))
-	(col.get_child(0).find_child("Title", true, false) as Label).add_theme_color_override(&"font_color", Palette.BRAND)
+	var head := UIKit.header("UNDERMARKET · FLOOD TUNNELS · ENCRYPTED LINK", "BLACK MARKET", GameManager.go_to_clinic)
+	(head.find_child("Title", true, false) as Label).add_theme_color_override(&"font_color", Palette.BRAND)
+	col.add_child(head)
+	_hex = UIKit.label("", &"MonoLabel", false, Color("a8327a"))
+	_hex.clip_text = true
+	UIKit.expand(_hex)
+	head.add_child(_hex)
+	_money = UIKit.label("", &"MonoLabel", false, Color("ffb0cc"))
+	head.add_child(_money)
 	col.add_child(_den_strip())
-	_money = UIKit.label("", &"MonoLabel", true, Color("ffb0cc"), 18)
-	col.add_child(_money)
+	var row := UIKit.hbox(18)
+	UIKit.expand(row, true, true)
+	col.add_child(row)
+	var main := UIKit.vbox(10)
+	UIKit.expand(main, true, true)
+	row.add_child(main)
 	var tabs := UIKit.tabs(TABS, _on_tab, "BMTab")
-	col.add_child(tabs)
+	tabs.custom_minimum_size.x = 640
+	tabs.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	main.add_child(tabs)
 	var sc := UIKit.scroll()
-	col.add_child(sc)
-	_list = UIKit.vbox(8)
+	main.add_child(sc)
+	_panels.append(sc)
+	_list = GridContainer.new()
+	_list.columns = 2
+	_list.add_theme_constant_override(&"h_separation", 12)
+	_list.add_theme_constant_override(&"v_separation", 12)
 	UIKit.expand(_list)
 	sc.add_child(_list)
+	# Right: the vendor and an encrypted feed that decodes as you watch.
+	var side := UIKit.panel(&"BMPanel")
+	side.custom_minimum_size.x = 440
+	row.add_child(side)
+	_panels.append(side)
+	var sv := UIKit.vbox(10)
+	side.add_child(sv)
+	var vendor := GlitchLabel.new()
+	vendor.theme_type_variation = &"BMLabel"
+	vendor.set_base_text("VENDOR: WIRE // NO NAMES")
+	sv.add_child(vendor)
+	var wire := CustomerManager.get_customer(&"vesna_kalo")
+	if wire:
+		var p := PixelPortrait.new()
+		sv.add_child(p)
+		p.set_appearance(wire.appearance, Palette.BRAND)
+	sv.add_child(UIKit.label("\"Cash only. No refunds. No questions.\"", &"DimLabel", true, Color("ffb0cc")))
+	sv.add_child(UIKit.label("> ENCRYPTED FEED", &"SubHeaderLabel", false, Palette.BRAND))
+	_feed = UIKit.label("", &"MonoLabel", true, Color("ff7ab0"))
+	_feed.name = "Feed"
+	sv.add_child(_feed)
+	_next_feed()
+	sv.add_child(UIKit.expand(Control.new(), false, true))
+	sv.add_child(UIKit.label("Unknown chrome can carry hidden traits. STUDY reveals one; MODIFY purges a bad one or repairs. Selling here earns tokens.", &"DimLabel", true))
 	var glitch := ColorRect.new()
 	glitch.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var mat := ShaderMaterial.new()
 	mat.shader = load("res://assets/shaders/bm_glitch.gdshader")
 	glitch.material = mat
-	mat.set_shader_parameter(&"intensity", 0.0 if Settings.reduce_motion else 0.6)
+	mat.set_shader_parameter(&"intensity", 0.0 if Settings.reduce_motion or Settings.effects_quality == 0 else 0.6)
 	add_child(UIKit.full_rect(glitch))
 	EventBus.money_changed.connect(func(_a: int, _d: int) -> void: _rebuild())
 	EventBus.inventory_changed.connect(_rebuild)
@@ -53,9 +109,37 @@ func on_enter(_params: Dictionary) -> void:
 	_rebuild()
 
 
+func get_panels() -> Array[Control]:
+	return _panels
+
+
+func _next_feed() -> void:
+	_feed_target = FEED[_feed_index % FEED.size()]
+	_feed_index += 1
+	_feed_progress = 0.0
+
+
+## Decrypting feed: resolved prefix + scrambled remainder, like a cipher
+## being cracked live. Plus a rolling hex session id in the header.
+func _process(delta: float) -> void:
+	if _feed == null:
+		return
+	_time += delta
+	_feed_progress += delta * (60.0 if Settings.reduce_motion else 22.0)
+	var n := mini(int(_feed_progress), _feed_target.length())
+	var tail := ""
+	for i in range(n, _feed_target.length()):
+		tail += " " if _feed_target[i] == " " else GLYPHS[randi() % GLYPHS.length()]
+	_feed.text = _feed_target.substr(0, n) + tail
+	if _feed_progress > _feed_target.length() + 90.0:
+		_next_feed()
+	if fmod(_time, 0.25) < delta:
+		_hex.text = "  SESSION 0x%08X  ·  ROUTE %d HOPS  ·  TRACE %s" % [randi(), 3 + randi() % 6, "CLEAN" if FactionManager.heat < 35.0 else "WARM"]
+
+
 func _den_strip() -> Control:
 	var holder := Control.new()
-	holder.custom_minimum_size = DEN_CROP.size * GameConfig.PIXEL_SCALE * Vector2(0, 1) + Vector2(0, 0)
+	holder.custom_minimum_size = Vector2(0, DEN_CROP.size.y * GameConfig.PIXEL_SCALE)
 	holder.clip_contents = true
 	var tex := TextureRect.new()
 	var at := AtlasTexture.new()
@@ -66,28 +150,6 @@ func _den_strip() -> Control:
 	tex.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
 	tex.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	holder.add_child(UIKit.full_rect(tex))
-	var row := UIKit.hbox(8)
-	row.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
-	row.offset_left = 6
-	row.offset_top = -80
-	holder.add_child(row)
-	var wire := CustomerManager.get_customer(&"vesna_kalo")
-	if wire:
-		var p := PixelPortrait.new()
-		p.crop = Rect2i(14, 6, 36, 36)
-		row.add_child(p)
-		p.set_appearance(wire.appearance, Palette.BRAND)
-	var quote := UIKit.vbox(0)
-	quote.size_flags_vertical = Control.SIZE_SHRINK_END
-	var name := GlitchLabel.new()
-	name.theme_type_variation = &"BMLabel"
-	name.set_base_text("WIRE // NO NAMES")
-	quote.add_child(name)
-	var line := UIKit.label("\"Cash only. No refunds. No questions.\"", &"DimLabel", false, Color("ffb0cc"), 13)
-	line.add_theme_color_override(&"font_outline_color", Color.BLACK)
-	line.add_theme_constant_override(&"outline_size", 4)
-	quote.add_child(line)
-	row.add_child(quote)
 	return holder
 
 
@@ -99,7 +161,7 @@ func _on_tab(i: int) -> void:
 func _rebuild() -> void:
 	if not is_inside_tree() or _list == null:
 		return
-	_money.text = "CR %d  ·  TOKENS %d  ·  PARTS %d  ·  HEAT %d" % [EconomyManager.money, InventoryManager.tokens, InventoryManager.parts, roundi(FactionManager.heat)]
+	_money.text = "CR %d · TOKENS %d · PARTS %d · HEAT %d" % [EconomyManager.money, InventoryManager.tokens, InventoryManager.parts, roundi(FactionManager.heat)]
 	UIKit.clear(_list)
 	match _tab:
 		0:
@@ -115,6 +177,7 @@ func _rebuild() -> void:
 				_list.add_child(_stash_card(i, stash[i]))
 		2:
 			_list.add_child(_cases_card())
+	_list.columns = 1 if _tab == 2 else 2
 
 
 func _item_header(row: HBoxContainer, inst: ImplantInstance) -> VBoxContainer:
@@ -162,8 +225,9 @@ func _offer_card(i: int) -> Control:
 	var row := UIKit.hbox(10)
 	card.add_child(row)
 	_item_header(row, inst)
+	UIKit.expand(card)
 	var b := UIKit.button(EconomyManager.format_money(int(offer["price"])), &"BMButton", func() -> void: _buy(i), "BMBuy_%d" % i)
-	b.custom_minimum_size.x = 86
+	b.custom_minimum_size.x = 140
 	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	b.disabled = not EconomyManager.can_afford(int(offer["price"]))
 	row.add_child(b)
@@ -172,6 +236,7 @@ func _offer_card(i: int) -> Control:
 
 func _stash_card(i: int, inst: ImplantInstance) -> Control:
 	var card := UIKit.panel(&"BMCardPanel")
+	UIKit.expand(card)
 	var v := UIKit.vbox(6)
 	card.add_child(v)
 	var row := UIKit.hbox(10)
@@ -187,7 +252,7 @@ func _stash_card(i: int, inst: ImplantInstance) -> Control:
 	var sell := UIKit.button("SELL %s" % EconomyManager.format_money(BlackMarketManager.sell_value(inst)), &"GhostButton", func() -> void: _sell(inst.uid), "Sell_%d" % i, 44)
 	var scrap := UIKit.button("SCRAP", &"GhostButton", func() -> void: _scrap(inst.uid), "Scrap_%d" % i, 44)
 	for b: Button in [study, modify, sell, scrap]:
-		b.add_theme_font_size_override(&"font_size", 12)
+		b.add_theme_font_size_override(&"font_size", 18)
 		UIKit.expand(b)
 		actions.add_child(b)
 	return card

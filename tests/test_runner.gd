@@ -188,7 +188,7 @@ func _e2e() -> void:
 	await _frames(3)
 	check(SurgeryManager.is_active and SurgeryManager.is_running, "cancelling abort keeps operating")
 	await _click_named("AbortButton")
-	await _click_dialog_button("ABORT")
+	await _click_named("AbortConfirm")
 	await _wait_screen(UIManager.SCREEN_RESULTS, 10.0)
 	var r4 := GameManager.last_result
 	check(r4 != null and not r4.success and r4.grade == "F", "run 4: aborted op is graded F")
@@ -277,6 +277,49 @@ func _e2e() -> void:
 	await _click_named("BackButton")
 	await _wait_screen(UIManager.SCREEN_CLINIC)
 
+	# PC: hotkeys, inventory grid, cyberware database, pause menu, quicksave.
+	await _key(KEY_I)
+	await _wait_screen(UIManager.SCREEN_INVENTORY)
+	await _frames(5)
+	await _checkpoint("inventory")
+	var first := _first_slot()
+	check(first != null, "inventory grid shows implant slots")
+	if first:
+		await _right_click(first.get_global_rect().get_center())
+		var ca := _find_visible("CompareA") as ItemSlot
+		check(ca != null and not ca.is_empty(), "right-click sets the CURRENT compare slot")
+		var slots := _all_slots()
+		if slots.size() > 1:
+			_drop_on(slots[1], _find_visible("CompareB") as ItemSlot)
+			await _frames(3)
+			check(_find_visible("Verdict_PERFORMANCE") != null, "dropping a unit on NEW shows the comparison")
+		await _checkpoint("inventory_compare")
+	await _click_named("InvTab_1")
+	await _frames(3)
+	check(_find_visible("Slot_tool_starter_scalpel") != null or _first_slot("tool") != null, "TOOLS tab lists instruments")
+	await _checkpoint("inventory_tools")
+	await _key(KEY_B)
+	await _wait_screen(UIManager.SCREEN_DATABASE)
+	await _frames(5)
+	await _checkpoint("database")
+	check(_find_visible("Spec") != null and _find_visible("Compare") != null, "database shows spec sheet and comparison")
+	await _key(KEY_ESCAPE)
+	await _wait_screen(UIManager.SCREEN_CLINIC)
+	await _key(KEY_ESCAPE)
+	await _frames(5)
+	check(UIManager.has_modal() and _find_visible("PauseResume") != null, "ESC on the clinic opens the pause menu")
+	await _checkpoint("pause_menu_keyboard")
+	await _key(KEY_ESCAPE)
+	await _frames(5)
+	check(not UIManager.has_modal(), "ESC again closes the pause menu")
+	var saved_before := SaveManager.last_saved_unix
+	await _key(KEY_F5)
+	await _frames(3)
+	check(SaveManager.has_save(), "F5 quick-saves (%s)" % SaveManager.save_path)
+	await _key(KEY_TAB)
+	await _frames(2)
+	check(get_viewport().gui_get_focus_owner() != null, "TAB moves keyboard focus into a panel")
+
 	# Detail zoom: double-tap the clinic art, pan, double-tap back.
 	await _frames(10)
 	var view := _find_visible("ClinicView") as ClinicView
@@ -308,11 +351,19 @@ func _e2e() -> void:
 	await _checkpoint("settings")
 	var settings_path := Settings.path
 	Settings.path = "user://test_settings.cfg"
+	await _click_named("SettingsTab_1")
+	await _frames(5)
+	await _checkpoint("settings_audio")
 	var slider := _find_visible("Slider_music_volume") as HSlider
 	if slider:
 		var r := slider.get_global_rect()
 		await _drag([r.position + Vector2(r.size.x * 0.8, r.size.y / 2), r.position + Vector2(r.size.x * 0.2, r.size.y / 2)])
 	check(Settings.music_volume < 0.4, "music slider drag changes volume (%.2f)" % Settings.music_volume)
+	await _click_named("SettingsTab_2")
+	await _frames(5)
+	await _checkpoint("settings_controls")
+	await _click_named("SettingsTab_3")
+	await _frames(5)
 	var before := Settings.reduce_motion
 	await _click_named("Toggle_reduce_motion")
 	await _frames(5)
@@ -632,6 +683,53 @@ func _handle_complication() -> void:
 		await _checkpoint("complication")
 		await _click(b)
 		_handling_complication = false
+
+
+func _key(keycode: Key) -> void:
+	for pressed in [true, false]:
+		var ev := InputEventKey.new()
+		ev.keycode = keycode
+		ev.physical_keycode = keycode
+		ev.pressed = pressed
+		Input.parse_input_event(ev)
+		await _frames(2)
+
+
+func _right_click(pos: Vector2) -> void:
+	for pressed in [true, false]:
+		var ev := InputEventMouseButton.new()
+		ev.button_index = MOUSE_BUTTON_RIGHT
+		ev.pressed = pressed
+		ev.position = pos
+		ev.global_position = pos
+		get_viewport().push_input(ev, true)
+		await _frames(1)
+	await _frames(2)
+
+
+func _all_slots(kind: StringName = &"implant") -> Array[ItemSlot]:
+	var out: Array[ItemSlot] = []
+	for n in get_tree().root.find_children("Slot_*", "Control", true, false):
+		var s := n as ItemSlot
+		if s and s.kind == kind and s.is_visible_in_tree():
+			out.append(s)
+	return out
+
+
+func _first_slot(kind: StringName = &"implant") -> ItemSlot:
+	var all := _all_slots(kind)
+	return all[0] if not all.is_empty() else null
+
+
+## Drag & drop through Godot's own DnD path is not injectable headless, so
+## call the same drop hook the GUI uses.
+func _drop_on(source: ItemSlot, target: ItemSlot) -> void:
+	if source == null or target == null:
+		check(false, "drag source and target exist")
+		return
+	var data := {"slot_kind": source.kind, "key": source.key, "source": source}
+	check(target._can_drop_data(Vector2.ZERO, data), "compare slot accepts the dragged unit")
+	target._drop_data(Vector2.ZERO, data)
 
 
 func _send_button(pos: Vector2, pressed: bool) -> void:

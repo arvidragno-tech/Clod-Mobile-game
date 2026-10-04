@@ -16,6 +16,12 @@ static var _cache: Dictionary = {}
 static var _cache_order: Array[String] = []
 
 
+static func clear_cache() -> void:
+	_layers.clear()
+	_cache.clear()
+	_cache_order.clear()
+
+
 static func manifest() -> Dictionary:
 	if _manifest.is_empty():
 		var parsed: Variant = DataLoader.load_json(GameConfig.DATA_CHARACTER_PARTS)

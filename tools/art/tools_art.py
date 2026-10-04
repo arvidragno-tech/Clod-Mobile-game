@@ -407,8 +407,8 @@ def generate():
 
 
 def app_icon():
-    """App icon on a 60x60 grid (iOS sizes 120/180 are exact 2x/3x; 1024 is
-    17x plus a 2 px bleed). Big, high-contrast shapes so it reads at 40 px:
+    """App icon on a 60x60 grid (the Windows .ico sizes are nearest-scaled
+    from it; 240 is an exact 4x, 1024 is 17x plus a 2 px bleed). Big, high-contrast shapes so it reads at 40 px:
     a cyan neural implant under a magenta-edged scalpel, a blood drop, on a
     dark underground backdrop with a magenta key light."""
     import os
@@ -495,18 +495,6 @@ def app_icon():
     big = Image.new("RGB", (1024, 1024), bg0)
     big.paste(img.resize((1020, 1020), Image.NEAREST), (2, 2))
     big.save(os.path.join(out, "app_icon_1024.png"), optimize=True)
-    # iOS icon set (iPhone): exact 2x/3x where possible, nearest elsewhere.
-    ios = os.path.join(SPRITES, "..", "ios")
-    os.makedirs(ios, exist_ok=True)
-    for size in (40, 58, 60, 76, 80, 87, 120, 152, 167, 180):
-        img.resize((size, size), Image.NEAREST).save(os.path.join(ios, f"icon_{size}.png"), optimize=True)
-    # Launch screen: the clinic mark + wordmark, integer-scaled per density.
-    logo = Image.new("RGBA", (64, 40), (0, 0, 0, 0))
-    lp = logo.load()
-    small = img.crop((10, 9, 44, 45)).resize((34, 36), Image.NEAREST)
-    logo.paste(small, (15, 0))
-    for scale, name in ((4, "launch@2x.png"), (6, "launch@3x.png")):
-        logo.resize((64 * scale, 40 * scale), Image.NEAREST).save(os.path.join(ios, name), optimize=True)
 
 
 # --- Mouse cursors (PC) --------------------------------------------------------

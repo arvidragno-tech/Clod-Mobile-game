@@ -18,6 +18,55 @@ func _ready() -> void:
 	Settings.apply_display()
 	_apply_cursors()
 	UIManager.go_to(UIManager.SCREEN_MAIN_MENU)
+	if OS.get_cmdline_user_args().has("--smoke-test") or OS.get_cmdline_args().has("--smoke-test"):
+		_smoke_test.call_deferred()
+
+
+## Release-build QA (`UndercityRipper.exe --smoke-test`): new game in slot 3,
+## visit the main screens, save, reload, screenshot each step to
+## user://smoke/, print SMOKE OK / SMOKE FAIL and quit. Used to verify the
+## exported Windows build (save path, rendering, scenes in the .pck).
+func _smoke_test() -> void:
+	var fails: Array[String] = []
+	var dir := "user://smoke"
+	DirAccess.make_dir_recursive_absolute(dir)
+	var step := func(id: StringName, params: Dictionary = {}) -> void:
+		if id != &"":
+			UIManager.go_to(id, params)
+		for i in 90:
+			await get_tree().process_frame
+		await RenderingServer.frame_post_draw
+		var img := get_viewport().get_texture().get_image()
+		if img:
+			img.save_png("%s/%s.png" % [dir, UIManager.current_screen_id])
+		if UIManager.current_screen_id != id and id != &"":
+			fails.append("screen %s did not open" % id)
+	await step.call(&"")
+	GameManager.start_new_game_in_slot(3)
+	TutorialManager.skip()
+	for id: StringName in [UIManager.SCREEN_CLINIC, UIManager.SCREEN_INVENTORY, UIManager.SCREEN_DATABASE, UIManager.SCREEN_SHOP,
+			UIManager.SCREEN_SKILLS, UIManager.SCREEN_UPGRADES, UIManager.SCREEN_DOSSIER, UIManager.SCREEN_SETTINGS]:
+		await step.call(id, {"return_to": UIManager.SCREEN_CLINIC})
+	var money := EconomyManager.money + 123
+	EconomyManager.add_money(123)
+	if not SaveManager.save_game():
+		fails.append("save failed")
+	SaveManager.reset_all()
+	if not SaveManager.load_game() or EconomyManager.money != money:
+		fails.append("reload mismatch")
+	var path := ProjectSettings.globalize_path(SaveManager.save_path)
+	if not FileAccess.file_exists(SaveManager.save_path):
+		fails.append("no save file at " + path)
+	print("SMOKE save file: ", path)
+	print("SMOKE window: ", DisplayServer.window_get_size(), " mode ", DisplayServer.window_get_mode())
+	print("SMOKE OK" if fails.is_empty() else "SMOKE FAIL: " + ", ".join(fails))
+	SaveManager.use_slot(1)
+	get_tree().quit(0 if fails.is_empty() else 1)
+
+
+func _exit_tree() -> void:
+	PixelArt.clear_cache()
+	CharacterArt.clear_cache()
 
 
 ## Pixel-art hardware cursors (2x art, hard edges): arrow, pointing hand for

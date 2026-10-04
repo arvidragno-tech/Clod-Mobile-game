@@ -1,63 +1,71 @@
 extends BaseScreen
-## Skill tree, one category per tab, readable on a phone: each skill is a
-## card with rank pips, what the next rank gives, and an UPGRADE button.
+## Skill tree: the four categories side by side. Each skill is a card with
+## rank pips, what it gives now and next, and an UPGRADE button.
 
-var _list: VBoxContainer
+var _columns: HBoxContainer
 var _points: Label
-var _tab: int = 0
+var _bonuses: Label
+var _panels: Array[Control] = []
 
 
 func on_enter(_params: Dictionary) -> void:
-	var m := UIKit.full_rect(UIKit.margin(10, 8, 10, 10))
-	add_child(m)
-	var col := UIKit.vbox(8)
-	m.add_child(col)
-	col.add_child(UIKit.header("RIPPER · TRAINING", "SKILLS", GameManager.go_to_clinic))
-	_points = UIKit.label("", &"MonoLabel", false, Palette.ACCENT)
-	col.add_child(_points)
-	var names: Array = []
-	for c: Dictionary in SkillManager.categories:
-		names.append(str(c["name"]))
-	col.add_child(UIKit.tabs(names, _on_tab, "SkillTab"))
-	var sc := UIKit.scroll()
-	col.add_child(sc)
-	_list = UIKit.vbox(8)
-	UIKit.expand(_list)
-	sc.add_child(_list)
+	var col := UIKit.workstation(self, &"skills")
+	var head := UIKit.header("RIPPER · TRAINING", "SKILLS", GameManager.go_to_clinic)
+	col.add_child(head)
+	_points = UIKit.label("", &"BigMonoLabel", false, Palette.ACCENT)
+	_points.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	UIKit.expand(_points)
+	head.add_child(_points)
+	_columns = UIKit.hbox(14)
+	UIKit.expand(_columns, true, true)
+	col.add_child(_columns)
+	_bonuses = UIKit.label("", &"DimLabel", true)
+	col.add_child(_bonuses)
 	EventBus.skills_changed.connect(_rebuild)
 	_rebuild()
 
 
-func _on_tab(i: int) -> void:
-	_tab = i
-	_rebuild()
+func get_panels() -> Array[Control]:
+	return _panels
 
 
+## One column per skill category, side by side (4 on a 1920 screen).
 func _rebuild() -> void:
-	if _list == null:
+	if _columns == null:
 		return
-	_points.text = "SKILL POINTS: %d   ·   LV %d" % [SkillManager.points, ProgressionManager.level]
-	UIKit.clear(_list)
-	var cat: Dictionary = SkillManager.categories[_tab]
-	var color := Color(str(cat.get("color", "2ee6c8")))
-	for id in SkillManager.get_skills_in(StringName(str(cat["id"]))):
-		_list.add_child(_skill_card(id, color))
+	_points.text = "%d SKILL POINT%s  ·  LV %d" % [SkillManager.points, "" if SkillManager.points == 1 else "S", ProgressionManager.level]
+	UIKit.clear(_columns)
+	_panels.clear()
+	for cat: Dictionary in SkillManager.categories:
+		var color := Color(str(cat.get("color", "2ee6c8")))
+		var panel := UIKit.panel(&"CardPanel")
+		UIKit.expand(panel, true, true)
+		_columns.add_child(panel)
+		_panels.append(panel)
+		var v := UIKit.vbox(10)
+		panel.add_child(v)
+		v.add_child(UIKit.label(str(cat["name"]).to_upper(), &"HeaderLabel", false, color))
+		var sc := UIKit.scroll()
+		v.add_child(sc)
+		var list := UIKit.vbox(10)
+		UIKit.expand(list)
+		sc.add_child(list)
+		for id in SkillManager.get_skills_in(StringName(str(cat["id"]))):
+			list.add_child(_skill_card(id, color))
 	var active := ModifierManager.get_all()
-	if not active.is_empty():
-		_list.add_child(UIKit.label("ACTIVE BONUSES (skills, clinic, tools, events)", &"SubHeaderLabel"))
-		_list.add_child(UIKit.label(UIKit.describe_modifiers(active), &"DimLabel", true, null, 13))
+	_bonuses.text = "ACTIVE BONUSES (skills, clinic, tools, events): " + UIKit.describe_modifiers(active) if not active.is_empty() else ""
 
 
 func _skill_card(id: StringName, color: Color) -> Control:
 	var s := SkillManager.get_skill(id)
 	var rank := SkillManager.get_rank(id)
 	var max_rank := int(s.get("max_rank", 3))
-	var card := UIKit.panel(&"CardPanel")
+	var card := UIKit.panel(&"HudPanel")
 	var v := UIKit.vbox(4)
 	card.add_child(v)
 	var top := UIKit.hbox(8)
 	v.add_child(top)
-	var title := UIKit.label(str(s.get("name", id)).to_upper(), &"HeaderLabel", false, color)
+	var title := UIKit.label(str(s.get("name", id)).to_upper(), &"MonoLabel", true, color)
 	UIKit.expand(title)
 	top.add_child(title)
 	var pips := RankPips.new(rank, max_rank, color)

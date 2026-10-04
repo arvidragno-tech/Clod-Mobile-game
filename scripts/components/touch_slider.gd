@@ -1,7 +1,8 @@
 class_name TouchSlider
 extends Control
-## Large, thumb-friendly horizontal slider. Touch or drag anywhere on it to
-## set the value (0..1); no need to grab a tiny knob.
+## Large pixel-art horizontal slider. Click or drag anywhere on it to set
+## the value (0..1); no need to grab a tiny knob. The wheel / arrow keys
+## nudge it via the calibrate stage.
 
 signal value_changed(value: float)
 

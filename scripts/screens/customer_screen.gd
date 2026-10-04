@@ -30,19 +30,12 @@ func on_enter(_params: Dictionary) -> void:
 	var left := UIKit.vbox(14)
 	left.custom_minimum_size.x = 440
 	row.add_child(left)
-	left.add_child(_profile_card(c))
-	var statement := UIKit.panel(&"CardPanel")
-	statement.name = "DialogueCard"
-	UIKit.expand(statement, true, true)
-	var sv := UIKit.vbox(8)
-	statement.add_child(sv)
-	sv.add_child(UIKit.label("STATEMENT", &"SubHeaderLabel", false, Palette.ACCENT))
-	_dialogue = UIKit.label(c.dialogue, &"MonoLabel", true)
-	sv.add_child(_dialogue)
-	statement.gui_input.connect(_on_dialogue_input)
-	statement.tooltip_text = "Click to skip the typing"
-	left.add_child(statement)
-	_panels.append(statement)
+	var lsc := UIKit.scroll()
+	left.add_child(lsc)
+	var profile := _profile_card(c)
+	UIKit.expand(profile, true, true)
+	lsc.add_child(profile)
+	_panels.append(lsc)
 
 	# --- Centre: expandable file sections ---
 	var sc := UIKit.scroll()
@@ -51,6 +44,16 @@ func on_enter(_params: Dictionary) -> void:
 	var mid := UIKit.vbox(12)
 	UIKit.expand(mid)
 	sc.add_child(mid)
+	var statement := UIKit.panel(&"AccentPanel")
+	statement.name = "DialogueCard"
+	var sv := UIKit.vbox(8)
+	statement.add_child(sv)
+	sv.add_child(UIKit.label("STATEMENT", &"SubHeaderLabel", false, Palette.ACCENT))
+	_dialogue = UIKit.label(c.dialogue, &"MonoLabel", true)
+	sv.add_child(_dialogue)
+	statement.gui_input.connect(_on_dialogue_input)
+	statement.tooltip_text = "Click to skip the typing"
+	mid.add_child(statement)
 	if item and surgery:
 		_request_section(mid, item, surgery)
 		_payment_section(mid, c, item, surgery)
@@ -121,11 +124,14 @@ func _profile_card(c: CustomerData) -> Control:
 	var g := GridContainer.new()
 	g.columns = 2
 	g.add_theme_constant_override(&"h_separation", 14)
-	g.add_theme_constant_override(&"v_separation", 4)
+	g.add_theme_constant_override(&"v_separation", 8)
 	v.add_child(g)
 	var fac_row := UIKit.hbox(6)
 	fac_row.add_child(UIKit.icon(str(FactionManager.get_faction(c.faction_id).get("emblem", "")), 16))
-	fac_row.add_child(UIKit.label(FactionManager.get_name_of(c.faction_id).to_upper(), &"SubHeaderLabel", true, FactionManager.get_color(c.faction_id)))
+	var fl := UIKit.label(FactionManager.get_name_of(c.faction_id).to_upper(), &"SubHeaderLabel", true, FactionManager.get_color(c.faction_id))
+	UIKit.expand(fl)
+	fac_row.add_child(fl)
+	UIKit.expand(fac_row)
 	for pair: Array in [
 		["FACTION", fac_row],
 		["STANDING", FactionManager.get_standing(c.faction_id)],
@@ -137,7 +143,7 @@ func _profile_card(c: CustomerData) -> Control:
 		if pair[1] is Control:
 			g.add_child(pair[1])
 		else:
-			g.add_child(UIKit.label(str(pair[1]), &"", true))
+			g.add_child(UIKit.expand(UIKit.label(str(pair[1]), &"", true)))
 	if c.visits > 0 or c.referred_by != "":
 		v.add_child(UIKit.label(("RETURNING · VISIT %d" % (c.visits + 1)) if c.visits > 0 else "REFERRED BY " + c.referred_by.to_upper(), &"SubHeaderLabel", true, Palette.OK))
 	return card

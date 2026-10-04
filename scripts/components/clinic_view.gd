@@ -10,6 +10,17 @@ extends Control
 ## Everything is drawn in whole art pixels; Reduce Motion keeps it calm.
 
 signal customer_tapped()
+## A room prop was clicked (PC: the clinic is an interactive room).
+signal hotspot_clicked(id: StringName)
+
+## Clickable props (art px in the 400x224 room) -> workstation section.
+const HOTSPOTS := [
+	{"id": &"database", "rect": Rect2(78, 86, 36, 34), "label": "DIAGNOSTICS TERMINAL · cyberware database", "min_tier": 0},
+	{"id": &"upgrades", "rect": Rect2(160, 104, 80, 58), "label": "OPERATING TABLE · facility upgrades", "min_tier": 0},
+	{"id": &"inventory", "rect": Rect2(248, 100, 76, 62), "label": "STORAGE BENCH · inventory", "min_tier": 0},
+	{"id": &"supply", "rect": Rect2(332, 52, 36, 110), "label": "SUPPLY CABINET · buy tools and implants", "min_tier": 0},
+	{"id": &"dossier", "rect": Rect2(370, 74, 28, 88), "label": "RECORDS SERVER · journal", "min_tier": 2},
+]
 
 ## Point (in background pixels) where the customer's feet stand.
 const CUSTOMER_FOOT := Vector2(27, 165)
@@ -36,6 +47,7 @@ var _zoom_focus := Vector2(90, 120)  # art px kept centred when zoomed
 var _last_tap_ms: int = -1000
 var _last_tap_pos := Vector2.ZERO
 var _panning: bool = false
+var _hot: int = -1
 const DOUBLE_TAP_MS := 350
 var _fx: Array = []
 var _puffs: Array[Vector4] = []  # x, y, age, life (steam)
@@ -155,6 +167,7 @@ func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, size), Color(0.02, 0.02, 0.04))
 	draw_texture_rect(_background, Rect2(_offset, Vector2(_background.get_size()) * _scale), false)
 	_draw_fx()
+	_draw_hotspot()
 	# Dust motes catching the lamp light (one art pixel each).
 	for d in _dust:
 		var a := 0.25 + 0.2 * sin(_time * 2.0 + d.z)
@@ -194,6 +207,12 @@ func _gui_input(event: InputEvent) -> void:
 			customer_tapped.emit()
 			accept_event()
 			return
+		var hot := _hotspot_at(mb.position)
+		if hot >= 0 and not zoomed and not mb.double_click:
+			AudioManager.play_sfx(&"click", 0.05)
+			hotspot_clicked.emit(HOTSPOTS[hot]["id"])
+			accept_event()
+			return
 		var now := Time.get_ticks_msec()
 		if now - _last_tap_ms < DOUBLE_TAP_MS and mb.position.distance_to(_last_tap_pos) < 40.0:
 			set_zoom(not zoomed, mb.position)
@@ -205,11 +224,65 @@ func _gui_input(event: InputEvent) -> void:
 		_panning = zoomed
 		accept_event()
 		return
+	# Wheel zooms around the cursor, right-click resets.
+	if mb and mb.pressed and mb.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN, MOUSE_BUTTON_RIGHT]:
+		var want := mb.button_index == MOUSE_BUTTON_WHEEL_UP
+		if want != zoomed:
+			set_zoom(want, mb.position)
+			AudioManager.play_sfx(&"servo", 0.0)
+		accept_event()
+		return
 	var mm := event as InputEventMouseMotion
 	if mm and _panning and zoomed:
 		_zoom_focus -= mm.relative / _scale
 		_layout()
 		accept_event()
+	elif mm:
+		var hot := -1 if zoomed else _hotspot_at(mm.position)
+		if hot != _hot:
+			_hot = hot
+			tooltip_text = str(HOTSPOTS[hot]["label"]) if hot >= 0 else _base_tooltip
+			mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if hot >= 0 or (_has_customer and get_customer_rect().has_point(mm.position)) else Control.CURSOR_ARROW
+			if hot >= 0:
+				AudioManager.play_sfx(&"hover", 0.03)
+			queue_redraw()
+
+
+var _base_tooltip: String = ""
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_MOUSE_EXIT and _hot >= 0:
+		_hot = -1
+		tooltip_text = _base_tooltip
+		queue_redraw()
+
+
+func _hotspot_at(local: Vector2) -> int:
+	var art := (local - _offset) / _scale
+	for i in HOTSPOTS.size():
+		var h: Dictionary = HOTSPOTS[i]
+		if ClinicManager.tier >= int(h["min_tier"]) and (h["rect"] as Rect2).has_point(art):
+			return i
+	return -1
+
+
+## Pulsing pixel brackets around the hovered prop.
+func _draw_hotspot() -> void:
+	if _hot < 0:
+		return
+	var r: Rect2 = HOTSPOTS[_hot]["rect"]
+	var a := 0.6 + 0.3 * sin(_time * 6.0)
+	var c := Color(Palette.ACCENT, a)
+	var tl := _px(r.position)
+	var br := _px(r.end)
+	var l := 4.0 * _scale
+	var w := _scale
+	for corner: Vector2 in [tl, Vector2(br.x - w, tl.y), Vector2(tl.x, br.y - w), br - Vector2(w, w)]:
+		var sx := 1.0 if corner.x <= tl.x else -1.0
+		var sy := 1.0 if corner.y <= tl.y else -1.0
+		draw_rect(Rect2(corner + Vector2(minf(0.0, sx * l) + (w if sx < 0 else 0.0), 0), Vector2(l, w)), c)
+		draw_rect(Rect2(corner + Vector2(0, minf(0.0, sy * l) + (w if sy < 0 else 0.0)), Vector2(w, l)), c)
 
 
 # --- Ambient animation ----------------------------------------------------------

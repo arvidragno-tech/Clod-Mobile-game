@@ -36,6 +36,7 @@ func _ready() -> void:
 	SaveManager.delete_save()
 	Settings.path = "user://stability_settings.cfg"
 	SurgeryScreen.pause_on_suspend = false
+	GameManager.quit_enabled = false
 	_main = (load("res://scenes/main/main.tscn") as PackedScene).instantiate()
 	add_child(_main)
 	await _frames(10)
@@ -226,8 +227,27 @@ func _monkey(count: int) -> void:
 	for i in count:
 		visited[UIManager.current_screen_id] = true
 		var p := Vector2(_rng.randf_range(0, view.x), _rng.randf_range(0, view.y))
-		var kind := _rng.randi() % 10
-		if kind < 6:
+		var kind := _rng.randi() % 14
+		if kind >= 10:
+			# PC inputs: right-click, wheel, random hotkeys.
+			match kind:
+				10:
+					_button(p, MOUSE_BUTTON_RIGHT, true)
+					_button(p, MOUSE_BUTTON_RIGHT, false)
+				11:
+					_button(p, MOUSE_BUTTON_WHEEL_UP if _rng.randf() < 0.5 else MOUSE_BUTTON_WHEEL_DOWN, true)
+				_:
+					var keys := [KEY_ESCAPE, KEY_TAB, KEY_SPACE, KEY_ENTER, KEY_E, KEY_Q, KEY_R, KEY_Z, KEY_X, KEY_V, KEY_1, KEY_2, KEY_3, KEY_4,
+						KEY_I, KEY_C, KEY_M, KEY_J, KEY_B, KEY_F, KEY_F5, KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_COMMA, KEY_PERIOD, KEY_EQUAL, KEY_MINUS]
+					var key: int = keys[_rng.randi() % keys.size()]
+					for pressed in [true, false]:
+						var ev := InputEventKey.new()
+						ev.keycode = key
+						ev.physical_keycode = key
+						ev.pressed = pressed
+						Input.parse_input_event(ev)
+						await _frames(1)
+		elif kind < 6:
 			_mouse(p, true)
 			await _frames(1)
 			_mouse(p, false)
@@ -272,6 +292,15 @@ func _mouse(p: Vector2, pressed: bool) -> void:
 	ev.position = p
 	ev.global_position = p
 	ev.button_mask = MOUSE_BUTTON_MASK_LEFT if pressed else 0
+	get_viewport().push_input(ev, true)
+
+
+func _button(p: Vector2, index: MouseButton, pressed: bool) -> void:
+	var ev := InputEventMouseButton.new()
+	ev.button_index = index
+	ev.pressed = pressed
+	ev.position = p
+	ev.global_position = p
 	get_viewport().push_input(ev, true)
 
 

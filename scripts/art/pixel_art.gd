@@ -10,6 +10,13 @@ static var _scaled: Dictionary = {}
 static var _palettes: Dictionary = {}
 
 
+## Drops cached textures (called on exit so GPU textures are released
+## before the rendering server shuts down).
+static func clear_cache() -> void:
+	_textures.clear()
+	_scaled.clear()
+
+
 static func tex(path: String) -> Texture2D:
 	if path.is_empty():
 		return null

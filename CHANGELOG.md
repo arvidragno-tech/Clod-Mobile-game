@@ -1,7 +1,56 @@
 # Changelog
 
-All notable changes to *UNDERCITY: RIPPER*. Versions follow the iOS
-`short_version` in `export_presets.cfg`.
+All notable changes to *UNDERCITY: RIPPER*. Versions follow
+`application/config/version` in `project.godot` and the Windows file version
+in `export_presets.cfg`.
+
+## 2.0.0 — Windows PC conversion (1920×1080, mouse + keyboard)
+
+The game is now a **Windows PC game** built for **1920×1080** with **mouse and
+keyboard**. All gameplay, progression, content and systems are preserved;
+the presentation, input and platform layers were rebuilt for desktop.
+
+### Platform and display
+- 1920×1080 design canvas (`canvas_items` stretch, `keep` aspect): 16:9 windows scale uniformly, other aspect ratios letterbox.
+- One global pixel density: 1 art pixel = 3 canvas units. Integer-perfect at 1920×1080 (3×) and 1280×720 (2×); nearest sampling everywhere, no mipmaps.
+- Window modes: windowed (1920×1080, 1600×900, 1366×768, 1280×720), borderless fullscreen and exclusive fullscreen; VSync toggle; nearest/linear filtering option; effects quality LOW/MEDIUM/HIGH.
+- Pixel-art hardware cursors (arrow, pointing hand, crosshair, grab) and a Windows `.ico` app icon.
+- Saves and settings go to `%APPDATA%\UndercityRipper\` (`config/use_custom_user_dir`), so no admin rights are needed.
+
+### Desktop UI (workstation layout)
+- **Workstation shell** on every hub screen: a top status bar (credits, level + XP, rep, heat, supplies, parts, tokens, jobs, MENU) and a left section nav (clinic, inventory, cyberware DB, supply, skills, facility, journal, black market, settings) with hotkeys.
+- **Clinic:** a wide 400×224 room rendered at 3×, a customer card on the left, status / rumours / faction cards, and **clickable room props** (diagnostics terminal → database, operating table → facility, storage bench → inventory, supply cabinet → supply, records server → journal) with hover brackets.
+- **Customer file:** a three-column dossier with expandable REQUEST, PAYMENT, RISK, MEDICAL HISTORY and **PREVIOUS OPERATIONS** sections, plus a NOW vs AFTER neural-load panel.
+- **Diagnosis / plan:** scanner | findings | diagnosis, then summary and checks | implant units | begin.
+- **Surgery workstation** (the centrepiece): patient, vitals, ECG and the procedure checklist on the left; a large zoomable operating field in the centre; an instrument rack (icon, name, hotkey, condition, precision/speed, description), emergency actions and the implant on the right; a key-hint bar at the bottom.
+- **Results:** a three-panel debrief (grade, breakdown, payout).
+- **Supply:** a two-column card grid with a detail panel and CURRENT vs NEW comparison, plus instrument servicing.
+- **New: Inventory.** A grid inventory with CYBERWARE / TOOLS / MEDICAL SUPPLIES / COMPONENTS / BLACK MARKET tabs, sort, text filter, hover details, double-click inspect, drag & drop reordering and two COMPARE slots.
+- **New: Cyberware database.** A searchable, filterable list of every known model with a full spec sheet (rarity, price, neural load, compatibility, difficulty, effects, risks, manufacturer, origin, stock condition) and a CURRENT vs NEW table tagged **▲ Better / ▼ Worse / ? Unknown / ✕ Incompatible**.
+- **Black market:** its own corrupted terminal: magenta, a rolling session header, an encrypted feed that decrypts live, the vendor panel and a signal-tear shader.
+- **Skills:** four category columns side by side. **Facility:** current → next with a horizontal tier ladder. **Journal:** card grids.
+- **Main menu:** NEW GAME, CONTINUE, LOAD GAME, SETTINGS, CONTROLS, CREDITS, QUIT. A new 3-slot **load / new-game** screen and a credits screen.
+- **Settings:** GRAPHICS, AUDIO (now with MASTER), CONTROLS (key rebinding with conflict swap, mouse sensitivity) and GAMEPLAY (text speed, shake, large text, high contrast, reduce motion) tabs.
+- **Pause menu (ESC):** resume, save, load, settings, how to play, save & main menu, save & quit to desktop.
+
+### Mouse and keyboard
+- Hover highlight and a hover sound on every button, pointing-hand cursor, cyan keyboard focus frame, and tooltips throughout.
+- Surgery: left-drag to cut / move, **right-click** puts the tool down (or returns a held implant), **wheel** zooms the field 3×–6× (or rotates the seated implant / tunes calibration), field hover reticle tinted by tool state and pulsing brackets on the nearest target.
+- Default keys: ESC pause/back, TAB cycle panels, WASD/arrows navigate, E interact, SPACE contextual (hold to infuse, LOCK, SEAT), F inspect, Q/R previous/next tool, 1–9 tools, Z/X/V COAG/SEDATE/STABIL, , . rotate, + − zoom, I inventory, C customer, M facility, J journal, B database, F5 quick save, F9 quick load. All rebindable.
+
+### Gameplay additions
+- **Instrument condition:** tools wear 3% per operation and lose up to 8% precision when worn out; SERVICE ALL at Supply restores them. Saved with the inventory.
+- **Save slots:** 3 slots (`saves/slot_N.json`) with summaries; the old single save migrates to slot 1. CONTINUE loads the most recent slot.
+
+### Removed or converted mobile systems
+- Portrait 360×640 viewport, safe-area handling (`SafeAreaUtil`), the bottom nav bar and the phone HUD (`NavBar`, `PlayerHud`), tap/swipe wording, oversized touch targets, the iOS export preset and the iOS icon set.
+- Haptics stay in the code but are hidden on PC (shown only on touch devices).
+- "Suspend" pause now triggers on window focus loss (Alt-Tab / minimise).
+
+### Tests
+- The end-to-end bot runs on the 1920×1080 canvas with mouse and keyboard events (hotkeys, ESC pause, F5, TAB, right-click compare, inventory and database screens).
+- New `tests/display_probe.tscn` drives the real window through all resolutions, window modes and a 5:4 letterbox, screenshots each, and checks that no button is off-screen.
+- The stability monkey also sends right-clicks, wheel and random hotkeys.
 
 ## 1.0.0 — Production pass (Step 3)
 

@@ -4,20 +4,22 @@ extends BaseScreen
 
 const TABS := ["FACTIONS", "CONTACTS", "RUMORS", "RECORDS"]
 
-var _list: VBoxContainer
+var _list: GridContainer
 var _tab: int = 0
 
 
 func on_enter(_params: Dictionary) -> void:
-	var m := UIKit.full_rect(UIKit.margin(10, 8, 10, 10))
-	add_child(m)
-	var col := UIKit.vbox(8)
-	m.add_child(col)
-	col.add_child(UIKit.header("CLINIC · INTEL", "DOSSIER", GameManager.go_to_clinic))
-	col.add_child(UIKit.tabs(TABS, _on_tab, "DossierTab"))
+	var col := UIKit.workstation(self, &"dossier")
+	col.add_child(UIKit.header("CLINIC · INTEL", "JOURNAL", GameManager.go_to_clinic))
+	var tabs := UIKit.tabs(TABS, _on_tab, "DossierTab")
+	tabs.custom_minimum_size.x = 900
+	tabs.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	col.add_child(tabs)
 	var sc := UIKit.scroll()
 	col.add_child(sc)
-	_list = UIKit.vbox(8)
+	_list = GridContainer.new()
+	_list.add_theme_constant_override(&"h_separation", 14)
+	_list.add_theme_constant_override(&"v_separation", 12)
 	UIKit.expand(_list)
 	sc.add_child(_list)
 	_rebuild()
@@ -30,9 +32,14 @@ func _on_tab(i: int) -> void:
 
 func _rebuild() -> void:
 	UIKit.clear(_list)
+	_list.columns = 1 if _tab == 3 else 2
 	match _tab:
 		0:
-			_list.add_child(UIKit.label("HEAT %d / 100  ·  inspections start around 35" % roundi(FactionManager.heat), &"MonoLabel", true, Palette.DANGER if FactionManager.heat >= 35 else Palette.TEXT_DIM, 18))
+			_list.columns = 3
+			var heat := UIKit.panel(&"DangerPanel" if FactionManager.heat >= 35 else &"HudPanel")
+			UIKit.expand(heat)
+			heat.add_child(UIKit.label("HEAT %d / 100\nInspections start around 35. Black-market work and failed jobs raise it." % roundi(FactionManager.heat), &"MonoLabel", true, Palette.DANGER if FactionManager.heat >= 35 else Palette.TEXT_DIM))
+			_list.add_child(heat)
 			for id in FactionManager.order:
 				_list.add_child(_faction_card(id))
 		1:
@@ -49,6 +56,7 @@ func _rebuild() -> void:
 				_list.add_child(UIKit.label("Nothing on the street yet.", &"DimLabel"))
 			for id in StoryManager.unlocked_rumors:
 				var card := UIKit.panel(&"CardPanel")
+				UIKit.expand(card)
 				card.add_child(UIKit.label(StoryManager.get_rumor_text(id), &"MonoLabel", true, Palette.ACCENT, 18))
 				_list.add_child(card)
 		3:
@@ -59,6 +67,7 @@ func _faction_card(id: StringName) -> Control:
 	var f := FactionManager.get_faction(id)
 	var color := FactionManager.get_color(id)
 	var card := UIKit.panel(&"CardPanel")
+	UIKit.expand(card)
 	var v := UIKit.vbox(4)
 	card.add_child(v)
 	var top := UIKit.hbox(8)
@@ -77,6 +86,7 @@ func _faction_card(id: StringName) -> Control:
 
 func _contact_card(c: CustomerData, role: String) -> Control:
 	var card := UIKit.panel(&"CardPanel")
+	UIKit.expand(card)
 	var row := UIKit.hbox(10)
 	card.add_child(row)
 	var p := PixelPortrait.new()

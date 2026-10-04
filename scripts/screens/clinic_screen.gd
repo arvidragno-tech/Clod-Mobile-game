@@ -126,7 +126,9 @@ func _build() -> void:
 	_view = ClinicView.new()
 	_view.name = "ClinicView"
 	_view.custom_minimum_size = Vector2(1100, 640)
-	_view.tooltip_text = "Click the customer to see them · double-click to zoom · drag to look around"
+	_view.tooltip_text = "Click the customer or a lit prop · wheel / double-click to zoom · drag to look around"
+	_view._base_tooltip = _view.tooltip_text
+	_view.hotspot_clicked.connect(GameManager.navigate)
 	frame.add_child(_view)
 	_view.customer_tapped.connect(GameManager.open_customer)
 	var overlay := UIKit.vbox(2)

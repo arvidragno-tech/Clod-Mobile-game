@@ -54,14 +54,15 @@ func on_enter(_params: Dictionary) -> void:
 	_item("QUIT", &"DangerButton", _on_quit, "QuitButton")
 	col.add_child(UIKit.expand(Control.new(), false, true))
 	col.add_child(UIKit.label("v%s · WINDOWS PC · 1920×1080 · MOUSE + KEYBOARD" % ProjectSettings.get_setting("application/config/version", "0"), &"SubHeaderLabel"))
-	var keys := UIKit.label("[↑ ↓ / W S] select   [ENTER] confirm   [F9] quick load", &"SubHeaderLabel")
-	keys.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
-	keys.offset_left = -620
-	keys.offset_top = -60
-	keys.offset_right = -40
-	keys.offset_bottom = -30
-	keys.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	add_child(keys)
+	var keys_panel := UIKit.panel(&"HudPanel")
+	keys_panel.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
+	keys_panel.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	keys_panel.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	keys_panel.offset_right = -40
+	keys_panel.offset_bottom = -30
+	keys_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	keys_panel.add_child(UIKit.label("[↑ ↓ / W S] select   [ENTER] confirm   [F9] quick load   [ESC] quit", &"SubHeaderLabel"))
+	add_child(keys_panel)
 
 
 func _item(text: String, style: StringName, cb: Callable, node_name: String) -> Button:
