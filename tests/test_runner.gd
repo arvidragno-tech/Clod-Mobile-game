@@ -1,16 +1,17 @@
 extends Node
-## Automated tests. Runs unit tests for the pure systems, then plays the full
-## loop end-to-end by injecting real pointer events (taps, drags, holds) into
-## the viewport, exactly like a finger on an iPhone would.
+## Automated tests. Runs unit/system tests (tests/unit_tests.gd), then plays
+## the game end-to-end by injecting real pointer events (taps, drags, holds)
+## into the viewport, exactly like a finger on an iPhone would.
 ##
-## Headless:   godot --headless --path . res://tests/test_runner.tscn
-## With shots: xvfb-run godot --path . --rendering-driver opengl3 \
+## Headless:   godot --headless --path . res://tests/test_runner.tscn -- --viewport=360x780
+## With shots: xvfb-run godot --path . --rendering-driver opengl3 --resolution 360x780 \
 ##               res://tests/test_runner.tscn -- --shots=/abs/dir
 ## Exit code 0 = all passed.
 
 const TEST_SAVE_PATH := "user://test_savegame.json"
 const STEP_TIMEOUT := 20.0
 const DRAG_STEP_PX := 6.0
+const UnitTests := preload("res://tests/unit_tests.gd")
 
 var _failures: Array[String] = []
 var _checks: int = 0
@@ -40,17 +41,12 @@ func _ready() -> void:
 
 
 func _run_all() -> void:
-	print("== UNIT TESTS ==")
-	_test_vitals()
-	_test_scoring()
-	_test_progression()
-	_test_economy_inventory()
-	_test_data_loaded()
-	_test_save_roundtrip()
+	print("== UNIT / SYSTEM TESTS ==")
+	UnitTests.new().run(self)
 	print("== END-TO-END ==")
 	_main = (load("res://scenes/main/main.tscn") as PackedScene).instantiate()
 	add_child(_main)
-	await _e2e_full_loop()
+	await _e2e()
 	SaveManager.delete_save()
 	AudioManager.stop_all()
 	await _frames(10)
@@ -74,215 +70,225 @@ func check(condition: bool, message: String) -> void:
 		_failures.append(message)
 
 
-# --- Unit tests --------------------------------------------------------------
+# =============================================================================
+# End-to-end scenarios
+# =============================================================================
 
-func _test_vitals() -> void:
-	var v := SurgeryVitals.new()
-	v.set_wound_open(true)
-	for i in 100:
-		v.tick(0.1)
-	check(v.blood_loss > 0.5 and v.blood_loss < 5.0, "open wound bleeds slowly (%.2f%% in 10s)" % v.blood_loss)
-	var before := v.neural
-	v.apply_effects(GameConfig.MISTAKE_EFFECTS[&"wrong_connection"])
-	check(v.neural < before, "wrong connection reduces neural stability")
-	v.apply_effects({"bleed_rate": 3.0})
-	for i in 600:
-		v.tick(0.1)
-	check(v.health < 100.0, "heavy bleeding drains health")
-	v.health = 0.0
-	check(v.get_failure_reason() == &"flatline", "zero health = flatline")
-	var calm := SurgeryVitals.new()
-	calm.sedated = true
-	for i in 100:
-		calm.tick(0.1)
-	check(calm.pain < GameConfig.START_PAIN, "sedation lowers pain over time")
-
-
-func _test_scoring() -> void:
-	check(SurgeryScoring.grade_for_score(0.95) == "S", "score 0.95 = S")
-	check(SurgeryScoring.grade_for_score(0.7) == "B", "score 0.7 = B")
-	check(SurgeryScoring.time_modifier(10, 100) > 0.0, "fast surgery gets a time bonus")
-	check(SurgeryScoring.time_modifier(400, 100) < 0.0, "slow surgery gets a time penalty")
-	var surgery := SurgeryManager.get_surgery(&"install_basic_neural_implant")
-	var r := SurgeryResult.new()
-	r.success = true
-	r.stage_quality = 1.0
-	r.final_health = 100.0
-	r.final_neural = 100.0
-	r.implant_performance = 1.0
-	r.elapsed_sec = 60.0
-	r.target_time_sec = surgery.target_time_sec
-	r.diagnosis_correct = true
-	SurgeryScoring.apply_rewards(r, surgery, null)
-	check(r.grade == "S" and r.pay > surgery.base_pay, "perfect op = S grade, pays above base (%d)" % r.pay)
-	var f := SurgeryResult.new()
-	f.success = false
-	SurgeryScoring.apply_rewards(f, surgery, null)
-	check(f.grade == "F" and f.pay == 0 and f.reputation_delta < 0, "failed op pays nothing and costs rep")
-
-
-func _test_progression() -> void:
-	ProgressionManager.reset_state()
-	var need := ProgressionManager.xp_required_for_level(2)
-	var gained := ProgressionManager.add_xp(need)
-	check(gained == 1 and ProgressionManager.level == 2, "XP threshold levels up")
-	ProgressionManager.reset_state()
-
-
-func _test_economy_inventory() -> void:
-	SaveManager.reset_all()
-	check(EconomyManager.money == GameConfig.STARTING_MONEY, "starting money")
-	check(not EconomyManager.spend(EconomyManager.money + 1), "cannot overspend")
-	check(InventoryManager.has_tool_category(&"scalpel"), "starter scalpel owned")
-	var stock := InventoryManager.get_implant_count(&"nx1_neural_bridge")
-	check(InventoryManager.buy_implant(&"nx1_neural_bridge"), "can buy implant")
-	check(InventoryManager.get_implant_count(&"nx1_neural_bridge") == stock + 1, "implant stock increased")
-	EconomyManager.add_money(1000)
-	check(InventoryManager.buy_tool(&"scalpel_mono"), "can buy mono scalpel")
-	check(InventoryManager.get_best_tool(&"scalpel").id == &"scalpel_mono", "best scalpel is the upgrade")
-	SaveManager.reset_all()
-
-
-func _test_data_loaded() -> void:
-	check(CustomerManager.templates.size() >= 3, "customers loaded (%d)" % CustomerManager.templates.size())
-	var s := SurgeryManager.get_surgery(&"install_basic_neural_implant")
-	check(s != null and s.stages.size() == 8, "neural implant surgery has 8 stages")
-	for stage in s.stages:
-		check(SurgeryStageRegistry.STAGE_TYPES.has(stage.type), "stage type '%s' is registered" % stage.type)
-	check(SurgeryManager.complications.size() >= 3, "complications loaded")
-	for c: CustomerData in CustomerManager.templates.values():
-		check(ResourceLoader.exists(c.portrait_path) and ResourceLoader.exists(c.sprite_path), "%s art exists" % c.id)
-
-
-func _test_save_roundtrip() -> void:
-	SaveManager.reset_all()
-	EconomyManager.add_money(123)
-	ReputationManager.change(7)
-	ProgressionManager.add_xp(42)
-	InventoryManager.add_implant(&"nx1_neural_bridge", 3)
-	ProgressionManager.record_surgery(&"install_basic_neural_implant", true, "A")
-	var expected_money := EconomyManager.money
-	var expected_stock := InventoryManager.get_implant_count(&"nx1_neural_bridge")
-	check(SaveManager.save_game(), "save writes")
-	SaveManager.reset_all()
-	check(EconomyManager.money == GameConfig.STARTING_MONEY, "reset clears state")
-	check(SaveManager.load_game(), "save loads")
-	check(EconomyManager.money == expected_money, "money persisted")
-	check(ReputationManager.reputation == 7, "reputation persisted")
-	check(ProgressionManager.total_xp == 42, "xp persisted")
-	check(InventoryManager.get_implant_count(&"nx1_neural_bridge") == expected_stock, "inventory persisted")
-	check(str(ProgressionManager.surgery_records.get("install_basic_neural_implant", {}).get("best_grade", "")) == "A", "surgery records persisted")
-	# Corrupt main file -> falls back to backup.
-	SaveManager.save_game()
-	var f := FileAccess.open(TEST_SAVE_PATH, FileAccess.WRITE)
-	f.store_string("{not json")
-	f.close()
-	check(SaveManager.load_game(), "corrupt save falls back to backup")
-	SaveManager.delete_save()
-	SaveManager.reset_all()
-
-
-# --- End-to-end --------------------------------------------------------------
-
-func _e2e_full_loop() -> void:
+func _e2e() -> void:
 	await _wait_screen(UIManager.SCREEN_MAIN_MENU)
 	await _checkpoint("main_menu")
 	await _click_named("NewGameButton")
 	await _wait_screen(UIManager.SCREEN_CLINIC)
+	# Deterministic: no random incidents while scripted scenarios run.
+	EventManager.history.clear()
 	var start_money := EconomyManager.money
 	var start_xp := ProgressionManager.total_xp
 
-	# Run 1: clean operation.
-	var r1 := await _play_customer_to_results(false)
-	check(r1 != null and r1.success, "run 1: operation succeeded")
+	# Run 1: the Step 1 neural slice, played cleanly.
+	var r1 := await _play_customer(&"mara_quill", false)
+	check(r1 != null and r1.success, "run 1: neural implant succeeded")
 	if r1:
 		print("     run 1 grade=%s score=%.2f pay=%d xp=%d mistakes=%d time=%.0fs complications=%d/%d" % [r1.grade, r1.score, r1.pay, r1.xp, r1.mistakes, r1.elapsed_sec, r1.complications_handled, r1.complications_total])
 		check(r1.grade in ["S", "A", "B"], "run 1: clean play grades B or better (%s)" % r1.grade)
-		check(r1.complications_total >= 1, "run 1: at least one complication happened")
-		check(r1.complications_handled == r1.complications_total, "run 1: complications handled")
-	await _wait_until(func() -> bool:
-		var b := _find_visible("ContinueButton") as Button
-		return b != null and not b.disabled, 10.0)
+		check(r1.complications_total >= 1 and r1.complications_handled == r1.complications_total, "run 1: complication happened and was handled")
+	await _wait_results_ready()
 	await _checkpoint("results_clean")
 	await _click_named("ContinueButton", 10.0)
-	await _wait_screen(UIManager.SCREEN_CLINIC)
-	check(EconomyManager.money > start_money, "money increased after surgery (%d -> %d)" % [start_money, EconomyManager.money])
-	check(ProgressionManager.total_xp > start_xp, "xp increased after surgery")
+	await _after_results()
+	check(EconomyManager.money > start_money and ProgressionManager.total_xp > start_xp, "money and XP increased")
 	check(SaveManager.has_save(), "game autosaved after surgery")
 
-	# Run 2: sloppy operation with deliberate mistakes.
-	var rep_before := ReputationManager.reputation
-	var r2 := await _play_customer_to_results(true)
+	# Run 2: sloppy, wrong diagnosis, deliberate mistakes.
+	var r2 := await _play_customer(&"hollis_brandt", true)
 	check(r2 != null and r2.success, "run 2: sloppy operation still completed")
 	if r2:
-		print("     run 2 grade=%s score=%.2f pay=%d mistakes=%d health=%.0f neural=%.0f" % [r2.grade, r2.score, r2.pay, r2.mistakes, r2.final_health, r2.final_neural])
-		check(r2.mistakes >= 4, "run 2: mistakes were registered (%d)" % r2.mistakes)
+		print("     run 2 grade=%s score=%.2f mistakes=%d health=%.0f neural=%.0f" % [r2.grade, r2.score, r2.mistakes, r2.final_health, r2.final_neural])
+		check(r2.mistakes >= 4, "run 2: mistakes registered (%d)" % r2.mistakes)
 		check(r1 == null or r2.score < r1.score, "run 2: mistakes lowered the score")
 	await _click_named("ContinueButton", 10.0)
-	await _wait_screen(UIManager.SCREEN_CLINIC)
+	await _after_results()
 
-	# Run 3: abort mid-operation -> failure path.
-	await _start_surgery_from_clinic(false)
+	# Run 3: arm install needs a drill we don't have -> buy it -> anchors.
+	EconomyManager.add_money(1500)
+	var arm := CustomerManager.generator.generate({"cyberware": "liftwell_arm", "archetype": "dock_worker"})
+	arm.hidden_conditions.clear()
+	arm.risk_tolerance = 0.9  # consent is covered by unit tests; keep this run deterministic
+	CustomerManager.debug_set_customer(arm)
+	InventoryManager.add_implant(&"liftwell_arm")
+	await _to_plan(arm.true_diagnosis_id)
+	var begin := _find_visible("BeginButton") as Button
+	check(begin != null and begin.disabled, "insufficient tools: BEGIN disabled without a drill")
+	await _checkpoint("plan_missing_drill")
+	await _click_named("PlanBackButton")
+	await _click_named("BackButton")
+	await _wait_screen(UIManager.SCREEN_CLINIC)
+	await _click_named("Nav_supply")
+	await _wait_screen(UIManager.SCREEN_SHOP)
+	await _click_named("ShopTab_1")
+	await _checkpoint("shop_tools")
+	await _click_named("BuyTool_cyber_drill")
+	check(InventoryManager.has_tool_category(&"drill"), "bought the cyber drill through the shop")
+	await _click_named("BackButton")
+	await _wait_screen(UIManager.SCREEN_CLINIC)
+	var r3 := await _play_current(false, arm.true_diagnosis_id)
+	check(r3 != null and r3.success and r3.surgery_id == &"install_arm", "run 3: arm implant with bone anchors succeeded")
+	await _click_named("ContinueButton", 10.0)
+	await _after_results()
+
+	# Run 4: abort -> failure path.
+	CustomerManager.debug_set_customer(CustomerManager.get_customer(&"juno_reyes"))
+	await _to_plan(&"neural_rejection")
+	await _click_named("BeginButton")
+	await _wait_screen(UIManager.SCREEN_SURGERY)
 	await _wait_stage_ready()
 	await _click_named("AbortButton")
 	await _click_dialog_button("ABORT")
 	await _wait_screen(UIManager.SCREEN_RESULTS, 10.0)
-	var r3 := GameManager.last_result
-	check(r3 != null and not r3.success and r3.grade == "F", "run 3: aborted op is graded F")
+	var r4 := GameManager.last_result
+	check(r4 != null and not r4.success and r4.grade == "F", "run 4: aborted op is graded F")
+	await _wait_results_ready()
 	await _checkpoint("results_failed")
 	await _click_named("ContinueButton", 10.0)
-	await _wait_screen(UIManager.SCREEN_CLINIC)
-	check(ReputationManager.reputation < rep_before + (r2.reputation_delta if r2 else 0) + 1, "failure cost reputation")
+	await _after_results()
 
-	# Run 4: reckless splicing until the neural link collapses.
-	var r4 := await _play_customer_to_results(false, true)
-	check(r4 != null and not r4.success and r4.failure_reason == &"neural_collapse", "run 4: repeated mistakes fail the operation (%s)" % (r4.failure_reason if r4 else &"none"))
+	# Run 5: reckless splicing collapses the neural link.
+	var r5 := await _play_customer(&"dez_okafor", false, true)
+	check(r5 != null and not r5.success and r5.failure_reason == &"neural_collapse", "run 5: repeated mistakes fail the operation (%s)" % (r5.failure_reason if r5 else &"none"))
 	await _click_named("ContinueButton", 10.0)
+	await _after_results()
+
+	# Events: the fixer shows up and opens the black market.
+	EventManager.queue_event(&"wire_intro")
+	UIManager.go_to(UIManager.SCREEN_CLINIC)
+	await _wait_screen(UIManager.SCREEN_CLINIC)
+	await _wait_until(func() -> bool: return _find_visible("EventPanel") != null, 5.0)
+	await _checkpoint("event_wire")
+	await _click_named("Choice_0")
+	await _click_named("EventContinue")
+	check(BlackMarketManager.is_unlocked(), "event choice unlocked the black market")
+
+	# Black market: buy, study, sell through the UI.
+	EconomyManager.add_money(4000)
+	InventoryManager.add_parts(6)
+	await _click_named("Nav_blackmarket")
+	await _wait_screen(UIManager.SCREEN_BLACK_MARKET)
+	await _frames(20)
+	await _checkpoint("black_market")
+	var units := InventoryManager.get_instances().size()
+	await _click_named("BMBuy_0")
+	check(InventoryManager.get_instances().size() == units + 1, "bought black-market chrome")
+	await _click_named("BMTab_1")
+	await _checkpoint("black_market_stash")
+	var stash := InventoryManager.get_instances()
+	var idx := -1
+	for i in stash.size():
+		if stash[i].has_unknown_traits():
+			idx = i
+			break
+	if idx >= 0:
+		await _click_named("Study_%d" % idx)
+		check(not stash[idx].revealed.is_empty(), "studied an unknown property via the UI")
+	var money := EconomyManager.money
+	await _click_named("Sell_0")
+	check(EconomyManager.money > money, "sold chrome via the UI")
+	await _click_named("BackButton")
 	await _wait_screen(UIManager.SCREEN_CLINIC)
 
-	# Supply terminal purchase.
-	EconomyManager.add_money(500)
-	await _click_named("SupplyButton")
-	await _frames(5)
-	var before_stock := InventoryManager.get_implant_count(&"nx1_neural_bridge")
-	await _checkpoint("supply")
-	await _click_named("BuyImplant_nx1_neural_bridge")
-	check(InventoryManager.get_implant_count(&"nx1_neural_bridge") == before_stock + 1, "supply terminal restocks implant")
-	await _click_named("CloseButton")
+	# Skills
+	SkillManager.add_points(1)
+	await _click_named("Nav_skills")
+	await _wait_screen(UIManager.SCREEN_SKILLS)
+	await _checkpoint("skills")
+	var rank := SkillManager.get_rank(&"speed")
+	await _click_named("Upgrade_speed")
+	check(SkillManager.get_rank(&"speed") == rank + 1, "upgraded a skill via the UI")
+	await _click_named("BackButton")
+	await _wait_screen(UIManager.SCREEN_CLINIC)
+
+	# Clinic upgrade
+	EconomyManager.add_money(int(ClinicManager.get_next_tier().get("cost", 0)))
+	ReputationManager.change(maxi(0, int(ClinicManager.get_next_tier().get("min_reputation", 0)) - ReputationManager.reputation))
+	while ProgressionManager.level < int(ClinicManager.get_next_tier().get("min_level", 1)):
+		ProgressionManager.add_xp(ProgressionManager.get_xp_for_next_level())
+	var tier := ClinicManager.tier
+	await _click_named("Nav_upgrades")
+	await _wait_screen(UIManager.SCREEN_UPGRADES)
+	await _checkpoint("upgrades")
+	await _click_named("UpgradeClinic")
+	check(ClinicManager.tier == tier + 1, "upgraded the clinic via the UI")
+	await _click_named("BackButton")
+	await _wait_screen(UIManager.SCREEN_CLINIC)
+	await _checkpoint("clinic_upgraded")
+
+	# Dossier tabs
+	await _click_named("Nav_dossier")
+	await _wait_screen(UIManager.SCREEN_DOSSIER)
+	await _checkpoint("dossier_factions")
+	for i in range(1, 4):
+		await _click_named("DossierTab_%d" % i)
+		await _checkpoint("dossier_tab_%d" % i)
+	await _click_named("BackButton")
+	await _wait_screen(UIManager.SCREEN_CLINIC)
+
+	# A generated customer through the whole loop (random archetype).
+	var rng_c := CustomerManager.generator.generate({"category": "eyes"})
+	rng_c.hidden_conditions.clear()
+	rng_c.risk_tolerance = 0.9
+	CustomerManager.debug_set_customer(rng_c)
+	InventoryManager.add_implant(rng_c.requested_cyberware_id)
+	InventoryManager.add_supplies(5)
+	var r6 := await _play_current(false, rng_c.true_diagnosis_id)
+	check(r6 != null and r6.success and r6.surgery_id == &"install_optic", "run 6: optic implant on a generated customer")
+	await _click_named("ContinueButton", 10.0)
+	await _after_results()
 
 	# Persistence across a simulated relaunch.
-	var money := EconomyManager.money
+	var m := EconomyManager.money
 	SaveManager.save_game()
 	SaveManager.reset_all()
-	check(SaveManager.load_game() and EconomyManager.money == money, "progress survives reload")
+	check(SaveManager.load_game() and EconomyManager.money == m and ClinicManager.tier == tier + 1, "progress survives reload")
 
 
-## Clinic -> customer -> diagnosis -> plan -> surgery -> results.
-func _play_customer_to_results(sloppy: bool, reckless: bool = false) -> SurgeryResult:
-	await _start_surgery_from_clinic(sloppy)
+## Puts an authored character at the door and plays the whole loop.
+func _play_customer(id: StringName, sloppy: bool, reckless: bool = false) -> SurgeryResult:
+	var c := CustomerManager.get_customer(id)
+	c.hidden_conditions.clear()
+	CustomerManager.debug_set_customer(c)
+	InventoryManager.add_implant(c.requested_cyberware_id)
+	InventoryManager.add_supplies(3)
+	var dx := c.true_diagnosis_id
+	if sloppy:
+		for option in SurgeryManager.get_surgery(c.requested_surgery_id).diagnosis_options:
+			if StringName(str(option["id"])) != dx:
+				dx = StringName(str(option["id"]))
+				break
+	return await _play_current(sloppy, dx, reckless)
+
+
+func _play_current(sloppy: bool, dx: StringName, reckless: bool = false) -> SurgeryResult:
+	await _to_plan(dx)
+	await _click_named("BeginButton")
+	await _wait_screen(UIManager.SCREEN_SURGERY)
 	var stage_count := SurgeryManager.get_stage_count()
 	for i in stage_count:
-		var ok := await _wait_stage_ready()
-		if not ok:
+		if not await _wait_stage_ready():
 			check(false, "stage %d became ready" % i)
 			return null
 		var screen := UIManager.current_screen
 		var stage: SurgeryStage = screen.current_stage
 		var stage_id := stage.stage.id
-		await _checkpoint("surgery_stage_%d_%s" % [i, stage_id])
+		await _checkpoint("surgery_%s_%d_%s" % [SurgeryManager.surgery.id, i, stage_id])
 		if reckless and stage is ConnectInterfaceStage:
 			await _click_named("Tool_splicer")
 			var attempts := 0
 			while SurgeryManager.is_active and attempts < 30:
 				var wrong: Array = stage.get_autoplay_hints()["wrong"]
-				await _drag([stage.get_global_rect().position + wrong[0], stage.get_global_rect().position + wrong[1]])
+				await _drag([_fs(wrong[0]), _fs(wrong[1])])
 				attempts += 1
 			break
 		await _play_stage(stage, sloppy)
-		if stage_id in [&"incision", &"debride", &"install", &"connect", &"close"]:
-			await _checkpoint("surgery_after_%s" % stage_id)
 		var advanced := await _wait_until(func() -> bool: return not SurgeryManager.is_active or SurgeryManager.stage_index > i, STEP_TIMEOUT)
-		check(advanced, "stage %d (%s) completed" % [i, stage_id])
+		check(advanced, "%s stage %d (%s) completed" % [SurgeryManager.surgery.id, i, stage_id])
 		if not advanced or not SurgeryManager.is_active:
 			break
 	await _checkpoint("surgery_end")
@@ -291,7 +297,8 @@ func _play_customer_to_results(sloppy: bool, reckless: bool = false) -> SurgeryR
 	return GameManager.last_result
 
 
-func _start_surgery_from_clinic(sloppy: bool) -> void:
+## Clinic -> customer -> scan -> diagnosis -> plan.
+func _to_plan(dx: StringName) -> void:
 	await _wait_screen(UIManager.SCREEN_CLINIC)
 	await _wait_until(func() -> bool: return CustomerManager.has_customer(), 10.0)
 	await _frames(20)
@@ -302,24 +309,44 @@ func _start_surgery_from_clinic(sloppy: bool) -> void:
 	await _checkpoint("customer")
 	await _click_named("AcceptButton")
 	await _wait_screen(UIManager.SCREEN_DIAGNOSIS)
-	var scan: ScanView = UIManager.current_screen.get_node("%ScanView")
-	for region: StringName in [&"neck", &"head", &"spine"]:
+	var scan := UIManager.current_screen.find_child("ScanView", true, false) as ScanView
+	var site := GameManager.get_current_surgery().scan_region
+	for region: StringName in [site, &"head" if site != &"head" else &"chest"]:
 		await _tap(scan.get_global_rect().position + scan.get_region_center(region))
 		await _wait_until(func() -> bool: return not scan.is_busy(), 3.0)
 	await _checkpoint("diagnosis")
-	var customer := GameManager.get_current_customer()
-	var diagnosis := customer.true_diagnosis_id
-	if sloppy:
-		for option in GameManager.get_current_surgery().diagnosis_options:
-			if StringName(str(option["id"])) != diagnosis:
-				diagnosis = StringName(str(option["id"]))
-				break
-	await _click_named("Option_%s" % diagnosis)
+	await _click_named("Option_%s" % dx)
 	await _click_named("ConfirmButton")
 	await _frames(5)
 	await _checkpoint("plan")
-	await _click_named("BeginButton")
-	await _wait_screen(UIManager.SCREEN_SURGERY)
+
+
+func _after_results() -> void:
+	await _wait_screen(UIManager.SCREEN_CLINIC)
+	# Resolve any random incident so scripted runs stay deterministic.
+	await _frames(10)
+	if _find_visible("EventPanel") != null:
+		await _checkpoint("event_random")
+		var b := _first_enabled_choice()
+		if b:
+			await _click(b)
+			await _click_named("EventContinue")
+	EventManager.pending_event = &""
+	UIManager.close_modal()
+
+
+func _first_enabled_choice() -> Button:
+	for i in 4:
+		var b := _find_visible("Choice_%d" % i) as Button
+		if b and not b.disabled:
+			return b
+	return null
+
+
+func _wait_results_ready() -> void:
+	await _wait_until(func() -> bool:
+		var b := _find_visible("ContinueButton") as Button
+		return b != null and not b.disabled, 10.0)
 
 
 func _wait_stage_ready() -> bool:
@@ -331,13 +358,16 @@ func _wait_stage_ready() -> bool:
 		return stage != null and not stage.is_finished and stage.stage == SurgeryManager.get_current_stage(), STEP_TIMEOUT)
 
 
+## Field (pixel viewport) coordinate -> screen coordinate.
+func _fs(p: Vector2) -> Vector2:
+	return UIManager.current_screen.field_to_screen(p)
+
+
 func _play_stage(stage: SurgeryStage, sloppy: bool) -> void:
-	var origin := stage.get_global_rect().position
 	if stage.requires_tool():
 		if sloppy and stage.stage.id == &"incision":
-			# Wrong tool first (counts as a mistake), then the right one.
 			await _click_named("Tool_retractor")
-			await _tap(origin + stage.get_autoplay_hints()["path"][0])
+			await _tap(_fs(stage.get_autoplay_hints()["path"][0]))
 		await _click_named("Tool_%s" % stage.stage.tool_category)
 	if stage is AnesthesiaStage:
 		var h := stage.get_autoplay_hints()
@@ -347,29 +377,38 @@ func _play_stage(stage: SurgeryStage, sloppy: bool) -> void:
 		await _wait_until(func() -> bool: return (stage as AnesthesiaStage).dose >= target - 1.0, 10.0)
 		await _release(button.get_global_rect().get_center())
 	elif stage is IncisionStage:
-		var path: Array = stage.get_autoplay_hints()["path"]
 		var pts: Array[Vector2] = []
-		for p: Vector2 in path:
-			pts.append(origin + p)
+		for p: Vector2 in stage.get_autoplay_hints()["path"]:
+			pts.append(_fs(p))
 		if sloppy:
-			# Wobble off the line in the middle of the cut.
-			var mid: Vector2 = pts[1]
-			pts.insert(2, mid + Vector2(40, 30))
+			pts.insert(2, pts[1] + Vector2(40, 30))
 		await _drag(pts)
 	elif stage is ExposeStage:
 		if sloppy:
-			await _tap(origin + stage.site.to_local_pos(Vector2(0.5, 0.12)))
+			await _tap(_fs(stage.site.to_local_pos(Vector2(0.5, 0.2))) + Vector2(60, 0))
 		for p: Vector2 in stage.get_autoplay_hints()["targets"]:
-			await _tap(origin + p)
+			await _tap(_fs(p))
 	elif stage is RemoveTissueStage:
 		var burn_time: float = stage.get_autoplay_hints()["burn_time"]
 		for p: Vector2 in stage.get_autoplay_hints()["targets"]:
-			await _press(origin + p)
+			await _press(_fs(p))
 			await _seconds(burn_time + 0.15)
-			await _release(origin + p)
+			await _release(_fs(p))
+	elif stage is AnchorDrillStage:
+		var drill := stage as AnchorDrillStage
+		while not drill.is_finished:
+			var h := drill.get_autoplay_hints()
+			var targets: Array = h["targets"]
+			if targets.is_empty():
+				break
+			var mid := (float(h["zone_min"]) + float(h["zone_max"])) / 2.0
+			await _press(_fs(targets[0]))
+			await _wait_until(func() -> bool: return drill.current_depth() >= mid or drill.is_finished, 5.0)
+			await _release(_fs(targets[0]))
+			await _frames(3)
 	elif stage is InstallImplantStage:
 		var h := stage.get_autoplay_hints()
-		await _drag([origin + h["implant"], origin + h["socket"]])
+		await _drag([_fs(h["implant"]), _fs(h["socket"])])
 		await _frames(3)
 		var error: float = stage.get_autoplay_hints()["angle_error_deg"]
 		var steps := roundi(absf(error) / InstallImplantStage.ROTATE_STEP_DEG)
@@ -382,12 +421,12 @@ func _play_stage(stage: SurgeryStage, sloppy: bool) -> void:
 	elif stage is ConnectInterfaceStage:
 		if sloppy:
 			var wrong: Array = stage.get_autoplay_hints()["wrong"]
-			await _drag([origin + wrong[0], origin + wrong[1]])
+			await _drag([_fs(wrong[0]), _fs(wrong[1])])
 		while not stage.is_finished:
 			var pairs: Array = stage.get_autoplay_hints()["pairs"]
 			if pairs.is_empty():
 				break
-			await _drag([origin + pairs[0][0], origin + pairs[0][1]])
+			await _drag([_fs(pairs[0][0]), _fs(pairs[0][1])])
 			await _frames(2)
 	elif stage is CalibrateStage:
 		var cal := stage as CalibrateStage
@@ -402,28 +441,83 @@ func _play_stage(stage: SurgeryStage, sloppy: bool) -> void:
 	elif stage is CloseIncisionStage:
 		var targets: Array = stage.get_autoplay_hints()["targets"]
 		if sloppy and targets.size() > 2:
-			await _tap(origin + targets[2])
+			await _tap(_fs(targets[2]))
 		for p: Vector2 in targets:
-			await _tap(origin + p)
+			await _tap(_fs(p))
 
+
+# =============================================================================
+# Layout guard + input helpers
+# =============================================================================
 
 ## Every visible button must be fully on-screen and at least touch-sized.
 func _check_layout(label: String) -> void:
+	# Screen shake offsets the whole screen for a few frames; measure at rest.
+	var waited := 0
+	while UIManager.is_shaking() and waited < 60:
+		await get_tree().process_frame
+		waited += 1
 	var view := get_viewport().get_visible_rect().grow(1.0)
 	var offenders: Array[String] = []
 	for node in get_tree().root.find_children("*", "BaseButton", true, false):
 		var b := node as Control
-		if not b.is_visible_in_tree():
+		if not b.is_visible_in_tree() or _clipped_by_scroll(b):
 			continue
 		var r := b.get_global_rect()
 		if not view.encloses(r):
 			offenders.append("%s off-screen %s" % [b.name, r])
 		elif minf(r.size.x, r.size.y) < GameConfig.MIN_TOUCH - 4.0:
 			offenders.append("%s too small %s" % [b.name, r.size])
+	offenders.append_array(_horizontal_overflow(view))
 	check(offenders.is_empty(), "layout ok at '%s' %s" % [label, ", ".join(offenders)])
 
 
-# --- Input helpers -----------------------------------------------------------
+## Controls wider than the screen (the cause of off-screen buttons). Reports
+## the innermost overflowing controls only. Full-bleed art layers whose
+## parent clips them are ignored.
+func _horizontal_overflow(view: Rect2) -> Array[String]:
+	var found: Array[Control] = []
+	for node in get_tree().root.find_children("*", "Control", true, false):
+		var c := node as Control
+		if not c.is_visible_in_tree() or c.get_viewport() != get_viewport():
+			continue
+		if c.get_parent() is Control and (c.get_parent() as Control).clip_contents:
+			continue
+		if _in_horizontal_scroll(c):
+			continue
+		var r := c.get_global_rect()
+		if r.position.x < view.position.x - 1.0 or r.end.x > view.end.x + 1.0:
+			found.append(c)
+	var out: Array[String] = []
+	for c in found:
+		var inner := false
+		for other in found:
+			if other != c and c.is_ancestor_of(other):
+				inner = true
+				break
+		if not inner and out.size() < 4:
+			out.append("%s overflows (%s w=%d)" % [c.get_path().get_concatenated_names().right(60), c.get_class(), int(c.size.x)])
+	return out
+
+
+func _in_horizontal_scroll(c: Control) -> bool:
+	var p := c.get_parent()
+	while p:
+		if p is ScrollContainer and (p as ScrollContainer).horizontal_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED:
+			return true
+		p = p.get_parent()
+	return false
+
+
+## Buttons inside scroll areas may legitimately be scrolled out of view.
+func _clipped_by_scroll(c: Control) -> bool:
+	var p := c.get_parent()
+	while p:
+		if p is ScrollContainer:
+			return true
+		p = p.get_parent()
+	return false
+
 
 func _handle_complication() -> void:
 	var c := SurgeryManager.active_complication
@@ -494,7 +588,20 @@ func _click(control: Control) -> void:
 	if control == null:
 		check(false, "click target exists")
 		return
+	var sc := _scroll_parent(control)
+	if sc:
+		sc.ensure_control_visible(control)
+		await _frames(2)
 	await _tap(control.get_global_rect().get_center())
+
+
+func _scroll_parent(c: Control) -> ScrollContainer:
+	var p := c.get_parent()
+	while p:
+		if p is ScrollContainer:
+			return p
+		p = p.get_parent()
+	return null
 
 
 func _click_named(node_name: String, timeout: float = STEP_TIMEOUT) -> void:
@@ -553,11 +660,11 @@ func _seconds(s: float) -> void:
 
 ## Layout guard + optional screenshot at key moments of the playthrough.
 func _checkpoint(label: String) -> void:
-	_check_layout(label)
+	await _check_layout(label)
 	if _shots_dir.is_empty():
 		return
 	await RenderingServer.frame_post_draw
 	var img := get_viewport().get_texture().get_image()
 	if img:
 		_shot_index += 1
-		img.save_png("%s/%02d_%s.png" % [_shots_dir, _shot_index, label])
+		img.save_png("%s/%03d_%s.png" % [_shots_dir, _shot_index, label])
