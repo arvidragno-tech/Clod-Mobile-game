@@ -167,7 +167,7 @@ func set_zoom(on: bool, at_local: Vector2 = Vector2.INF) -> void:
 func _process(delta: float) -> void:
 	_time += delta
 	_next_flicker -= delta
-	if _next_flicker <= 0.0:
+	if _next_flicker <= 0.0 and Settings.lighting_quality > 0 and Settings.flashing_allowed():
 		_next_flicker = randf_range(1.5, 7.0) if ClinicManager.tier <= 1 else randf_range(6.0, 14.0)
 		_flicker = 0.22
 	_flicker = maxf(0.0, _flicker - delta)
@@ -198,7 +198,9 @@ func _draw() -> void:
 	_draw_fx()
 	_draw_hotspot()
 	# Dust motes catching the lamp light (one art pixel each).
-	for d in _dust:
+	var motes: int = 0 if not Settings.environment_effects else [6, 14, DUST_COUNT][Settings.effects_level()]
+	for di in mini(motes, _dust.size()):
+		var d := _dust[di]
 		var a := 0.25 + 0.2 * sin(_time * 2.0 + d.z)
 		draw_rect(Rect2((_offset + Vector2(floorf(d.x), floorf(d.y)) * _scale), Vector2.ONE * _scale), Color(1, 0.95, 0.85, a))
 	if _has_customer and _customer_tex:
@@ -236,7 +238,7 @@ func _draw_customer(r: Rect2) -> void:
 		[Rect2(0, 0, tex_size.x, head_h), Vector2(head_dx + j.x + lean, -inhale)],
 	]
 	var tint := Color(1, 1, 1, _customer_alpha)
-	var glow_tint := Color(1, 1, 1, _customer_alpha * 0.5 * float(_anim.get("glow", 1.0)))
+	var glow_tint := Color(1, 1, 1, _customer_alpha * 0.5 * float(_anim.get("glow", 1.0)) * (1.0 if Settings.glow else 0.0))
 	for band: Array in bands:
 		var src: Rect2 = band[0]
 		var off: Vector2 = band[1]
@@ -352,7 +354,7 @@ func _dot(p: Vector2, c: Color) -> void:
 
 
 func _update_fx(delta: float) -> void:
-	var calm := Settings.reduce_motion
+	var calm := Settings.reduce_motion or not Settings.environment_effects or Settings.effects_level() == 0
 	_drip_t += delta
 	# Steam puffs drift up and fade.
 	for e: Dictionary in _fx:
@@ -387,7 +389,7 @@ func _update_fx(delta: float) -> void:
 
 
 func _draw_fx() -> void:
-	var calm := Settings.reduce_motion
+	var calm := Settings.reduce_motion or not Settings.environment_effects
 	for e: Dictionary in _fx:
 		var pos := Vector2(float(e["x"]), float(e["y"]))
 		var c: Color = FX_COLORS.get(str(e.get("color", "cyan")), Palette.ACCENT)

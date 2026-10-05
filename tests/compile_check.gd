@@ -9,7 +9,9 @@ func _ready() -> void:
 	_walk("res://", paths)
 	var bad := 0
 	for p in paths:
-		if load(p) == null:
+		var r: Resource = load(p)
+		# A script that failed to compile still loads, but can't be instanced.
+		if r == null or (r is Script and not (r as Script).can_instantiate()):
 			bad += 1
 			print("FAILED ", p)
 	print("compile check: %d files, %d failed" % [paths.size(), bad])

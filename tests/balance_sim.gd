@@ -66,6 +66,10 @@ func simulate(ops: int, skill_bias: float) -> Dictionary:
 		declines_in_row = 0
 		var result := _operate(c, r, op, skill_bias)
 		op += 1
+		# Business days: rent and running costs are part of the balance.
+		BusinessManager.record_job()
+		if BusinessManager.is_day_full():
+			BusinessManager.end_day()
 		if not result.success:
 			crashes += 1
 		grades[result.grade] = int(grades.get(result.grade, 0)) + 1

@@ -58,6 +58,10 @@ func start() -> void:
 	active = true
 	completed = false
 	step_index = -1
+	# Tutorial hints off: no coach marks, no scripted first patient.
+	if not Settings.tutorial_hints:
+		completed = true
+		active = false
 
 
 func skip() -> void:

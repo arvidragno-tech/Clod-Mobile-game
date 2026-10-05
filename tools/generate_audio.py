@@ -195,6 +195,9 @@ def make_sfx():
     write("sfx/spark.wav", concat(noise(0.03, vol=0.35, lowpass=0.95, seed=41), noise(0.05, vol=0.2, lowpass=0.9, seed=42)))
     write("sfx/hover.wav", tone(2600, 2400, 0.018, sine, vol=0.08, release=0.3))  # PC hover tick
     write("sfx/tutorial.wav", concat(tone(1046, 1046, 0.05, sine, vol=0.18), tone(1568, 1568, 0.09, sine, vol=0.18)))
+    # Dialogue voice blip (pitched per character at runtime) and comms chime.
+    write("sfx/voice.wav", mixdown(tone(210, 190, 0.045, square, vol=0.12, release=0.6), noise(0.03, vol=0.04, lowpass=0.3, seed=71)))
+    write("sfx/comms.wav", concat(tone(1320, 1320, 0.03, sine, vol=0.15), silence(0.03), tone(990, 990, 0.03, sine, vol=0.12), silence(0.05), tone(1320, 1320, 0.06, sine, vol=0.15)))
     # One-shot ambient details (scheduled randomly by AudioManager).
     write("ambient/oneshots/drip.wav", concat(tone(1800, 900, 0.03, sine, vol=0.25, release=0.3), silence(0.15), tone(1500, 1000, 0.02, sine, vol=0.08)))
     write("ambient/oneshots/siren.wav", siren())
@@ -283,7 +286,40 @@ def layer_city(dur=12.0):
     return normalize(seamless(out, 1.0, MUSIC_RATE), 0.4)
 
 
+def layer_pump(dur=12.0):
+    """Pump station through the wall: slow heavy thumps, pipe groan, metal ticks."""
+    rng = random.Random(13)
+    rate = MUSIC_RATE
+    n = int(rate * (dur + 0.6))
+    out = [0.0] * n
+    lp = OnePole(0.01)
+    for i in range(n):
+        out[i] = lp(rng.uniform(-1, 1)) * 0.6
+    period = 1.6
+    t = 0.2
+    while t < dur:
+        start = int(t * rate)
+        for i in range(int(0.35 * rate)):
+            if start + i < n:
+                f = 48 - 18 * i / (0.35 * rate)
+                out[start + i] += math.sin(TAU * f * i / rate) * 0.55 * math.exp(-i / (0.09 * rate))
+        t += period
+    for _ in range(int(dur * 0.8)):
+        start = rng.randrange(n - int(0.05 * rate))
+        f = rng.choice([1900, 2600, 3300])
+        for i in range(int(0.04 * rate)):
+            out[start + i] += math.sin(TAU * f * i / rate) * 0.05 * math.exp(-i / (0.006 * rate))
+    groan_ph = 0.0
+    for i in range(n):
+        tt = i / rate
+        f = 70 + 12 * math.sin(TAU * tt / 7.0)
+        groan_ph += f / rate
+        out[i] += saw(groan_ph) * 0.03 * (0.5 + 0.5 * math.sin(TAU * tt / 5.0)) ** 4
+    return normalize(seamless(out, 0.6, rate), 0.4)
+
+
 def make_ambience():
+    write_ogg("ambient/pump.ogg", layer_pump())
     write_ogg("ambient/hum.ogg", layer_hum())
     write_ogg("ambient/vent.ogg", layer_vent())
     write_ogg("ambient/crt.ogg", layer_crt())
@@ -359,16 +395,77 @@ def render_music(bpm, bars, chords, arp, bass_pattern, pulse=False, detune=0.0, 
     return normalize(buf, 0.85)
 
 
+def render_industrial(bpm, bars, roots, seed=1, clank=None, kick=None, drone_vol=0.22, bell=None):
+    """Dark, minimal industrial loop: a low two-oscillator drone that shifts
+    root every two bars, sparse metal clanks (noise through a ringing comb),
+    a muffled kick like a press in another room and a distant detuned bell."""
+    rate = MUSIC_RATE
+    beat = 60.0 / bpm
+    bar_len = beat * 4
+    n = int(rate * bar_len * bars)
+    buf = [0.0] * n
+    rng = random.Random(seed)
+    clank = clank or [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0]
+    kick = kick or [1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0]
+    # Drone
+    ph1 = ph2 = 0.0
+    lp = OnePole(0.02)
+    for i in range(n):
+        t = i / rate
+        root = roots[int(t / (bar_len * 2)) % len(roots)]
+        f = midi(root - 24)
+        ph1 += f / rate
+        ph2 += f * 1.005 / rate
+        swell = 0.7 + 0.3 * math.sin(TAU * t / (bar_len * 2))
+        buf[i] += lp(saw(ph1) + saw(ph2) * 0.8) * drone_vol * swell
+    # Kick / press
+    for b in range(bars):
+        for step, on in enumerate(kick):
+            if not on:
+                continue
+            start = int((b * bar_len + step * beat / 4) * rate)
+            for i in range(int(0.3 * rate)):
+                f = 60 - 30 * i / (0.3 * rate)
+                buf[(start + i) % n] += math.sin(TAU * f * i / rate) * 0.45 * math.exp(-i / (0.07 * rate))
+    # Metal clanks: noise burst into a short comb delay (rings like a pipe).
+    for b in range(bars):
+        for step, on in enumerate(clank):
+            if not on or rng.random() < 0.25:
+                continue
+            start = int((b * bar_len + step * beat / 4) * rate)
+            length = int(0.4 * rate)
+            delay = int(rate / rng.choice([620, 840, 1130]))
+            burst = [rng.uniform(-1, 1) * math.exp(-i / (0.004 * rate)) for i in range(length)]
+            for i in range(delay, length):
+                burst[i] += burst[i - delay] * 0.92
+            amp = rng.uniform(0.05, 0.1)
+            for i in range(length):
+                buf[(start + i) % n] += burst[i] * amp * math.exp(-i / (0.15 * rate))
+    # Distant bell on bar starts.
+    for b in range(0, bars, 2):
+        note = (bell or roots)[(b // 2) % len(bell or roots)] + 12
+        start = int(b * bar_len * rate)
+        for i in range(int(2.5 * rate)):
+            t = i / rate
+            v = math.sin(TAU * midi(note) * t) + 0.5 * math.sin(TAU * midi(note) * 2.76 * t)
+            buf[(start + i) % n] += v * 0.035 * math.exp(-t / 0.9)
+    buf = circular_delay(buf, beat * 1.5, 0.45, 0.4, rate, lowpass=0.2)
+    return normalize(buf, 0.8)
+
+
 def make_music():
-    # Clinic: slow, melancholic, minor (Am - F - C - Em).
-    write_ogg("music/clinic.ogg", render_music(72, 8, [[57, 60, 64], [53, 57, 60], [48, 52, 55], [52, 55, 59]],
-                                               [1, 0, 0, 3, 0, 0, 2, 0, 0, 0, 3, 0, 0, 2, 0, 0], [1, 0, 0, 0, 1, 0, 0, 0], seed=3))
+    # Clinic: dark minimal industrial (A / F / D / E roots).
+    write_ogg("music/clinic.ogg", render_industrial(66, 8, [57, 53, 50, 52], seed=3))
     # Surgery: tense pulse (Dm - Bb - Gm - A).
     write_ogg("music/surgery.ogg", render_music(96, 8, [[50, 53, 57], [46, 50, 53], [43, 46, 50], [45, 49, 52]],
                                                 [1, 0, 2, 0, 3, 0, 2, 0, 1, 0, 2, 0, 3, 0, 2, 3], [1, 0, 1, 0, 1, 0, 1, 0], pulse=True, seed=5, pad_vol=0.14, arp_vol=0.07))
-    # Black market: darker, detuned, tritone colour (Cm - Gb - Cm - Ab).
-    write_ogg("music/market.ogg", render_music(84, 8, [[48, 51, 55], [42, 46, 49], [48, 51, 55], [44, 48, 51]],
-                                               [1, 0, 0, 0, 2, 0, 0, 3, 0, 0, 1, 0, 0, 0, 3, 0], [1, 0, 0, 1, 0, 0, 1, 0], detune=0.12, seed=7))
+    # Black market: industrial, heavier press, tritone roots.
+    write_ogg("music/market.ogg", render_industrial(80, 8, [48, 54, 48, 44], seed=7,
+                                                    clank=[1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0],
+                                                    kick=[1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0]))
+    # Conversations: almost nothing - a drone and a bell.
+    write_ogg("music/dialogue.ogg", render_industrial(56, 8, [45, 41, 43, 40], seed=11, clank=[0] * 16,
+                                                      kick=[0] * 16, drone_vol=0.16))
 
 
 def main(groups):

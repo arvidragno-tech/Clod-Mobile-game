@@ -201,3 +201,30 @@ The icon is designed on a **60 px grid**:
 - One density everywhere (1 art px = 3 canvas units). Wide scenes (clinic, key art, den, surgery backdrop) were redrawn at the new width rather than stretched.
 - No anti-aliasing: every `StyleBoxFlat` has `anti_aliasing = false`, textures use the nearest filter, and soft shadows are not allowed.
 - Text never relies on colour alone.
+
+---
+
+## 3.0 additions
+
+### Grime first, neon last
+- The underground is lit by **dirty tungsten** (single bulbs), **sodium** (industrial cages), **cold fluorescent** (old practices, corporate) and **monitors**. Neon is at most one hand-made sign per room, with dead letters.
+- Every clinic gets a **grime pass** sized to its standing (0 filthy … 3 clean-ish): water streaks under pipe joints, rust runs, mould in the corners, a darkened skirting band, a worn path from the door to the table, cigarette butts, wrappers, used syringes, bloody gauze. Even the corporate suite keeps a stained drain.
+- Storytelling props: stacked CRTs (one cracked and dead, one with a green trace), encrypted terminals with amber cipher text, coolant lines split and taped, sharps boxes with a needle poking out, a stained mattress, waste bags, chain hoists for limb work, tarp walls and limb racks in the market.
+- Emissive props are dimmed after drawing (`dim_emissive`) so cabinets, tanks and jars never out-shine the lamp.
+
+### Seven clinics, one layout
+The door and waiting spot (left), diagnostics (left wall), operating table under the lamp (centre), storage bench (right), supply cabinet and records server (far right) stay in the same places so the room remains clickable; architecture, light and dirt change per district (concrete Sump, tiled pump room, riveted foundry bay, tarp-walled stall, parish infirmary, white corporate suite, hex-panelled lab).
+
+### Upgrade overlays
+Each category × level is drawn into a copy of the lit scene, rendered only in the changed region, diffed against the base render and cropped. The overlay therefore inherits the room's light, falloff and dithering, and carries its own animation anchors (LEDs, monitor sweeps, drips).
+
+### Characters
+- Portrait 96×112, body 40×80; parts are cropped to their bounding boxes and packed into atlases; layers composite back to front (hair back, body, outfit, head, age, nose, mouth, brows, eyes, facial hair, scars, tattoos, makeup, low cyberware, piercings, hair, cyberware, accessories).
+- Adult proportions, no chibi. Silhouette carries the job: posture (upright, slouch, wide, hunched) and build (slim, average, heavy, muscular), kit on the body (toolbelt, rifle, briefcase, cane, medkit).
+- Group palettes: corporate white / gray / black / cold blue; gang black / red / magenta / dirty orange; workers brown / dark blue / gray / safety yellow; medical white / dirty green / cyan / dark gray; black market purple / magenta / black / dark red; military olive / black / gray / muted red.
+- Cyberware is identity: poverty shows as brass and patched implants, wealth hides chrome under ceramic; factions tint glow and rim light.
+- The story changes faces: losing an eye adds an optic and a brow scar, a staff member's skill earns a coat, a loupe, precision optics; stress shows as fear.
+- Dialogue portraits are drawn at 5×, in-room bodies and lists at the global 3×.
+
+### City map
+320×180 at 3×: the caldera ring wall, water with dithered swell, district land split by nearest centre, roads on the borders, building footprints with roof highlights and cast shadows in each district's palette, a few warm or cold lit windows, the canal and the drowned edge. Labels and markers are drawn by the game, not baked.

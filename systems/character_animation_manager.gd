@@ -144,7 +144,7 @@ func _step(st: Dictionary, delta: float, calm: bool) -> bool:
 				changed = true
 				break
 	# Cyberware flicker: a brief dip in emissive brightness now and then.
-	if st["cyber"]:
+	if st["cyber"] and Settings.flashing_allowed():
 		st["_glow_t"] -= delta
 		var g := 1.0
 		if st["_glow_t"] <= 0.0:

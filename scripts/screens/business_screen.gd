@@ -118,5 +118,5 @@ func _line(parent: Control, text: String, amount: int) -> void:
 	l.clip_text = true
 	UIKit.expand(l)
 	h.add_child(l)
-	h.add_child(UIKit.label("%+d" % amount, &"MonoLabel", false, Palette.OK if amount >= 0 else Palette.DANGER, 17))
+	h.add_child(UIKit.label(Accessibility.tag(&"good" if amount >= 0 else &"bad") + "%+d" % amount, &"MonoLabel", false, Palette.OK if amount >= 0 else Palette.DANGER, 17))
 	parent.add_child(h)

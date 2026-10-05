@@ -86,6 +86,10 @@ func _soak(shifts: int) -> void:
 			await _frames(30)
 			baseline_nodes = int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT))
 			baseline_orphans = int(Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT))
+		if BusinessManager.is_day_full() and not CustomerManager.has_customer():
+			GameManager.close_for_the_night()
+			await _frames(3)
+			UIManager.close_modal()
 		var waited := 0.0
 		while not CustomerManager.has_customer() and waited < 8.0:
 			CustomerManager.request_next_customer()

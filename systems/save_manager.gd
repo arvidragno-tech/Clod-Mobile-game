@@ -108,14 +108,25 @@ func _notification(what: int) -> void:
 			# Never persist a half-finished operation; the last save is from
 			# before it started, which is the state the player returns to.
 			if autosave_enabled and not SurgeryManager.is_active:
-				save_game()
+				save_game(&"manual")
 
 
 func has_save() -> bool:
 	return FileAccess.file_exists(save_path) or FileAccess.file_exists(_backup_path()) or FileAccess.file_exists(_tmp_path())
 
 
-func save_game() -> bool:
+## reason: &"auto" (after jobs / purchases), &"night" (closing the clinic),
+## &"manual" (quick save, pause menu, quitting). Settings.autosave decides
+## which automatic saves happen: 0 off, 1 every job, 2 nightly only.
+func save_game(reason: StringName = &"auto") -> bool:
+	if reason == &"auto" and Settings.autosave != 1:
+		return false
+	if reason == &"night" and Settings.autosave == 0:
+		return false
+	return _write_save()
+
+
+func _write_save() -> bool:
 	var systems := {}
 	for system_name in SAVEABLE_SYSTEMS:
 		var system := _get_system(system_name)

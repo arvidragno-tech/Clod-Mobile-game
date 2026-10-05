@@ -30,6 +30,7 @@ func run(runner: Node) -> void:
 	_failure_and_death()
 	_save_roundtrip()
 	_save_migration_v1()
+	_save_v4()
 	_save_robustness()
 	SaveManager.reset_all()
 
@@ -330,10 +331,96 @@ func _settings() -> void:
 	Settings.set_value("haptics", true)
 	UIManager.haptic(&"implant")
 	check(UIManager.last_haptic == &"implant", "haptic kinds fire when enabled")
+	# --- PC options: every one persists and drives something real.
 	Settings.reset_to_defaults()
+	for k: String in ["fps_limit", "pixel_scaling", "crt_filter", "scanlines", "shake_intensity", "lighting_quality", "glow",
+			"environment_effects", "dialogue_volume", "ui_volume", "auto_advance", "confirm_dangerous", "tutorial_hints",
+			"tooltips", "pause_dialogue", "pause_focus_loss", "difficulty", "autosave", "damage_feedback", "ui_scale",
+			"text_scale", "colorblind", "reduced_shake", "reduced_flashing", "reduced_effects"]:
+		check(Settings.DEFAULTS.has(k), "setting %s exists" % k)
+	Settings.set_value("fps_limit", 1)
+	Settings.apply_runtime()
+	check(Engine.max_fps == 60, "frame rate limit applies (60)")
+	Settings.set_value("pixel_scaling", "integer")
+	Settings.apply_runtime()
+	check((Engine.get_main_loop() as SceneTree).root.content_scale_stretch == Window.CONTENT_SCALE_STRETCH_INTEGER, "integer pixel scaling applies")
+	Settings.set_value("pixel_scaling", "fit")
+	Settings.set_value("ui_scale", 2)
+	Settings.apply_runtime()
+	check(is_equal_approx((Engine.get_main_loop() as SceneTree).root.content_scale_factor, 1.1), "UI scale applies")
+	Settings.set_value("tooltips", false)
+	Settings.apply_runtime()
+	check(float(ProjectSettings.get_setting("gui/timers/tooltip_delay_sec")) > 1000.0, "tooltips off")
+	Settings.set_value("reduced_shake", true)
+	check(Settings.shake_scale() < 0.5, "reduced shake scales shake down")
+	Settings.set_value("reduced_flashing", true)
+	check(not Settings.flashing_allowed(), "reduced flashing")
+	Settings.set_value("text_scale", 1.2)
+	check(UIKit.fs(20) >= 24, "text scale grows fonts")
+	# Audio buses: every slider controls its own bus.
+	for bus: StringName in [&"Music", &"Ambience", &"SFX", &"Dialogue", &"UI"]:
+		check(AudioServer.get_bus_index(bus) >= 0, "audio bus %s exists" % bus)
+	Settings.set_value("dialogue_volume", 0.5)
+	Settings.set_value("ui_volume", 0.0)
+	check(is_equal_approx(AudioManager.bus_volume_db(&"Dialogue"), linear_to_db(0.5)), "dialogue slider drives the Dialogue bus")
+	check(AudioServer.is_bus_mute(AudioServer.get_bus_index(&"UI")), "interface slider at 0 mutes the UI bus")
+	check(AudioManager.UI_SFX.has(&"click") and not AudioManager.UI_SFX.has(&"cut"), "clicks are UI sounds, tools are effects")
+	# Difficulty and autosave.
+	Settings.set_value("difficulty", 0)
+	var easy := Difficulty.assist(10)
+	Settings.set_value("difficulty", 2)
+	check(Difficulty.assist(10) < easy and Difficulty.cost_mult() > 1.0, "difficulty changes tolerance and costs")
+	Settings.set_value("autosave", 0)
+	var sp := SaveManager.save_path
+	SaveManager.save_path = "user://test_autosave.json"
+	SaveManager.delete_save()
+	check(not SaveManager.save_game() and not FileAccess.file_exists(SaveManager.save_path), "autosave off skips automatic saves")
+	check(SaveManager.save_game(&"manual"), "manual saves always work")
+	Settings.set_value("autosave", 2)
+	check(not SaveManager.save_game() and SaveManager.save_game(&"night"), "nightly autosave saves only at night")
+	SaveManager.delete_save()
+	SaveManager.save_path = sp
+	# Persist and reload the whole set.
+	Settings.load_settings()
+	check(Settings.difficulty == 2 and Settings.reduced_flashing and is_equal_approx(Settings.text_scale, 1.2), "new settings persist")
+	Settings.reset_to_defaults()
+	Settings.apply_runtime()
+	_controls()
+	Settings.reset_to_defaults()
+	Settings.apply_runtime()
 	DirAccess.remove_absolute(Settings.path)
 	Settings.path = path
 	Settings.load_settings()
+
+
+func _controls() -> void:
+	Controls.reset_bindings()
+	check(Controls.all_conflicts().is_empty(), "default bindings have no conflicts %s" % [Controls.all_conflicts().keys()])
+	var cats := {}
+	for id: String in Controls.ACTIONS:
+		cats[str(Controls.ACTIONS[id]["group"])] = true
+	check(cats.size() == 10, "ten control categories (%d)" % cats.size())
+	check(Controls.key_name("pause") == "ESC" and Controls.key_name("quicksave") == "F5" and not Controls.is_mouse(KEY_ESCAPE), "special keys stay keys (ESC, F5)")
+	check(InputMap.action_has_event(&"inspect", Controls.event_for(Controls.mouse(MOUSE_BUTTON_MIDDLE))), "mouse buttons are bindable (inspect on MMB)")
+	# Conflict detection respects context: 1 is a tool in surgery and an answer in dialogue.
+	check(Controls.conflicts_for("dialogue_1", KEY_1).is_empty(), "surgery and dialogue keys don't clash")
+	check(Controls.conflicts_for("journal", KEY_I) == ["inventory"], "global keys clash")
+	var hit := Controls.rebind("journal", KEY_I, 0, "keep")
+	check(hit == ["inventory"] and Controls.all_conflicts().has("journal"), "duplicate kept and reported")
+	Controls.reset_action("journal")
+	check(Controls.is_default("journal") and Controls.all_conflicts().is_empty(), "reset a single binding")
+	Controls.rebind("journal", KEY_I, 0, "swap")
+	check(Controls.get_slots("inventory")[0] == KEY_J and Controls.get_slots("journal")[0] == KEY_I, "swap moves the old key over")
+	Controls.rebind("tool_next", Controls.mouse(MOUSE_BUTTON_RIGHT), 1)
+	check(Controls.code_name(Controls.get_slots("tool_next")[1]) == "RMB" and InputMap.action_has_event(&"tool_next", Controls.event_for(Controls.mouse(MOUSE_BUTTON_RIGHT))), "bind a mouse button to an action")
+	Controls.rebind("move_up", KEY_I, 0, "keep")
+	var ev := InputEventKey.new()
+	ev.physical_keycode = KEY_I
+	check(InputMap.action_has_event(&"ui_up", ev), "menus follow the movement bindings")
+	Controls.clear_slot("quick_coag", 0)
+	check(Controls.get_keys("quick_coag").is_empty(), "a binding slot can be cleared")
+	Controls.reset_bindings()
+	check(Controls.get_slots("inventory")[0] == KEY_I and not InputMap.action_has_event(&"ui_up", ev), "reset all bindings")
 
 
 func _neural_load() -> void:
@@ -885,6 +972,59 @@ func _save_robustness() -> void:
 	f.store_string(JSON.stringify(v2))
 	f.close()
 	check(SaveManager.load_game() and EconomyManager.money == 4321 and TutorialManager.completed and not TutorialManager.is_active(), "v2 save migrates (tutorial skipped for veterans)")
+	SaveManager.delete_save()
+	SaveManager.reset_all()
+
+
+func _save_v4() -> void:
+	SaveManager.reset_all()
+	# A v3 (previous release) save: six-tier clinic, none of the new systems.
+	var v3 := {"version": 3, "saved_at": 0, "systems": {
+		"EconomyManager": {"money": 4321}, "ReputationManager": {"reputation": 30},
+		"ProgressionManager": {"total_xp": 900, "level": 5, "customers_served": 20, "surgery_records": {}},
+		"ClinicManager": {"tier": 3}, "EventManager": {"operations": 20}, "TutorialManager": {"completed": true}}}
+	var f := FileAccess.open(SaveManager.save_path, FileAccess.WRITE)
+	f.store_string(JSON.stringify(v3))
+	f.close()
+	check(SaveManager.load_game(), "v3 save loads")
+	check(EconomyManager.money == 4321 and ClinicManager.clinic_id() == "professional" and ClinicManager.owns(0), "v3 tier 3 becomes the Old Caldera Practice (back alley kept)")
+	check(BusinessManager.day == 1 and StaffManager.count() == 0 and StoryManager.act == 1 and QuestManager.states.is_empty(), "new systems start fresh on an old save")
+	# Everything new round-trips through a real save file.
+	var was := GameManager.is_running
+	GameManager.is_running = true
+	EconomyManager.add_money(5000)
+	ClinicManager.install(&"security")
+	BusinessManager.record_job()
+	BusinessManager.end_day()
+	BusinessManager.debt = 77
+	WorldManager.add_influence(&"oldcity", 4)
+	StaffManager.refresh_candidates()
+	StaffManager.hire(0)
+	var hired := str(StaffManager.employees[0]["id"]) if StaffManager.count() > 0 else ""
+	CharacterManager.apply_appearance_event(&"rook_varga", "lose_eye")
+	CharacterManager.change_relationship(&"vesna_kalo", 25)
+	StoryManager.set_flag(&"bm_access")
+	StoryManager.schedule_consequence(&"d_dune_sabotage", 3)
+	StoryManager.add_path(&"kingpin", 2)
+	StoryManager.bump(&"bm_sell", 2)
+	QuestManager.start(&"q_undermarket_trade")
+	CommsManager.send(&"c_act2")
+	DialogueManager.start(&"d_wire_contract")
+	DialogueManager.choose(2)
+	Settings.bindings = {}
+	var wire_rel := CharacterManager.relationship(&"vesna_kalo")
+	check(SaveManager.save_game(&"manual"), "v4 save written")
+	SaveManager.reset_all()
+	check(SaveManager.load_game(), "v4 save loads")
+	check(ClinicManager.upgrade_level(&"security") == 1 and BusinessManager.day == 2 and BusinessManager.debt == 77, "clinic upgrades and business days persist")
+	check(WorldManager.get_influence(&"oldcity") == 4, "district influence persists")
+	check(hired == "" or not StaffManager.get_employee(StringName(hired)).is_empty(), "employees persist")
+	check((CharacterManager.appearance(&"rook_varga")["cyber"] as Array).has("optic") and CharacterManager.relationship(&"vesna_kalo") == wire_rel, "character appearance changes and relationships persist")
+	check(StoryManager.has_flag(&"bm_access") and StoryManager.pending.size() == 1 and StoryManager.path_score(&"kingpin") >= 2 and StoryManager.counter(&"bm_sell") == 2, "flags, pending consequences, paths and counters persist")
+	check(QuestManager.is_active(&"q_undermarket_trade") and CommsManager.inbox.size() >= 1 and DialogueManager.choices.size() >= 1, "quests, comms and dialogue choices persist")
+	var raw := FileAccess.get_file_as_string(SaveManager.save_path)
+	check(raw.contains("\"version\": %d" % GameConfig.SAVE_VERSION) and GameConfig.SAVE_VERSION == 4, "save is versioned (v4)")
+	GameManager.is_running = was
 	SaveManager.delete_save()
 	SaveManager.reset_all()
 

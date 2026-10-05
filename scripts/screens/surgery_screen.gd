@@ -617,7 +617,7 @@ static var pause_on_suspend: bool = true
 
 
 func _notification(what: int) -> void:
-	if pause_on_suspend and what in [NOTIFICATION_APPLICATION_PAUSED, NOTIFICATION_APPLICATION_FOCUS_OUT]:
+	if pause_on_suspend and Settings.pause_focus_loss and what in [NOTIFICATION_APPLICATION_PAUSED, NOTIFICATION_APPLICATION_FOCUS_OUT]:
 		pause_operation()
 
 

@@ -91,11 +91,12 @@ func _apply_cursors() -> void:
 ## Text size / contrast on the shared theme; calmer CRT for accessibility.
 func _apply_settings() -> void:
 	Accessibility.apply(theme if theme else ThemeDB.get_project_theme())
-	Settings.apply_filter()
+	Settings.apply_runtime()
 	var crt := get_node_or_null("CrtLayer/CrtOverlay") as ColorRect
 	if crt and crt.material is ShaderMaterial:
 		var m := crt.material as ShaderMaterial
-		m.set_shader_parameter(&"noise_strength", 0.0 if Settings.reduce_motion else 0.025)
-		m.set_shader_parameter(&"scanline_strength", 0.035 if Settings.high_contrast else 0.07)
+		m.set_shader_parameter(&"noise_strength", 0.0 if Settings.reduce_motion or not Settings.flashing_allowed() else 0.025)
+		m.set_shader_parameter(&"scanline_strength", 0.0 if not Settings.scanlines else (0.035 if Settings.high_contrast else 0.07))
 		m.set_shader_parameter(&"vignette_strength", 0.2 if Settings.high_contrast else 0.35)
-		crt.visible = Settings.effects_quality > 0
+		crt.visible = Settings.crt_enabled() or Settings.scanlines
+		m.set_shader_parameter(&"vignette_strength", 0.0 if not Settings.crt_enabled() else (0.2 if Settings.high_contrast else 0.35))

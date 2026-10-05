@@ -66,7 +66,7 @@ const HAPTICS := {
 }
 ## Which sound profile (music + ambience) each screen uses.
 const SCREEN_AUDIO := {
-	SCREEN_MAIN_MENU: &"menu", SCREEN_SURGERY: &"surgery", SCREEN_BLACK_MARKET: &"market",
+	SCREEN_MAIN_MENU: &"menu", SCREEN_SURGERY: &"surgery", SCREEN_BLACK_MARKET: &"market", SCREEN_MAP: &"city",
 }
 
 var _screen_host: Control
@@ -164,8 +164,9 @@ func show_toast(text: String, kind: StringName = &"info") -> void:
 
 
 func shake(strength: float = 4.0) -> void:
-	if current_screen == null or not Settings.shake_allowed():
+	if current_screen == null or not Settings.shake_allowed() or not Settings.damage_feedback:
 		return
+	strength *= Settings.shake_scale()
 	if _shake_tween and _shake_tween.is_valid():
 		_shake_tween.kill()
 	var target := current_screen
@@ -223,8 +224,10 @@ func is_shaking() -> bool:
 
 
 func flash(color: Color, peak_alpha: float = 0.25) -> void:
-	if _flash == null:
+	if _flash == null or not Settings.damage_feedback:
 		return
+	if not Settings.flashing_allowed():
+		peak_alpha *= 0.25
 	_flash.color = Color(color, peak_alpha)
 	var t := create_tween()
 	t.tween_property(_flash, "color:a", 0.0, 0.3)
@@ -283,6 +286,14 @@ func confirm(title: String, body: String, confirm_label: String, on_confirm: Cal
 		{"label": confirm_label, "style": &"DangerButton" if danger else &"AccentButton", "callback": on_confirm},
 	]
 	show_dialog(title, body, buttons)
+
+
+## Dangerous actions ask first (unless the player turned that off).
+func guard(title: String, body: String, label: String, action: Callable) -> void:
+	if Settings.confirm_dangerous:
+		confirm(title, body, label, action, true)
+	else:
+		action.call()
 
 
 func show_modal(content: Control) -> void:

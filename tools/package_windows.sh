@@ -26,8 +26,10 @@ Run UndercityRipper.exe. No installation or admin rights needed.
 Controls: left click select/use tool, drag to cut and move, right click puts
 the tool down, wheel zooms, ESC pause/back, TAB cycle panels, 1-9 tools,
 Q/R previous/next tool, Z/X/V emergency actions, SPACE contextual action,
-I inventory, B cyberware database, J journal, M facility, C customer,
-F5 quick save, F9 quick load. Rebind keys in SETTINGS > CONTROLS.
+I inventory, B cyberware database, U supply, J journal, N comms, C customer,
+K facility, L business, T staff, M city map, ENTER/1-4 in conversations,
+F5 quick save, F9 quick load. Rebind keys and mouse buttons in
+SETTINGS > CONTROLS.
 
 Saves and settings: %APPDATA%\\UndercityRipper\\
   (C:\\Users\\<you>\\AppData\\Roaming\\UndercityRipper\\saves\\slot_1.json ...)

@@ -22,11 +22,12 @@ static func apply(theme: Theme) -> void:
 		_base_sizes[&"__default"] = theme.default_font_size
 		_base_sizes[&"__rich"] = theme.get_font_size(&"normal_font_size", &"RichTextLabel")
 	var bonus := Settings.font_bonus()
+	var sc := Settings.font_scale()
 	for t in SCALED_TYPES:
-		theme.set_font_size(&"font_size", t, int(_base_sizes[t]) + bonus)
-	theme.default_font_size = int(_base_sizes[&"__default"]) + bonus
+		theme.set_font_size(&"font_size", t, roundi(int(_base_sizes[t]) * sc) + bonus)
+	theme.default_font_size = roundi(int(_base_sizes[&"__default"]) * sc) + bonus
 	for k in [&"normal_font_size", &"bold_font_size"]:
-		theme.set_font_size(k, &"RichTextLabel", int(_base_sizes[&"__rich"]) + bonus)
+		theme.set_font_size(k, &"RichTextLabel", roundi(int(_base_sizes[&"__rich"]) * sc) + bonus)
 	var dim := DIM_HIGH if Settings.high_contrast else DIM_NORMAL
 	for t in [&"DimLabel", &"SubHeaderLabel"]:
 		theme.set_color(&"font_color", t, dim)
@@ -45,3 +46,18 @@ static func text_color(c: Color) -> Color:
 	if Settings.high_contrast and c.is_equal_approx(DIM_NORMAL):
 		return DIM_HIGH
 	return c
+
+
+## Colour-blind indicator: a text marker added to colour-coded values when
+## the setting is on (good / caution / bad never rely on hue alone).
+static func tag(level: StringName) -> String:
+	if not Settings.colorblind:
+		return ""
+	match level:
+		&"good":
+			return "[+] "
+		&"warn":
+			return "[~] "
+		&"bad":
+			return "[!] "
+	return ""

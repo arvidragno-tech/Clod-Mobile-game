@@ -305,7 +305,7 @@ const LEGACY_TIER_MAP := [0, 1, 2, 4, 5, 6]
 
 
 static func migrate_legacy(data: Dictionary) -> Dictionary:
-	if data.has("owned"):
+	if data.has("owned") or data.has("owned_idx"):
 		return data
 	var t := clampi(int(data.get("tier", 0)), 0, LEGACY_TIER_MAP.size() - 1)
 	var idx: int = LEGACY_TIER_MAP[t]

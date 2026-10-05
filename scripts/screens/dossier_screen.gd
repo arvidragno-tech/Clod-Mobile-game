@@ -3,7 +3,7 @@ extends BaseScreen
 ## relationship status and what you know of them), factions, rumours, the
 ## operation record and the story so far (acts and endgame paths).
 
-const TABS := ["QUESTS", "COMMS", "PEOPLE", "FACTIONS", "RUMORS", "RECORDS", "STORY"]
+const TABS := ["QUESTS", "COMMS", "PEOPLE", "FACTIONS", "RUMORS", "PROGRESSION", "STORY"]
 enum Tab { QUESTS, COMMS, PEOPLE, FACTIONS, RUMORS, RECORDS, STORY }
 
 var _list: GridContainer
@@ -123,6 +123,30 @@ func _contact_card(c: CustomerData, role: String) -> Control:
 
 
 func _records() -> void:
+	_list.columns = 1
+	var top := UIKit.hbox(12)
+	_list.add_child(top)
+	var cards := [
+		["SURGEON", "LV %d" % ProgressionManager.level, "%d / %d XP to next" % [ProgressionManager.get_xp_into_level(), ProgressionManager.get_xp_for_next_level()]],
+		["REPUTATION", "%d" % ReputationManager.reputation, ReputationManager.get_tier_name()],
+		["STORY", "ACT %d" % StoryManager.act, StoryManager.act_title().get_slice("·", 1).strip_edges()],
+		["BUSINESS", "DAY %d" % BusinessManager.day, "%s cash · debt %d" % [EconomyManager.format_money(EconomyManager.money), BusinessManager.debt]],
+		["PROPERTY", "%d / %d" % [ClinicManager.owned.size(), ClinicManager.tiers.size()], "clinics · %d upgrades" % QuestManager._value({"type": "upgrades"})],
+		["TEAM", "%d" % StaffManager.count(), "ripperdocs · %d/day payroll" % StaffManager.daily_salaries()],
+		["CITY", "%d / %d" % [WorldManager.visited.size(), WorldManager.order.size()], "districts · stronghold %s" % WorldManager.district_name(WorldManager.stronghold())],
+	]
+	for c: Array in cards:
+		var p := UIKit.panel(&"CardPanel")
+		UIKit.expand(p)
+		var v := UIKit.vbox(2)
+		p.add_child(v)
+		v.add_child(UIKit.label(str(c[0]), &"SubHeaderLabel"))
+		v.add_child(UIKit.label(str(c[1]), &"BigMonoLabel", false, Palette.ACCENT))
+		v.add_child(UIKit.label(str(c[2]), &"DimLabel", true, null, 13))
+		top.add_child(p)
+	_list.add_child(UIKit.meter(ProgressionManager.get_level_progress(), Palette.ACCENT, 6))
+	var ends := StoryManager.ranked_endings()
+	_list.add_child(UIKit.label("Endings within reach: %s" % (", ".join(ends.map(func(e: StringName) -> String: return str(StoryManager.ending_text(e).get("title", e)))) if not ends.is_empty() else "none yet"), &"MonoLabel", true, Palette.BRAND, 17))
 	var lines := [
 		"Level %d · %d XP" % [ProgressionManager.level, ProgressionManager.total_xp],
 		"Reputation %d · %s" % [ReputationManager.reputation, ReputationManager.get_tier_name()],

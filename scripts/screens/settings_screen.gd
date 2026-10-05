@@ -4,7 +4,7 @@ extends BaseScreen
 ## settings.cfg). Opened from the main menu (SETTINGS / CONTROLS) or the
 ## pause menu; BACK / ESC returns to wherever it was opened from.
 
-const TABS := ["GRAPHICS", "AUDIO", "CONTROLS", "GAMEPLAY"]
+const TABS := ["GRAPHICS", "AUDIO", "CONTROLS", "GAMEPLAY", "ACCESSIBILITY"]
 
 var _return_to: StringName = UIManager.SCREEN_MAIN_MENU
 var _tab: int = 0
@@ -28,7 +28,7 @@ func on_enter(params: Dictionary) -> void:
 	m.add_child(col)
 	col.add_child(UIKit.header("SYSTEM · PREFERENCES", "SETTINGS", _back))
 	_tabs = UIKit.tabs(TABS, _on_tab, "SettingsTab")
-	_tabs.custom_minimum_size.x = 960
+	_tabs.custom_minimum_size.x = 1200
 	_tabs.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	col.add_child(_tabs)
 	(_tabs.get_child(_tab) as Button).button_pressed = true
@@ -82,6 +82,7 @@ func _build() -> void:
 		1: _build_audio()
 		2: _build_controls()
 		3: _build_gameplay()
+		4: _build_accessibility()
 
 
 func _build_graphics() -> void:
@@ -96,17 +97,22 @@ func _build_graphics() -> void:
 		res_names.append("%d×%d" % [r.x, r.y])
 	_choice_str(display, "RESOLUTION (WINDOWED)", "resolution", res_values, res_names, true)
 	_toggle(display, "VSYNC", "vsync", "Sync to the monitor refresh. Off = lower input latency, possible tearing.", true)
+	_choice_int(display, "FRAME RATE LIMIT", "fps_limit", Settings.FPS_NAMES, true)
 	display.add_child(UIKit.label("Fullscreen and borderless use your desktop resolution. The game renders a 1920×1080 canvas and letterboxes other aspect ratios.", &"DimLabel", true))
-	var pixels := UIKit.section(right, "PIXEL ART")
-	_choice_str(pixels, "TEXTURE FILTERING", "texture_filter", ["nearest", "linear"], ["NEAREST (CRISP)", "LINEAR (SOFT)"])
+	var pixels := UIKit.section(left, "PIXEL ART")
+	_choice_str(pixels, "PIXEL SCALING", "pixel_scaling", Settings.PIXEL_SCALING, Settings.PIXEL_SCALING_NAMES, true)
+	_choice_str(pixels, "TEXTURE FILTERING", "texture_filter", ["nearest", "linear"], ["NEAREST (PIXEL PERFECT)", "LINEAR (SOFT)"], true)
 	var size := DisplayServer.window_get_size() if DisplayServer.get_name() != "headless" else Vector2i(1920, 1080)
 	var sc := minf(size.x / 1920.0, size.y / 1080.0)
-	pixels.add_child(UIKit.label("PIXEL SCALING: art pixel = 3 canvas units. Current window %d×%d → %.2fx canvas → %s." % [size.x, size.y, sc,
-		"integer (%dx art pixels)" % roundi(sc * 3.0) if is_equal_approx(sc * 3.0, roundf(sc * 3.0)) else "fractional (nearest sampling keeps pixels sharp)"], &"DimLabel", true))
-	pixels.add_child(UIKit.label("Integer-perfect at 1920×1080 (3x) and 1280×720 (2x).", &"DimLabel", true))
+	pixels.add_child(UIKit.label("Art pixel = 3 canvas units. Window %d×%d → %.2fx. Integer scaling keeps every pixel square (black borders on odd sizes)." % [size.x, size.y, sc], &"DimLabel", true))
 	var fx := UIKit.section(right, "EFFECTS")
-	_choice_int(fx, "EFFECTS QUALITY", "effects_quality", Settings.EFFECTS_NAMES)
-	fx.add_child(UIKit.label("LOW: no CRT overlay or signal glitches, fewer particles. HIGH: full effects.", &"DimLabel", true))
+	_toggle(fx, "CRT FILTER", "crt_filter", "Vignette and grain over the whole screen.")
+	_toggle(fx, "SCANLINES", "scanlines", "Thin dark lines like an old monitor.")
+	_slider(fx, "SCREEN SHAKE", "shake_intensity", 0.0, 1.5, 0.05, true)
+	_choice_int(fx, "LIGHTING QUALITY", "lighting_quality", Settings.EFFECTS_NAMES)
+	_choice_int(fx, "PARTICLE QUALITY", "effects_quality", Settings.EFFECTS_NAMES)
+	_toggle(fx, "GLOW", "glow", "Emissive cyberware, monitors and signs glow and flicker.")
+	_toggle(fx, "ENVIRONMENT EFFECTS", "environment_effects", "Dust in the lamp light, steam, sparks, drips and rain.")
 
 
 func _build_audio() -> void:
@@ -115,10 +121,13 @@ func _build_audio() -> void:
 	var mix := UIKit.section(left, "MIX")
 	_slider(mix, "MASTER", "master_volume")
 	_slider(mix, "MUSIC", "music_volume")
-	_slider(mix, "AMBIENCE", "ambience_volume")
-	_slider(mix, "EFFECTS", "sfx_volume")
+	_slider(mix, "SOUND EFFECTS", "sfx_volume")
+	_slider(mix, "AMBIENT", "ambience_volume")
+	_slider(mix, "DIALOGUE", "dialogue_volume")
+	_slider(mix, "INTERFACE", "ui_volume")
 	var info := UIKit.section(right, "SOUNDSCAPE")
-	info.add_child(UIKit.label("Music and ambience change with the place: the clinic hum, the street rain, the operating theatre and the black-market tunnels. Effects cover tools, vitals alarms and UI clicks.", &"DimLabel", true))
+	info.add_child(UIKit.label("Each slider drives its own audio bus: music, effects (tools, vitals, the city), ambient beds (pumps, vents, CRT hum, rain), dialogue voices and interface clicks.", &"DimLabel", true))
+	info.add_child(UIKit.label("Music is dark and minimal on purpose; conversations drop to a near-silent drone.", &"DimLabel", true))
 
 
 func _build_controls() -> void:
@@ -127,41 +136,52 @@ func _build_controls() -> void:
 	var mouse := UIKit.section(left, "MOUSE")
 	_slider(mouse, "SENSITIVITY", "mouse_sensitivity", 0.25, 3.0, 0.05, true)
 	mouse.add_child(UIKit.label("Affects implant rotation drags, wheel tuning and key nudges in surgery.", &"DimLabel", true))
-	var help := UIKit.section(left, "MOUSE BUTTONS")
-	for line in ["LEFT CLICK · select, use the active tool", "LEFT DRAG · cut, move implants, connect wires", "RIGHT CLICK · put the tool down / cancel / compare", "WHEEL · scroll lists, zoom the operating field", "DOUBLE CLICK · inspect", "HOVER · details and highlights everywhere"]:
+	var help := UIKit.section(left, "FIXED MOUSE ACTIONS")
+	for line in ["LEFT CLICK · select, use the active tool", "LEFT DRAG · cut, move implants, connect wires", "RIGHT CLICK · put the tool down / cancel / compare", "WHEEL · scroll lists, zoom the operating field", "Bind middle, side buttons, right click and the wheel to any action on the right."]:
 		help.add_child(UIKit.label(line, &"DimLabel", true))
-	var groups := {}
-	for id: String in Controls.ACTIONS:
-		var g := str(Controls.ACTIONS[id]["group"])
-		if not groups.has(g):
-			groups[g] = []
-		groups[g].append(id)
-	var keys := UIKit.section(right, "KEY BINDINGS", &"CardPanel", "click a key, then press the new one")
-	for g: String in groups:
-		keys.add_child(UIKit.label(g.to_upper(), &"SubHeaderLabel", false, Palette.ACCENT))
-		var grid := GridContainer.new()
-		grid.columns = 2
-		grid.add_theme_constant_override(&"h_separation", 18)
-		grid.add_theme_constant_override(&"v_separation", 4)
-		keys.add_child(grid)
-		for id: String in groups[g]:
-			var l := UIKit.label(str(Controls.ACTIONS[id]["label"]), &"")
-			UIKit.expand(l)
-			grid.add_child(l)
-			var b := UIKit.button(Controls.key_name(id), &"Button", Callable(), "Bind_%s" % id, 44)
-			b.custom_minimum_size.x = 200
-			b.pressed.connect(_start_listening.bind(id, b))
-			grid.add_child(b)
-	keys.add_child(UIKit.button("RESET KEY BINDINGS", &"GhostButton", func() -> void:
+	var clashes := Controls.all_conflicts()
+	if not clashes.is_empty():
+		var warn := UIKit.section(left, "CONFLICTS", &"DangerPanel")
+		for id: String in clashes:
+			var names: Array[String] = []
+			for o: String in clashes[id]:
+				names.append(str(Controls.ACTIONS[o]["label"]))
+			warn.add_child(UIKit.label("%s shares a binding with %s" % [Controls.ACTIONS[id]["label"], ", ".join(names)], &"DimLabel", true, Palette.WARN))
+	left.add_child(UIKit.button("RESET ALL BINDINGS", &"GhostButton", func() -> void:
 		Controls.reset_bindings()
 		_build(), "ResetBindings"))
-	keys.add_child(UIKit.label("A key already in use is swapped onto the other action, so nothing is left unbound. Arrows / WASD always navigate menus.", &"DimLabel", true))
+	var keys := UIKit.section(right, "BINDINGS", &"CardPanel", "click a slot, then press a key or mouse button · DEL clears")
+	for cat: String in Controls.CATEGORIES:
+		keys.add_child(UIKit.label("%s  (%s)" % [cat.to_upper(), Controls.CATEGORIES[cat]], &"SubHeaderLabel", false, Palette.ACCENT))
+		var grid := GridContainer.new()
+		grid.columns = 4
+		grid.add_theme_constant_override(&"h_separation", 10)
+		grid.add_theme_constant_override(&"v_separation", 4)
+		keys.add_child(grid)
+		for id: String in Controls.ACTIONS:
+			if str(Controls.ACTIONS[id]["group"]) != cat:
+				continue
+			var l := UIKit.label(("⚠ " if clashes.has(id) else "") + str(Controls.ACTIONS[id]["label"]), &"", false, Palette.WARN if clashes.has(id) else null)
+			UIKit.expand(l)
+			grid.add_child(l)
+			var slots := Controls.get_slots(id)
+			for slot in Controls.SLOTS:
+				var b := UIKit.button(Controls.code_name(slots[slot]), &"Button", Callable(), "Bind_%s_%d" % [id, slot], 40)
+				b.custom_minimum_size.x = 150
+				b.pressed.connect(_start_listening.bind(id, slot, b))
+				grid.add_child(b)
+			var r := UIKit.button("↺", &"GhostButton", func() -> void:
+				Controls.reset_action(id)
+				_build(), "ResetBind_%s" % id, 40)
+			r.tooltip_text = "Reset this action to its default"
+			r.disabled = Controls.is_default(id)
+			grid.add_child(r)
 
 
 func _build_gameplay() -> void:
 	var left := _column()
 	var right := _column()
-	var text := UIKit.section(left, "TEXT")
+	var text := UIKit.section(left, "TEXT AND DIALOGUE")
 	_choice_int(text, "TEXT SPEED", "text_speed", Settings.TEXT_SPEED_NAMES)
 	var sample := TypewriterLabel.new()
 	sample.text = "\"Lie still. This will sting.\""
@@ -169,17 +189,39 @@ func _build_gameplay() -> void:
 	sample.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	text.add_child(sample)
 	sample.play()
-	_toggle(text, "LARGE TEXT", "large_text", "Bigger body text across menus.")
-	var feel := UIKit.section(left, "FEEDBACK")
-	_toggle(feel, "SCREEN SHAKE", "screen_shake", "Camera shake on mistakes and crashes.")
+	_toggle(text, "AUTO-ADVANCE DIALOGUE", "auto_advance", "Lines without choices move on by themselves.")
+	_toggle(text, "PAUSE DURING DIALOGUE", "pause_dialogue", "Nobody walks in while you're talking.")
+	var play := UIKit.section(left, "GAME")
+	_choice_int(play, "DIFFICULTY", "difficulty", Settings.DIFFICULTY_NAMES)
+	play.add_child(UIKit.label("STORY: wider tolerances, more time, cheaper rent. BRUTAL: tight hands, short timers, expensive city.", &"DimLabel", true))
+	_choice_int(play, "AUTOSAVE", "autosave", Settings.AUTOSAVE_NAMES)
+	_toggle(play, "PAUSE ON FOCUS LOSS", "pause_focus_loss", "Alt-Tab freezes the patient and the door.")
+	var help := UIKit.section(right, "HELP")
+	_toggle(help, "CONFIRM DANGEROUS ACTIONS", "confirm_dangerous", "Ask before firing staff, selling clinics, borrowing, refusing and aborting.")
+	_toggle(help, "TUTORIAL HINTS", "tutorial_hints", "Coach marks on your first operation (new games).")
+	_toggle(help, "TOOLTIPS", "tooltips", "Hover details on props, stats and buttons.")
+	_toggle(help, "DAMAGE FEEDBACK", "damage_feedback", "Screen shake and red flashes on mistakes.")
 	if DisplayServer.is_touchscreen_available() or OS.has_feature("mobile"):
-		_toggle(feel, "HAPTICS", "haptics", "Vibration on mistakes and successes.")
-	var access := UIKit.section(right, "ACCESSIBILITY")
-	_toggle(access, "HIGH CONTRAST", "high_contrast", "Brighter secondary text, lighter CRT overlay.")
-	_toggle(access, "REDUCE MOTION", "reduce_motion", "No shake, flicker or glitch effects; fewer particles.")
-	access.add_child(UIKit.label("Status is never shown by colour alone: vitals, checks, comparisons and neural bands always carry a label or symbol.", &"DimLabel", true))
-	var tut := UIKit.section(right, "TUTORIAL")
-	tut.add_child(UIKit.label("Coach marks guide your first operation. HOW TO PLAY in the pause menu (ESC) recaps the controls any time.", &"DimLabel", true))
+		_toggle(help, "HAPTICS", "haptics", "Vibration on mistakes and successes.")
+
+
+func _build_accessibility() -> void:
+	var left := _column()
+	var right := _column()
+	var size := UIKit.section(left, "SIZE")
+	_choice_int(size, "UI SCALE", "ui_scale", Settings.UI_SCALE_NAMES, true)
+	size.add_child(UIKit.label("Applies with FIT pixel scaling (integer scaling keeps the art at whole pixels).", &"DimLabel", true))
+	_slider(size, "TEXT SCALE", "text_scale", 0.85, 1.4, 0.05, true)
+	_toggle(size, "LARGE TEXT", "large_text", "Extra size on body text across menus.")
+	var vis := UIKit.section(left, "VISION")
+	_toggle(vis, "HIGH CONTRAST", "high_contrast", "Brighter secondary text, lighter CRT overlay.")
+	_toggle(vis, "COLOUR-BLIND INDICATORS", "colorblind", "Adds [+] [~] [!] markers wherever good / risky / bad is colour-coded.")
+	var motion := UIKit.section(right, "MOTION AND EFFECTS")
+	_toggle(motion, "REDUCED SHAKE", "reduced_shake", "Shake is kept but gentle.")
+	_toggle(motion, "REDUCED FLASHING", "reduced_flashing", "No strobing lights, glitch bursts or cyberware flicker; flashes dimmed.")
+	_toggle(motion, "REDUCED EFFECTS", "reduced_effects", "Minimum particles, no CRT filter.")
+	_toggle(motion, "REDUCE MOTION", "reduce_motion", "No shake, flicker, glitches or idle animation bursts.")
+	motion.add_child(UIKit.label("Status is never shown by colour alone: vitals, checks, comparisons and neural bands always carry a label.", &"DimLabel", true))
 
 
 # --- Rows ----------------------------------------------------------------------
@@ -247,8 +289,11 @@ func _choice_row(parent: Control, caption: String, names: Array[String], current
 	parent.add_child(row)
 
 
-func _choice_int(parent: Control, caption: String, key: String, names: Array[String]) -> void:
-	_choice_row(parent, caption, names, int(Settings.get(key)), key, func(i: int) -> void: Settings.set_value(key, i))
+func _choice_int(parent: Control, caption: String, key: String, names: Array[String], display: bool = false) -> void:
+	_choice_row(parent, caption, names, int(Settings.get(key)), key, func(i: int) -> void:
+		Settings.set_value(key, i)
+		if display:
+			Settings.apply_display())
 
 
 func _choice_str(parent: Control, caption: String, key: String, values: Array[String], names: Array[String], display: bool = false) -> void:
@@ -258,19 +303,23 @@ func _choice_str(parent: Control, caption: String, key: String, values: Array[St
 			Settings.apply_display())
 
 
-# --- Key rebinding ---------------------------------------------------------------
+# --- Rebinding ---------------------------------------------------------------------
 
-func _start_listening(id: String, b: Button) -> void:
+var _listen_slot: int = 0
+
+
+func _start_listening(id: String, slot: int, b: Button) -> void:
 	_stop_listening()
 	_listening = id
+	_listen_slot = slot
 	_listen_button = b
-	b.text = "PRESS A KEY..."
+	b.text = "PRESS..."
 	b.theme_type_variation = &"AccentButton"
 
 
 func _stop_listening() -> void:
-	if _listen_button and is_instance_valid(_listen_button):
-		_listen_button.text = Controls.key_name(_listening) if _listening != "" else _listen_button.text
+	if _listen_button and is_instance_valid(_listen_button) and _listening != "":
+		_listen_button.text = Controls.code_name(Controls.get_slots(_listening)[_listen_slot])
 		_listen_button.theme_type_variation = &"Button"
 	_listening = ""
 	_listen_button = null
@@ -279,22 +328,51 @@ func _stop_listening() -> void:
 func _input(event: InputEvent) -> void:
 	if _listening == "":
 		return
+	if not event.is_pressed() or event.is_echo():
+		return
 	var k := event as InputEventKey
-	if k == null or not k.pressed or k.echo:
+	var m := event as InputEventMouseButton
+	if k == null and m == null:
+		return
+	# The click that started listening is a left click; ignore left clicks.
+	if m and m.button_index == MOUSE_BUTTON_LEFT:
 		return
 	get_viewport().set_input_as_handled()
-	if k.physical_keycode == KEY_ESCAPE and _listening != "pause":
+	if k and k.physical_keycode == KEY_ESCAPE and _listening != "pause":
 		_stop_listening()
 		return
-	var key := k.physical_keycode if k.physical_keycode != KEY_NONE else k.keycode
 	var id := _listening
-	var swapped := Controls.rebind(id, key)
+	var slot := _listen_slot
+	if k and k.physical_keycode in [KEY_DELETE, KEY_BACKSPACE]:
+		_listening = ""
+		Controls.clear_slot(id, slot)
+		_build.call_deferred()
+		return
+	var code := Controls.code_for(event)
+	if code == 0:
+		return
 	_listening = ""
 	_listen_button = null
-	AudioManager.play_sfx(&"confirm", 0.0)
-	if swapped != "":
-		UIManager.show_toast("%s now on %s (swapped)" % [str(Controls.ACTIONS[swapped]["label"]), Controls.key_name(swapped)], &"warn")
-	_build.call_deferred()
+	var clash := Controls.conflicts_for(id, code)
+	if clash.is_empty():
+		Controls.rebind(id, code, slot)
+		AudioManager.play_sfx(&"confirm", 0.0)
+		_build.call_deferred()
+		return
+	var names: Array[String] = []
+	for o: String in clash:
+		names.append(str(Controls.ACTIONS[o]["label"]))
+	var buttons: Array[Dictionary] = [
+		{"label": "SWAP", "style": &"AccentButton", "name": "BindSwap", "callback": func() -> void:
+			Controls.rebind(id, code, slot, "swap")
+			_build()},
+		{"label": "KEEP BOTH", "style": &"", "name": "BindKeep", "callback": func() -> void:
+			Controls.rebind(id, code, slot, "keep")
+			_build()},
+		{"label": "CANCEL", "style": &"GhostButton", "name": "BindCancel", "callback": func() -> void: _build()},
+	]
+	AudioManager.play_sfx(&"denied", 0.0)
+	UIManager.show_dialog("BINDING CONFLICT", "%s is already used by %s. Swap them, or keep both (they'll fire together)?" % [Controls.code_name(code), ", ".join(names)], buttons)
 
 
 func _confirm_reset() -> void:

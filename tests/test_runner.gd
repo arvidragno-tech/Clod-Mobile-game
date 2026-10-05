@@ -335,6 +335,8 @@ func _e2e() -> void:
 	if _find_visible("DayReportClose") != null:
 		await _checkpoint("day_report")
 		await _click_named("DayReportClose")
+	# Delegated jobs can trigger incidents like your own do.
+	await _after_results()
 
 	# Dossier tabs
 	await _click_named("Nav_dossier")
@@ -431,18 +433,47 @@ func _e2e() -> void:
 	await _click_named("SettingsTab_2")
 	await _frames(5)
 	await _checkpoint("settings_controls")
+	# Rebind JOURNAL to I through the UI: conflict dialog, then swap.
+	await _click_named("Bind_journal_0")
+	await _frames(2)
+	await _key(KEY_I)
+	await _frames(4)
+	await _checkpoint("settings_bind_conflict")
+	await _click_named("BindSwap")
+	await _frames(4)
+	check(Controls.get_slots("journal")[0] == KEY_I and Controls.get_slots("inventory")[0] == KEY_J, "rebinding with a conflict swaps via the UI")
+	# A mouse button on a second slot.
+	await _click_named("Bind_inspect_1")
+	await _frames(2)
+	var mb := InputEventMouseButton.new()
+	mb.button_index = MOUSE_BUTTON_XBUTTON1
+	mb.pressed = true
+	get_viewport().push_input(mb, true)
+	await _frames(4)
+	check(Controls.get_slots("inspect")[1] == Controls.mouse(MOUSE_BUTTON_XBUTTON1) or not Controls.conflicts_for("inspect", Controls.mouse(MOUSE_BUTTON_XBUTTON1)).is_empty(), "mouse button rebinding via the UI")
+	if _find_visible("BindKeep"):
+		await _click_named("BindKeep")
+	await _click_named("ResetBindings")
+	await _frames(4)
+	check(Controls.all_conflicts().is_empty() and Controls.get_slots("journal")[0] == KEY_J, "reset all bindings via the UI")
+	await _click_named("SettingsTab_0")
+	await _frames(5)
+	await _checkpoint("settings_graphics")
 	await _click_named("SettingsTab_3")
+	await _frames(5)
+	await _checkpoint("settings_gameplay")
+	await _click_named("Choice_text_speed_3")
+	await _frames(5)
+	check(Settings.text_speed == 3, "text speed choice works")
+	await _click_named("SettingsTab_4")
 	await _frames(5)
 	var before := Settings.reduce_motion
 	await _click_named("Toggle_reduce_motion")
 	await _frames(5)
 	check(Settings.reduce_motion != before, "reduce-motion toggle works")
-	await _click_named("Choice_text_speed_3")
-	await _frames(5)
-	check(Settings.text_speed == 3, "text speed choice works")
 	await _click_named("Toggle_large_text")
 	await _frames(5)
-	await _checkpoint("settings_large_text")
+	await _checkpoint("settings_accessibility")
 	Settings.reset_to_defaults()
 	DirAccess.remove_absolute(Settings.path)
 	Settings.path = settings_path

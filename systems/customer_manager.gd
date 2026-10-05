@@ -101,6 +101,21 @@ func request_next_customer(delay: float = GameConfig.CUSTOMER_ARRIVAL_DELAY_SEC)
 		_arrival_timer.start(delay)
 
 
+func _notification(what: int) -> void:
+	if not Settings.pause_focus_loss:
+		return
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT:
+		set_arrivals_paused(true)
+	elif what == NOTIFICATION_APPLICATION_FOCUS_IN and not DialogueManager.is_active():
+		set_arrivals_paused(false)
+
+
+## Pause during dialogue / focus loss: nobody walks in meanwhile.
+func set_arrivals_paused(on: bool) -> void:
+	if _arrival_timer:
+		_arrival_timer.paused = on
+
+
 func dismiss_current() -> void:
 	if current_customer == null:
 		return

@@ -21,8 +21,10 @@ func _ready() -> void:
 func burst(pos: Vector2, color: Color, amount: int = 12, speed: float = 90.0, pixel_size: float = 3.0, gravity: float = 260.0) -> void:
 	if get_child_count() >= MAX_EMITTERS:
 		return
-	if Settings.reduce_motion:
-		amount = maxi(2, amount / 2)
+	if Settings.reduce_motion or Settings.effects_level() == 0:
+		amount = maxi(2, amount / 3)
+	elif Settings.effects_level() == 1:
+		amount = maxi(2, amount * 2 / 3)
 	speed *= unit_scale
 	gravity *= unit_scale
 	pixel_size = maxf(1.0, roundf(pixel_size * unit_scale))

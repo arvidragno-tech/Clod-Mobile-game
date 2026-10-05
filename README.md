@@ -1,13 +1,19 @@
 # UNDERCITY: RIPPER
 
 An original 2D pixel-art cyberpunk surgery sim for **Windows PC**, designed
-for **1920×1080** and played with **mouse and keyboard**. You run an
-underground clinic: take customers, diagnose them, install cyberware at a
-surgical workstation, handle complications, get paid, and climb toward the
-black market.
+for **1920×1080** and played with **mouse and keyboard**. You are an illegal
+ripperdoc in Caldera, a flooded megacity: start in a back-alley room with
+almost nothing, take customers, install cyberware at a surgical workstation,
+hire staff, buy clinics across the city, and decide what you become while a
+corporate conspiracy spreads through your patients' nerves.
 
-**Status: 2.0.0, the Windows PC version** (converted from the 1.0 iPhone
-build; all gameplay, progression and content carried over). The game has:
+**Status: 3.0.0, "The Underground"**: characters, clinics, staff, business,
+districts and a five-act story on top of the 2.0 PC game. The game has:
+- a dark, grimy look: seven lit clinic interiors with grime, waste and failing light; very little neon
+- detailed characters: layered portraits and bodies built from parts, occupation and faction looks, a ten-person story cast whose looks change with the story, idle animation everywhere
+- seven purchasable clinics in seven districts, six upgrade categories that visibly change the room, business days with rent, salaries, a ledger and debt
+- staff to hire, assign, grow and lose: specializations, ethics, traits, loyalty, stress and secrets
+- a five-act story: 23 branching conversations with persuasion / intimidation / bribery / empathy / lies / negotiation, delayed consequences, 21 quests, a comms inbox and seven endings
 - a desktop "medical workstation" UI: status bar, section nav, multi-panel screens
 - a guided first shift, then a gradual learning curve
 - 8 operations across 8 cyberware categories, with 27 implants (tiers 1–5)
@@ -15,8 +21,8 @@ build; all gameplay, progression and content carried over). The game has:
 - procedural customers with hidden conditions, previous operations, and a neural-load system
 - a grid inventory with drag & drop, and a cyberware database with CURRENT vs NEW comparison
 - 21 upgradeable tools, 5 factions with heat, a black market with unknown properties
-- a 4-branch skill tree, 6 clinic tiers, 20 story and random events
-- 3 save slots, rebindable keys, window modes and resolutions, accessibility options
+- a 4-branch skill tree, 6 factions, 20 story and random events
+- 3 save slots, full keyboard + mouse rebinding, graphics / audio (6 buses) / gameplay / accessibility options
 - a layered soundscape and detailed, animated pixel art at one crisp density
 
 [CHANGELOG.md](CHANGELOG.md) lists the changes. Design and code are documented in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and [docs/ART_BIBLE.md](docs/ART_BIBLE.md).
@@ -64,7 +70,9 @@ mode and resolution in **SETTINGS → GRAPHICS**.
 | Pick tool 1–9 | click the rack | 1–9 |
 | Emergency COAG / SEDATE / STABIL | click | Z / X / V |
 | Rotate implant | wheel when seated | , / . |
-| Inventory · customer · facility · journal · database | side nav | I · C · M · J · B |
+| Inventory · customer · journal · database · supply | side nav | I · C · J · B · U |
+| Facility · business · staff · city map · comms | side nav | K · L · T · M · N |
+| Dialogue: continue / answers 1–4 | click | ENTER (or SPACE) / 1–4 |
 | Quick save / quick load | | F5 / F9 |
 
 Everything gives feedback: hover highlights and a hover tick on every
@@ -81,8 +89,9 @@ step. The clinic room is interactive: the diagnostics terminal, operating
 table, storage bench, supply cabinet and records server open their screens;
 wheel or double-click zooms into the room.
 
+0. **The day.** Each clinic takes a number of jobs per day. When they're done (or whenever you like), **CLOSE FOR THE NIGHT**: rent, running costs, upkeep and salaries are paid, unpaid bills become debt, and the night report shows the ledger. People from the story come to the clinic to talk between jobs; those conversations open by themselves.
 1. **Clinic.** A customer shows up at the door, drawn with their own face, outfit and installed chrome. Click them, **SEE CUSTOMER** or press **C**. The left nav opens **INVENTORY**, **CYBERWARE DB**, **SUPPLY**, **SKILLS**, **FACILITY**, **JOURNAL** and, once you have the contacts, the **BLACK MARKET**.
-2. **Customer file.** A three-column dossier: identity and faction on the left; expandable **REQUEST**, **PAYMENT**, **RISK**, **MEDICAL HISTORY** and **PREVIOUS OPERATIONS** in the centre; neural load now vs after and the decision on the right. **ACCEPT JOB** (ENTER), or decline (which costs a little rep and faction standing).
+2. **Customer file.** A three-column dossier: identity and faction on the left; expandable **REQUEST**, **PAYMENT**, **RISK**, **MEDICAL HISTORY** and **PREVIOUS OPERATIONS** in the centre; neural load now vs after and the decision on the right. **PERFORM SURGERY YOURSELF** (ENTER), **ASSIGN RIPPERDOC** (one of your staff does it off-screen, with their odds and their ethics), **DEFER TO TOMORROW** (they may not come back) or **REFUSE** (a little rep and faction standing).
 3. **Diagnosis.** Scan body regions (at least 2). Scans can reveal **hidden conditions** (rejection-prone, clotting disorder, neural scarring...), which change how the operation behaves. Then pick a diagnosis.
 4. **Plan.** Choose which implant unit to install: stock, buy now, a black-market unit, or a salvaged one. Review the checks:
    - required tools (e.g. a drill for limbs)
@@ -110,26 +119,30 @@ Everything keys off the number of completed jobs (`scripts/core/difficulty.gd`):
 | Tutorial | 0 | Scripted easy patient, ×1.5 tolerances, no complications, guided steps |
 | Learning | 1–2 | Forgiving tolerances, at most one slow complication, calm and stable customers (neural load ≤ 45%), no hidden conditions, no random events, jobs match your tools |
 | Street | 3–7 | Assist fades to ×1.0. Hidden conditions, second complications and events begin. The black market arrives around job 6 (rep 18) |
-| Undercity | 8+ | Full game: risk scales with chrome tier, neural load and conditions. Tier-4 chrome comes at LV8, the late clinic tiers need high rep |
+| Undercity | 8+ | Full game: risk scales with chrome tier, neural load and conditions. Tier-4 chrome comes at LV8, the late clinics need high rep |
+
+On top of that, **SETTINGS → GAMEPLAY → DIFFICULTY** picks STORY (wider tolerances, more time, rent ×0.75), STANDARD or BRUTAL (tighter tolerances, shorter timers, rent ×1.3).
 
 Pacing was checked with `tests/balance_sim.tscn`, which runs the real economy for 40 jobs across several player profiles:
 - tier-2 chrome arrives about 8–10 minutes in
 - the black market opens at about 15–25 minutes
 - tier-3 chrome arrives at about 20–45 minutes
-- the third clinic tier comes after about 1 hour
+- the third clinic comes after about 1 hour (rent and running costs included)
 
 The simulator found no dead ends: there are never more than 3 impossible jobs in a row, money never goes negative, and a struggling player still upgrades the clinic. The checks also close a black-market buy/sell loop.
 
 ## Settings and accessibility
 
 Settings are stored in `%APPDATA%\UndercityRipper\settings.cfg`, separately from the saves, so a new game keeps them:
-- **Graphics:** window mode (windowed / borderless / fullscreen), windowed resolution (1920×1080, 1600×900, 1366×768, 1280×720), VSync, texture filtering (nearest = crisp pixels, linear = soft), effects quality (LOW turns off the CRT overlay and signal glitches)
-- **Audio:** master, music, ambience and effects volume
-- **Controls:** every key binding (click, then press the new key; a key already in use is swapped onto the other action), mouse sensitivity (implant rotation drags, wheel tuning, key nudges), reset bindings
-- **Gameplay:** text speed (slow / normal / fast / instant typewriter), large text, screen shake
+- **Graphics:** window mode (windowed / borderless / fullscreen), windowed resolution (1920×1080, 1600×900, 1366×768, 1280×720), VSync, frame-rate limit (30 / 60 / 120 / 144 / unlimited), pixel scaling (fit, or integer = pixel perfect), texture filtering, CRT filter, scanlines, screen-shake intensity, lighting quality, particle quality, glow, environment effects (dust, steam, sparks, drips, rain)
+- **Audio:** master, music, sound effects, ambient, dialogue and interface; each slider drives its own audio bus
+- **Controls:** ten categories (movement, interaction, surgery, tools, inventory, map, journal, dialogue, camera, general), two slots per action, keyboard keys or mouse buttons (middle, side buttons, right, wheel); clashes are detected per context (surgery keys can reuse dialogue keys) and offered as SWAP / KEEP BOTH; reset one action or all; mouse sensitivity
+- **Gameplay:** text speed, auto-advance dialogue, pause during dialogue, difficulty (story / standard / brutal), autosave (off / every job / every night; quick save, the pause menu and quitting always save), pause on focus loss, confirm dangerous actions, tutorial hints, tooltips, damage feedback
 - **Accessibility:**
+  - UI scale (with fit scaling) and text scale, large text
   - high contrast: brighter secondary text and a lighter CRT overlay
-  - reduce motion: no shake, flicker or glitch, and fewer particles
+  - colour-blind indicators: `[+]` `[~]` `[!]` markers on colour-coded odds and ledgers
+  - reduced shake, reduced flashing (no strobing, glitch bursts or cyberware flicker), reduced effects, reduce motion
   - colour-independent status everywhere: `!` on warning vitals, `+`/`x` on plan checks, ▲ ▼ ? ✕ on comparisons, neural bands named in text
 - Haptics remain in the code for touch devices but are hidden on PC.
 
@@ -139,7 +152,8 @@ Settings are stored in `%APPDATA%\UndercityRipper\settings.cfg`, separately from
 project.godot            Engine config (1920x1080 canvas, stretch, autoloads, input, renderer, Windows icon, user dir)
 export_presets.cfg       Windows Desktop export preset (x86_64, embedded .pck, icon, version info)
 data/                    Game content as JSON (cyberware, tools, surgeries, complications, characters,
-                         archetypes, names, dialogue, conditions, factions, skills, clinic tiers,
+                         archetypes, names, dialogue, conditions, factions, skills, clinics + upgrades + overlays,
+                         districts, staff, cast, appearance rules, dialogues, quests, story, comms,
                          events, rumors, black market, palettes, character parts)
 systems/                 Autoload singletons (the game's services)
 scripts/
@@ -183,7 +197,12 @@ LICENSES/                Font licences (SIL OFL 1.1)
 | `ProgressionManager` | XP, levels, skill points, records |
 | `FactionManager` | 5 faction standings and heat |
 | `SkillManager` | Skill tree: Surgery / Cybernetics / Medicine / Underworld |
-| `ClinicManager` | Clinic tiers 0–5 |
+| `ClinicManager` | Seven clinics (owned / active), upgrades and overlays |
+| `WorldManager` | Districts of Caldera, influence, walk-in and event weights |
+| `BusinessManager` | Business days, ledger, nightly costs, debt |
+| `StaffManager` / `EmployeeAI` | Hiring board, staff, assignment odds and refusals, nightly growth |
+| `CharacterManager` / `CharacterAppearanceManager` / `CharacterPortraitManager` / `CharacterAnimationManager` | Story cast, appearance rules and events, portraits, idle animation |
+| `StoryManager` / `DialogueManager` / `QuestManager` / `CommsManager` | Acts, beats, consequences, endings; conversations; quests; inbox |
 | `StoryManager` | Story flags, contacts, rumours |
 | `EventManager` | Random and story events with choices, timed modifiers |
 | `BlackMarketManager` | Stock, unknown traits, buy / sell / study / modify / scrap, cases |
@@ -210,7 +229,7 @@ filter, so exports pick the files up.
 Most new content is a data entry (the full table is in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#adding-content)):
 - **New implant:** an entry in `data/cyberware.json`. The icon is chosen by category and tier.
 - **New surgery:** an entry in `data/surgeries.json`. It lists stages by `type` with their own params, so no code is needed.
-- **New event, condition, archetype, faction, skill or clinic tier:** the matching JSON file.
+- **New event, condition, archetype, faction, skill, clinic, upgrade, district, quest, conversation or story beat:** the matching JSON file (`data/`). Conversations are node graphs in `data/dialogues.json`; beats in `data/story.json` fire them.
 - **New interaction type:** subclass `SurgeryStage` and register it in `surgery_stage_registry.gd`.
 
 ## How the surgery system works
@@ -314,13 +333,17 @@ Details are in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#neural-load).
 - **What:**
   - money, XP/level, skill points and ranks, reputation
   - faction standings and heat
-  - clinic tier
+  - owned clinics, the active clinic and every installed upgrade; business day, ledger history and debt; district influence
+  - employees (stats, traits, loyalty, stress, history, appearance), the hiring board
+  - the story cast's relationships, fear and appearance changes
+  - story act, flags, pending consequences, endgame paths, counters, queued conversations, the chosen ending
+  - quests and their states, the comms inbox, every dialogue choice
   - tools, implant instances (condition and traits), supplies, parts and tokens
   - black-market stock
   - story flags, contacts, rumours, pending event and timed modifiers
   - customer queue and history, and the waiting customer
   - records and settings
-- **Settings** are stored separately in `settings.cfg`.
+- **Settings and key bindings** are stored separately in `settings.cfg`.
 - **Where:** `user://` is redirected to a per-user folder (`application/config/use_custom_user_dir`), so no admin rights are needed:
   - Windows: `%APPDATA%\UndercityRipper\saves\slot_1.json` … `slot_3.json` (e.g. `C:\Users\<you>\AppData\Roaming\UndercityRipper\saves\`)
   - Linux (from source): `~/.local/share/UndercityRipper/saves/`; macOS: `~/Library/Application Support/UndercityRipper/saves/`
@@ -332,21 +355,23 @@ Details are in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#neural-load).
 - If the app is killed between the write and the swap, the temp file is recovered.
 - A failed write shows a toast.
 
-The format is version 3, and `_migrate()` upgrades older saves:
+The format is version 4, and `_migrate()` upgrades older saves:
 - v1 → v2: stock becomes implant instances, veterans get clinic tier 1, and the waiting customer is kept.
 - v2 → v3: settings move out of the save, and veterans skip the tutorial.
-- **When:** after every operation, purchase and decline, on F5 / pause-menu SAVE, and when the window loses focus or closes (`FOCUS_OUT` / `WM_CLOSE_REQUEST`). An operation in progress is never saved: if the game is killed mid-surgery, you reopen in the clinic, before the operation, with the same customer waiting.
+- v3 → v4: the six old clinic tiers map onto the seven clinics (0→back alley, 1→Undercity, 2→Furnace Line, 3→Old Caldera, 4→Meridian Heights, 5→Exclusion Zone; the back-alley room stays owned); business, world, staff, story, quests, comms and dialogue start fresh.
+- **When:** with AUTOSAVE = EVERY JOB (default) after every operation, purchase and decline; with EVERY NIGHT only when you close for the night; always on F5 / pause-menu SAVE, and when the window loses focus or closes (`FOCUS_OUT` / `WM_CLOSE_REQUEST`). An operation in progress is never saved: if the game is killed mid-surgery, you reopen in the clinic, before the operation, with the same customer waiting.
 
 ## Audio
 
 `tools/generate_audio.py` synthesises the whole soundscape deterministically
 (standard library plus `ffmpeg` for OGG):
-- **Music:** three seamless loops (clinic, surgery, black market) that crossfade between screens.
-- **Ambience:** four layers (electrical hum, ventilation, CRT buzz, distant city) mixed per screen profile, plus random one-shots: drips, sirens, trains, servos, beeps.
-- **SFX hooks:** `click`, `hover`, `tool`, `cut`, `burn`, `clamp`, `zap`, `stitch`, `implant`, `stage`, `mistake`, `warning`, `success`, `failure`, `customer`, `cash`, `levelup`, `drill`, `glitch`, `event`, `beep`, `servo`, `activate`, `critical`, `confirm`, `back`, `denied`, `unlock`, `purchase`, `heartbeat`, `spark`, `tutorial`.
+- **Music:** four seamless loops that crossfade between screens: dark minimal industrial for the clinic and the black market (a low drone, metal clanks rung through a comb filter, a press thumping in another room, a distant bell), a tense pulse for surgery, and a near-silent drone for conversations.
+- **Ambience:** five layers (electrical hum, ventilation, CRT buzz, distant city and rain, a pump station through the wall) mixed per screen profile, plus random one-shots: drips, sirens, trains, servos, beeps.
+- **SFX hooks:** `click`, `hover`, `tool`, `cut`, `burn`, `clamp`, `zap`, `stitch`, `implant`, `stage`, `mistake`, `warning`, `success`, `failure`, `customer`, `cash`, `levelup`, `drill`, `glitch`, `event`, `beep`, `servo`, `activate`, `critical`, `confirm`, `back`, `denied`, `unlock`, `purchase`, `heartbeat`, `spark`, `tutorial`, `voice` (dialogue blips, pitched per character), `comms`.
 
-Every button clicks on press and ticks on hover. Four buses (Master, Music,
-Ambience, SFX) map to the four volume sliders. Any file can be replaced 1:1
+Every button clicks on press and ticks on hover. Six buses (Master, Music,
+Ambience, SFX, Dialogue, UI) map to the six volume sliders: interface sounds
+play on UI, voices on Dialogue. Any file can be replaced 1:1
 with final audio.
 
 ## Art pipeline
@@ -358,9 +383,13 @@ at a single global density (1 art pixel = 3 canvas units on the 1920×1080 canva
 - shaded primitives with selective outlines
 - banded dithered lighting
 
-Characters are palette-indexed parts, composited and recoloured at runtime
-(`CharacterArt`), so every customer looks different and their installed chrome
-shows. The rules are in [docs/ART_BIBLE.md](docs/ART_BIBLE.md).
+Characters are palette-indexed parts packed into atlases
+(`tools/art/characters2.py` → `data/character_parts.json`), composited and
+recoloured at runtime (`CharacterArt`), so every customer looks different and
+their installed chrome shows. Clinics (`tools/art/clinics.py`) are rendered
+per pixel with lights; each upgrade overlay is the room re-rendered with the
+upgrade, diffed against the base and cropped, so it carries the room's light.
+The city map is `tools/art/citymap.py`. The rules are in [docs/ART_BIBLE.md](docs/ART_BIBLE.md).
 
 ```sh
 python3 tools/generate_art.py                 # all groups, ~5 s

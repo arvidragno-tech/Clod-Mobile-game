@@ -81,7 +81,7 @@ Results ◄── SurgeryManager ◄──BEGIN── Operation plan (implant un
 
 Every source adds plain deltas, and consumers use `ModifierManager.value(key)` (additive) or `.mult(key)` (1 + value). The sources are:
 - skills: `data/skills.json` `effect_per_rank`
-- clinic tiers: `data/clinic_tiers.json` `modifiers`
+- clinics: `data/clinics.json` `modifiers` + installed upgrades (`data/clinic_upgrades.json`)
 - owned tools: `data/tools.json` `modifiers`
 - timed event effects: `EventManager.temp_modifiers`, which expire after N operations
 
@@ -213,3 +213,74 @@ Version 3 (`GameConfig.SAVE_VERSION`):
 - **Inventory grid.** `ItemSlot` is a drawn 112 px cell supporting hover, click, double-click (inspect → database), right-click (set CURRENT) and Godot drag & drop (`_get_drag_data` / `_drop_data`): dropping on another slot swaps storage order (saved), dropping on a COMPARE slot loads the comparison.
 - **Save slots.** `SaveManager.save_dir` + `slot_path(n)`; `use_slot(n)` switches the active file and remembers it in `Settings.last_slot`; `get_slot_info(n)` reads the `meta` summary without loading the slot.
 - **Instrument wear.** `InventoryManager.tool_condition` (0–100 per tool id, saved), `wear_tools()` after each operation, `tool_condition_factor()` feeds `SurgeryManager.get_tool_precision()`, `service_tools()` restores everything for credits.
+
+---
+
+## 3.0: the underground (characters, clinics, staff, business, story)
+
+### New autoloads
+
+| Autoload | Owns | Saved |
+|---|---|---|
+| `CharacterAppearanceManager` | Appearance rules (`data/appearance_rules.json`): generation from occupation, faction, wealth, age, personality and installed chrome; v1→v2 migration; appearance events (`lose_eye`, `cyber_arm`, `upgrade_outfit:`, `faction:`, `expr:`...) | no (pure) |
+| `CharacterManager` | Story cast (`data/cast.json`, `CharacterData`): relationship value and state (hostile … loyal, romantic), fear, met, appearance after events | yes |
+| `CharacterPortraitManager` | "Who is this": cast, staff or customer → appearance, backdrop, animation profile, accent, relationship; pre-composites expressions before a conversation | no |
+| `CharacterAnimationManager` | One ticker for blink, gaze, breath, tremor, idle actions and cyberware flicker on every registered view; redraws a view only when its state changed | no |
+| `WorldManager` | Districts (`data/districts.json`), visited, influence; walk-in weights (archetype × district) and event weights (district events ×2) | yes |
+| `BusinessManager` | Days, job capacity, categorised ledger (every `EconomyManager` movement carries a category and is emitted as `EventBus.transaction`), nightly settlement, debt and interest, day reports | yes |
+| `StaffManager` (+ `EmployeeAI`) | Hiring board, employees, hire / fire / transfer / raises, assignment (`EmployeeAI.refusal`, `success_chance`, `perform`), nightly stress / loyalty / growth / secrets, staff-run clinics | yes |
+| `CommsManager` | Inbox: message, call, email, encrypted, contract (actions with effects) from `data/comms.json` templates | yes |
+| `QuestManager` | Quests (`data/quests.json`): start, objective evaluation, deadlines, rewards, states | yes |
+| `DialogueManager` | Conversation graphs (`data/dialogues.json`): nodes, options, checks and odds, effects, choice log | yes (choices) |
+| `StoryManager` (extended) | Acts, beats, delayed consequences, talk queue, endgame paths, counters, endings (`data/story.json`), plus flags and rumours as before | yes |
+
+`ClinicManager` was rewritten around `data/clinics.json` (seven clinics,
+owned + active index, per-clinic upgrades from `data/clinic_upgrades.json`,
+overlay sprites from `data/clinic_overlays.json`) and keeps the old tier API
+(`tier`, `get_next_tier`, `upgrade`, `get_tier_data`) so existing screens and
+saves keep working.
+
+### Flow
+
+```
+customer arrives (WorldManager weights the archetype by district)
+ └─ customer file: PERFORM (surgery as before) | ASSIGN (StaffManager.assign → EmployeeAI)
+                   | DEFER (queue with due_day) | REFUSE
+      └─ job done → BusinessManager.record_job → StoryManager.check()
+                     (beats → talk queue / comms / quests; act advance; QuestManager.check_all)
+day full → CLOSE FOR THE NIGHT → BusinessManager.end_day
+      → StaffManager.end_of_day (stress, loyalty, growth, secrets, other clinics)
+      → rent / running / upkeep / salaries / interest → report → EventBus.day_ended
+      → EventBus.day_started → StoryManager: due consequences → talks / events / comms
+clinic screen: pending event > queued talk (DialoguePanel) > customer
+```
+
+### Story data
+
+- **Conversation** (`dialogues.json`): `{character, title, act, start, nodes}`; a node has `speaker`, `expr` (portrait expression), `text`, optional `effects` on entry, and `options` or `next`. An option has `kind` (plain, refuse, persuade, intimidate, bribe, empathy, lie, negotiate), `mod`, `requires` (`flag`, `flag_any`, `rel_min`, `ending`), `cost`, `effects` / `fail_effects`, `next` / `fail_next`.
+- **Effects** (`StoryManager.apply_effects`): `rel`, `fear`, `rel_other`, `flag` (one or a list), `money` (negative beyond your cash becomes debt), `debt`, `rep`, `faction`, `heat`, `path`, `quest`, `consequence {id, days}`, `appearance_char {id, event}`, `supplies`, `ending`.
+- **Beats** (`story.json`): `{act, when, do}`; `when` uses `StoryManager.cond` (`min_day`, `min_day_in_act`, `min_ops`, `min_rep`, `min_heat`, `flag`, `not_flag`, `flag_any`, `clinics`, `staff`, `staff_skill`, `faction_min`); `do` queues talks, sends comms, starts quests, sets flags. Each act has an `advance` condition.
+- **Consequences:** `schedule_consequence(id, days)`; on the due day the id resolves to a conversation, an event or a comms template, in that order.
+- **Endings:** available when their `requires` hold and you walked that path (path score > 0; "feared" is always open). The finale offers only the available ones.
+
+### Checks
+
+`DialogueManager.chance` (clamped 5–95%):
+- persuade 0.35 + rep/200 + relationship/250 + level×0.01
+- intimidate 0.3 + heat/200 + fear/200 + gangs/300 + feared path ×0.03
+- bribe 0.8 − relationship/400 (and it costs money)
+- empathy 0.45 + relationship/200 + respected path ×0.02
+- lie 0.4 + level×0.015 (−0.15 if they're suspicious)
+- negotiate 0.4 + level×0.02 + rep/300 + kingpin path ×0.02
+
+### Staff odds
+
+`EmployeeAI.success_chance` = 0.58 + 0.1 × (skill − difficulty) + precision / reliability terms, +0.12 when the implant category is in the specialization, + trait and clinic (`staff.skill`) modifiers, − 0.25 × stress, − hidden conditions, − 0.1 at critical projected neural load. Refusals come from ethics (minors, black-market chrome, corporate clients), traits (money first) and shift limits; hard refusals can be overridden with INSIST (loyalty and stress cost, remembered by the story).
+
+### Settings → effects
+
+`Settings.apply_runtime()` sets `Engine.max_fps`, the root's stretch mode (integer / fractional), content scale (UI scale, fit only), filtering and the tooltip delay. `Accessibility.apply` scales theme fonts by text scale. Consumers query `shake_scale()`, `flashing_allowed()`, `effects_level()`, `crt_enabled()`, `glow`, `environment_effects`, `lighting_quality`, `damage_feedback`, `confirm_dangerous` (`UIManager.guard`), `pause_dialogue` / `pause_focus_loss` (customer arrivals, surgery pause), `difficulty` (`Difficulty.assist`, `complication_time`, `cost_mult`) and `autosave` (`SaveManager.save_game(reason)`).
+
+### Controls
+
+`Controls.ACTIONS` lists every action with a category; categories map to contexts (global, surgery, dialogue) and only actions sharing a context can clash. A binding code is a keycode (> 0) or a negated mouse button (< 0); each action has two slots. Movement bindings are mirrored onto `ui_up` / `ui_down` / `ui_left` / `ui_right` so menus follow the layout.

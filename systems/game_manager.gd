@@ -27,7 +27,7 @@ func start_new_game() -> void:
 	StoryManager.unlock_rumor(&"welcome")
 	TutorialManager.start()
 	_begin_play()
-	SaveManager.save_game()
+	SaveManager.save_game(&"manual")
 	EventBus.new_game_started.emit()
 	UIManager.go_to(UIManager.SCREEN_CLINIC)
 
@@ -64,7 +64,7 @@ func load_slot(n: int) -> bool:
 func quick_save() -> void:
 	if not is_running or SurgeryManager.is_active:
 		return
-	if SaveManager.save_game():
+	if SaveManager.save_game(&"manual"):
 		UIManager.show_toast("Saved to slot %d" % SaveManager.slot, &"success")
 
 
@@ -138,7 +138,7 @@ var quit_enabled: bool = true
 
 func quit_to_desktop() -> void:
 	if is_running and not SurgeryManager.is_active:
-		SaveManager.save_game()
+		SaveManager.save_game(&"manual")
 	if not quit_enabled:
 		UIManager.go_to(UIManager.SCREEN_MAIN_MENU)
 		return
@@ -149,7 +149,7 @@ func quit_to_desktop() -> void:
 func quit_to_menu() -> void:
 	if SurgeryManager.is_active:
 		return
-	SaveManager.save_game()
+	SaveManager.save_game(&"manual")
 	UIManager.go_to(UIManager.SCREEN_MAIN_MENU)
 
 
@@ -177,7 +177,7 @@ func close_for_the_night() -> void:
 	if SurgeryManager.is_active or CustomerManager.has_customer():
 		return
 	var report := BusinessManager.end_day()
-	SaveManager.save_game()
+	SaveManager.save_game(&"night")
 	UIManager.show_day_report(report)
 	CustomerManager.request_next_customer()
 

@@ -116,7 +116,8 @@ func _draw() -> void:
 			var src_clip := Rect2(src.position + (clip.position - dst.position) / s, clip.size / s)
 			draw_texture_rect_region(tex[0], clip, src_clip)
 			var glow := float(_anim.get("glow", 1.0))
-			draw_texture_rect_region(tex[1], clip, src_clip, Color(1, 1, 1, 0.35 * glow))
+			if Settings.glow:
+				draw_texture_rect_region(tex[1], clip, src_clip, Color(1, 1, 1, 0.35 * glow))
 		_draw_action(r, s, cr)
 	# Grime vignette + scanlines + refresh sweep.
 	for i in 4:

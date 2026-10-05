@@ -5,7 +5,7 @@ extends RefCounted
 ## Scales a font size written for the old layouts to the 1080p design size
 ## (plus the Large Text bonus).
 static func fs(size: int) -> int:
-	return roundi(size * GameConfig.TEXT_SCALE) + Settings.font_bonus()
+	return roundi(size * GameConfig.TEXT_SCALE * Settings.font_scale()) + Settings.font_bonus()
 
 
 ## Desktop workstation frame: status bar on top, section navigation on the

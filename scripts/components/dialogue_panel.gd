@@ -22,6 +22,8 @@ var _line: Label
 var _options: VBoxContainer
 var _type_tween: Tween
 var _auto_timer: float = -1.0
+var _voice_pitch: float = 1.0
+var _last_chars: int = 0
 
 
 func _ready() -> void:
@@ -83,6 +85,9 @@ func _ready() -> void:
 	DialogueManager.check_rolled.connect(_on_check)
 	if not DialogueManager.is_active():
 		DialogueManager.start(dialogue_id)
+	AudioManager.enter_dialogue()
+	if Settings.pause_dialogue:
+		CustomerManager.set_arrivals_paused(true)
 	title.text = str(DialogueManager.get_dialogue().get("title", "")).to_upper()
 	_setup_speaker()
 	_on_node(DialogueManager.current_node())
@@ -95,6 +100,8 @@ func _exit_tree() -> void:
 	# ESC / closing the modal walks away from the conversation.
 	if DialogueManager.is_active():
 		DialogueManager.end()
+	AudioManager.exit_dialogue()
+	CustomerManager.set_arrivals_paused(false)
 	closed.emit()
 
 
@@ -104,6 +111,7 @@ func _setup_speaker() -> void:
 	if d.is_empty():
 		return
 	_portrait.set_appearance(d["appearance"], d["accent"], d["backdrop"], d["profile"])
+	_voice_pitch = float(d.get("voice", 1.0))
 	_name.text = str(d["name"]).to_upper()
 	_sub.text = "%s · %s" % [d["subtitle"], d["faction"]]
 	_refresh_status()
@@ -119,6 +127,13 @@ func _refresh_status() -> void:
 
 
 func _process(delta: float) -> void:
+	# Voice blips while the line types out.
+	if _type_tween and _type_tween.is_running():
+		var shown := int(_line.visible_ratio * _line.text.length())
+		if shown - _last_chars >= 3:
+			_last_chars = shown
+			if _line.text.substr(shown, 1) != " ":
+				AudioManager.play_voice(_voice_pitch)
 	if _auto_timer > 0.0:
 		_auto_timer -= delta
 		if _auto_timer <= 0.0 and DialogueManager.is_active() and not DialogueManager.current_node().has("options"):
@@ -132,6 +147,7 @@ func _on_node(n: Dictionary) -> void:
 	_refresh_status()
 	var text := str(n.get("text", ""))
 	_line.text = text
+	_last_chars = 0
 	if _type_tween:
 		_type_tween.kill()
 	var cps := Settings.chars_per_second()
@@ -237,7 +253,17 @@ func _on_line_input(event: InputEvent) -> void:
 		_line.visible_ratio = 1.0
 
 
-func _unhandled_key_input(event: InputEvent) -> void:
-	if event.is_pressed() and not event.is_echo() and (event as InputEventKey).keycode == KEY_SPACE and DialogueManager.options().is_empty():
+func _unhandled_input(event: InputEvent) -> void:
+	if not event.is_pressed() or event.is_echo():
+		return
+	if (event.is_action("dialogue_next") or event.is_action("context")) and DialogueManager.options().is_empty():
 		_continue()
 		get_viewport().set_input_as_handled()
+		return
+	for i in 4:
+		if event.is_action("dialogue_%d" % (i + 1)):
+			var b := _options.get_node_or_null("DialogueOption_%d" % i) as Button
+			if b and not b.disabled:
+				b.pressed.emit()
+			get_viewport().set_input_as_handled()
+			return

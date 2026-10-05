@@ -315,7 +315,8 @@ func _toggle_staff() -> void:
 		row.add_child(v)
 		v.add_child(UIKit.label(str(e["name"]), &"", true, Palette.TEXT, 15))
 		var chance := roundi(float(o["chance"]) * 100.0)
-		v.add_child(UIKit.label("%s · %d%% · stress %d" % [StaffManager.spec_label(e), chance, roundi(float(e["stress"]))], &"DimLabel", true, Palette.OK if chance >= 70 else (Palette.WARN if chance >= 45 else Palette.DANGER), 13))
+		var lvl: StringName = &"good" if chance >= 70 else (&"warn" if chance >= 45 else &"bad")
+		v.add_child(UIKit.label("%s%s · %d%% · stress %d" % [Accessibility.tag(lvl), StaffManager.spec_label(e), chance, roundi(float(e["stress"]))], &"DimLabel", true, Palette.OK if chance >= 70 else (Palette.WARN if chance >= 45 else Palette.DANGER), 13))
 		var why := str(o["refusal"])
 		if why != "":
 			v.add_child(UIKit.label(why, &"DimLabel", true, Palette.WARN, 13))

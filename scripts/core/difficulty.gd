@@ -24,6 +24,21 @@ const EARLY_LOAD_CAP := 45.0
 const EARLY_LOAD_CAP_UNTIL_OP := 4
 
 
+## Player difficulty (Settings): STORY, STANDARD, BRUTAL.
+const LEVEL_ASSIST := [1.25, 1.0, 0.88]
+const LEVEL_COMPLICATION_TIME := [1.35, 1.0, 0.82]
+const LEVEL_COSTS := [0.75, 1.0, 1.3]
+
+
+static func level() -> int:
+	return Settings.difficulty
+
+
+## Rent, running costs and salaries scale with difficulty.
+static func cost_mult() -> float:
+	return LEVEL_COSTS[level()]
+
+
 static func ops() -> int:
 	return EventManager.operations
 
@@ -33,11 +48,11 @@ static func _pick(table: Array, i: int) -> float:
 
 
 static func assist(op_count: int = -1) -> float:
-	return _pick(ASSIST, ops() if op_count < 0 else op_count)
+	return _pick(ASSIST, ops() if op_count < 0 else op_count) * LEVEL_ASSIST[level()]
 
 
 static func complication_time(op_count: int = -1) -> float:
-	return _pick(COMPLICATION_TIME, ops() if op_count < 0 else op_count)
+	return _pick(COMPLICATION_TIME, ops() if op_count < 0 else op_count) * LEVEL_COMPLICATION_TIME[level()]
 
 
 ## How many complications an operation may have at most.

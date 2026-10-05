@@ -101,7 +101,7 @@ func on_enter(_params: Dictionary) -> void:
 	var mat := ShaderMaterial.new()
 	mat.shader = load("res://assets/shaders/bm_glitch.gdshader")
 	glitch.material = mat
-	var intensity := 0.0 if Settings.reduce_motion or Settings.effects_quality == 0 else (0.35 if Settings.effects_quality == 1 else 0.6)
+	var intensity := 0.0 if Settings.reduce_motion or not Settings.flashing_allowed() or Settings.effects_level() == 0 else (0.35 if Settings.effects_quality == 1 else 0.6)
 	mat.set_shader_parameter(&"intensity", intensity)
 	# The shader samples the whole screen: skip the pass entirely when off.
 	glitch.visible = intensity > 0.0

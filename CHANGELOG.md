@@ -4,6 +4,54 @@ All notable changes to *UNDERCITY: RIPPER*. Versions follow
 `application/config/version` in `project.godot` and the Windows file version
 in `export_presets.cfg`.
 
+## 3.0.0 — The Underground: characters, clinics, staff, story
+
+A large continuation of the PC game. Nothing was rebuilt from scratch; the
+surgery, cyberware, inventory, factions, black market and progression all
+carry over and now sit inside a business, a city and a story.
+
+### Visual identity: dark, grimy, underground
+- Seven new clinic interiors (400×224, lit per pixel) with a grime pass: water streaks from leaking joints, rust runs, mould, scuffed paths to the table, trash, used syringes, bloody gauze, stained drapes, waste bags. Props: dead and dying CRT stacks, encrypted terminals, coolant leaks wrapped in tape, sharps boxes, stained mattresses, chain hoists, tarp walls, limb racks, caged sodium lamps, flickering fluorescent tubes.
+- Far less neon: most light is dirty tungsten, sodium or cold fluorescent; signage is a single half-dead sign; cabinets and tanks dimmed.
+- City map of Caldera: procedural rooftops per district palette, the ring wall, the canal and the drowned edge.
+
+### Characters (primary pillar)
+- New part-based character art: 96×112 layered portraits and 40×80 skeleton-based bodies (4 builds × 4 postures), 18 outfits, 14 hair styles, 18 face cyberware pieces, 19 accessories, scars, tattoos, piercings, makeup, expressions and gaze, palette-indexed materials (skin, synthetic skin, metal, leather, fabric, grime, blood).
+- Appearance rules per occupation and faction with restrained group palettes (corporate, gang, workers, medical, black market, military); generated customers read as their job at a glance.
+- Story cast of ten with background, motivation, arc, relationships, speech style, silhouette and cyberware; appearance changes persist (a lost eye becomes an optic, faction colours, wealth, skill).
+- Animation: one ticker for blinking, gaze, breathing, tremor, smoking, checking cyberware, fidgeting, glancing and cyberware flicker on portraits and in-room bodies.
+
+### Clinics, upgrades, business, districts
+- Seven purchasable clinics, each with price, rent, running cost, customer pool (district), reputation, security, staff capacity, jobs per day, upgrade slots and Undermarket access. Own several, move between them, sell them.
+- Six upgrade categories (surgery, diagnostics, security, black market, staff, customer facilities) × 3 levels; every level is a pre-lit overlay sprite that visibly changes the room and carries its own animation anchors.
+- Business days: a job capacity per day, CLOSE FOR THE NIGHT, nightly rent / running costs / upkeep / salaries, debt with interest, a night report, and a BUSINESS screen (categorised ledger, profit chart, obligations, pay or borrow).
+- Seven districts (Sump, Furnace Line, Glow Strip, Velvet Tier, Old Caldera, Meridian Heights, Lyra Exclusion Zone) shape who walks in and which incidents happen; CITY MAP screen.
+- New faction: Lyra Biocomp.
+
+### Staff
+- Hiring board shaped by district; seven specializations; stats, salary, personality, ethics (no minors, no black-market chrome, no corporate work), visible and hidden traits (informants, gamblers, stim users, ambitious, loyal...), loyalty, stress, ambition and relationships.
+- Customer file: PERFORM SURGERY YOURSELF / ASSIGN RIPPERDOC (live odds and refusals in their own words; insist at a loyalty cost) / DEFER / REFUSE.
+- Nightly growth and wear: burnout, raise requests, quitting, informants caught on camera, theft from the till; staff run your other clinics; skill shows on their look (coat, loupe, precision optics). STAFF screen.
+
+### Story
+- Five acts (SURVIVAL, REPUTATION, POWER, CONSPIRACY, CONSEQUENCE) driven by beats, 23 branching conversations (138 nodes), persuade / intimidate / bribe / empathy / lie / negotiate / refuse checks with odds from who you are and who you're talking to.
+- Dilemmas with consequences that land days later; seven endings (respected, kingpin, corporate, network, investigator, creator, feared).
+- Dialogue panel: 5× animated portrait with name, occupation, faction and relationship status; expressions follow each line; voice blips; tagged choices.
+- 21 quests across main, side, staff, customer, faction, black market and clinic; comms inbox with messages, calls, emails, encrypted drops and contracts. Journal: QUESTS, COMMS, PEOPLE, FACTIONS, RUMORS, PROGRESSION, STORY.
+
+### Settings, controls, audio
+- Graphics: frame-rate limit, integer or fit pixel scaling, CRT filter, scanlines, shake intensity, lighting and particle quality, glow, environment effects (plus window mode, resolution, VSync, filtering).
+- Audio: six real buses (Master, Music, SFX, Ambient, Dialogue, UI); every slider drives its own bus. New darker industrial music, a pump-station ambience layer, a near-silent dialogue mix, voice blips and a comms chime.
+- Controls: ten categories, two slots per action, keyboard and mouse-button bindings, context-aware conflict detection with SWAP / KEEP BOTH, reset per action and reset all; menus follow movement bindings.
+- Gameplay: auto-advance dialogue, confirm dangerous actions, tutorial hints, tooltips, pause during dialogue, pause on focus loss, difficulty (STORY / STANDARD / BRUTAL), autosave (off / every job / every night), damage feedback.
+- Accessibility: UI scale, text scale, colour-blind indicators, reduced shake, reduced flashing, reduced effects (plus high contrast and reduce motion).
+
+### Saves
+- Save format v4: clinics and upgrades, business days and debt, districts, characters (relationships and appearance changes), staff, story (acts, flags, pending consequences, paths, counters), quests, comms and dialogue choices. v1–v3 saves migrate (old tiers map onto the new clinics).
+
+### QA
+- Unit suite grew to 500+ checks (clinics, overlays, business, districts, staff, story content integrity, two full-campaign playthroughs reaching different endings, settings, buses, bindings, save v3→v4), the E2E bot plays conversations, hires staff, assigns a job, rebinds keys and visits every new screen; the compile check now fails on scripts that load but don't compile.
+
 ## 2.0.0 — Windows PC conversion (1920×1080, mouse + keyboard)
 
 The game is now a **Windows PC game** built for **1920×1080** with **mouse and

@@ -80,8 +80,8 @@ func projected_costs() -> Array[Dictionary]:
 	for i in ClinicManager.owned:
 		var c := ClinicManager.daily_costs(i)
 		var nm := str(ClinicManager.get_tier_data(i).get("name", ""))
-		out.append({"category": &"rent", "amount": int(c["rent"]), "note": nm})
-		out.append({"category": &"operating", "amount": int(c["operating"]), "note": nm})
+		out.append({"category": &"rent", "amount": _scaled(int(c["rent"])), "note": nm})
+		out.append({"category": &"operating", "amount": _scaled(int(c["operating"])), "note": nm})
 		var sec := 0
 		for lv in range(1, ClinicManager.upgrade_level(&"security", i) + 1):
 			sec += int(ClinicManager.upgrade_def(&"security", lv).get("upkeep", 0))
@@ -104,6 +104,10 @@ func projected_total() -> int:
 	for c in projected_costs():
 		n += int(c["amount"])
 	return n
+
+
+static func _scaled(v: int) -> int:
+	return int(round(v * Difficulty.cost_mult()))
 
 
 ## Closes the clinic for the night and settles the books. Returns the report.

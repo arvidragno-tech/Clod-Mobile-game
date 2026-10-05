@@ -21,7 +21,7 @@ func set_base_text(t: String) -> void:
 
 
 func _process(delta: float) -> void:
-	if Settings.reduce_motion:
+	if Settings.reduce_motion or not Settings.flashing_allowed():
 		if text != base_text:
 			text = base_text
 		return

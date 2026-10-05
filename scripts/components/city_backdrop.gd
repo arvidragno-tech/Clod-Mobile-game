@@ -48,7 +48,7 @@ func _layout() -> void:
 
 func _process(delta: float) -> void:
 	_time += delta
-	if not Settings.reduce_motion:
+	if not Settings.reduce_motion and Settings.environment_effects:
 		var img := Vector2(_tex.get_size()) if _tex else Vector2(180, 400)
 		for i in _drops.size():
 			var d := _drops[i]
@@ -89,7 +89,7 @@ func _draw() -> void:
 		var x0 := col_end * i / steps
 		draw_rect(Rect2(floorf(x0), 0, ceilf(col_end / steps), size.y), Color(0.02, 0.02, 0.05, 0.78 - i * 0.13))
 	# Cross sign buzz: occasionally drops out for a few frames.
-	if not Settings.reduce_motion and fmod(_time, 5.3) < 0.12:
+	if Settings.flashing_allowed() and fmod(_time, 5.3) < 0.12:
 		draw_rect(Rect2(_art(CROSS.position), CROSS.size * _scale), Color(0.02, 0.02, 0.04, 0.85))
 	# Door work light pulses slowly.
 	var pulse := 0.25 + 0.25 * sin(_time * 2.0)

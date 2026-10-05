@@ -19,6 +19,15 @@ const RESOLUTIONS: Array[Vector2i] = [Vector2i(1920, 1080), Vector2i(1600, 900),
 const WINDOW_MODES: Array[String] = ["windowed", "borderless", "fullscreen"]
 const WINDOW_MODE_NAMES: Array[String] = ["WINDOWED", "BORDERLESS", "FULLSCREEN"]
 const EFFECTS_NAMES: Array[String] = ["LOW", "MEDIUM", "HIGH"]
+const FPS_LIMITS: Array[int] = [30, 60, 120, 144, 0]
+const FPS_NAMES: Array[String] = ["30", "60", "120", "144", "UNLIMITED"]
+const PIXEL_SCALING: Array[String] = ["fit", "integer"]
+const PIXEL_SCALING_NAMES: Array[String] = ["FIT (FILL WINDOW)", "INTEGER (PIXEL PERFECT)"]
+const DIFFICULTY_NAMES: Array[String] = ["STORY", "STANDARD", "BRUTAL"]
+const AUTOSAVE_NAMES: Array[String] = ["OFF", "EVERY JOB", "EVERY NIGHT"]
+const UI_SCALES: Array[float] = [0.9, 1.0, 1.1]
+const TOOLTIP_DELAY := 0.45
+const UI_SCALE_NAMES: Array[String] = ["SMALL", "NORMAL", "LARGE"]
 
 const DEFAULTS := {
 	"master_volume": 0.9,
@@ -39,6 +48,35 @@ const DEFAULTS := {
 	"large_text": false,
 	"high_contrast": false,
 	"reduce_motion": false,
+	# Graphics
+	"fps_limit": 1,
+	"pixel_scaling": "fit",
+	"crt_filter": true,
+	"scanlines": true,
+	"shake_intensity": 1.0,
+	"lighting_quality": 2,
+	"glow": true,
+	"environment_effects": true,
+	# Audio
+	"dialogue_volume": 0.9,
+	"ui_volume": 0.7,
+	# Gameplay
+	"auto_advance": false,
+	"confirm_dangerous": true,
+	"tutorial_hints": true,
+	"tooltips": true,
+	"pause_dialogue": true,
+	"pause_focus_loss": true,
+	"difficulty": 1,
+	"autosave": 1,
+	"damage_feedback": true,
+	# Accessibility
+	"ui_scale": 1,
+	"text_scale": 1.0,
+	"colorblind": false,
+	"reduced_shake": false,
+	"reduced_flashing": false,
+	"reduced_effects": false,
 }
 
 var master_volume: float = 0.9
@@ -59,6 +97,31 @@ var text_speed: int = 1
 var large_text: bool = false
 var high_contrast: bool = false
 var reduce_motion: bool = false
+var fps_limit: int = 1
+var pixel_scaling: String = "fit"
+var crt_filter: bool = true
+var scanlines: bool = true
+var shake_intensity: float = 1.0
+var lighting_quality: int = 2
+var glow: bool = true
+var environment_effects: bool = true
+var dialogue_volume: float = 0.9
+var ui_volume: float = 0.7
+var auto_advance: bool = false
+var confirm_dangerous: bool = true
+var tutorial_hints: bool = true
+var tooltips: bool = true
+var pause_dialogue: bool = true
+var pause_focus_loss: bool = true
+var difficulty: int = 1
+var autosave: int = 1
+var damage_feedback: bool = true
+var ui_scale: int = 1
+var text_scale: float = 1.0
+var colorblind: bool = false
+var reduced_shake: bool = false
+var reduced_flashing: bool = false
+var reduced_effects: bool = false
 
 var path: String = PATH
 
@@ -90,6 +153,17 @@ func load_settings() -> void:
 	ambience_volume = clampf(ambience_volume, 0.0, 1.0)
 	sfx_volume = clampf(sfx_volume, 0.0, 1.0)
 	text_speed = clampi(text_speed, 0, TEXT_SPEEDS.size() - 1)
+	fps_limit = clampi(fps_limit, 0, FPS_LIMITS.size() - 1)
+	if not PIXEL_SCALING.has(pixel_scaling):
+		pixel_scaling = "fit"
+	shake_intensity = clampf(shake_intensity, 0.0, 1.5)
+	lighting_quality = clampi(lighting_quality, 0, 2)
+	dialogue_volume = clampf(dialogue_volume, 0.0, 1.0)
+	ui_volume = clampf(ui_volume, 0.0, 1.0)
+	difficulty = clampi(difficulty, 0, 2)
+	autosave = clampi(autosave, 0, 2)
+	ui_scale = clampi(ui_scale, 0, UI_SCALES.size() - 1)
+	text_scale = clampf(text_scale, 0.85, 1.4)
 	changed.emit()
 
 
@@ -147,7 +221,22 @@ func apply_display() -> void:
 			if screen.size.x > 0:
 				DisplayServer.window_set_position(screen.position + (screen.size - size) / 2)
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED if vsync else DisplayServer.VSYNC_DISABLED)
+	apply_runtime()
+
+
+## Settings that apply without touching the window: frame cap, filtering,
+## pixel scaling mode, UI scale.
+func apply_runtime() -> void:
+	Engine.max_fps = FPS_LIMITS[fps_limit]
+	# Tooltips off = a delay nobody will ever wait out.
+	ProjectSettings.set_setting("gui/timers/tooltip_delay_sec", TOOLTIP_DELAY if tooltips else 1.0e6)
 	apply_filter()
+	var tree := Engine.get_main_loop() as SceneTree
+	if tree:
+		var root := tree.root
+		root.content_scale_stretch = Window.CONTENT_SCALE_STRETCH_INTEGER if pixel_scaling == "integer" else Window.CONTENT_SCALE_STRETCH_FRACTIONAL
+		# Integer stretch floors the factor, so UI scale only applies in FIT.
+		root.content_scale_factor = UI_SCALES[ui_scale] if pixel_scaling == "fit" else 1.0
 
 
 func apply_filter() -> void:
@@ -157,7 +246,26 @@ func apply_filter() -> void:
 
 
 func shake_allowed() -> bool:
-	return screen_shake and not reduce_motion
+	return screen_shake and not reduce_motion and shake_intensity > 0.0
+
+
+## Multiplier for every camera shake.
+func shake_scale() -> float:
+	return shake_intensity * (0.35 if reduced_shake else 1.0)
+
+
+## Flashes, glitches and strobing lights.
+func flashing_allowed() -> bool:
+	return not reduced_flashing and not reduce_motion
+
+
+## Particle / ambient effect level 0..2 (reduced effects forces the minimum).
+func effects_level() -> int:
+	return 0 if reduced_effects else effects_quality
+
+
+func crt_enabled() -> bool:
+	return crt_filter and not reduced_effects and effects_quality > 0
 
 
 ## Characters per second, or 0 for instant.
@@ -167,3 +275,8 @@ func chars_per_second() -> float:
 
 func font_bonus() -> int:
 	return LARGE_TEXT_BONUS if large_text else 0
+
+
+## Multiplier for every themed font size (text scale slider).
+func font_scale() -> float:
+	return text_scale
