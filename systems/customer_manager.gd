@@ -125,8 +125,14 @@ func dismiss_current() -> void:
 
 
 func _on_arrival_timer_timeout() -> void:
-	current_customer = _next_customer()
+	# Whoever has been waiting on the bench goes first.
+	var seated := ClinicLifeManager.take_next()
+	current_customer = seated if seated else _next_customer()
 	if current_customer:
+		if seated:
+			TimeManager.advance(2)
+		else:
+			TimeManager.on_customer_arrived(current_customer.is_emergency)
 		if current_customer.character_id != &"":
 			StoryManager.meet(current_customer.character_id)
 		EventBus.customer_arrived.emit(current_customer)
@@ -143,6 +149,12 @@ func _next_customer() -> CustomerData:
 			var entry: Dictionary = queue[i]
 			queue.remove_at(i)
 			return CustomerData.from_save_dict(entry["customer"])
+	# People you've met before come back on their own schedule, changed.
+	var due := PeopleManager.due_people()
+	if not due.is_empty():
+		var back := PeopleManager.make_customer(due[_rng.randi() % due.size()])
+		if back:
+			return back
 	# Occasionally a recurring regular from the old days drops by.
 	if _rng.randf() < 0.12:
 		var regulars: Array[StringName] = []
@@ -173,6 +185,7 @@ func spawn_emergency() -> CustomerData:
 	c.bleed_multiplier *= 1.4
 	c.complication_risk *= 1.3
 	c.dialogue = "He's bleeding through a rag and his chrome is sparking. No time to talk."
+	generator.roll_budget(c)
 	_replace_current(c)
 	return c
 
@@ -227,32 +240,22 @@ func record_outcome(c: CustomerData, result: SurgeryResult) -> Dictionary:
 	if history.size() > 60:
 		history = history.slice(history.size() - 60)
 	notes["regular"] = regular
+	var outcome := "success" if result.success else ("death" if result.failure_reason == &"flatline" else "failed")
+	PeopleManager.after_visit(c, outcome, result.pay)
+	var person := PeopleManager.get_person(c.id)
+	notes["returning"] = int(person.get("next_day", -1)) >= 0
 	if result.success and _rng.randf() < get_post_op_risk(c, result.grade):
 		# The patient comes back with a failing wound: handled as a story event.
 		EventManager.queue_event(&"post_op_return")
 		notes["post_op"] = true
 		return notes
 	if result.success and result.grade in ["S", "A", "B"]:
-		if _rng.randf() < GameConfig.REFERRAL_CHANCE:
-			var friend := generator.generate({"faction": String(c.faction_id), "referred_by": c.display_name})
+		# Word of mouth: people who like you send friends.
+		var chance := GameConfig.REFERRAL_CHANCE + float(person.get("rel", 0)) / 300.0
+		if PeopleManager.rel_state(c.id) != "hostile" and _rng.randf() < chance:
+			var friend := PeopleManager.referral(c)
 			queue.append({"customer": friend.to_save_dict(), "due_op": EventManager.operations + _rng.randi_range(1, 3)})
 			notes["referral"] = true
-		if c.character_id == &"" and _rng.randf() < GameConfig.RETURN_CHANCE + (0.2 if regular else 0.0):
-			var again := CustomerData.from_save_dict(c.to_save_dict())
-			again.existing_cyberware.append(c.requested_cyberware_id)
-			again.revealed_conditions.clear()
-			var arch := _get_archetype(again.archetype_id)
-			if not arch.is_empty():
-				generator._roll_request(again, arch, {})
-				generator._roll_diagnosis(again)
-				again.scan_findings.clear()
-				generator._build_findings(again)
-			again.visits = visits
-			again.dialogue = str(dialogue.get("returning", ["Back again."])[0])
-			if regular:
-				again.pay_multiplier *= 1.0 + GameConfig.REGULAR_PAY_BONUS
-			queue.append({"customer": again.to_save_dict(), "due_op": EventManager.operations + _rng.randi_range(GameConfig.RETURN_DELAY_OPS.x, GameConfig.RETURN_DELAY_OPS.y)})
-			notes["returning"] = true
 	elif not result.success and _rng.randf() < GameConfig.COMPLAINT_CHANCE:
 		EventManager.queue_event(&"angry_relative")
 	return notes

@@ -76,6 +76,8 @@ static func success_chance(e: Dictionary, c: CustomerData) -> float:
 		p += float(spec.get("black_market_bonus", 0.0)) - 0.05
 	p += trait_value(e, "chance")
 	p -= 0.25 * float(e.get("stress", 0)) / 100.0
+	p += StaffLifeManager.team_modifier(e)
+	p += TimeManager.staff_modifier(e)
 	p += ModifierManager.value(&"staff.skill") * 0.5 - ModifierManager.value(&"complication.chance") * 0.5
 	if c:
 		p -= 0.05 * c.hidden_conditions.size()

@@ -106,6 +106,8 @@ var _music_a: AudioStreamPlayer
 var _music_b: AudioStreamPlayer
 var _music_id: StringName = &""
 var _layers: Dictionary = {}  # id -> AudioStreamPlayer
+## Reactive mix: source (time of day, tension...) -> {layer: multiplier}.
+var _mix_mods: Dictionary = {}
 var _oneshot_player: AudioStreamPlayer
 var _oneshot_timer: float = 12.0
 var _last_played: Dictionary = {}
@@ -248,9 +250,32 @@ func set_profile(id: StringName) -> void:
 	profile = id
 	var p: Dictionary = PROFILES[id]
 	play_music(p["music"])
-	var mix: Dictionary = p["layers"]
+	refresh_mix()
+
+
+## Ambience layers for the current profile, scaled by every reactive source.
+func layer_level(layer_id: StringName) -> float:
+	if profile == &"":
+		return 0.0
+	var v := float((PROFILES[profile]["layers"] as Dictionary).get(layer_id, 0.0))
+	for src: Variant in _mix_mods:
+		v *= float((_mix_mods[src] as Dictionary).get(String(layer_id), 1.0))
+	return clampf(v, 0.0, 1.5)
+
+
+func refresh_mix() -> void:
 	for layer_id: StringName in _layers:
-		_fade_layer(layer_id, float(mix.get(layer_id, 0.0)))
+		_fade_layer(layer_id, layer_level(layer_id))
+
+
+## Time of day, tension and danger reshape the ambience (multipliers per
+## layer, e.g. {"city": 1.4}).
+func set_mix_mod(source: StringName, mods: Dictionary) -> void:
+	if _mix_mods.get(source, {}) == mods:
+		return
+	_mix_mods[source] = mods.duplicate()
+	if profile != &"":
+		refresh_mix()
 
 
 ## Compatibility with Step 1/2 callers.

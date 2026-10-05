@@ -50,6 +50,21 @@ extends Resource
 @export var is_emergency: bool = false
 @export var visits: int = 0
 @export var referred_by: String = ""
+## Psychology (data/patients.json traits) and the mood they arrive in.
+@export var traits: Array[StringName] = []
+@export var mood: StringName = &"calm"
+## Finances: situation (desperate / poor / working / comfortable / wealthy /
+## criminal / corporate), what they can actually pay today, who backs them.
+@export var finance: StringName = &"working"
+@export var budget: int = 400
+@export var backer: StringName = &""
+## Payment terms agreed at intake (full, discount, free, overcharge, plan,
+## faction) and what changed since their last visit (returning people).
+@export var terms: StringName = &"full"
+@export var changes: Array[String] = []
+## Cyberware dependency stage (0 none .. 4 crisis).
+@export var dependency: int = 0
+@export var emergency_deadline: int = -1
 
 
 ## Authored recurring character (data/characters.json).

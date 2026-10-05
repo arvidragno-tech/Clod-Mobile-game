@@ -43,7 +43,7 @@ func generate(context: Dictionary = {}) -> CustomerData:
 	c.archetype_id = StringName(str(arch["id"]))
 	var fw := {}
 	for f: Variant in arch["factions"]:
-		fw[f] = float(arch["factions"][f]) * FactionManager.customer_weight(StringName(str(f)))
+		fw[f] = float(arch["factions"][f]) * FactionManager.customer_weight(StringName(str(f))) * WorldEventManager.faction_weight(StringName(str(f)))
 	c.faction_id = StringName(str(context.get("faction", pick_weighted(fw))))
 	var names: Dictionary = CustomerManager.names
 	c.display_name = "%s %s" % [pick(names["first"]), pick(names["last"])]
@@ -69,6 +69,7 @@ func generate(context: Dictionary = {}) -> CustomerData:
 	c.bleed_multiplier = rng.randf_range(0.9, 1.15)
 	c.complication_risk = rng.randf_range(0.85, 1.15)
 	c.pay_multiplier = float(arch.get("pay_mult", 1.0)) * (0.8 + 0.15 * c.wealth)
+	roll_psychology(c, str(arch["id"]))
 	_roll_existing_cyberware(c, arch)
 	# Learning curve: early patients are calm, stable and have no surprises
 	# (context "full_difficulty" opts out, e.g. for story spawns and tests).
@@ -84,6 +85,7 @@ func generate(context: Dictionary = {}) -> CustomerData:
 	_roll_diagnosis(c)
 	_build_findings(c)
 	_build_history(c)
+	roll_budget(c)
 	c.appearance = build_appearance(c, arch)
 	c.dialogue = _build_dialogue(c, context)
 	if context.has("referred_by"):
@@ -107,7 +109,7 @@ func _pick_archetype(context: Dictionary) -> Dictionary:
 		for f: Variant in a["factions"]:
 			w += float(a["factions"][f]) * FactionManager.customer_weight(StringName(str(f)))
 		# The district decides who walks past the door.
-		weights[i] = w * WorldManager.customer_weight(str(a["id"]))
+		weights[i] = w * WorldManager.customer_weight(str(a["id"])) * TimeManager.archetype_weight(str(a["id"])) * WorldEventManager.archetype_weight(str(a["id"]))
 	return list[int(pick_weighted(weights))]
 
 
@@ -244,17 +246,79 @@ func build_appearance(c: CustomerData, arch: Dictionary) -> Dictionary:
 	return CharacterAppearanceManager.generate(ctx, rng)
 
 
+## Traits (1-2, weighted by archetype), finances and today's budget.
+## Traits nudge patience, risk appetite and the portrait's idle animation.
+func roll_psychology(c: CustomerData, arch_id: String) -> void:
+	var data: Dictionary = PeopleManager.patients
+	var tw: Dictionary = data.get("trait_weights_by_archetype", {})
+	var weights: Dictionary = (tw.get(arch_id, tw.get("_default", {"nervous": 1})) as Dictionary).duplicate()
+	c.traits.clear()
+	for i in (2 if rng.randf() < 0.45 else 1):
+		if weights.is_empty():
+			break
+		var t := str(pick_weighted(weights))
+		weights.erase(t)
+		c.traits.append(StringName(t))
+	var defs: Dictionary = data.get("traits", {})
+	for t in c.traits:
+		var d: Dictionary = defs.get(String(t), {})
+		c.patience = clampi(c.patience + int(d.get("patience", 0)), 5, 100)
+		c.risk_tolerance = clampf(c.risk_tolerance + float(d.get("risk", 0.0)), 0.0, 1.0)
+		if d.has("anim"):
+			c.personality = StringName(str(d["anim"]))
+	c.mood = &"nervous" if c.traits.has(&"nervous") or c.traits.has(&"paranoid") else (&"angry" if c.traits.has(&"aggressive") else &"calm")
+	var fw: Dictionary = data.get("finance_by_wealth", {}).get(str(c.wealth), {"working": 1})
+	c.finance = StringName(str(pick_weighted(fw)))
+	var fd: Dictionary = data.get("finances", {}).get(String(c.finance), {})
+	var b: Array = fd.get("budget", [300, 600])
+	c.budget = rng.randi_range(int(b[0]), int(b[1]))
+	c.backer = StringName(str(fd.get("backer", "")))
+	if c.traits.has(&"dependent"):
+		c.dependency = 1
+
+
+## What they can pay today: a share of the expected fee for the job they
+## want, set by their finances (data/patients.json budget_ratio).
+func roll_budget(c: CustomerData) -> void:
+	var fd: Dictionary = PeopleManager.patients.get("finances", {}).get(String(c.finance), {})
+	var fee := estimate_fee(c)
+	if fee <= 0 or not fd.has("budget_ratio"):
+		return
+	var r: Array = fd["budget_ratio"]
+	var ratio := rng.randf_range(float(r[0]), float(r[1]))
+	# While learning the job, everyone can pay.
+	if Difficulty.ops() < Difficulty.HIDDEN_CONDITIONS_FROM_OP + 2:
+		ratio = maxf(ratio, 1.3)
+	c.budget = maxi(20, int(round(fee * ratio / 10.0)) * 10)
+
+
+## Roughly what the job will be billed at (an average result).
+static func estimate_fee(c: CustomerData) -> int:
+	var item := CyberwareManager.get_cyberware(c.requested_cyberware_id)
+	var s := SurgeryManager.get_surgery(c.requested_surgery_id)
+	if item == null or s == null:
+		return 0
+	var base := s.base_pay + InventoryManager.implant_price(item) * GameConfig.IMPLANT_PRICE_MARKUP
+	return int(round(base * c.pay_multiplier * 1.1 * ModifierManager.mult(&"pay")))
+
+
 func _build_dialogue(c: CustomerData, context: Dictionary) -> String:
 	var d: Dictionary = CustomerManager.dialogue
 	var parts: Array[String] = []
 	if context.has("referred_by"):
 		parts.append(str(pick(d["referral"])).replace("{name}", str(context["referred_by"])))
 	else:
-		parts.append(str(pick(d["greeting"].get(String(c.personality), d["greeting"]["calm"]))))
+		var hour := TimeManager.greeting_line()
+		parts.append(hour if hour != "" else str(pick(d["greeting"].get(String(c.personality), d["greeting"]["calm"]))))
 	var item := CyberwareManager.get_cyberware(c.requested_cyberware_id)
 	if item:
 		parts.append(str(pick(d["reason"].get(String(item.category), ["I need chrome."]))))
 	if c.get_neural_load() > 60.0:
 		parts.append(str(pick(d["symptoms"])))
 	parts.append(str(pick(d["money"].get(str(c.wealth), ["I can pay."]))))
+	for t in c.traits:
+		var lines: Array = PeopleManager.patients.get("traits", {}).get(String(t), {}).get("lines", [])
+		if not lines.is_empty() and rng.randf() < 0.6:
+			parts.append(str(pick(lines)))
+			break
 	return " ".join(parts)

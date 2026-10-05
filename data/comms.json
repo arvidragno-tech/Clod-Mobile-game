@@ -75,6 +75,18 @@
      }
     }
    ]
+  },
+  "c_dependency_crisis": {
+   "kind": "message",
+   "from": "",
+   "subject": "About {name}",
+   "body": "Somebody from {name}'s block: \"They're not sleeping. Their hands won't stop. They keep saying the chrome is talking. You did this, doc. Fix it or stop selling it to them.\""
+  },
+  "c_patient_news": {
+   "kind": "message",
+   "from": "",
+   "subject": "{subject}",
+   "body": "{body}"
   }
  }
 }

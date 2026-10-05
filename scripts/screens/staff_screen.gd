@@ -85,6 +85,13 @@ func _person(e: Dictionary, candidate: bool, index: int) -> Control:
 	a.add_child(UIKit.label(str(e.get("background", "")), &"DimLabel", true, null, 13))
 	var spec: Dictionary = StaffManager.specializations.get(str(e["specialization"]), {})
 	a.add_child(UIKit.label(str(spec.get("text", "")), &"DimLabel", true, Palette.TEXT_DIM, 13))
+	if not candidate:
+		# Their life outside these walls.
+		var life := StaffLifeManager.ensure_life(e)
+		var ll := UIKit.label("Home: %s\nMoney: %s\nFears: %s\nWants: %s" % [StaffLifeManager.family_label(e), StaffLifeManager.money_label(e),
+			str(life.get("fear", "")).to_lower(), str(life.get("dream", "")).to_lower()], &"DimLabel", true, Palette.TEXT, 13)
+		ll.name = "Life_%s" % str(e["id"])
+		a.add_child(ll)
 	# Stats
 	var b := UIKit.vbox(2)
 	b.custom_minimum_size.x = 260
@@ -119,6 +126,17 @@ func _person(e: Dictionary, candidate: bool, index: int) -> Control:
 		c.add_child(UIKit.meter(float(e["stress"]) / 100.0, Palette.DANGER if float(e["stress"]) > 70 else Palette.WARN))
 		c.add_child(UIKit.label("Ambition %d · jobs %d · lost %d · at %s" % [roundi(float(e["ambition"])), int(e["jobs_done"]), int(e["deaths"]),
 			str(ClinicManager.get_tier_data(int(e["clinic"])).get("name", ""))], &"DimLabel", true, null, 13))
+		var bonds := HFlowContainer.new()
+		bonds.name = "Bonds_%s" % str(e["id"])
+		bonds.add_theme_constant_override(&"h_separation", 10)
+		for o in StaffLifeManager.colleagues(e):
+			var st := StaffLifeManager.bond(e, o)
+			var bl := UIKit.label("%s: %s" % [str(o["name"]).get_slice(" ", 0), StaffLifeManager.bond_label(st).to_upper()], &"DimLabel", false, StaffLifeManager.bond_color(st), 13)
+			bl.tooltip_text = "%s about %s · regard %+d" % [str(e["name"]), str(o["name"]), StaffLifeManager.rel(e, o)]
+			bl.mouse_filter = Control.MOUSE_FILTER_PASS
+			bonds.add_child(bl)
+		if bonds.get_child_count() > 0:
+			c.add_child(bonds)
 		var hist: Array = e.get("history", [])
 		if not hist.is_empty():
 			c.add_child(UIKit.label(str(hist[hist.size() - 1]), &"DimLabel", true, Palette.TEXT_DIM, 12))

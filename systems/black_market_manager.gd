@@ -74,7 +74,7 @@ func price_for(inst: ImplantInstance) -> int:
 	var data := inst.get_data()
 	var base := float(data.price) if data else 100.0
 	var p := base * (0.55 + 0.45 * inst.condition / 100.0)
-	p *= FactionManager.price_multiplier(&"black_market") * ModifierManager.mult(&"bm.price")
+	p *= FactionManager.price_multiplier(&"black_market") * ModifierManager.mult(&"bm.price") * TimeManager.bm_price_mult()
 	return maxi(10, int(round(p)))
 
 

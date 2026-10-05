@@ -77,7 +77,7 @@ func pick_event() -> StringName:
 	var weights: Array[float] = []
 	for id in order:
 		var e: Dictionary = events[id]
-		var w := float(e.get("weight", 0)) * WorldManager.event_weight(id)
+		var w := float(e.get("weight", 0)) * WorldManager.event_weight(id) * TimeManager.event_weight(id) * WorldEventManager.event_weight(id)
 		if w > 0.0 and is_eligible(id):
 			pool.append(id)
 			weights.append(w)

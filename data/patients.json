@@ -1,0 +1,312 @@
+{
+ "_doc": "Patient psychology and finances (PeopleManager / CustomerGenerator).",
+ "traits": {
+  "nervous": {
+   "label": "Nervous",
+   "patience": -15,
+   "risk": -0.15,
+   "anim": "nervous",
+   "lines": [
+    "Is it going to hurt? Don't answer that."
+   ]
+  },
+  "desperate": {
+   "label": "Desperate",
+   "patience": 20,
+   "risk": 0.3,
+   "accepts_overcharge": true,
+   "lines": [
+    "I'll take anything. Please."
+   ]
+  },
+  "arrogant": {
+   "label": "Arrogant",
+   "patience": -10,
+   "complain": 0.3,
+   "lines": [
+    "I've had better work done uptown. Try to keep up."
+   ]
+  },
+  "paranoid": {
+   "label": "Paranoid",
+   "patience": -5,
+   "risk": -0.2,
+   "anim": "nervous",
+   "lines": [
+    "Who else has been in here today? Who's watching?"
+   ]
+  },
+  "dependent": {
+   "label": "Cyberware-dependent",
+   "risk": 0.25,
+   "dependency": true,
+   "lines": [
+    "It's not enough. It's never quite enough."
+   ]
+  },
+  "greedy": {
+   "label": "Greedy",
+   "haggle": 0.2,
+   "theft": 0.08,
+   "lines": [
+    "What's the cheapest you can do? The real price."
+   ]
+  },
+  "loyal": {
+   "label": "Loyal",
+   "loyal": 0.3,
+   "lines": [
+    "I don't go anywhere else."
+   ]
+  },
+  "distrustful": {
+   "label": "Distrustful",
+   "rel": -10,
+   "lines": [
+    "Show me the part before it goes in me."
+   ]
+  },
+  "compassionate": {
+   "label": "Compassionate",
+   "rel": 5,
+   "lines": [
+    "You look tired, doc. Long night?"
+   ]
+  },
+  "aggressive": {
+   "label": "Aggressive",
+   "patience": -20,
+   "anim": "aggressive",
+   "theft": 0.04,
+   "lines": [
+    "Hurry it up or I'll find someone faster."
+   ]
+  },
+  "ashamed": {
+   "label": "Ashamed",
+   "patience": 10,
+   "lines": [
+    "Please don't tell anyone I came here."
+   ]
+  },
+  "proud": {
+   "label": "Proud",
+   "complain": 0.15,
+   "lines": [
+    "I don't want charity. I pay my way."
+   ]
+  }
+ },
+ "trait_weights_by_archetype": {
+  "addict": {
+   "dependent": 4,
+   "desperate": 3,
+   "ashamed": 2,
+   "nervous": 1
+  },
+  "gang_member": {
+   "aggressive": 3,
+   "proud": 2,
+   "loyal": 2,
+   "distrustful": 1
+  },
+  "corporate": {
+   "arrogant": 3,
+   "paranoid": 2,
+   "proud": 1
+  },
+  "executive": {
+   "arrogant": 4,
+   "paranoid": 2
+  },
+  "dock_worker": {
+   "proud": 2,
+   "desperate": 2,
+   "loyal": 2,
+   "compassionate": 1
+  },
+  "civilian": {
+   "nervous": 3,
+   "compassionate": 2,
+   "ashamed": 1,
+   "desperate": 1
+  },
+  "elder": {
+   "compassionate": 3,
+   "distrustful": 2,
+   "proud": 1
+  },
+  "street_merc": {
+   "aggressive": 2,
+   "dependent": 2,
+   "proud": 1
+  },
+  "smuggler": {
+   "paranoid": 3,
+   "greedy": 2
+  },
+  "bm_tech": {
+   "greedy": 2,
+   "distrustful": 2,
+   "dependent": 1
+  },
+  "scavenger": {
+   "desperate": 3,
+   "greedy": 2,
+   "nervous": 1
+  },
+  "netrunner": {
+   "paranoid": 3,
+   "dependent": 2,
+   "arrogant": 1
+  },
+  "_default": {
+   "nervous": 2,
+   "proud": 1,
+   "loyal": 1,
+   "distrustful": 1,
+   "compassionate": 1,
+   "greedy": 1
+  }
+ },
+ "finances": {
+  "desperate": {
+   "label": "Desperate",
+   "budget": [
+    40,
+    180
+   ],
+   "wealth": 0,
+   "budget_ratio": [
+    0.25,
+    0.6
+   ]
+  },
+  "poor": {
+   "label": "Poor",
+   "budget": [
+    150,
+    380
+   ],
+   "wealth": 0,
+   "budget_ratio": [
+    0.5,
+    0.95
+   ]
+  },
+  "working": {
+   "label": "Working class",
+   "budget": [
+    300,
+    650
+   ],
+   "wealth": 1,
+   "budget_ratio": [
+    0.85,
+    1.3
+   ]
+  },
+  "comfortable": {
+   "label": "Comfortable",
+   "budget": [
+    600,
+    1400
+   ],
+   "wealth": 2,
+   "budget_ratio": [
+    1.2,
+    1.9
+   ]
+  },
+  "wealthy": {
+   "label": "Wealthy",
+   "budget": [
+    1500,
+    5000
+   ],
+   "wealth": 3,
+   "budget_ratio": [
+    2.0,
+    4.0
+   ]
+  },
+  "criminal": {
+   "label": "Criminal money",
+   "budget": [
+    500,
+    2500
+   ],
+   "wealth": 2,
+   "backer": "street_gangs",
+   "budget_ratio": [
+    1.0,
+    2.5
+   ]
+  },
+  "corporate": {
+   "label": "Corporate-funded",
+   "budget": [
+    1500,
+    6000
+   ],
+   "wealth": 3,
+   "backer": "corporate_security",
+   "budget_ratio": [
+    2.0,
+    5.0
+   ]
+  }
+ },
+ "finance_by_wealth": {
+  "0": {
+   "desperate": 2,
+   "poor": 3
+  },
+  "1": {
+   "working": 4,
+   "poor": 1
+  },
+  "2": {
+   "comfortable": 3,
+   "criminal": 1
+  },
+  "3": {
+   "wealthy": 2,
+   "corporate": 2
+  }
+ },
+ "_doc_budget": "budget_ratio: what they can pay now, as a share of the expected fee for the job they want (budget is the fallback when no fee can be estimated).",
+ "terms": {
+  "full": {
+   "label": "FULL PRICE",
+   "mult": 1.0,
+   "desc": "The usual fee."
+  },
+  "discount": {
+   "label": "DISCOUNT 30%",
+   "mult": 0.7,
+   "desc": "They remember it. Civilian rep up."
+  },
+  "free": {
+   "label": "FREE",
+   "mult": 0.0,
+   "desc": "No fee. They will not forget."
+  },
+  "overcharge": {
+   "label": "OVERCHARGE +40%",
+   "mult": 1.4,
+   "desc": "More money. They notice; the street hears."
+  },
+  "plan": {
+   "label": "PAY LATER",
+   "mult": 1.0,
+   "upfront": 0.3,
+   "desc": "30% now, the rest as a debt on a payment plan."
+  },
+  "faction": {
+   "label": "BACKER PAYS",
+   "mult": 1.1,
+   "desc": "Their crew or company covers it. You owe them a little."
+  }
+ }
+}

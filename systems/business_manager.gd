@@ -66,8 +66,9 @@ func jobs_left() -> int:
 	return maxi(0, capacity() - jobs_today)
 
 
+## No more customers today: every slot used, or it's past closing time.
 func is_day_full() -> bool:
-	return jobs_today >= capacity()
+	return jobs_today >= capacity() or TimeManager.is_closing_time()
 
 
 func record_job() -> void:

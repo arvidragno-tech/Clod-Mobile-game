@@ -81,6 +81,8 @@ func _add_aftermath(r: SurgeryResult) -> void:
 		notes.append("They'll be back for more chrome.")
 	if bool(r.consequences.get("regular", false)):
 		notes.append("REGULAR: loyal customer, pays better.")
+	for l: Variant in r.settlement.get("lines", []):
+		notes.append(str(l))
 	if r.levels_gained > 0:
 		notes.append("+%d SKILL POINT%s to spend." % [r.levels_gained * GameConfig.SKILL_POINTS_PER_LEVEL, "S" if r.levels_gained > 1 else ""])
 	if notes.is_empty():

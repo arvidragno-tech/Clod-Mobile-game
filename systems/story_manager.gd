@@ -333,6 +333,12 @@ func apply_effects(e: Dictionary, char_id: StringName = &"") -> Array[String]:
 		CharacterManager.apply_appearance_event(StringName(str(ac["id"])), str(ac["event"]))
 	if e.has("supplies"):
 		InventoryManager.add_supplies(int(e["supplies"]))
+	if e.has("dims"):
+		ReputationManager.change_dims(e["dims"])
+		for d: Variant in e["dims"]:
+			out.append("%s rep %+d" % [str(ReputationManager.DIMENSION_LABELS.get(StringName(str(d)), d)).to_lower(), int(e["dims"][d])])
+	if e.has("memory") and char_id != &"":
+		MemoryManager.remember(char_id, StringName(str(e["memory"])))
 	if e.has("ending"):
 		choose_ending(StringName(str(e["ending"])))
 	return out

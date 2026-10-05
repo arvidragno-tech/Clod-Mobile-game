@@ -96,6 +96,8 @@ func navigate(id: StringName) -> void:
 			UIManager.go_to(UIManager.SCREEN_UPGRADES)
 		&"dossier":
 			UIManager.go_to(UIManager.SCREEN_DOSSIER)
+		&"wall":
+			UIManager.go_to(UIManager.SCREEN_DOSSIER, {"tab": 7})
 		&"staff":
 			UIManager.go_to(UIManager.SCREEN_STAFF)
 		&"business":
@@ -240,6 +242,8 @@ func decline_customer() -> void:
 	ReputationManager.change(GameConfig.DECLINE_REPUTATION_PENALTY)
 	if c:
 		FactionManager.change(c.faction_id, -1)
+		PeopleManager.after_visit(c, "refused")
+	TimeManager.on_talk()
 	CustomerManager.dismiss_current()
 	SaveManager.save_game()
 	UIManager.go_to(UIManager.SCREEN_CLINIC)
@@ -256,6 +260,9 @@ func assign_customer(employee_id: StringName, insist: bool = false) -> Dictionar
 		return r
 	var e := StaffManager.get_employee(employee_id)
 	if bool(r["success"]):
+		var settled := PeopleManager.settle(c, int(r["pay"]))
+		r["pay"] = int(settled["paid"])
+		r["settlement"] = settled
 		EconomyManager.add_money(int(r["pay"]), &"revenue")
 		var it := CyberwareManager.get_cyberware(c.requested_cyberware_id)
 		if it and it.category == &"neural":
@@ -278,8 +285,10 @@ func assign_customer(employee_id: StringName, insist: bool = false) -> Dictionar
 		"outcome": "success" if r["success"] else ("flatline" if r["death"] else "failed"), "grade": "staff",
 		"op": EventManager.operations, "surgery": item.display_name if item else "", "implant": item.display_name if item else "",
 		"visits": c.visits + 1, "regular": false, "character": String(c.character_id), "by": str(e.get("name", ""))})
+	PeopleManager.after_visit(c, "success" if r["success"] else ("death" if r["death"] else "failed"), int(r.get("pay", 0)))
 	CustomerManager.dismiss_current()
 	BusinessManager.record_job()
+	TimeManager.on_operation(item.install_difficulty if item else 2, c.is_emergency)
 	WorldManager.add_influence()
 	EventManager.on_operation_completed()
 	EventManager.roll_random_event()
@@ -296,11 +305,16 @@ func defer_customer() -> bool:
 	if c.is_emergency:
 		# Sending a bleeding patient away is a choice too.
 		ReputationManager.change(-3)
+		PeopleManager.after_visit(c, "refused")
 		StoryManager.schedule_consequence(&"angry_relative", 1, {"name": c.display_name})
 		CustomerManager.dismiss_current()
 		SaveManager.save_game()
 		return false
 	var comes_back := _rng.randf() < 0.45 + c.patience / 200.0
+	PeopleManager.after_visit(c, "deferred")
+	TimeManager.on_talk()
+	if not comes_back:
+		MemoryManager.remember(c.id, &"PLAYER_MADE_ME_WAIT")
 	if comes_back:
 		CustomerManager.queue.append({"customer": c.to_save_dict(), "due_day": BusinessManager.day + 1, "due_op": 0})
 	CustomerManager.dismiss_current()
@@ -449,6 +463,9 @@ func abort_surgery() -> void:
 func _on_surgery_finished(result: SurgeryResult) -> void:
 	var c := SurgeryManager.customer
 	_apply_patience(result, c)
+	if result.success and c:
+		result.settlement = PeopleManager.settle(c, result.pay)
+		result.pay = int(result.settlement["paid"])
 	EconomyManager.add_money(result.pay, &"revenue")
 	var tier_before := CyberwareManager.get_available_tier()
 	result.levels_gained = ProgressionManager.add_xp(result.xp)
@@ -469,6 +486,7 @@ func _on_surgery_finished(result: SurgeryResult) -> void:
 		result.consequences = CustomerManager.record_outcome(c, result)
 	CustomerManager.dismiss_current()
 	BusinessManager.record_job()
+	TimeManager.on_operation(result.install_difficulty, c != null and c.is_emergency)
 	WorldManager.add_influence()
 	EventManager.on_operation_completed()
 	BlackMarketManager.on_operation_completed()

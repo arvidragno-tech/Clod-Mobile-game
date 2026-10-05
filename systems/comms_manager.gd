@@ -94,6 +94,10 @@ func act(uid: int, index: int) -> bool:
 	m["read"] = true
 	var a: Dictionary = acts[index]
 	StoryManager.apply_effects(a.get("effects", {}), StringName(str(m.get("from", ""))))
+	if a.has("staff"):
+		StaffLifeManager.apply_staff(a["staff"], m.get("vars", {}))
+	if a.has("person"):
+		WorldEventManager.apply_person(a["person"], m.get("vars", {}))
 	if a.has("dialogue"):
 		StoryManager.queue_talk(StringName(str(a["dialogue"])))
 	changed.emit()

@@ -13,6 +13,7 @@ const TEST_SAVE_DIR := "user://test_saves"
 const STEP_TIMEOUT := 20.0
 const DRAG_STEP_PX := 6.0
 const UnitTests := preload("res://tests/unit_tests.gd")
+const LivingWorldTests := preload("res://tests/living_world_tests.gd")
 
 var _failures: Array[String] = []
 var _checks: int = 0
@@ -48,6 +49,8 @@ func _ready() -> void:
 func _run_all() -> void:
 	print("== UNIT / SYSTEM TESTS ==")
 	UnitTests.new().run(self)
+	print("== LIVING WORLD TESTS ==")
+	LivingWorldTests.new().run(self)
 	if OS.get_cmdline_user_args().has("--unit-only"):
 		_finish()
 		return
@@ -395,7 +398,8 @@ func _e2e() -> void:
 	await _frames(10)
 	var view := _find_visible("ClinicView") as ClinicView
 	if view:
-		var spot := view.get_global_rect().position + Vector2(view.size.x * 0.6, view.size.y * 0.3)
+		# Empty floor (no prop hotspots there).
+		var spot := view.get_global_rect().position + Vector2(view.size.x * 0.25, view.size.y * 0.86)
 		await _tap(spot)
 		await _tap(spot)
 		check(view.zoomed, "double-tap zooms into the clinic art")
@@ -605,6 +609,17 @@ func _after_results() -> void:
 			await _click_named("EventContinue")
 	EventManager.pending_event = &""
 	UIManager.close_modal()
+
+
+func _resolve_incident() -> void:
+	var b := _first_enabled_choice()
+	if b:
+		await _click(b)
+		await _click_named("EventContinue")
+	EventManager.pending_event = &""
+	if _find_visible("EventPanel") != null:
+		UIManager.close_modal()
+	await _frames(3)
 
 
 func _first_enabled_choice() -> Button:
@@ -924,6 +939,10 @@ func _scroll_parent(c: Control) -> ScrollContainer:
 
 
 func _click_named(node_name: String, timeout: float = STEP_TIMEOUT) -> void:
+	# Timed incidents (the supplier at 10:00, a midnight deal...) can pop up
+	# on the clinic between scripted steps: resolve them first.
+	if not (node_name.begins_with("Choice_") or node_name == "EventContinue") and _find_visible("EventPanel") != null:
+		await _resolve_incident()
 	var found := await _wait_until(func() -> bool:
 		var n := _find_visible(node_name)
 		return n != null and not (n is BaseButton and (n as BaseButton).disabled) and not UIManager.is_transitioning(), timeout)

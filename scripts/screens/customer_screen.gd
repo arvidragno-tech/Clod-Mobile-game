@@ -12,6 +12,7 @@ var _dialogue: Label
 var _type_tween: Tween
 var _panels: Array[Control] = []
 var _staff_box: VBoxContainer
+var _terms_preview: Label
 
 
 func on_enter(_params: Dictionary) -> void:
@@ -157,7 +158,8 @@ func _profile_card(c: CustomerData) -> Control:
 		["FACTION", fac_row],
 		["STANDING", FactionManager.get_standing(c.faction_id)],
 		["TEMPER", String(c.personality).to_upper()],
-		["MONEY", WEALTH[clampi(c.wealth, 0, 3)]],
+		["TRAITS", ", ".join(c.traits.map(func(t: StringName) -> String: return PeopleManager.trait_label(t))).to_upper() if not c.traits.is_empty() else "—"],
+		["MONEY", "%s · %s" % [WEALTH[clampi(c.wealth, 0, 3)], PeopleManager.finance_label(c.finance).to_upper()]],
 		["STREET REP", str(c.street_rep)],
 	]:
 		g.add_child(UIKit.label(pair[0], &"SubHeaderLabel"))
@@ -167,7 +169,37 @@ func _profile_card(c: CustomerData) -> Control:
 			g.add_child(UIKit.expand(UIKit.label(str(pair[1]), &"", true)))
 	if c.visits > 0 or c.referred_by != "":
 		v.add_child(UIKit.label(("RETURNING · VISIT %d" % (c.visits + 1)) if c.visits > 0 else "REFERRED BY " + c.referred_by.to_upper(), &"SubHeaderLabel", true, Palette.OK))
+	_history_block(v, c)
 	return card
+
+
+## Who they are to you: relationship, what changed since last time, what
+## they remember about you, what they owe.
+func _history_block(v: VBoxContainer, c: CustomerData) -> void:
+	var known := PeopleManager.has_person(c.id)
+	if known:
+		var st := PeopleManager.rel_state(c.id)
+		var col: Color = {"loyal": Palette.OK, "grateful": Palette.OK, "friendly": Palette.OK, "wary": Palette.WARN, "hostile": Palette.DANGER}.get(st, Palette.TEXT_DIM)
+		var rl := UIKit.label("RELATIONSHIP · %s  (%+d)" % [st.to_upper(), int(PeopleManager.get_person(c.id).get("rel", 0))], &"SubHeaderLabel", true, col)
+		rl.name = "RelationshipLabel"
+		v.add_child(rl)
+	if not c.changes.is_empty():
+		v.add_child(UIKit.label("SINCE LAST TIME", &"SubHeaderLabel", false, Palette.ACCENT))
+		for ch in c.changes:
+			v.add_child(UIKit.label("· " + ch, &"DimLabel", true))
+	var mem := MemoryManager.of(c.id)
+	if not mem.is_empty():
+		v.add_child(UIKit.label("THEY REMEMBER", &"SubHeaderLabel", false, Palette.ACCENT))
+		var seen := {}
+		for i in range(mem.size() - 1, -1, -1):
+			var tag := str(mem[i]["tag"])
+			if seen.has(tag) or seen.size() >= 5:
+				continue
+			seen[tag] = true
+			var good := int(MemoryManager.defs.get(tag, {}).get("rel", 0)) >= 0
+			v.add_child(UIKit.label("· %s  (day %d)" % [MemoryManager.label(StringName(tag)), int(mem[i]["day"])], &"DimLabel", true, Palette.OK if good else Palette.DANGER))
+	if c.dependency > 0:
+		v.add_child(UIKit.label("CHROME DEPENDENCY · %s" % PeopleManager.DEPENDENCY_LABELS[clampi(c.dependency, 0, 4)].to_upper(), &"SubHeaderLabel", true, Palette.WARN))
 
 
 func _grid(parent: Control, rows: Array) -> void:
@@ -202,22 +234,85 @@ func _request_section(parent: Control, item: CyberwareData, surgery: SurgeryData
 	_grid(body, [
 		["CLASS", "T%d %s · %s" % [item.tier, item.get_tier_name(), item.rarity.to_upper()], item.get_rarity_color()],
 		["MAKER", item.manufacturer if item.manufacturer != "" else "unknown"],
-		["PROCEDURE", "%s · %d steps" % [surgery.display_name, surgery.stages.size()]],
+		["PROCEDURE", "%s · %d steps · ≈ %s" % [surgery.display_name, surgery.stages.size(), TimeManager.duration_text(TimeManager.procedure_minutes(item.install_difficulty, GameManager.get_current_customer() != null and GameManager.get_current_customer().is_emergency))]],
 		["DIFFICULTY", "%s  %d/5" % [UIKit.pips(item.install_difficulty, 5), item.install_difficulty], Palette.WARN if item.install_difficulty >= 3 else null],
 		["TOOLS", ", ".join(tools) if not tools.is_empty() else "standard kit", Palette.DANGER if tools.any(func(t: String) -> bool: return t.ends_with("(MISSING)")) else null],
 		["IN STOCK", "%d unit(s)" % InventoryManager.get_implant_count(item.id), Palette.DANGER if InventoryManager.get_implant_count(item.id) == 0 else Palette.OK],
 	])
 
 
-func _payment_section(parent: Control, c: CustomerData, item: CyberwareData, surgery: SurgeryData) -> void:
+func _payment_section(parent: Control, c: CustomerData, item: CyberwareData, _surgery: SurgeryData) -> void:
 	var body := UIKit.collapsible(parent, "PAYMENT", true)
-	var offer := int(round((surgery.base_pay + item.price * GameConfig.IMPLANT_PRICE_MARKUP) * c.pay_multiplier))
+	var fee := CustomerGenerator.estimate_fee(c)
+	var cast := c.character_id != &"" and CharacterManager.has_character(c.character_id)
+	var owed := PeopleManager.owed_by(c.id)
 	_grid(body, [
-		["OFFER", "%s base" % EconomyManager.format_money(offer), Palette.WARN],
+		["EXPECTED FEE", "≈ %s for clean work" % EconomyManager.format_money(fee), Palette.WARN],
 		["IMPLANT VALUE", EconomyManager.format_money(item.price)],
-		["PAYS", "x%.2f of list (%s)" % [c.pay_multiplier, WEALTH[clampi(c.wealth, 0, 3)].to_lower()]],
+		["CAN PAY NOW", "whatever you ask" if cast else EconomyManager.format_money(c.budget), Palette.OK if cast or c.budget >= fee else Palette.WARN],
+		["BACKED BY", FactionManager.get_name_of(c.backer) if c.backer != &"" else "nobody"],
+		["ALREADY OWES", EconomyManager.format_money(owed) if owed > 0 else "nothing", Palette.DANGER if owed > 0 else null],
 		["BONUS", "Clean work, speed and a stable patient raise the final pay."],
 	])
+	body.add_child(UIKit.label("TERMS", &"SubHeaderLabel", false, Palette.ACCENT))
+	var flow := HFlowContainer.new()
+	flow.name = "TermsRow"
+	flow.add_theme_constant_override(&"h_separation", 8)
+	flow.add_theme_constant_override(&"v_separation", 8)
+	body.add_child(flow)
+	var group := ButtonGroup.new()
+	for t in PeopleManager.available_terms(c):
+		var d := PeopleManager.terms_def(t)
+		var b := UIKit.button(str(d.get("label", t)), &"GhostButton", _set_terms.bind(t), "Terms_%s" % t, 36)
+		b.toggle_mode = true
+		b.button_group = group
+		b.button_pressed = c.terms == t
+		b.tooltip_text = str(d.get("desc", ""))
+		flow.add_child(b)
+	_terms_preview = UIKit.label("", &"MonoLabel", true)
+	_terms_preview.name = "TermsPreview"
+	body.add_child(_terms_preview)
+	_update_terms_preview()
+
+
+func _set_terms(t: StringName) -> void:
+	var c := GameManager.get_current_customer()
+	if c == null:
+		return
+	c.terms = t
+	_update_terms_preview()
+
+
+## What the chosen terms mean for an average result: paid now / owed.
+func _update_terms_preview() -> void:
+	var c := GameManager.get_current_customer()
+	if c == null or _terms_preview == null:
+		return
+	var fee := CustomerGenerator.estimate_fee(c)
+	var d := PeopleManager.terms_def(c.terms)
+	var price := int(round(fee * float(d.get("mult", 1.0))))
+	if c.terms == &"full" and c.traits.has(&"greedy"):
+		price = int(round(price * 0.85))
+	var cast := c.character_id != &"" and CharacterManager.has_character(c.character_id)
+	var now := price
+	match c.terms:
+		&"plan":
+			now = int(round(price * float(d.get("upfront", 0.3))))
+			if not cast:
+				now = mini(now, c.budget)
+		&"faction", &"free":
+			pass
+		_:
+			if not cast:
+				now = mini(price, c.budget)
+	var owe := price - now if c.terms != &"free" else 0
+	var txt := "%s  ·  ≈ %s now" % [str(d.get("desc", "")), EconomyManager.format_money(now)]
+	if owe > 0:
+		txt += ", %s owed" % EconomyManager.format_money(owe)
+	if c.terms == &"full" and c.traits.has(&"greedy"):
+		txt += "  (they'll haggle)"
+	_terms_preview.text = txt
+	_terms_preview.add_theme_color_override(&"font_color", Palette.WARN if owe > 0 or c.terms in [&"overcharge", &"free"] else Palette.TEXT)
 
 
 func _risk_section(parent: Control, c: CustomerData) -> void:
@@ -336,6 +431,8 @@ func _on_assign(id: StringName, insist: bool) -> void:
 	AudioManager.play_sfx(&"cash" if ok else (&"failure" if bool(r["death"]) else &"denied"), 0.0)
 	var title := "JOB DONE" if ok else ("PATIENT LOST" if bool(r["death"]) else "JOB BOTCHED")
 	var body := "%s\n\n%s" % [str(r["text"]), ("Paid %s." % EconomyManager.format_money(int(r["pay"]))) if ok else "No pay. People will talk."]
+	for l: Variant in r.get("settlement", {}).get("lines", []):
+		body += "\n" + str(l)
 	var btn: Array[Dictionary] = [{"label": "BACK TO THE CLINIC", "style": &"AccentButton", "name": "AssignResultClose", "callback": GameManager.go_to_clinic}]
 	UIManager.show_dialog(title, body, btn)
 

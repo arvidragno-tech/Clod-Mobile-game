@@ -3,8 +3,8 @@ extends BaseScreen
 ## relationship status and what you know of them), factions, rumours, the
 ## operation record and the story so far (acts and endgame paths).
 
-const TABS := ["QUESTS", "COMMS", "PEOPLE", "FACTIONS", "RUMORS", "PROGRESSION", "STORY"]
-enum Tab { QUESTS, COMMS, PEOPLE, FACTIONS, RUMORS, RECORDS, STORY }
+const TABS := ["QUESTS", "COMMS", "PEOPLE", "FACTIONS", "NEWS", "PROGRESSION", "STORY", "WALL"]
+enum Tab { QUESTS, COMMS, PEOPLE, FACTIONS, RUMORS, RECORDS, STORY, WALL }
 
 var _list: GridContainer
 var _tab: int = 0
@@ -18,7 +18,7 @@ func on_enter(params: Dictionary) -> void:
 	var col := UIKit.workstation(self, &"dossier")
 	col.add_child(UIKit.header("CLINIC · INTEL", "JOURNAL", GameManager.go_to_clinic))
 	var tabs := UIKit.tabs(TABS, _on_tab, "DossierTab")
-	tabs.custom_minimum_size.x = 1300
+	tabs.custom_minimum_size.x = 1480
 	if _tab > 0 and _tab < tabs.get_child_count():
 		(tabs.get_child(_tab) as Button).button_pressed = true
 	tabs.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
@@ -50,6 +50,8 @@ func _rebuild() -> void:
 			_people()
 		Tab.STORY:
 			_story()
+		Tab.WALL:
+			_wall()
 		Tab.FACTIONS:
 			_list.columns = 3
 			var heat := UIKit.panel(&"DangerPanel" if FactionManager.heat >= 35 else &"HudPanel")
@@ -68,6 +70,7 @@ func _rebuild() -> void:
 			if not any:
 				_list.add_child(UIKit.label("No contacts yet. Keep the clinic open and people will find you.", &"DimLabel", true))
 		Tab.RUMORS:
+			_news()
 			if StoryManager.unlocked_rumors.is_empty():
 				_list.add_child(UIKit.label("Nothing on the street yet.", &"DimLabel"))
 			for id in StoryManager.unlocked_rumors:
@@ -290,8 +293,49 @@ func _people() -> void:
 		if c:
 			_list.add_child(_contact_card(c, str(CustomerManager.characters[id].get("role", "")).to_upper()))
 			any = true
+	# Patients: everyone who keeps coming back, or holds a grudge.
+	var pats: Array = PeopleManager.people.values().filter(func(p: Dictionary) -> bool:
+		return int(p.get("visits", 0)) >= 1 or absi(int(p.get("rel", 0))) >= 15 or PeopleManager.owed_by(StringName(str(p["id"]))) > 0)
+	pats.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return absi(int(a["rel"])) + int(a["visits"]) * 8 > absi(int(b["rel"])) + int(b["visits"]) * 8)
+	for p: Dictionary in pats.slice(0, 24):
+		_list.add_child(_patient_card(p))
+		any = true
 	if not any:
 		_list.add_child(UIKit.label("Nobody important knows your name yet.", &"DimLabel", true))
+
+
+func _patient_card(p: Dictionary) -> Control:
+	var id := StringName(str(p["id"]))
+	var card := UIKit.panel(&"CardPanel")
+	card.name = "Patient_%s" % str(p["id"])
+	UIKit.expand(card)
+	var row := UIKit.hbox(12)
+	card.add_child(row)
+	var por := PixelPortrait.new()
+	por.framing = PixelPortrait.Framing.FACE
+	por.set_appearance(p.get("appearance", {}), FactionManager.get_color(StringName(str(p.get("faction", "")))))
+	row.add_child(por)
+	var v := UIKit.vbox(3)
+	UIKit.expand(v)
+	row.add_child(v)
+	var dead := str(p.get("status", "alive")) != "alive"
+	v.add_child(UIKit.label(("%s%s" % [str(p["name"]), "  †" if dead else ""]).to_upper(), &"SubHeaderLabel", true, Palette.TEXT_DIM if dead else Palette.ACCENT))
+	v.add_child(UIKit.label("PATIENT · %s · %s · %d visit(s)" % [str(p.get("occupation", "")), FactionManager.get_name_of(StringName(str(p.get("faction", "")))), int(p.get("visits", 0))], &"DimLabel", true, null, 13))
+	var st := PeopleManager.rel_state(id)
+	v.add_child(UIKit.label("%s  %+d · paid you %d cr in all" % [st.to_upper(), int(p.get("rel", 0)), int(p.get("paid_total", 0))], &"SubHeaderLabel", false,
+		{"loyal": Palette.OK, "grateful": Palette.OK, "friendly": Palette.OK, "wary": Palette.WARN, "hostile": Palette.DANGER}.get(st, Palette.TEXT)))
+	var traits: Array = (p.get("traits", []) as Array).map(func(t: Variant) -> String: return PeopleManager.trait_label(StringName(str(t))))
+	if not traits.is_empty():
+		v.add_child(UIKit.label(", ".join(traits) + " · " + PeopleManager.finance_label(StringName(str(p.get("finance", "")))), &"DimLabel", true, null, 13))
+	var mem := MemoryManager.of(id)
+	if not mem.is_empty():
+		v.add_child(UIKit.label("Remembers: " + MemoryManager.label(StringName(str(mem[mem.size() - 1]["tag"]))), &"DimLabel", true, Palette.TEXT, 13))
+	var hist: Array = p.get("history", [])
+	for h in hist.slice(maxi(0, hist.size() - 2)):
+		v.add_child(UIKit.label(str(h), &"DimLabel", true, null, 12))
+	if PeopleManager.owed_by(id) > 0:
+		v.add_child(UIKit.label("Owes you %d cr" % PeopleManager.owed_by(id), &"DimLabel", true, Palette.WARN, 13))
+	return card
 
 
 func _person_card(id: StringName) -> Control:
@@ -364,3 +408,62 @@ func _story() -> void:
 	for c: Dictionary in ch.slice(0, 10):
 		var d := DialogueManager.get_dialogue(StringName(str(c["dialogue"])))
 		rv.add_child(UIKit.label("D%d · %s: \"%s\"%s" % [int(c["day"]), str(d.get("title", "")), str(c["option"]), "" if bool(c["success"]) else " (failed)"], &"DimLabel", true, null, 13))
+
+
+# --- The Clinic Wall ---------------------------------------------------------------------
+
+func _wall() -> void:
+	_list.columns = 4
+	var pins := ClinicLifeManager.wall
+	if pins.is_empty():
+		_list.columns = 1
+		_list.add_child(UIKit.label("The wall over the sink is bare. It fills up with the clinic's history: first jobs, regulars, the ones you lost, notices, clippings.", &"DimLabel", true))
+	for i in range(pins.size() - 1, -1, -1):
+		var p: Dictionary = pins[i]
+		var card := UIKit.panel(&"CardPanel")
+		card.name = "Pin_%d" % i
+		UIKit.expand(card)
+		var v := UIKit.vbox(3)
+		card.add_child(v)
+		var kind := str(p["kind"])
+		v.add_child(UIKit.label("%s · DAY %d" % [ClinicLifeManager.kind_label(kind).to_upper(), int(p["day"])], &"SubHeaderLabel", false, ClinicLifeManager.pin_color(kind)))
+		v.add_child(UIKit.label(str(p["title"]), &"", true, Palette.TEXT, 15))
+		v.add_child(UIKit.label(str(p.get("text", "")), &"DimLabel", true, null, 13))
+		_list.add_child(card)
+	if not ClinicLifeManager.captions.is_empty():
+		var log_card := UIKit.panel(&"HudPanel")
+		UIKit.expand(log_card)
+		var lv := UIKit.vbox(2)
+		log_card.add_child(lv)
+		lv.add_child(UIKit.label("AROUND THE CLINIC TODAY", &"SubHeaderLabel"))
+		for c in ClinicLifeManager.captions.slice(maxi(0, ClinicLifeManager.captions.size() - 8)):
+			lv.add_child(UIKit.label(c, &"DimLabel", true, null, 13))
+		_list.add_child(log_card)
+
+
+# --- News ---------------------------------------------------------------------------------
+
+## The wire: what's going on in the city (and what it says about you),
+## above the street rumours.
+func _news() -> void:
+	for a in WorldEventManager.active:
+		var s := WorldEventManager.situation(StringName(str(a["id"])))
+		var card := UIKit.panel(&"DangerPanel")
+		card.name = "Situation_%s" % str(a["id"])
+		UIKit.expand(card)
+		var v := UIKit.vbox(3)
+		card.add_child(v)
+		v.add_child(UIKit.label("HAPPENING NOW · %d DAY%s LEFT" % [int(a["days_left"]), "" if int(a["days_left"]) == 1 else "S"], &"SubHeaderLabel", false, Palette.DANGER))
+		v.add_child(UIKit.label(WorldEventManager._fill(str(s.get("headline", "")), a["vars"]), &"", true, Palette.TEXT, 16))
+		v.add_child(UIKit.label(WorldEventManager._fill(str(s.get("body", "")), a["vars"]), &"DimLabel", true, null, 13))
+		_list.add_child(card)
+	for n in WorldEventManager.latest_news(10):
+		var card := UIKit.panel(&"AccentPanel" if bool(n.get("about_you", false)) else &"CardPanel")
+		UIKit.expand(card)
+		var v := UIKit.vbox(3)
+		card.add_child(v)
+		v.add_child(UIKit.label("DAY %d · %s%s" % [int(n["day"]), TimeManager.clock_text(int(n.get("minute", 540))), "  · ABOUT YOU" if bool(n.get("about_you", false)) else ""], &"SubHeaderLabel", false, Palette.ACCENT if bool(n.get("about_you", false)) else null))
+		v.add_child(UIKit.label(str(n["headline"]), &"", true, Palette.TEXT, 16))
+		if str(n.get("body", "")) != "":
+			v.add_child(UIKit.label(str(n["body"]), &"DimLabel", true, null, 13))
+		_list.add_child(card)

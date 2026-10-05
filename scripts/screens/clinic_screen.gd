@@ -28,6 +28,7 @@ var _waiting_dots: float = 0.0
 var _panels: Array[Control] = []
 var _loc: Label
 var _close_button: Button
+var _agenda: Label
 
 
 func on_enter(_params: Dictionary) -> void:
@@ -45,6 +46,11 @@ func on_enter(_params: Dictionary) -> void:
 	else:
 		_show_waiting()
 	StoryManager.talk_queued.connect(func(_id: StringName) -> void: _show_talk.call_deferred())
+	# Something scheduled for this hour (the supplier, a midnight deal...).
+	EventBus.event_queued.connect(func(_id: StringName) -> void:
+		if is_inside_tree():
+			_show_event.call_deferred())
+	EventBus.time_changed.connect(func(_m: int, _p: StringName) -> void: _refresh_status())
 	if EventManager.has_pending():
 		_show_event.call_deferred()
 	elif StoryManager.has_talk():
@@ -142,11 +148,17 @@ func _build() -> void:
 	overlay.offset_right = -12
 	overlay.offset_top = 10
 	_view.add_child(overlay)
-	var loc := UIKit.label("%s · %s · DAY %d" % [ClinicManager.get_tier_name().to_upper(), WorldManager.district_name().to_upper(), BusinessManager.day], &"SubHeaderLabel", false, Palette.TEXT)
+	var loc := UIKit.label("", &"SubHeaderLabel", false, Palette.TEXT)
+	loc.name = "ClockLabel"
 	_loc = loc
 	loc.add_theme_color_override(&"font_outline_color", Palette.BG_0)
 	loc.add_theme_constant_override(&"outline_size", 4)
 	overlay.add_child(loc)
+	_agenda = UIKit.label("", &"DimLabel", false, Palette.ACCENT, 14)
+	_agenda.name = "AgendaLabel"
+	_agenda.add_theme_color_override(&"font_outline_color", Palette.BG_0)
+	_agenda.add_theme_constant_override(&"outline_size", 4)
+	overlay.add_child(_agenda)
 	var cards := UIKit.hbox(14)
 	UIKit.expand(cards, true, true)
 	centre.add_child(cards)
@@ -175,7 +187,7 @@ func _process(delta: float) -> void:
 		_refresh_objective()
 	if _waiting and _waiting.visible:
 		_waiting_dots += delta * 2.0
-		_waiting.text = ("Door's locked. Close up for the night." if BusinessManager.is_day_full() else "Waiting for customers") + ".".repeat(int(_waiting_dots) % 4)
+		_waiting.text = (("It's %s. Door's locked. Close up for the night." % TimeManager.clock_text()) if BusinessManager.is_day_full() else "Waiting for customers") + ".".repeat(int(_waiting_dots) % 4)
 
 
 func _show_event() -> void:
@@ -288,9 +300,19 @@ func _refresh_status() -> void:
 	_status_box.add_child(UIKit.label("DAY %d · jobs %d/%d · tonight's bill %d%s" % [BusinessManager.day, BusinessManager.jobs_today, BusinessManager.capacity(),
 		BusinessManager.projected_total(), ("  · DEBT %d" % BusinessManager.debt) if BusinessManager.debt > 0 else ""], &"DimLabel", true, Palette.WARN if BusinessManager.debt > 0 else null))
 	if _loc:
-		_loc.text = "%s · %s · DAY %d" % [ClinicManager.get_tier_name().to_upper(), WorldManager.district_name().to_upper(), BusinessManager.day]
+		_loc.text = "%s · %s · %s" % [ClinicManager.get_tier_name().to_upper(), WorldManager.district_name().to_upper(), TimeManager.stamp()]
 	_status_box.add_child(UIKit.label("Supplies %d / %d · Parts %d · Tokens %d" % [InventoryManager.supplies, ClinicManager.get_supplies_capacity(), InventoryManager.parts, InventoryManager.tokens], &"DimLabel", true))
 	_status_box.add_child(UIKit.label("Heat %d%s" % [roundi(FactionManager.heat), "  · inspections likely" if FactionManager.heat >= 35.0 else ""], &"DimLabel", true, Palette.DANGER if FactionManager.heat >= 35.0 else null))
+	# Today's agenda: what's due and when the door locks.
+	var agenda: Array[String] = []
+	for a in TimeManager.upcoming():
+		agenda.append("%s  %s" % [TimeManager.clock_text(int(a["minute"])), str(a["label"])])
+	var due := PeopleManager.due_people().size()
+	if due > 0:
+		agenda.append("%d patient%s due back today" % [due, "s" if due > 1 else ""])
+	agenda.append("%s  doors lock (%s left)" % [TimeManager.clock_text(TimeManager.close_minute()), TimeManager.duration_text(TimeManager.minutes_left())])
+	if _agenda:
+		_agenda.text = "\n".join(agenda)
 	UIKit.clear_after(_factions_box, 1)
 	var grid := GridContainer.new()
 	grid.columns = 2

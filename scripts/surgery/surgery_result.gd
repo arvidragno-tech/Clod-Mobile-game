@@ -42,6 +42,8 @@ var heat_delta: float = 0.0
 var neural_break: bool = false
 ## Customer consequences: {"referral": bool, "returning": bool, "regular": bool}
 var consequences: Dictionary = {}
+## Payment by the agreed terms (PeopleManager.settle): {fee, price, paid, debt, lines}.
+var settlement: Dictionary = {}
 
 
 func get_failure_text() -> String:

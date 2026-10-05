@@ -291,6 +291,7 @@ func give_raise(id: StringName, accept: bool = true) -> void:
 		e["loyalty"] = minf(100.0, float(e["loyalty"]) + 12.0)
 		e["ambition"] = maxf(0.0, float(e["ambition"]) - 20.0)
 		_log(e, "Got a raise to %d/day." % int(e["salary"]))
+		StaffLifeManager.on_raise(e)
 	else:
 		e["loyalty"] = maxf(0.0, float(e["loyalty"]) - 15.0)
 		_log(e, "Asked for a raise. Refused.")
@@ -323,6 +324,8 @@ func assign(id: StringName, c: CustomerData, insist: bool = false) -> Dictionary
 		e["loyalty"] = maxf(0.0, float(e["loyalty"]) - 12.0)
 		e["stress"] = minf(100.0, float(e["stress"]) + 15.0)
 		_log(e, "Was made to do a job they refused.")
+		StaffLifeManager.on_forced(e)
+		MemoryManager.remember(id, &"PLAYER_FORCED_MY_HAND")
 		if id == TEO:
 			CharacterManager.change_relationship(TEO, -15)
 			StoryManager.set_flag(&"teo_crossed_line")
@@ -337,6 +340,7 @@ func assign(id: StringName, c: CustomerData, insist: bool = false) -> Dictionary
 		e["deaths"] = int(e["deaths"]) + 1
 		e["loyalty"] = maxf(0.0, float(e["loyalty"]) - 5.0)
 		_appearance(e, "expr:sad")
+		StaffLifeManager.on_patient_death(e)
 	elif bool(r["success"]):
 		e["loyalty"] = minf(100.0, float(e["loyalty"]) + 1.0)
 	_log(e, str(r["text"]))

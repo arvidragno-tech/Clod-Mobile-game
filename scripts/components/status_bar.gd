@@ -79,6 +79,7 @@ func _ready() -> void:
 	EventBus.heat_changed.connect(func(_a: float, _b: float) -> void: _refresh())
 	EventBus.clinic_upgraded.connect(func(_t: int) -> void: _refresh())
 	EventBus.day_started.connect(func(_d: int) -> void: _refresh())
+	EventBus.time_changed.connect(func(_m: int, _p: StringName) -> void: _refresh())
 	_money_shown = EconomyManager.money
 	_money.text = EconomyManager.format_money(_money_shown)
 	_refresh()
@@ -117,7 +118,7 @@ func _on_money(amount: int, _delta: int) -> void:
 
 
 func _refresh() -> void:
-	_location.text = "%s · %s · DAY %d" % [ClinicManager.get_tier_name().to_upper(), WorldManager.district_name().to_upper(), BusinessManager.day]
+	_location.text = "%s · %s · %s" % [ClinicManager.get_tier_name().to_upper(), WorldManager.district_name().to_upper(), TimeManager.stamp()]
 	_level.text = "LV %d" % ProgressionManager.level
 	var need := ProgressionManager.xp_required_for_level(ProgressionManager.level + 1)
 	_xp_text.text = "%d / %d XP" % [ProgressionManager.total_xp, need]

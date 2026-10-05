@@ -6,6 +6,7 @@ var t: Node  # the runner (provides check())
 
 func run(runner: Node) -> void:
 	t = runner
+	WorldEventManager.auto_roll = false
 	_vitals()
 	_scoring()
 	_progression()
@@ -33,6 +34,7 @@ func run(runner: Node) -> void:
 	_save_v4()
 	_save_robustness()
 	SaveManager.reset_all()
+	WorldEventManager.auto_roll = true
 
 
 func check(c: bool, msg: String) -> void:

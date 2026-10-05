@@ -20,6 +20,7 @@ const HOTSPOTS := [
 	{"id": &"inventory", "rect": Rect2(248, 100, 76, 62), "label": "STORAGE BENCH · inventory", "min_tier": 0},
 	{"id": &"supply", "rect": Rect2(332, 52, 36, 110), "label": "SUPPLY CABINET · buy tools and implants", "min_tier": 0},
 	{"id": &"dossier", "rect": Rect2(370, 74, 28, 88), "label": "RECORDS SERVER · journal", "min_tier": 2},
+	{"id": &"wall", "rect": Rect2(232, 42, 76, 34), "label": "THE WALL · the clinic's memory", "min_tier": 0},
 ]
 
 ## Point (in background pixels) where the customer's feet stand.
@@ -61,6 +62,19 @@ const FX_COLORS := {
 }
 static var _fx_data: Dictionary = {}
 var _overlays: Array = []  # [Texture2D, Vector2 art px]
+## Waiting room: where the people on the bench stand (art px, feet).
+const WAIT_FEET := [Vector2(134, 167), Vector2(152, 170), Vector2(118, 171), Vector2(168, 172)]
+## The Clinic Wall: pinned notes, photos and notices on the back wall (art px).
+const WALL_ORIGIN := Vector2(236, 46)
+const WALL_COLS := 8
+var _waiting_tex: Dictionary = {}  # customer id -> Texture2D
+var _caption: Label
+var _caption_t: float = 0.0
+## The wire: a news ticker along the bottom of the room (the old CRT by the door).
+var _ticker_box: Control
+var _ticker: Label
+const TICKER_H := 26.0
+const TICKER_SPEED := 46.0
 
 
 func _ready() -> void:
@@ -74,10 +88,65 @@ func _ready() -> void:
 	add_child(_bubble)
 	for i in DUST_COUNT:
 		_dust.append(Vector3(randf_range(150, 250), randf_range(50, 160), randf_range(0.0, TAU)))
+	_caption = UIKit.label("", &"DimLabel", true, Palette.TEXT, 15)
+	_caption.name = "LifeCaption"
+	_caption.add_theme_color_override(&"font_outline_color", Palette.BG_0)
+	_caption.add_theme_constant_override(&"outline_size", 5)
+	_caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_caption.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_caption.modulate.a = 0.0
+	add_child(_caption)
+	ClinicLifeManager.caption_posted.connect(show_caption)
+	_ticker_box = Control.new()
+	_ticker_box.name = "NewsTicker"
+	_ticker_box.clip_contents = true
+	_ticker_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_ticker_box)
+	_ticker = UIKit.label("", &"MonoLabel", false, Palette.WARN, 15)
+	_ticker.name = "TickerText"
+	_ticker.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_ticker_box.add_child(_ticker)
+	EventBus.news_posted.connect(func(_n: Dictionary) -> void: refresh_ticker())
+	refresh_ticker()
+	ClinicLifeManager.waiting_changed.connect(_refresh_waiting)
+	_refresh_waiting()
 	EventBus.clinic_upgraded.connect(func(_t: int) -> void: refresh_background())
 	EventBus.clinic_upgrade_installed.connect(func(_c: StringName, _l: int) -> void: refresh_background())
 	resized.connect(_layout)
 	refresh_background()
+
+
+## A line of clinic life at the bottom of the room, fading after a while.
+func show_caption(text: String) -> void:
+	if _caption == null:
+		return
+	_caption.text = text
+	_caption_t = 7.0
+	_caption.modulate.a = 1.0
+
+
+func refresh_ticker() -> void:
+	if _ticker == null:
+		return
+	var heads: Array[String] = []
+	for n in WorldEventManager.latest_news(4):
+		heads.append(("▲ " if bool(n.get("about_you", false)) else "") + str(n["headline"]).to_upper())
+	_ticker.text = ("WIRE ▸ " + "   ///   ".join(heads)) if not heads.is_empty() else ""
+	_ticker.reset_size()
+	_ticker.position.x = _ticker_box.size.x
+
+
+func _refresh_waiting() -> void:
+	var keep := {}
+	for c in ClinicLifeManager.waiting_customers():
+		keep[c.id] = true
+		if not _waiting_tex.has(c.id):
+			var app := CharacterAppearanceManager.normalize(c.appearance)
+			_waiting_tex[c.id] = CharacterArt.body_layers(app)[0] if not app.is_empty() else null
+	for k: Variant in _waiting_tex.keys():
+		if not keep.has(k):
+			_waiting_tex.erase(k)
+	queue_redraw()
 
 
 func refresh_background() -> void:
@@ -171,6 +240,21 @@ func _process(delta: float) -> void:
 		_next_flicker = randf_range(1.5, 7.0) if ClinicManager.tier <= 1 else randf_range(6.0, 14.0)
 		_flicker = 0.22
 	_flicker = maxf(0.0, _flicker - delta)
+	if _ticker and _ticker.text != "":
+		_ticker_box.position = Vector2(0, size.y - TICKER_H)
+		_ticker_box.size = Vector2(size.x, TICKER_H)
+		_ticker.position.y = (TICKER_H - _ticker.size.y) / 2.0
+		_ticker.position.x -= delta * (TICKER_SPEED if not Settings.reduce_motion else 0.0)
+		if _ticker.position.x < -_ticker.size.x:
+			_ticker.position.x = size.x
+		if Settings.reduce_motion:
+			_ticker.position.x = 8.0
+	if _caption_t > 0.0:
+		_caption_t -= delta
+		_caption.modulate.a = clampf(_caption_t / 1.5, 0.0, 1.0)
+		_caption.custom_minimum_size.x = maxf(100.0, size.x - 40.0)
+		_caption.size = Vector2(_caption.custom_minimum_size.x, _caption.get_minimum_size().y)
+		_caption.position = Vector2(20, size.y - _caption.size.y - 12 - (TICKER_H if _ticker.text != "" else 0.0))
 	_update_fx(delta)
 	for i in _dust.size():
 		var d := _dust[i]
@@ -196,6 +280,7 @@ func _draw() -> void:
 		var t: Texture2D = o[0]
 		draw_texture_rect(t, Rect2(_offset + (o[1] as Vector2) * _scale, Vector2(t.get_size()) * _scale), false)
 	_draw_fx()
+	_draw_wall()
 	_draw_hotspot()
 	# Dust motes catching the lamp light (one art pixel each).
 	var motes: int = 0 if not Settings.environment_effects else [6, 14, DUST_COUNT][Settings.effects_level()]
@@ -203,6 +288,7 @@ func _draw() -> void:
 		var d := _dust[di]
 		var a := 0.25 + 0.2 * sin(_time * 2.0 + d.z)
 		draw_rect(Rect2((_offset + Vector2(floorf(d.x), floorf(d.y)) * _scale), Vector2.ONE * _scale), Color(1, 0.95, 0.85, a))
+	_draw_waiting()
 	if _has_customer and _customer_tex:
 		var r := get_customer_rect()
 		# Contact shadow (pixel-snapped ellipse)
@@ -211,13 +297,54 @@ func _draw() -> void:
 			var w := (14 - k * 4) * _scale
 			draw_rect(Rect2(foot.x - w / 2.0, foot.y - _scale + k * 0.0, w, _scale), Color(0, 0, 0, 0.25 + k * 0.15))
 		_draw_customer(r)
+	# The hour colours the room: cold morning, amber evening, blue night.
+	var tint := TimeManager.tint()
+	if tint.a > 0.0:
+		draw_rect(Rect2(Vector2.ZERO, size), tint)
 	if zoomed:
 		# Zoom badge (top-right), drawn in whole pixels.
 		var badge := Rect2(size.x - 34, 6, 28, 14)
 		draw_rect(badge, Color(0.02, 0.03, 0.05, 0.8))
 		draw_string(get_theme_font(&"font", &"PixelLabel"), badge.position + Vector2(4, 11), "x2", HORIZONTAL_ALIGNMENT_LEFT, -1, 8, Palette.ACCENT)
+	if _ticker and _ticker.text != "":
+		draw_rect(Rect2(0, size.y - TICKER_H, size.x, TICKER_H), Color(0.02, 0.02, 0.03, 0.82))
+		draw_rect(Rect2(0, size.y - TICKER_H, size.x, 1), Color(1, 0.7, 0.25, 0.35))
 	if _flicker > 0.0 and fmod(_flicker * 40.0, 2.0) < 1.0:
 		draw_rect(Rect2(Vector2.ZERO, size), Color(0, 0, 0, 0.28))
+
+
+## The people on the bench: further back, a little darker, breathing.
+func _draw_waiting() -> void:
+	var list := ClinicLifeManager.waiting_customers()
+	for i in mini(list.size(), WAIT_FEET.size()):
+		var tex: Texture2D = _waiting_tex.get(list[i].id, null)
+		if tex == null:
+			continue
+		var s := Vector2(tex.get_size()) * _scale
+		var foot: Vector2 = _offset + (WAIT_FEET[i] as Vector2) * _scale
+		var bob := (floorf(sin(_time * 1.6 + i * 1.3) + 1.0) * 0.5) * _scale if Settings.environment_effects else 0.0
+		var r := Rect2(foot - Vector2(s.x / 2.0, s.y - BODY_FOOT_PAD * _scale) + Vector2(0, -bob), s)
+		draw_rect(Rect2(foot.x - 5 * _scale, foot.y - _scale, 10 * _scale, _scale), Color(0, 0, 0, 0.35))
+		draw_texture_rect(tex, r, false, Color(0.62, 0.62, 0.7, 1.0))
+
+
+## The Clinic Wall: one small pinned rectangle per memory.
+func _draw_wall() -> void:
+	var pins := ClinicLifeManager.wall
+	for i in pins.size():
+		var p: Dictionary = pins[i]
+		var cell := Vector2((i % WALL_COLS) * 9, (i / WALL_COLS) * 10) + Vector2((i * 7) % 3, (i * 5) % 2)
+		var at := _offset + (WALL_ORIGIN + cell) * _scale
+		var col := ClinicLifeManager.pin_color(str(p["kind"])).darkened(0.25)
+		draw_rect(Rect2(at, Vector2(7, 8) * _scale), Color(0, 0, 0, 0.45))
+		draw_rect(Rect2(at + Vector2(-1, -1) * _scale, Vector2(7, 8) * _scale), col)
+		if str(p["kind"]) == "patient":
+			draw_rect(Rect2(at + Vector2(1, 1) * _scale, Vector2(5, 4) * _scale), Color(0.35, 0.3, 0.32))
+			draw_rect(Rect2(at + Vector2(2, 2) * _scale, Vector2(3, 2) * _scale), Color(0.75, 0.58, 0.48))
+		else:
+			for ln in 3:
+				draw_rect(Rect2(at + Vector2(0, 1 + ln * 2) * _scale, Vector2(5 - (ln % 2) * 2, 1) * _scale), col.darkened(0.45))
+		draw_rect(Rect2(at + Vector2(2, -1) * _scale, Vector2.ONE * _scale), Color(0.9, 0.2, 0.25))
 
 
 ## Body in three bands so it can breathe and look around without
