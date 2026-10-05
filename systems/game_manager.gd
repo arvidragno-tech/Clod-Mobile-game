@@ -365,8 +365,7 @@ func triage_specialist() -> Dictionary:
 		var settled := PeopleManager.settle(c, CustomerGenerator.estimate_fee(c))
 		EconomyManager.add_money(int(settled["paid"]), &"revenue")
 		c.existing_cyberware.append(c.requested_cyberware_id)
-		PeopleManager.after_visit(c, "success", int(settled["paid"]))
-		MemoryManager.remember(c.id, &"PLAYER_SAVED_ME")
+		PeopleManager.after_visit(c, "success", int(settled["paid"]))  # emergencies remember PLAYER_SAVED_ME there
 		ReputationManager.change(1)
 		text = "The specialist works fast and says nothing. %s walks out on their own feet." % c.display_name
 	else:
@@ -559,14 +558,14 @@ func customer_accepts(inst: ImplantInstance) -> bool:
 	var needed_nerve := consent_risk_needed(NeuralLoad.projected(c, inst))
 	if c.risk_tolerance < needed_nerve:
 		return false
-	if inst.cyberware_id == c.requested_cyberware_id and inst.traits.is_empty():
+	if inst.cyberware_id == c.requested_cyberware_id and inst.traits.is_empty() and inst.identified:
 		return true
 	var data := inst.get_data()
 	var requested := get_requested_item()
 	# Upgrades are always welcome; downgrades and shady chrome need nerve.
 	if data and requested and data.tier > requested.tier and not data.black_market:
 		return true
-	return c.risk_tolerance >= (0.35 if not inst.has_unknown_traits() else 0.6)
+	return c.risk_tolerance >= (0.35 if not inst.has_unknown_traits() and inst.identified else 0.6)
 
 
 ## Minimum risk tolerance a customer needs to consent at a projected load.
@@ -616,6 +615,9 @@ func get_surgery_readiness() -> Dictionary:
 	return r
 
 
+var _implant_returnable: bool = false
+
+
 func begin_surgery() -> void:
 	var surgery := get_current_surgery()
 	var readiness := get_surgery_readiness()
@@ -633,6 +635,9 @@ func begin_surgery() -> void:
 			inst = ImplantInstance.create(get_requested_item().id, 70.0, &"salvaged")
 		_:
 			InventoryManager.remove_instance(inst.uid)
+	# A unit from the shelf (or just bought) goes back if the operation stops
+	# before it's installed; a salvaged stand-in doesn't exist outside surgery.
+	_implant_returnable = readiness["implant_source"] != &"salvaged"
 	var session_mods := {}
 	if not InventoryManager.use_supplies(surgery.supplies):
 		session_mods = GameConfig.NO_SUPPLIES_MODIFIERS.duplicate()
@@ -649,6 +654,10 @@ func abort_surgery() -> void:
 func _on_surgery_finished(result: SurgeryResult) -> void:
 	var c := SurgeryManager.customer
 	_apply_patience(result, c)
+	if result.failure_reason == &"aborted" and not SurgeryManager.implant_installed and _implant_returnable and SurgeryManager.implant:
+		InventoryManager.add_instance(SurgeryManager.implant)
+		result.dilemma_notes.append("You stopped before the implant went in: it's back in stock.")
+	_implant_returnable = false
 	if result.success and c:
 		result.settlement = PeopleManager.settle(c, result.pay)
 		result.pay = int(result.settlement["paid"])

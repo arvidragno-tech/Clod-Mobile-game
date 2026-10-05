@@ -44,6 +44,7 @@ func _ready() -> void:
 		await _high_stakes(res)
 		await _suppliers(res)
 		await _security(res)
+	await _rooms()
 	SaveManager.delete_save()
 	DirAccess.remove_absolute(Settings.path)
 	print("")
@@ -348,6 +349,33 @@ func _security(label: String) -> void:
 	UIManager.close_modal()
 	FactionManager.add_heat(-FactionManager.heat)
 	await _settle()
+
+
+## Every clinic: the Wall and the waiting room sit in clear space.
+func _rooms() -> void:
+	Settings.resolution = "1920x1080"
+	Settings.apply_display()
+	await _frames(10)
+	for i in 12:
+		ClinicLifeManager.pin("milestone" if i % 3 else "patient", "pin %d" % i)
+	for i in ClinicManager.tiers.size():
+		if not ClinicManager.owned.has(i):
+			ClinicManager.owned.append(i)
+		ClinicManager.move_to(i)
+		BusinessManager.jobs_today = 0
+		ClinicLifeManager.waiting.clear()
+		CustomerManager.debug_set_customer(CustomerManager.generator.generate({"full_difficulty": true}))
+		ClinicManager.upgrades[ClinicManager.clinic_id()] = {"customer": 2}
+		for k in 2:
+			ClinicLifeManager.seat(CustomerManager.generator.generate({"full_difficulty": true, "faction": "independent_mercs"}))
+		UIManager.go_to(UIManager.SCREEN_CLINIC)
+		await _settle()
+		UIManager.close_modal()
+		await _frames(10)
+		_check(ClinicLifeManager.waiting.size() >= 1, "%s: people waiting" % ClinicManager.clinic_id())
+		await _shot("room", ClinicManager.clinic_id())
+	ClinicLifeManager.waiting.clear()
+	CustomerManager.dismiss_current()
 
 
 func _find_visible_button(n: String) -> Button:

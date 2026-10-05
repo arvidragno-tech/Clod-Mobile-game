@@ -264,7 +264,7 @@ func _implant_option(i: int, inst: ImplantInstance, selected: bool, requested: C
 	b.button_pressed = selected
 	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	b.custom_minimum_size.y = 96
-	b.tooltip_text = "%s\n%s" % [data.display_name, data.description]
+	b.tooltip_text = "%s\n%s" % [data.display_name, data.description] if inst.identified else "Unidentified device: model, condition and properties unknown."
 	b.pressed.connect(func() -> void:
 		GameManager.select_implant(inst.uid)
 		_build_plan_contents())
@@ -272,13 +272,20 @@ func _implant_option(i: int, inst: ImplantInstance, selected: bool, requested: C
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	b.add_child(UIKit.full_rect(UIKit.margin(6, 4, 6, 4)))
 	(b.get_child(0) as MarginContainer).add_child(row)
-	row.add_child(CyberwareIcon.make(data))
+	if inst.identified:
+		row.add_child(CyberwareIcon.make(data))
+	else:
+		row.add_child(UIKit.icon("res://assets/sprites/ui/icons/warning.png", 16))
 	var v := UIKit.vbox(1)
 	v.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	UIKit.expand(v)
 	v.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	row.add_child(v)
 	var tag := "REQUESTED" if data.id == requested.id else ("UPGRADE" if data.tier > requested.tier else "SUBSTITUTE")
+	if not inst.identified:
+		v.add_child(UIKit.label(inst.display_name(), &"", true, Palette.BRAND, 15))
+		v.add_child(UIKit.label("UNKNOWN · COND ?? · LOAD ??  · install it blind", &"SubHeaderLabel", true, Palette.WARN))
+		return b
 	v.add_child(UIKit.label(data.display_name, &"", true, null, 15))
 	var unknown := "  ?? TRAITS" if inst.has_unknown_traits() else ""
 	v.add_child(UIKit.label("%s · COND %d%% · LOAD +%d%%%s" % [tag, roundi(inst.condition), roundi(inst.get_neural_load()), unknown], &"SubHeaderLabel", true,

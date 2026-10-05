@@ -296,8 +296,10 @@ func _stash_card(i: int, inst: ImplantInstance) -> Control:
 			var pay := SupplierManager.give_to_specialist(inst.uid)
 			if pay > 0:
 				UIManager.show_toast("The Curator pays %d and owes you one." % pay, &"success")
-				SaveManager.save_game(), "Curator_%d" % i, 44)
-		cur.disabled = not bool(SupplierManager.st("curator").get("discovered", false))
+				SaveManager.save_game()
+			else:
+				UIManager.show_toast("The Curator isn't taking your calls.", &"warn"), "Curator_%d" % i, 44)
+		cur.disabled = not bool(SupplierManager.st("curator").get("discovered", false)) or SupplierManager.is_cut_off("curator")
 		cur.tooltip_text = "Give it to a specialist who collects mysteries: 70% of its value and their trust." if not cur.disabled else "You don't know a specialist yet."
 		row_btns = [an, cur, sell, scrap]
 	for b: Button in row_btns:
@@ -464,7 +466,7 @@ func _supplier_offer(id: String, i: int, o: Dictionary) -> Control:
 		var label: String = str({"cash": "BUY %s", "credit": "ON CREDIT %s", "rush": "RUSH NOW %s"}[mode]) % EconomyManager.format_money(SupplierManager.price_for(id, i, mode))
 		var b := UIKit.button(label, &"BMButton" if mode == "cash" else &"GhostButton", _buy_supplier.bind(id, i, mode), "SupplierBuy_%s_%d_%s" % [id, i, mode], 34)
 		b.disabled = why != ""
-		b.tooltip_text = why if why != "" else {"cash": "Pay now.", "credit": "Pay after your next %d jobs. Miss it and they get suspicious." % int(SupplierManager.data.get("credit_jobs", 3)), "rush": "Delivered right now, any hour: +50%."}[mode]
+		b.tooltip_text = why if why != "" else {"cash": "Pay now; delivered at opening tomorrow.", "credit": "Delivered tomorrow; pay after your next %d jobs. Miss it and they get suspicious." % int(SupplierManager.data.get("credit_jobs", 3)), "rush": "Delivered right now, any hour: +50%."}[mode]
 		b.custom_minimum_size.x = 210
 		btns.add_child(b)
 	return row

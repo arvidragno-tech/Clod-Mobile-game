@@ -87,6 +87,27 @@
    "from": "",
    "subject": "{subject}",
    "body": "{body}"
+  },
+  "fired_grudge": {
+   "kind": "message",
+   "from": "",
+   "subject": "{name} is talking",
+   "body": "Word is {name} has been telling corporate security exactly where you keep the unregistered chrome. Being fired made them chatty.",
+   "actions": [
+    {
+     "label": "LET THEM TALK",
+     "effects": {
+      "heat": 5
+     }
+    },
+    {
+     "label": "PAY THEM TO STOP (150)",
+     "effects": {
+      "money": -150,
+      "heat": 1
+     }
+    }
+   ]
   }
  }
 }

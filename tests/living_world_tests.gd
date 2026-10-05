@@ -24,6 +24,8 @@ func run(runner: Node) -> void:
 	_threats()
 	_narrative()
 	_save_v5_migration()
+	_followups()
+	_audit_fixes()
 	SaveManager.reset_all()
 	WorldEventManager.auto_roll = true
 	SecurityManager.auto_roll = true
@@ -607,7 +609,9 @@ func _high_stakes() -> void:
 	check(SurgeryManager.resolve_dilemma(1).is_empty(), "and can't be chosen")
 	InventoryManager.supplies = 10
 	var r := SurgeryManager.resolve_dilemma(0)
-	check(not r.is_empty() and SurgeryManager.active_dilemma.is_empty() and SurgeryManager.is_running, "deciding resumes the operation")
+	check(not r.is_empty() and SurgeryManager.active_dilemma.is_empty() and not SurgeryManager.is_running, "deciding keeps the patient frozen while you read the outcome")
+	SurgeryManager.resume()
+	check(SurgeryManager.is_running, "dismissing it resumes the operation")
 	check(SurgeryManager.dilemma_notes.size() == 1, "the outcome is recorded for the report")
 	# Stop safely.
 	SurgeryManager.debug_trigger_dilemma(&"cyberware_instability")
@@ -748,9 +752,11 @@ func _suppliers() -> void:
 		SupplierManager._refresh(okafor)
 		var st: Array = SupplierManager.st(okafor)["stock"]
 		for j in st.size():
-			if str(st[j]["kind"]) == "tool":
+			if str(st[j]["kind"]) == "tool" and SupplierManager.buy_block_reason(okafor, j) == "":
 				var tid := StringName(str(st[j]["tool"]))
 				SupplierManager.buy(okafor, j)
+				check(not InventoryManager.owns_tool(tid), "a cash order isn't here yet")
+				SupplierManager._on_day_started(BusinessManager.day)
 				got_tool = InventoryManager.owns_tool(tid)
 				break
 		if got_tool:
@@ -1021,3 +1027,285 @@ func _save_v5_migration() -> void:
 	var back := PeopleManager.make_customer(c.id)
 	check(back != null and not back.appearance.is_empty(), "and can walk back in with a face")
 	SaveManager.delete_save()
+
+
+func _followups() -> void:
+	_fresh()
+	# 1. Unidentified devices stay unknown until analysed or installed.
+	var c := CustomerManager.generator.generate({"full_difficulty": true, "category": "eyes"})
+	c.risk_tolerance = 0.5
+	CustomerManager.debug_set_customer(c)
+	var u := ImplantInstance.create(c.requested_cyberware_id, 70.0, &"black_market")
+	u.identified = false
+	check(not GameManager.customer_accepts(u), "a cautious patient won't take an unidentified device")
+	c.risk_tolerance = 0.9
+	check(GameManager.customer_accepts(u), "a reckless one will")
+	var item := CyberwareManager.get_cyberware(c.requested_cyberware_id)
+	SurgeryManager.start_session(SurgeryManager.get_surgery(item.install_surgery_id), c, true, 1.0, 3, u)
+	var res := [null]
+	var cb := func(r: SurgeryResult) -> void: res[0] = r
+	SurgeryManager.session_finished.connect(cb)
+	SurgeryManager.abort()
+	SurgeryManager.session_finished.disconnect(cb)
+	check(u.identified and (res[0] as SurgeryResult).implant_name.contains("blind"), "installing blind reveals what it was")
+	CustomerManager.dismiss_current()
+	# 2. Every clinic has its own wall space and waiting spots, inside the room.
+	var ok := true
+	for i in ClinicManager.tiers.size():
+		var t := ClinicManager.get_tier_data(i)
+		var w: Dictionary = t.get("wall", {})
+		ok = ok and w.has("x") and int(w["x"]) + int(w["cols"]) * 9 <= 400 and int(w["y"]) + 30 <= 224
+		ok = ok and (t.get("waiting_feet", []) as Array).size() >= 2
+	check(ok, "all seven clinics define wall space and waiting spots inside the room")
+	# 3. Time pressure setting.
+	var tp0 := Settings.time_pressure
+	Settings.time_pressure = 1
+	check(Settings.time_pressure_mult() == 2.0, "RELAXED doubles the emergency countdown")
+	Settings.time_pressure = 2
+	check(Settings.time_pressure_mult() == 0.0, "OFF removes it")
+	Settings.time_pressure = tp0
+	# 5. The clinic score follows the night and the tension.
+	AudioManager.set_profile(&"menu")
+	FactionManager.heat = 0.0
+	SecurityManager.cases.clear()
+	TimeManager.minute = 700
+	AudioManager.update_tension()
+	AudioManager.set_profile(&"clinic")
+	check(AudioManager.current_music() == &"clinic", "daytime clinic score")
+	TimeManager.minute = 1400
+	AudioManager.update_tension()
+	check(AudioManager.current_music() == &"clinic_night", "a sparser score at night")
+	FactionManager.heat = 80.0
+	CustomerManager.spawn_emergency()
+	AudioManager.update_tension()
+	check(AudioManager.current_music() == &"clinic_tension", "the tense score when things go wrong")
+	FactionManager.heat = 50.0
+	CustomerManager.dismiss_current()
+	AudioManager.update_tension()
+	check(AudioManager.current_music() == &"clinic_tension" or AudioManager.tension < 0.3, "it doesn't flap at the threshold (hysteresis)")
+	FactionManager.heat = 0.0
+	AudioManager.update_tension()
+	check(AudioManager.current_music() == &"clinic_night", "and calms down again")
+	for id: StringName in [&"clinic_night", &"clinic_tension"]:
+		check(ResourceLoader.exists(AudioManager.MUSIC_PATHS[id]), "%s track exists" % id)
+	AudioManager.set_profile(&"menu")
+	# 6. Conversations know who you've become and what they remember.
+	ReputationManager.reset_state()
+	DialogueManager.start(&"d_mother_protection")
+	var plain := DialogueManager.node_text(DialogueManager.current_node())
+	ReputationManager.change_dim(&"criminal", 25)
+	check(DialogueManager.node_text(DialogueManager.current_node()) != plain and DialogueManager.node_text(DialogueManager.current_node()).contains("crews already call you"), "Mother greets the gang doc differently")
+	DialogueManager.choose(0)
+	check(DialogueManager.options().any(func(o: Dictionary) -> bool: return str(o["text"]).contains("colours")), "and a gang doc gets a new option")
+	DialogueManager.end()
+	ReputationManager.change_dim(&"criminal", -25)
+	DialogueManager.start(&"d_mother_protection")
+	DialogueManager.choose(0)
+	check(not DialogueManager.options().any(func(o: Dictionary) -> bool: return str(o["text"]).contains("colours")), "which is hidden otherwise")
+	DialogueManager.end()
+	# Memories change odds and lines.
+	DialogueManager.start(&"d_teo_crossroads")
+	var lie := {"kind": "lie"}
+	var p0 := DialogueManager.chance(lie)
+	MemoryManager.remember(&"teo_marr", &"PLAYER_LIED")
+	check(DialogueManager.chance(lie) < p0, "a remembered lie makes the next one harder")
+	MemoryManager.remember(&"teo_marr", &"PLAYER_SAVED_EMPLOYEE")
+	check(DialogueManager.node_text(DialogueManager.current_node()).contains("paid"), "Teo remembers you paid his debt")
+	DialogueManager.end()
+	# Every authored option points at a node that exists.
+	var broken: Array[String] = []
+	for did: Variant in DialogueManager.dialogues:
+		var nodes: Dictionary = DialogueManager.dialogues[did].get("nodes", {})
+		for nid: Variant in nodes:
+			var n: Dictionary = nodes[nid]
+			for key: String in ["next"]:
+				if n.has(key) and not nodes.has(str(n[key])):
+					broken.append("%s/%s" % [did, nid])
+			for o: Variant in n.get("options", []):
+				for key: String in ["next", "fail_next"]:
+					if (o as Dictionary).has(key) and not nodes.has(str(o[key])):
+						broken.append("%s/%s->%s" % [did, nid, o[key]])
+	check(broken.is_empty(), "dialogue graphs are intact %s" % [broken])
+
+
+## Regression tests for the bugs found in the code audit.
+func _audit_fixes() -> void:
+	_fresh()
+	# Terms memories only when paid treatment happened.
+	var c := CustomerManager.generator.generate({"full_difficulty": true})
+	c.terms = &"free"
+	PeopleManager.after_visit(c, "refused")
+	check(not MemoryManager.has(c.id, &"PLAYER_TREATED_FREE"), "refusing a FREE patient isn't remembered as free treatment")
+	PeopleManager.after_visit(c, "deferred")
+	check(not MemoryManager.has(c.id, &"PLAYER_TREATED_FREE"), "nor is deferring them")
+	PeopleManager.after_visit(c, "success", 0)
+	check(MemoryManager.has(c.id, &"PLAYER_TREATED_FREE"), "treating them is")
+	# The dead don't pay.
+	var d := CustomerManager.generator.generate({"full_difficulty": true})
+	PeopleManager.register(d)
+	var debt := PeopleManager.add_debt(d.id, 400, "test")
+	PeopleManager.set_plan(int(debt["id"]))
+	PeopleManager.after_visit(d, "death")
+	var m0 := EconomyManager.money
+	for i in 4:
+		BusinessManager.end_day()
+	check(PeopleManager.owed_by(d.id) == 0 and str(PeopleManager.get_debt(int(debt["id"]))["status"]) == "deceased" and EconomyManager.money <= m0, "a dead patient's debt closes and stops paying")
+	check(PeopleManager.demand(int(debt["id"])) == 0, "and can't be demanded")
+	# Specialist: one PLAYER_SAVED_ME, not two.
+	var em := CustomerManager.spawn_emergency()
+	EconomyManager.add_money(5000)
+	var saved := false
+	for i in 20:
+		var r := GameManager.triage_specialist()
+		if bool(r.get("success", false)):
+			saved = true
+			break
+		em = CustomerManager.spawn_emergency()
+	if saved:
+		check(MemoryManager.count(em.id, &"PLAYER_SAVED_ME") == 1, "the specialist save is remembered once")
+	# First-time patients: dilemma memories move the relationship.
+	var f := CustomerManager.generator.generate({"full_difficulty": true, "category": "neural"})
+	var item := CyberwareManager.get_cyberware(f.requested_cyberware_id)
+	SurgeryManager.start_session(SurgeryManager.get_surgery(item.install_surgery_id), f, true, 1.0, 5, ImplantInstance.create(item.id))
+	SurgeryManager.debug_trigger_dilemma(&"foreign_device")
+	var ch: Dictionary = SurgeryManager.active_dilemma["choices"][0]
+	ch["odds"] = 1.0
+	SurgeryManager.resolve_dilemma(0)
+	ch["odds"] = 0.55
+	check(PeopleManager.has_person(f.id) and int(PeopleManager.get_person(f.id)["rel"]) < 0, "a first-timer you robbed on the table resents it")
+	# A choice with no failure outcome always succeeds.
+	SurgeryManager.resume()
+	SurgeryManager.debug_trigger_dilemma(&"nerve_damage")
+	var lower: Dictionary = SurgeryManager.active_dilemma["choices"][2]
+	lower["odds"] = 0.0
+	check(bool(SurgeryManager.resolve_dilemma(2)["success"]), "a safe choice can't 'go wrong'")
+	lower["odds"] = 0.95
+	SurgeryManager.resume()
+	# Stopping before the implant goes in returns it to stock.
+	var stop_c := CustomerManager.generator.generate({"full_difficulty": true, "category": "dermal"})
+	SurgeryManager.abort()
+	CustomerManager.debug_set_customer(stop_c)
+	var it2 := CyberwareManager.get_cyberware(stop_c.requested_cyberware_id)
+	InventoryManager.add_instance(ImplantInstance.create(it2.id))
+	GameManager.chosen_diagnosis_id = stop_c.true_diagnosis_id
+	GameManager.diagnosis_correct = true
+	for t in it2.get_tool_requirements():
+		for tool: ToolData in InventoryManager.tool_catalog.values():
+			if tool.category == StringName(str(t["category"])) and tool.tier >= int(t["tier"]) and not InventoryManager.owns_tool(tool.id):
+				InventoryManager.owned_tools.append(tool.id)
+				break
+	for cat in SurgeryManager.get_surgery(it2.install_surgery_id).get_required_tool_categories():
+		if not InventoryManager.has_tool_category(cat):
+			for tool: ToolData in InventoryManager.tool_catalog.values():
+				if tool.category == cat:
+					InventoryManager.owned_tools.append(tool.id)
+					break
+	stop_c.risk_tolerance = 1.0
+	var units := InventoryManager.get_instances().filter(func(x: ImplantInstance) -> bool: return x.cyberware_id == it2.id).size()
+	GameManager.begin_surgery()
+	check(SurgeryManager.is_active, "operation starts for the stop test %s" % [GameManager.get_surgery_readiness()])
+	SurgeryManager.debug_trigger_dilemma(&"cyberware_instability")
+	SurgeryManager.resolve_dilemma(2)
+	await_free()
+	check(InventoryManager.get_instances().filter(func(x: ImplantInstance) -> bool: return x.cyberware_id == it2.id).size() == units, "stopping before the implant goes in returns it to stock")
+	CustomerManager.dismiss_current()
+	# Waiting-room complaint makes people leave sooner, not later.
+	ClinicLifeManager.waiting.clear()
+	var w := CustomerManager.generator.generate({"full_difficulty": true})
+	ClinicLifeManager.waiting.append({"customer": w, "since": 600})
+	ClinicLifeManager._apply({"patience": -10})
+	check(int(ClinicLifeManager.waiting[0]["since"]) < 600, "a complaint eats patience")
+	ClinicLifeManager.waiting.clear()
+	# Rivalry XP.
+	var a := StaffManager.generate_candidate()
+	var b := StaffManager.generate_candidate()
+	a["clinic"] = ClinicManager.tier
+	b["clinic"] = ClinicManager.tier
+	a["relationships"][str(b["id"])] = 0
+	b["relationships"][str(a["id"])] = 0
+	StaffManager.employees.append(a)
+	StaffManager.employees.append(b)
+	var xp0 := int(a["xp"]) + int(a["skill"]) * 1000
+	StaffLifeManager.apply_staff({"bond": "competitive", "xp": 30}, {"a": str(a["id"]), "b": str(b["id"])})
+	check(int(a["xp"]) + int(a["skill"]) * 1000 > xp0, "a rivalry sharpens both of them")
+	StaffManager.employees.clear()
+	check(CommsManager.templates.has("fired_grudge"), "a fired employee's grudge has somewhere to land")
+	# Trimming keeps favours and returns; memories go with the person.
+	var fav := CustomerManager.generator.generate({"full_difficulty": true})
+	PeopleManager.register(fav)
+	PeopleManager.get_person(fav.id)["favor"] = true
+	PeopleManager.get_person(fav.id)["rel"] = 0
+	for i in PeopleManager.MAX_PEOPLE + 5:
+		var x := CustomerManager.generator.generate({"full_difficulty": true})
+		PeopleManager.register(x)
+		MemoryManager.remember(x.id, &"PLAYER_MADE_ME_WAIT")
+	check(PeopleManager.has_person(fav.id), "someone who owes you a favour is never forgotten")
+	check(MemoryManager.memories.size() <= PeopleManager.people.size() + 30, "forgotten people take their memories with them")
+	# Backers survive a change in wealth.
+	var cr := CustomerManager.generator.generate({"full_difficulty": true})
+	PeopleManager.after_visit(cr, "success", 10)
+	var pc := PeopleManager.get_person(cr.id)
+	pc["finance"] = "criminal"
+	for i in 30:
+		pc["last_day"] = BusinessManager.day - 30
+		PeopleManager.make_customer(cr.id)
+	check(str(pc["finance"]) == "criminal", "crew money stays crew money")
+	# Confiscation takes all the black-market chrome.
+	for x in InventoryManager.get_instances().duplicate():
+		InventoryManager.remove_instance(x.uid)
+	for i in 3:
+		InventoryManager.add_instance(ImplantInstance.create(&"ghostlink_eye", 60.0, &"black_market"))
+	InventoryManager.add_instance(ImplantInstance.create(&"kevlace_mesh"))
+	SecurityManager.confiscate()
+	check(InventoryManager.get_instances().size() == 1 and InventoryManager.get_instances()[0].source != &"black_market", "confiscation takes every unregistered unit, nothing else")
+	# No paying twice for a tool you own.
+	StoryManager.set_flag(&"bm_access")
+	SupplierManager.discover("okafor", "test")
+	var stock: Array = SupplierManager.st("okafor")["stock"]
+	stock.clear()
+	var owned_id: StringName = InventoryManager.owned_tools[0]
+	stock.append({"kind": "tool", "tool": String(owned_id), "category": "rare_tools", "grade": "professional", "price": 100})
+	check(SupplierManager.buy_block_reason("okafor", 0) == "You already have one", "you can't buy a tool you already own")
+	# Night brings more stock.
+	SupplierManager.st("okafor")["stock"] = []
+	SupplierManager.st("sallow")["discovered"] = true
+	SupplierManager.st("sallow")["stock"] = []
+	SupplierManager._on_period_changed(&"night")
+	check((SupplierManager.st("sallow")["stock"] as Array).size() >= 2, "night contacts bring out more")
+	# Rush is now; cash is tomorrow.
+	EconomyManager.add_money(50000)
+	SupplierManager.st("sallow")["trust"] = 60
+	var n_sup := InventoryManager.supplies
+	InventoryManager.supplies = 0
+	(SupplierManager.st("sallow")["stock"] as Array).insert(0, {"kind": "supplies", "amount": 4, "category": "illegal_pharma", "grade": "used", "price": 50})
+	SupplierManager.buy("sallow", 0, "rush")
+	check(InventoryManager.supplies == 4, "RUSH delivers right away")
+	(SupplierManager.st("sallow")["stock"] as Array).insert(0, {"kind": "supplies", "amount": 3, "category": "illegal_pharma", "grade": "used", "price": 50})
+	SupplierManager.buy("sallow", 0, "cash")
+	check(InventoryManager.supplies == 4 and SupplierManager.deliveries.size() == 1, "a cash order waits for the morning run")
+	SupplierManager._on_day_started(BusinessManager.day)
+	check(InventoryManager.supplies == 7 and SupplierManager.deliveries.is_empty(), "and arrives at opening")
+	InventoryManager.supplies = n_sup
+	# Getting hurt in a fight costs you steady hands.
+	var prec := ModifierManager.value(&"surgery.precision")
+	StoryManager.apply_effects({"appearance_player": "injury"})
+	check(ModifierManager.value(&"surgery.precision") < prec, "an injury really makes your hands worse")
+	# Teo caught stealing is gone for good.
+	var teo := StaffManager.cast_candidate(StaffManager.TEO)
+	if not teo.is_empty():
+		teo["clinic"] = ClinicManager.tier
+		StaffManager.employees.append(teo)
+		var cs := {"id": 999, "day": BusinessManager.day, "loot": {"kind": "belongings", "text": "x"}, "loot_text": "x",
+			"culprit": {"kind": "employee", "id": str(teo["id"]), "name": str(teo["name"])}, "clues": [], "used": [], "status": "open", "outcome": ""}
+		SecurityManager.cases.append(cs)
+		SecurityManager.confront(999, "staff:%s" % teo["id"])
+		check(StoryManager.has_flag(&"teo_gone"), "Teo caught stealing is gone from the story")
+	# The emergency countdown lives on the patient, not the screen.
+	var e2 := CustomerManager.spawn_emergency()
+	var left := CustomerManager.emergency_seconds_left()
+	e2.emergency_deadline -= 30000
+	check(absf(CustomerManager.emergency_seconds_left() - (left - 30.0)) < 0.01, "time spent away from the file still counts")
+
+
+func await_free() -> void:
+	pass

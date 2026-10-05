@@ -25,6 +25,9 @@ const PIXEL_SCALING: Array[String] = ["fit", "integer"]
 const PIXEL_SCALING_NAMES: Array[String] = ["FIT (FILL WINDOW)", "INTEGER (PIXEL PERFECT)"]
 const DIFFICULTY_NAMES: Array[String] = ["STORY", "STANDARD", "BRUTAL"]
 const AUTOSAVE_NAMES: Array[String] = ["OFF", "EVERY JOB", "EVERY NIGHT"]
+## Emergency triage countdown multiplier (index = time_pressure; 0 = no countdown).
+const TIME_PRESSURE: Array[float] = [1.0, 2.0, 0.0]
+const TIME_PRESSURE_NAMES: Array[String] = ["NORMAL", "RELAXED (x2)", "OFF"]
 const UI_SCALES: Array[float] = [0.9, 1.0, 1.1]
 const UI_SCALE_NAMES: Array[String] = ["SMALL", "NORMAL", "LARGE"]
 
@@ -66,6 +69,7 @@ const DEFAULTS := {
 	"tooltips": true,
 	"pause_dialogue": true,
 	"pause_focus_loss": true,
+	"time_pressure": 0,
 	"difficulty": 1,
 	"autosave": 1,
 	"damage_feedback": true,
@@ -112,6 +116,8 @@ var tutorial_hints: bool = true
 var tooltips: bool = true
 var pause_dialogue: bool = true
 var pause_focus_loss: bool = true
+## Emergency countdowns: 0 normal, 1 relaxed, 2 off (accessibility).
+var time_pressure: int = 0
 var difficulty: int = 1
 var autosave: int = 1
 var damage_feedback: bool = true
@@ -152,6 +158,7 @@ func load_settings() -> void:
 	ambience_volume = clampf(ambience_volume, 0.0, 1.0)
 	sfx_volume = clampf(sfx_volume, 0.0, 1.0)
 	text_speed = clampi(text_speed, 0, TEXT_SPEEDS.size() - 1)
+	time_pressure = clampi(time_pressure, 0, TIME_PRESSURE.size() - 1)
 	fps_limit = clampi(fps_limit, 0, FPS_LIMITS.size() - 1)
 	if not PIXEL_SCALING.has(pixel_scaling):
 		pixel_scaling = "fit"
@@ -277,3 +284,9 @@ func font_bonus() -> int:
 ## Multiplier for every themed font size (text scale slider).
 func font_scale() -> float:
 	return text_scale
+
+
+
+## Multiplier for real-time emergency countdowns (0 = no countdown).
+func time_pressure_mult() -> float:
+	return TIME_PRESSURE[clampi(time_pressure, 0, TIME_PRESSURE.size() - 1)]

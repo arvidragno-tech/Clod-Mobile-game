@@ -68,4 +68,9 @@ func _pick(i: int) -> void:
 
 func _close() -> void:
 	UIManager.close_modal()
+
+
+func _exit_tree() -> void:
+	# Back to the table: the patient's clock runs again.
+	SurgeryManager.resume()
 	closed.emit()

@@ -97,6 +97,12 @@ func _ready() -> void:
 	_caption.modulate.a = 0.0
 	add_child(_caption)
 	ClinicLifeManager.caption_posted.connect(show_caption)
+	# The hour colours the room (cold morning, amber evening, blue night) as a
+	# colour multiply on the room's own draw: no extra full-screen pass.
+	EventBus.period_changed.connect(func(_p: StringName) -> void: _apply_tint())
+	EventBus.time_changed.connect(func(_m: int, _p: StringName) -> void: _apply_tint())
+	_apply_tint()
+	ClinicLifeManager.wall_changed.connect(func() -> void: _wall_tex = null)
 	_ticker_box = Control.new()
 	_ticker_box.name = "NewsTicker"
 	_ticker_box.clip_contents = true
@@ -114,6 +120,20 @@ func _ready() -> void:
 	EventBus.clinic_upgrade_installed.connect(func(_c: StringName, _l: int) -> void: refresh_background())
 	resized.connect(_layout)
 	refresh_background()
+
+
+var _tint_applied := Color(-1, -1, -1)
+var _wall_tex: ImageTexture = null
+var _wall_tex_clinic: String = ""
+
+
+func _apply_tint() -> void:
+	var t := TimeManager.tint()
+	var m := Color.WHITE.lerp(Color(t.r, t.g, t.b), clampf(t.a * 1.6, 0.0, 0.6)).darkened(t.a * 0.5)
+	m.a = 1.0
+	if m != _tint_applied:
+		_tint_applied = m
+		self_modulate = m
 
 
 ## A line of clinic life at the bottom of the room, fading after a while.
@@ -297,10 +317,6 @@ func _draw() -> void:
 			var w := (14 - k * 4) * _scale
 			draw_rect(Rect2(foot.x - w / 2.0, foot.y - _scale + k * 0.0, w, _scale), Color(0, 0, 0, 0.25 + k * 0.15))
 		_draw_customer(r)
-	# The hour colours the room: cold morning, amber evening, blue night.
-	var tint := TimeManager.tint()
-	if tint.a > 0.0:
-		draw_rect(Rect2(Vector2.ZERO, size), tint)
 	if zoomed:
 		# Zoom badge (top-right), drawn in whole pixels.
 		var badge := Rect2(size.x - 34, 6, 28, 14)
@@ -316,35 +332,52 @@ func _draw() -> void:
 ## The people on the bench: further back, a little darker, breathing.
 func _draw_waiting() -> void:
 	var list := ClinicLifeManager.waiting_customers()
-	for i in mini(list.size(), WAIT_FEET.size()):
+	var feet: Array = ClinicManager.get_tier_data().get("waiting_feet", WAIT_FEET)
+	for i in mini(list.size(), feet.size()):
 		var tex: Texture2D = _waiting_tex.get(list[i].id, null)
 		if tex == null:
 			continue
 		var s := Vector2(tex.get_size()) * _scale
-		var foot: Vector2 = _offset + (WAIT_FEET[i] as Vector2) * _scale
+		var fp: Variant = feet[i]
+		var foot: Vector2 = _offset + (Vector2(float(fp[0]), float(fp[1])) if fp is Array else fp as Vector2) * _scale
 		var bob := (floorf(sin(_time * 1.6 + i * 1.3) + 1.0) * 0.5) * _scale if Settings.environment_effects else 0.0
 		var r := Rect2(foot - Vector2(s.x / 2.0, s.y - BODY_FOOT_PAD * _scale) + Vector2(0, -bob), s)
 		draw_rect(Rect2(foot.x - 5 * _scale, foot.y - _scale, 10 * _scale, _scale), Color(0, 0, 0, 0.35))
 		draw_texture_rect(tex, r, false, Color(0.62, 0.62, 0.7, 1.0))
 
 
-## The Clinic Wall: one small pinned rectangle per memory.
+## The Clinic Wall: pins rendered once into a small art-pixel texture
+## (rebuilt when the wall or the clinic changes) and drawn with the room.
 func _draw_wall() -> void:
+	if ClinicLifeManager.wall.is_empty():
+		return
+	var wd: Dictionary = ClinicManager.get_tier_data().get("wall", {})
+	var origin := Vector2(float(wd.get("x", WALL_ORIGIN.x)), float(wd.get("y", WALL_ORIGIN.y)))
+	if _wall_tex == null or _wall_tex_clinic != ClinicManager.clinic_id():
+		_wall_tex = _build_wall_texture(int(wd.get("cols", WALL_COLS)))
+		_wall_tex_clinic = ClinicManager.clinic_id()
+	var at := _offset + (origin - Vector2(1, 1)) * _scale
+	draw_texture_rect(_wall_tex, Rect2(at, Vector2(_wall_tex.get_size()) * _scale), false)
+
+
+func _build_wall_texture(cols: int) -> ImageTexture:
+	var img := Image.create(cols * 9 + 4, 34, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0, 0, 0, 0))
 	var pins := ClinicLifeManager.wall
-	for i in pins.size():
+	for i in mini(pins.size(), cols * 3):
 		var p: Dictionary = pins[i]
-		var cell := Vector2((i % WALL_COLS) * 9, (i / WALL_COLS) * 10) + Vector2((i * 7) % 3, (i * 5) % 2)
-		var at := _offset + (WALL_ORIGIN + cell) * _scale
+		var cell := Vector2i((i % cols) * 9, (i / cols) * 10) + Vector2i((i * 7) % 3, (i * 5) % 2) + Vector2i(1, 1)
 		var col := ClinicLifeManager.pin_color(str(p["kind"])).darkened(0.25)
-		draw_rect(Rect2(at, Vector2(7, 8) * _scale), Color(0, 0, 0, 0.45))
-		draw_rect(Rect2(at + Vector2(-1, -1) * _scale, Vector2(7, 8) * _scale), col)
+		img.fill_rect(Rect2i(cell, Vector2i(7, 8)), Color(0, 0, 0, 0.45))
+		img.fill_rect(Rect2i(cell - Vector2i(1, 1), Vector2i(7, 8)), col)
 		if str(p["kind"]) == "patient":
-			draw_rect(Rect2(at + Vector2(1, 1) * _scale, Vector2(5, 4) * _scale), Color(0.35, 0.3, 0.32))
-			draw_rect(Rect2(at + Vector2(2, 2) * _scale, Vector2(3, 2) * _scale), Color(0.75, 0.58, 0.48))
+			img.fill_rect(Rect2i(cell + Vector2i(0, 0), Vector2i(5, 4)), Color(0.35, 0.3, 0.32))
+			img.fill_rect(Rect2i(cell + Vector2i(1, 1), Vector2i(3, 2)), Color(0.75, 0.58, 0.48))
 		else:
 			for ln in 3:
-				draw_rect(Rect2(at + Vector2(0, 1 + ln * 2) * _scale, Vector2(5 - (ln % 2) * 2, 1) * _scale), col.darkened(0.45))
-		draw_rect(Rect2(at + Vector2(2, -1) * _scale, Vector2.ONE * _scale), Color(0.9, 0.2, 0.25))
+				img.fill_rect(Rect2i(cell + Vector2i(-1, ln * 2), Vector2i(5 - (ln % 2) * 2, 1)), col.darkened(0.45))
+		img.set_pixelv(cell + Vector2i(1, -1), Color(0.9, 0.2, 0.25))
+	return ImageTexture.create_from_image(img)
 
 
 ## Body in three bands so it can breathe and look around without
@@ -443,11 +476,19 @@ func _notification(what: int) -> void:
 		queue_redraw()
 
 
+## The Wall's hotspot follows where this clinic's wall space is.
+func _hotspot_rect(h: Dictionary) -> Rect2:
+	if h["id"] == &"wall":
+		var wd: Dictionary = ClinicManager.get_tier_data().get("wall", {})
+		return Rect2(float(wd.get("x", WALL_ORIGIN.x)) - 4, float(wd.get("y", WALL_ORIGIN.y)) - 4, int(wd.get("cols", WALL_COLS)) * 9 + 6, 34)
+	return h["rect"]
+
+
 func _hotspot_at(local: Vector2) -> int:
 	var art := (local - _offset) / _scale
 	for i in HOTSPOTS.size():
 		var h: Dictionary = HOTSPOTS[i]
-		if ClinicManager.tier >= int(h["min_tier"]) and (h["rect"] as Rect2).has_point(art):
+		if ClinicManager.tier >= int(h["min_tier"]) and _hotspot_rect(h).has_point(art):
 			return i
 	return -1
 
@@ -456,7 +497,7 @@ func _hotspot_at(local: Vector2) -> int:
 func _draw_hotspot() -> void:
 	if _hot < 0:
 		return
-	var r: Rect2 = HOTSPOTS[_hot]["rect"]
+	var r: Rect2 = _hotspot_rect(HOTSPOTS[_hot])
 	var a := 0.6 + 0.3 * sin(_time * 6.0)
 	var c := Color(Palette.ACCENT, a)
 	var tl := _px(r.position)

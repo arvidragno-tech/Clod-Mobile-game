@@ -330,6 +330,9 @@ func apply_staff(fx: Dictionary, vars: Dictionary) -> Array[String]:
 	if not a.is_empty() and not b.is_empty():
 		if fx.has("rel"):
 			change_rel(a, b, int(fx["rel"]))
+		if fx.has("xp"):
+			StaffManager._gain_xp(a, int(fx["xp"]))
+			StaffManager._gain_xp(b, int(fx["xp"]))
 		if fx.has("bond"):
 			set_bond(a, b, str(fx["bond"]))
 			out.append("%s & %s: %s" % [a["name"], b["name"], bond_label(str(fx["bond"])).to_lower()])

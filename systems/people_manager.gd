@@ -121,8 +121,11 @@ func _trim() -> void:
 	for k: String in keys:
 		if people.size() <= MAX_PEOPLE:
 			break
-		if owed_by(StringName(k)) == 0:
+		var pk: Dictionary = people[k]
+		# Never forget debtors, favours owed or people due back.
+		if owed_by(StringName(k)) == 0 and not bool(pk.get("favor", false)) and int(pk.get("next_day", -1)) < 0:
 			people.erase(k)
+			MemoryManager.memories.erase(k)
 
 
 func _weight(k: String) -> float:
@@ -184,7 +187,15 @@ func after_visit(c: CustomerData, outcome: String, paid: int = 0) -> void:
 			note(id, "Operation went wrong.")
 		"death":
 			p["status"] = "dead"
+			p["next_day"] = -1
 			note(id, "Died on the table.")
+			# The dead don't pay: their debts close.
+			for d in debts:
+				if str(d["person"]) == String(id) and str(d["status"]) in ["open", "plan", "favor"]:
+					d["status"] = "deceased"
+					(d["history"] as Array).append("D%d died; debt closed" % BusinessManager.day)
+			p["favor"] = false
+			debt_changed.emit()
 			# The people who loved them remember.
 			for other: String in p["links"]:
 				if has_person(StringName(other)):
@@ -206,7 +217,9 @@ func after_visit(c: CustomerData, outcome: String, paid: int = 0) -> void:
 		"left":
 			MemoryManager.remember(id, &"PLAYER_MADE_ME_WAIT")
 			note(id, "Gave up waiting and left.")
-	_apply_terms_memory(c)
+	# Terms are remembered only when money actually changed hands under them.
+	if outcome in ["success", "stabilized"]:
+		_apply_terms_memory(c)
 	if outcome in ["success", "failed"]:
 		_schedule_return(p, outcome)
 	visit_recorded.emit(id, outcome)
@@ -406,6 +419,11 @@ func make_customer(id: StringName) -> CustomerData:
 	return c
 
 
+## Crew or corporate money stays crew or corporate money when wealth moves.
+func _backed(p: Dictionary) -> bool:
+	return str(patients.get("finances", {}).get(str(p.get("finance", "")), {}).get("backer", "")) != ""
+
+
 ## What happened to them since you last saw them.
 func _evolve(p: Dictionary, c: CustomerData) -> void:
 	var days := maxi(1, BusinessManager.day - int(p.get("last_day", BusinessManager.day)))
@@ -413,12 +431,14 @@ func _evolve(p: Dictionary, c: CustomerData) -> void:
 	var app: Dictionary = p["appearance"]
 	if _rng.randf() < 0.22 * r and int(p["wealth"]) < 3 and int(p["rel"]) >= 0:
 		p["wealth"] = int(p["wealth"]) + 1
-		p["finance"] = {1: "working", 2: "comfortable", 3: "wealthy"}.get(int(p["wealth"]), p["finance"])
+		if not _backed(p):
+			p["finance"] = {1: "working", 2: "comfortable", 3: "wealthy"}.get(int(p["wealth"]), p["finance"])
 		app = CharacterAppearanceManager.apply_event(app, "wealth_up")
 		c.changes.append("Better clothes, better chrome: things are going well.")
 	elif _rng.randf() < 0.15 * r and int(p["wealth"]) > 0:
 		p["wealth"] = int(p["wealth"]) - 1
-		p["finance"] = {0: "poor", 1: "working", 2: "comfortable"}.get(int(p["wealth"]), p["finance"])
+		if not _backed(p):
+			p["finance"] = {0: "poor", 1: "working", 2: "comfortable"}.get(int(p["wealth"]), p["finance"])
 		app = CharacterAppearanceManager.apply_event(app, "wealth_down")
 		c.changes.append("Thinner, cheaper coat. Money ran out somewhere.")
 	if _rng.randf() < 0.2 * r:

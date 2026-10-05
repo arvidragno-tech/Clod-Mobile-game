@@ -4,6 +4,41 @@ All notable changes to *UNDERCITY: RIPPER*. Versions follow
 `application/config/version` in `project.godot` and the Windows file version
 in `export_presets.cfg`.
 
+## 3.1.1 — Follow-ups and audit fixes
+
+### Follow-ups
+- Unidentified devices stay unidentified everywhere (inventory, operation plan, surgery): no name, grade, condition or properties until analysed. Installing one blind reveals what it was; cautious patients refuse to take one.
+- Each clinic defines its own wall space for the Clinic Wall and its own waiting spots, placed clear of that room's props; the Wall's hotspot follows.
+- New setting: GAMEPLAY > EMERGENCY COUNTDOWN (normal, relaxed ×2, off).
+- The hour's colour is now a colour multiply on the room (no extra full-screen pass) and the Wall is pre-rendered. Measured against 3.0 on the same machine, the clinic costs the same.
+- Two new score pieces: a sparse night variant and a tense variant (pressing double kick, heartbeat). The clinic switches between them with the hour and the tension, with hysteresis so it doesn't flap.
+- Conversations react to who you've become and what people remember: line variants and options by street identity, reputation and memories in six conversations (Mother, Inspector Moor, Voss, Teo, Wire, the Landlord). Identity and memories also move check odds (a remembered lie makes the next one harder; the saint is better at empathy; the gang doc at intimidation).
+
+### Fixes
+- Payment-terms memories are only recorded when treatment was actually paid for (FREE + REFUSE/DEFER no longer farm reputation).
+- A patient who dies has their debts closed: no more instalments from the dead.
+- A specialist save is remembered once, not twice.
+- First-time patients remember what happened in a surgical dilemma (they are registered before the memory).
+- The emergency countdown lives on the patient: reopening the file no longer resets it and walking away no longer pauses it (it still stops during surgery, dialogs and pauses, and respects the new setting).
+- A waiting-room complaint now shortens patience instead of lengthening it.
+- Staff rivalry XP is granted.
+- Firing a disloyal employee can now really come back to bite you (their grudge arrives in COMMS).
+- Trimming old people never forgets someone who owes you a favour or is due back, and removes the memories of people it forgets.
+- Crew or corporate money stays that way when a patient's wealth changes (BACKER PAYS doesn't vanish).
+- The table stays frozen while you read a dilemma's outcome; it resumes when you go back to it.
+- A dilemma choice with no failure outcome can't "go wrong".
+- Stopping an operation before the implant goes in returns the unit to stock.
+- Confiscation takes every black-market unit (it skipped some); thefts no longer re-sort your stash.
+- You can't buy a tool you already own from a supplier.
+- Contacts bring out more stock after dark (night multipliers now apply).
+- RUSH means something: ordinary supplier orders arrive at opening the next morning; RUSH delivers now.
+- Two quick music changes can no longer leave the score silent.
+- Teo caught stealing is gone from the story for good.
+- "Fight back" in the crew raid now really hurts you (shaky hands for three jobs).
+- TO THE CURATOR is disabled when the Curator has cut you off, and says so.
+- Accusing a suspect is a two-click confirm inside the SECURITY panel (cancelling no longer closes the panel).
+- The status bar's location and clock line is clipped with a tooltip, so long clinic names can't push MENU off-screen.
+
 ## 3.1.0 — The world reacts
 
 The clinic is no longer CUSTOMER → SURGERY → MONEY → NEXT. People remember

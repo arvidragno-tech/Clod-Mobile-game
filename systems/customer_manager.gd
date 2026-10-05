@@ -16,6 +16,12 @@ var queue: Array[Dictionary] = []
 var history: Array[Dictionary] = []
 
 var _arrival_timer: Timer
+## Emergencies: real seconds before an untreated patient crashes, then dies.
+## Counts down wherever you are (clinic, file, plan) but not during surgery,
+## dialogs or pauses; Settings > Emergency countdown scales or disables it.
+signal emergency_crashed(name: String, died: bool)
+const EMERGENCY_SECONDS := 75.0
+const CRASH_SECONDS := 45.0
 var _rng := RandomNumberGenerator.new()
 var generator: CustomerGenerator
 ## Kept for Step 1 compatibility: authored characters by id.
@@ -309,3 +315,38 @@ func load_save_data(data: Dictionary) -> void:
 	for h: Variant in data.get("history", []):
 		if typeof(h) == TYPE_DICTIONARY:
 			history.append(h)
+
+
+
+func emergency_total(c: CustomerData) -> float:
+	return (CRASH_SECONDS if c.crashes > 0 else EMERGENCY_SECONDS) * maxf(0.1, Settings.time_pressure_mult())
+
+
+## Seconds left for the patient at the door (stored on them, so it survives
+## screen changes and saves).
+func emergency_seconds_left() -> float:
+	var c := current_customer
+	if c == null or not c.is_emergency:
+		return -1.0
+	if c.emergency_deadline < 0:
+		c.emergency_deadline = int(emergency_total(c) * 1000.0)
+	return c.emergency_deadline / 1000.0
+
+
+func _process(delta: float) -> void:
+	var c := current_customer
+	if c == null or not c.is_emergency or not GameManager.is_running or Settings.time_pressure_mult() <= 0.0:
+		return
+	if SurgeryManager.is_active or UIManager.has_modal() or UIManager.is_transitioning() or (_arrival_timer and _arrival_timer.paused):
+		return
+	emergency_seconds_left()
+	c.emergency_deadline -= int(delta * 1000.0)
+	if c.emergency_deadline > 0:
+		return
+	var who := c.display_name
+	var died := GameManager.emergency_crash()
+	if not died:
+		c.emergency_deadline = int(emergency_total(c) * 1000.0)
+	AudioManager.play_sfx(&"failure" if died else &"warning", 0.0)
+	CommsManager.notify(("%s died waiting." % who) if died else ("%s is crashing: neural stability dropping, bleeding faster." % who))
+	emergency_crashed.emit(who, died)

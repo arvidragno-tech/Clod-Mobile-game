@@ -196,6 +196,8 @@ func _build_gameplay() -> void:
 	play.add_child(UIKit.label("STORY: wider tolerances, more time, cheaper rent. BRUTAL: tight hands, short timers, expensive city.", &"DimLabel", true))
 	_choice_int(play, "AUTOSAVE", "autosave", Settings.AUTOSAVE_NAMES)
 	_toggle(play, "PAUSE ON FOCUS LOSS", "pause_focus_loss", "Alt-Tab freezes the patient and the door.")
+	_choice_int(play, "EMERGENCY COUNTDOWN", "time_pressure", Settings.TIME_PRESSURE_NAMES)
+	play.add_child(UIKit.label("How long a bleeding patient waits for your triage decision. OFF: they wait until you decide.", &"DimLabel", true))
 	var help := UIKit.section(right, "HELP")
 	_toggle(help, "CONFIRM DANGEROUS ACTIONS", "confirm_dangerous", "Ask before firing staff, selling clinics, borrowing, refusing and aborting.")
 	_toggle(help, "TUTORIAL HINTS", "tutorial_hints", "Coach marks on your first operation (new games).")

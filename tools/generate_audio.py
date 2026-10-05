@@ -468,6 +468,36 @@ def make_music():
                                                       kick=[0] * 16, drone_vol=0.16))
 
 
+def render_heartbeat(bpm, bars, buf_len, rate, vol=0.5):
+    """Low double thump (lub-dub) on every beat, like a pulse in your ears."""
+    out = [0.0] * buf_len
+    beat = 60.0 / bpm
+    for k in range(int(bars * 4)):
+        for off, amp in ((0.0, 1.0), (0.16, 0.6)):
+            start = int((k * beat + off) * rate)
+            for i in range(int(0.22 * rate)):
+                f = 48 - 18 * i / (0.22 * rate)
+                out[(start + i) % buf_len] += math.sin(TAU * f * i / rate) * vol * amp * math.exp(-i / (0.05 * rate))
+    return out
+
+
+def make_music_reactive():
+    """Two extra clinic loops for the reactive score (3.1): a sparse night
+    variant for quiet small hours, and a tension variant for heat, open
+    cases, gang wars and bleeding patients at the door."""
+    # Night: slower, no press, only far clanks and the bell (same key family as clinic).
+    write_ogg("music/clinic_night.ogg", render_industrial(52, 8, [57, 53, 55, 52], seed=13,
+                                                          clank=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+                                                          kick=[0] * 16, drone_vol=0.15, bell=[64, 60, 62, 59]))
+    # Tension: faster, half-step roots, a pressing double kick and a heartbeat.
+    bars = 8
+    base = render_industrial(92, bars, [45, 46, 45, 44], seed=17,
+                             clank=[1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0],
+                             kick=[1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0], drone_vol=0.26, bell=[57, 58, 57, 56])
+    heart = render_heartbeat(92, bars, len(base), MUSIC_RATE, vol=0.35)
+    write_ogg("music/clinic_tension.ogg", normalize([a + b for a, b in zip(base, heart)], 0.82))
+
+
 def main(groups):
     if "sfx" in groups:
         make_sfx()
@@ -475,6 +505,8 @@ def main(groups):
         make_ambience()
     if "music" in groups:
         make_music()
+    if "music" in groups or "music_reactive" in groups:
+        make_music_reactive()
 
 
 if __name__ == "__main__":

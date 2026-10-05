@@ -198,7 +198,7 @@ func _take_loot() -> Dictionary:
 			out["amount"] = n
 			out["text"] = str(lt.get("money", "%d credits")) % n
 		"cyberware":
-			var list := InventoryManager.get_instances()
+			var list := InventoryManager.get_instances().duplicate()
 			list.sort_custom(func(a: ImplantInstance, b: ImplantInstance) -> bool: return (a.get_data().price if a.get_data() else 0) > (b.get_data().price if b.get_data() else 0))
 			var inst: ImplantInstance = list[0] if _rng.randf() < 0.6 else list[_rng.randi() % list.size()]
 			out["item"] = inst.to_dict()
@@ -363,6 +363,8 @@ func confront(case_id: int, key: String) -> Dictionary:
 				if not e.is_empty():
 					e["loyalty"] = 0.0
 					StaffManager.employees.erase(e)
+					if StringName(str(e["id"])) == StaffManager.TEO:
+						StoryManager.set_flag(&"teo_gone")
 					StaffManager.staff_changed.emit()
 					if str(c["culprit"]["kind"]) == "insider":
 						e["secret_known"] = true
@@ -495,7 +497,7 @@ func apply(fx: Dictionary) -> void:
 ## Security takes black-market chrome and stored contraband.
 func confiscate() -> int:
 	var n := 0
-	for inst in InventoryManager.get_instances():
+	for inst in InventoryManager.get_instances().duplicate():
 		if inst.source == &"black_market":
 			InventoryManager.remove_instance(inst.uid)
 			n += 1

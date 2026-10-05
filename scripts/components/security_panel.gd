@@ -100,11 +100,16 @@ func _case_card(c: Dictionary) -> Control:
 	var i := 0
 	for s in SecurityManager.suspects(id):
 		var key := str(s["key"])
-		var b2 := UIKit.button(str(s["label"]).to_upper(), &"DangerButton", func() -> void:
-			UIManager.confirm("CONFRONT", "Accuse %s? If you're wrong, they'll remember." % s["label"], "ACCUSE", func() -> void:
-				var r := SecurityManager.confront(id, key)
-				UIManager.show_toast(str(r.get("text", "")), &"success" if bool(r.get("right", false)) else &"danger")
-				SaveManager.save_game(), true), "Confront_%d_%d" % [id, i], 36)
+		var b2 := UIKit.button(str(s["label"]).to_upper(), &"DangerButton", Callable(), "Confront_%d_%d" % [id, i], 36)
+		# Two clicks: the first arms it (stays in this panel), the second accuses.
+		b2.pressed.connect(func() -> void:
+			if not b2.has_meta(&"armed"):
+				b2.set_meta(&"armed", true)
+				b2.text = "ACCUSE %s? CLICK AGAIN" % str(s["label"]).to_upper()
+				return
+			var r := SecurityManager.confront(id, key)
+			UIManager.show_toast(str(r.get("text", "")), &"success" if bool(r.get("right", false)) else &"danger")
+			SaveManager.save_game())
 		who.add_child(b2)
 		i += 1
 	return card

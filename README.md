@@ -7,7 +7,7 @@ almost nothing, take customers, install cyberware at a surgical workstation,
 hire staff, buy clinics across the city, and decide what you become while a
 corporate conspiracy spreads through your patients' nerves.
 
-**Status: 3.1.0, "The world reacts"**: patients who remember you and come
+**Status: 3.1.1, "The world reacts"**: patients who remember you and come
 back changed, staff with lives, a clock from 09:00 to 04:00, a waiting room
 and a Clinic Wall, a city with its own situations and news, surgical
 dilemmas, emergency triage, a black-market supplier network, break-ins and
@@ -454,13 +454,14 @@ These numbers come from the perf probe (`tests/perf_probe.tscn`) at
 **1920×1080 on a software rasterizer** (Mesa llvmpipe, CPU only, no GPU).
 Any Windows GPU renders far faster, so treat them as upper bounds.
 
-3.1 (living world) re-measured on the same software rasterizer: the clinic
-room now also draws the hour's tint, the news ticker, people in the waiting
-room and the Clinic Wall, which puts the clinic at 41–46 ms average (was
-32–35) with 148–154 draw calls and 240 nodes; the Undermarket with its new
-CONTACTS tab builds in ~480 ms and averages 63–68 ms; other screens are
-within a few ms of the table below. Static memory stays flat across a
-20-shift soak (stability test: nodes 226 → 226, orphans 0).
+3.1 (living world), measured back to back with the 3.0 build on the same
+machine and renderer: the clinic averages 37–43 ms in both (3.0: 36–42 ms),
+so the new room layers (time-of-day colour, news ticker, waiting room,
+Clinic Wall) cost nothing measurable. The time-of-day colour is a colour
+multiply on the room's own draw and the Wall is pre-rendered into a small
+texture. Absolute numbers vary with machine load, so compare within one
+run. Static memory stays flat across a 20-shift soak (stability test:
+nodes 226 → 226, orphans 0).
 
 | Screen | Build ms | Avg frame ms (HIGH) | Avg frame ms (LOW) | Draw calls | Nodes | Texture MB |
 |---|---|---|---|---|---|---|

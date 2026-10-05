@@ -30,7 +30,30 @@
     "Stained mattress"
    ],
    "index": 0,
-   "background": "res://assets/sprites/clinic/clinic_backalley.png"
+   "background": "res://assets/sprites/clinic/clinic_backalley.png",
+   "wall": {
+    "x": 236,
+    "y": 46,
+    "cols": 8
+   },
+   "waiting_feet": [
+    [
+     134,
+     167
+    ],
+    [
+     152,
+     170
+    ],
+    [
+     118,
+     171
+    ],
+    [
+     168,
+     172
+    ]
+   ]
   },
   {
    "id": "undercity",
@@ -58,7 +81,30 @@
     "Hidden wall stash"
    ],
    "index": 1,
-   "background": "res://assets/sprites/clinic/clinic_undercity.png"
+   "background": "res://assets/sprites/clinic/clinic_undercity.png",
+   "wall": {
+    "x": 226,
+    "y": 30,
+    "cols": 8
+   },
+   "waiting_feet": [
+    [
+     134,
+     167
+    ],
+    [
+     152,
+     170
+    ],
+    [
+     118,
+     171
+    ],
+    [
+     168,
+     172
+    ]
+   ]
   },
   {
    "id": "industrial",
@@ -89,7 +135,30 @@
     "Coolant line (leaking)"
    ],
    "index": 2,
-   "background": "res://assets/sprites/clinic/clinic_industrial.png"
+   "background": "res://assets/sprites/clinic/clinic_industrial.png",
+   "wall": {
+    "x": 236,
+    "y": 46,
+    "cols": 8
+   },
+   "waiting_feet": [
+    [
+     134,
+     167
+    ],
+    [
+     152,
+     170
+    ],
+    [
+     118,
+     171
+    ],
+    [
+     168,
+     172
+    ]
+   ]
   },
   {
    "id": "nightmarket",
@@ -121,7 +190,30 @@
     "Tarp walls"
    ],
    "index": 3,
-   "background": "res://assets/sprites/clinic/clinic_nightmarket.png"
+   "background": "res://assets/sprites/clinic/clinic_nightmarket.png",
+   "wall": {
+    "x": 230,
+    "y": 44,
+    "cols": 7
+   },
+   "waiting_feet": [
+    [
+     134,
+     167
+    ],
+    [
+     152,
+     170
+    ],
+    [
+     118,
+     171
+    ],
+    [
+     168,
+     172
+    ]
+   ]
   },
   {
    "id": "professional",
@@ -153,7 +245,30 @@
     "Tiled theatre"
    ],
    "index": 4,
-   "background": "res://assets/sprites/clinic/clinic_professional.png"
+   "background": "res://assets/sprites/clinic/clinic_professional.png",
+   "wall": {
+    "x": 228,
+    "y": 44,
+    "cols": 7
+   },
+   "waiting_feet": [
+    [
+     134,
+     167
+    ],
+    [
+     152,
+     170
+    ],
+    [
+     118,
+     171
+    ],
+    [
+     168,
+     172
+    ]
+   ]
   },
   {
    "id": "corporate",
@@ -187,7 +302,30 @@
     "Holo diagnostics"
    ],
    "index": 5,
-   "background": "res://assets/sprites/clinic/clinic_corporate.png"
+   "background": "res://assets/sprites/clinic/clinic_corporate.png",
+   "wall": {
+    "x": 236,
+    "y": 46,
+    "cols": 8
+   },
+   "waiting_feet": [
+    [
+     134,
+     167
+    ],
+    [
+     152,
+     170
+    ],
+    [
+     118,
+     171
+    ],
+    [
+     168,
+     172
+    ]
+   ]
   },
   {
    "id": "elite",
@@ -220,7 +358,30 @@
     "Lattice-grade scanner"
    ],
    "index": 6,
-   "background": "res://assets/sprites/clinic/clinic_elite.png"
+   "background": "res://assets/sprites/clinic/clinic_elite.png",
+   "wall": {
+    "x": 236,
+    "y": 44,
+    "cols": 7
+   },
+   "waiting_feet": [
+    [
+     134,
+     167
+    ],
+    [
+     152,
+     170
+    ],
+    [
+     118,
+     171
+    ],
+    [
+     168,
+     172
+    ]
+   ]
   }
  ]
 }

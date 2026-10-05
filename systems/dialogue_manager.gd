@@ -87,8 +87,38 @@ func _enter(node_id: String) -> void:
 		return
 	if n.has("effects"):
 		StoryManager.apply_effects(n["effects"], character_id())
-	log_lines.append({"speaker": str(n.get("speaker", "npc")), "text": str(n.get("text", ""))})
-	node_changed.emit(n)
+	# Lines can change with who you've become and what they remember.
+	var shown := n.duplicate()
+	shown["text"] = node_text(n)
+	log_lines.append({"speaker": str(n.get("speaker", "npc")), "text": str(shown["text"])})
+	node_changed.emit(shown)
+
+
+## The line to show: the first variant whose condition holds, else "text".
+## Variants: [{"if": {identity, memory, not_memory, dim_min}, "text": ...}]
+func node_text(n: Dictionary) -> String:
+	for v: Variant in n.get("variants", []):
+		if v is Dictionary and world_cond(v.get("if", {})):
+			return str(v.get("text", n.get("text", "")))
+	return str(n.get("text", ""))
+
+
+## Living-world conditions: your street identity (id or list), a memory the
+## speaker holds (or doesn't), minimum reputation dimensions.
+func world_cond(w: Dictionary) -> bool:
+	if w.has("identity"):
+		var ids: Array = w["identity"] if w["identity"] is Array else [w["identity"]]
+		if not ids.has(str(ReputationManager.identity()["id"])):
+			return false
+	if w.has("memory") and not MemoryManager.has(character_id(), StringName(str(w["memory"]))):
+		return false
+	if w.has("not_memory") and MemoryManager.has(character_id(), StringName(str(w["not_memory"]))):
+		return false
+	var dm: Dictionary = w.get("dim_min", {})
+	for d: Variant in dm:
+		if ReputationManager.dim(StringName(str(d))) < int(dm[d]):
+			return false
+	return true
 
 
 ## Options the player can see: [{index, text, kind, label, chance, locked}]
@@ -130,6 +160,8 @@ func lock_reason(o: Dictionary) -> String:
 			any = any or StoryManager.has_flag(StringName(str(f)))
 		if not any:
 			return "hidden"
+	if (r.has("identity") or r.has("memory") or r.has("not_memory") or r.has("dim_min")) and not world_cond(r):
+		return "hidden"
 	var cost := int(o.get("cost", {}).get("money", 0))
 	if cost > 0 and not EconomyManager.can_afford(cost):
 		return "Not enough credits"
@@ -163,7 +195,38 @@ func chance(o: Dictionary) -> float:
 		"negotiate":
 			p = 0.4 + lvl * 0.02 + rep / 300.0 + StoryManager.path_score(&"kingpin") * 0.02
 	p += float(o.get("mod", 0.0))
+	p += reputation_mod(kind)
 	return clampf(p, 0.05, 0.95)
+
+
+## What the street calls you and what they remember about you bend the odds.
+func reputation_mod(kind: String) -> float:
+	var who := character_id()
+	var idn := str(ReputationManager.identity()["id"])
+	var m := 0.0
+	match kind:
+		"intimidate":
+			if idn in ["butcher", "gang_doc"]:
+				m += 0.1
+		"empathy":
+			if idn == "saint":
+				m += 0.1
+			if MemoryManager.has(who, &"PLAYER_SAVED_ME") or MemoryManager.has(who, &"PLAYER_SAVED_EMPLOYEE"):
+				m += 0.1
+		"negotiate":
+			if idn in ["fence", "contractor"]:
+				m += 0.08
+		"persuade":
+			if idn in ["saint", "surgeon"]:
+				m += 0.05
+			if MemoryManager.has(who, &"PLAYER_KEPT_SECRET") or MemoryManager.has(who, &"PLAYER_KEPT_PROMISE"):
+				m += 0.08
+		"lie":
+			if MemoryManager.has(who, &"PLAYER_LIED"):
+				m -= 0.15
+	if MemoryManager.has(who, &"PLAYER_BETRAYED_FACTION") and kind != "intimidate":
+		m -= 0.1
+	return m
 
 
 ## Picks visible option `index` (the original option index from options()).

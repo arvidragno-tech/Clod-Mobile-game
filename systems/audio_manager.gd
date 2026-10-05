@@ -52,6 +52,8 @@ const MUSIC_PATHS := {
 	&"surgery": "res://audio/music/surgery.ogg",
 	&"market": "res://audio/music/market.ogg",
 	&"dialogue": "res://audio/music/dialogue.ogg",
+	&"clinic_night": "res://audio/music/clinic_night.ogg",
+	&"clinic_tension": "res://audio/music/clinic_tension.ogg",
 }
 
 const AMBIENCE_LAYERS := {
@@ -261,7 +263,7 @@ func set_profile(id: StringName) -> void:
 		return
 	profile = id
 	var p: Dictionary = PROFILES[id]
-	play_music(p["music"])
+	play_music(_score_for(p["music"]))
 	refresh_mix()
 
 
@@ -295,22 +297,37 @@ func play_ambient(id: StringName) -> void:
 	set_profile(&"menu" if id == &"clinic" and profile == &"" else id)
 
 
+var _music_active: AudioStreamPlayer = null
+var _music_tweens: Dictionary = {}  # player -> Tween
+
+
 func play_music(id: StringName) -> void:
 	if id == _music_id:
 		return
 	_music_id = id
 	var stream := _get_stream(MUSIC_PATHS.get(id, ""), true)
-	var old := _music_a if _music_a.playing else _music_b
-	var new := _music_b if old == _music_a else _music_a
+	# The active player fades out; the other one fades in. Stale fades are
+	# killed first so two quick changes can't stop the new track.
+	var old: AudioStreamPlayer = _music_active if _music_active else (_music_a if _music_a.playing else _music_b)
+	var new: AudioStreamPlayer = _music_b if old == _music_a else _music_a
+	for p: AudioStreamPlayer in [old, new]:
+		var tw: Tween = _music_tweens.get(p, null)
+		if tw and tw.is_valid():
+			tw.kill()
 	if old.playing:
 		var t := create_tween()
 		t.tween_property(old, "volume_db", -60.0, CROSSFADE_SEC)
 		t.tween_callback(old.stop)
+		_music_tweens[old] = t
+	_music_active = new
 	if stream:
 		new.stream = stream
 		new.volume_db = -60.0
 		new.play()
-		create_tween().tween_property(new, "volume_db", MUSIC_VOLUME_DB, CROSSFADE_SEC)
+		_music_tweens[new] = create_tween()
+		(_music_tweens[new] as Tween).tween_property(new, "volume_db", MUSIC_VOLUME_DB, CROSSFADE_SEC)
+	else:
+		new.stop()
 
 
 func _fade_layer(id: StringName, linear: float) -> void:
@@ -366,6 +383,29 @@ func get_debug_state() -> Dictionary:
 
 
 
+## The clinic score follows the night: a sparse variant in the small hours,
+## a tense one when things go wrong (with hysteresis so it doesn't flap).
+var _tense_score: bool = false
+
+
+func _score_for(base: StringName) -> StringName:
+	if base != &"clinic" or profile != &"clinic":
+		return base
+	if tension >= 0.5:
+		_tense_score = true
+	elif tension < 0.3:
+		_tense_score = false
+	if _tense_score:
+		return &"clinic_tension"
+	if TimeManager.period() in [&"night", &"late_night"]:
+		return &"clinic_night"
+	return &"clinic"
+
+
+func current_music() -> StringName:
+	return _music_id
+
+
 ## Reactive audio: recomputes tension from the state of the game. Quiet
 ## nights stay quiet (the music closes in, muffled); danger opens it up and
 ## pushes the machinery forward. Nothing dramatic unless something is.
@@ -386,6 +426,8 @@ func update_tension() -> void:
 		t += 0.1
 	tension = clampf(t, 0.0, 1.0)
 	set_mix_mod(&"tension", {"pump": 1.0 + 0.8 * tension, "hum": 1.0 + 0.3 * tension, "city": 1.0 + 0.4 * tension, "crt": 1.0 + 0.3 * tension})
+	if profile == &"clinic":
+		play_music(_score_for(&"clinic"))
 	var mi := AudioServer.get_bus_index(BUS_MUSIC)
 	if mi >= 0 and AudioServer.get_bus_effect_count(mi) > 0:
 		var lp := AudioServer.get_bus_effect(mi, 0) as AudioEffectLowPassFilter

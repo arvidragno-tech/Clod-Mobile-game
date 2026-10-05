@@ -30,6 +30,13 @@ func _ready() -> void:
 	title.add_theme_color_override(&"font_color", Palette.BRAND)
 	brand.add_child(title)
 	_location = UIKit.label("", &"SubHeaderLabel")
+	# Long clinic + district + clock lines are clipped (full text on hover)
+	# so the bar never pushes MENU off-screen.
+	_location.clip_text = true
+	_location.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	_location.custom_minimum_size.x = 380
+	_location.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	_location.mouse_filter = Control.MOUSE_FILTER_PASS
 	brand.add_child(_location)
 	row.add_child(brand)
 	row.add_child(_sep())
@@ -118,7 +125,8 @@ func _on_money(amount: int, _delta: int) -> void:
 
 
 func _refresh() -> void:
-	_location.text = "%s · %s · %s" % [ClinicManager.get_tier_name().to_upper(), WorldManager.district_name().to_upper(), TimeManager.stamp()]
+	_location.text = "%s · %s · %s" % [TimeManager.stamp(), ClinicManager.get_tier_name().to_upper(), WorldManager.district_name().to_upper()]
+	_location.tooltip_text = _location.text
 	_level.text = "LV %d" % ProgressionManager.level
 	var need := ProgressionManager.xp_required_for_level(ProgressionManager.level + 1)
 	_xp_text.text = "%d / %d XP" % [ProgressionManager.total_xp, need]

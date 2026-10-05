@@ -345,3 +345,25 @@ clinic log become people you've met (`SaveManager._migrate`).
 - The E2E harness resolves timed incidents and surgical dilemmas; scripted
   runs switch random dilemmas off, unit runs switch random world / security
   rolls off for determinism.
+
+### 3.1.1 notes
+
+- Emergency countdown: `CustomerManager._process` counts the waiting
+  emergency down (stored in `CustomerData.emergency_deadline`, ms left), so
+  it survives screen changes and saves; it stops during surgery, modals and
+  paused arrivals, and `Settings.time_pressure` scales or disables it. The
+  customer screen only displays it and listens to `emergency_crashed`.
+- Supplier orders: cash and credit orders go to `SupplierManager.deliveries`
+  and arrive at the next `day_started`; RUSH calls `_deliver` immediately.
+  Night stock is topped up on `period_changed` → night.
+- Surgical dilemmas leave the table paused after `resolve_dilemma`; the
+  `DilemmaPanel` resumes on exit. Aborts before the `install_implant` stage
+  return the unit to stock (`SurgeryManager.implant_installed`,
+  `GameManager._implant_returnable`).
+- Dialogue: nodes may carry `variants` ([{if, text}]) and options a
+  `requires` with `identity`, `memory`, `not_memory`, `dim_min`
+  (`DialogueManager.world_cond`); `reputation_mod` adjusts check odds.
+- Clinics (`data/clinics.json`) define `wall` {x, y, cols} and
+  `waiting_feet` for the room overlays.
+- Music: `clinic_night` and `clinic_tension` (tools/generate_audio.py
+  `music_reactive`), chosen by `AudioManager._score_for`.

@@ -264,7 +264,10 @@ func _build_side_panels() -> void:
 	# Implant
 	var item := SurgeryManager.implant_item
 	_implant_box.add_child(UIKit.label("IMPLANT", &"SubHeaderLabel", false, Palette.ACCENT))
-	if item:
+	if item and SurgeryManager.implant and not SurgeryManager.implant.identified:
+		_implant_box.add_child(UIKit.label("UNIDENTIFIED DEVICE", &"", true, Palette.BRAND, 16))
+		_implant_box.add_child(UIKit.label("Installing blind: model and properties unknown.", &"SubHeaderLabel", true, Palette.WARN))
+	elif item:
 		var irow := UIKit.hbox(12)
 		_implant_box.add_child(irow)
 		irow.add_child(CyberwareIcon.make(item))

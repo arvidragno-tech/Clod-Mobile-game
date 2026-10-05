@@ -333,6 +333,11 @@ func apply_effects(e: Dictionary, char_id: StringName = &"") -> Array[String]:
 		CharacterManager.apply_appearance_event(StringName(str(ac["id"])), str(ac["event"]))
 	if e.has("supplies"):
 		InventoryManager.add_supplies(int(e["supplies"]))
+	if e.has("appearance_player"):
+		# You got hurt: your own hands are worse for the next few jobs.
+		EventManager.temp_modifiers.append({"key": "surgery.precision", "value": -0.15, "ops": 3, "source": "injury"})
+		EventBus.modifiers_changed.emit()
+		out.append("you're hurt: shaky hands for 3 jobs")
 	if e.has("dims"):
 		ReputationManager.change_dims(e["dims"])
 		for d: Variant in e["dims"]:

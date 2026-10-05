@@ -153,6 +153,12 @@ func _entries() -> Array[Dictionary]:
 				var d := inst.get_data()
 				if d == null:
 					continue
+				if not inst.identified:
+					# Partial information only: the slot it fits, nothing else.
+					out.append({"kind": &"implant", "key": inst.uid, "name": inst.display_name(), "icon": PixelArt.scaled("res://assets/sprites/ui/icons/warning.png"),
+						"count": 1, "condition": -1.0, "tier": 0, "value": 0, "load": 0.0, "accent": Palette.BRAND,
+						"search": "unidentified unknown %s" % d.category})
+					continue
 				out.append({"kind": &"implant", "key": inst.uid, "name": d.display_name, "icon": PixelArt.scaled(d.icon_path),
 					"count": 1, "condition": inst.condition, "tier": d.tier, "value": d.price, "load": inst.get_neural_load(),
 					"accent": d.get_rarity_color(), "search": "%s %s %s %s" % [d.display_name, d.category, d.manufacturer, d.rarity]})
@@ -288,6 +294,9 @@ func _set_compare(zone: ItemSlot, kind: StringName, key: String) -> void:
 	var icon: Texture2D
 	if kind == &"implant":
 		var inst := InventoryManager.get_instance(key)
+		if inst and not inst.identified:
+			UIManager.show_toast("Analyse it first: nobody knows what it is", &"warn")
+			return
 		icon = PixelArt.scaled(inst.get_data().icon_path) if inst else null
 	else:
 		var t := InventoryManager.get_tool(StringName(key))
@@ -340,6 +349,11 @@ func _show(kind: StringName, key: String) -> void:
 			if inst == null:
 				return
 			var d := inst.get_data()
+			if not inst.identified:
+				_detail.add_child(UIKit.label("UNIDENTIFIED DEVICE", &"HeaderLabel", true, Palette.BRAND))
+				_detail.add_child(UIKit.label("FITS: %s SLOT · MODEL, GRADE, CONDITION AND PROPERTIES UNKNOWN" % String(d.category).to_upper(), &"SubHeaderLabel", true))
+				_detail.add_child(UIKit.label("Analyse it in the Undermarket stash (2 parts or 150 cr), give it to a specialist, sell it, or install it blind.", &"DimLabel", true))
+				return
 			var row := UIKit.hbox(14)
 			_detail.add_child(row)
 			row.add_child(CyberwareIcon.make(d))

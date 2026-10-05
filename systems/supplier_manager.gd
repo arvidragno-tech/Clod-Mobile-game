@@ -25,6 +25,8 @@ var data: Dictionary = {}
 var state: Dictionary = {}
 ## Contraband you agreed to store: [{supplier, days_left}]
 var contraband: Array[Dictionary] = []
+## Orders waiting for tomorrow's delivery: [{supplier, offer}]
+var deliveries: Array[Dictionary] = []
 var _rng := RandomNumberGenerator.new()
 
 
@@ -35,12 +37,14 @@ func _ready() -> void:
 		data = d
 	EventBus.day_started.connect(_on_day_started)
 	EventBus.customer_left.connect(_on_customer_left)
+	EventBus.period_changed.connect(_on_period_changed)
 	reset_state()
 
 
 func reset_state() -> void:
 	state.clear()
 	contraband.clear()
+	deliveries.clear()
 	for s: Dictionary in data.get("suppliers", []):
 		state[str(s["id"])] = {"discovered": false, "trust": int(s.get("trust", 0)), "suspicion": 0, "debt": 0, "debt_jobs": 0,
 			"favors_done": 0, "loyalty": 0, "cut_off_until": -1, "stock": [], "price_drift": 1.0, "bought": 0, "lead_from": ""}
@@ -182,6 +186,7 @@ func _check_discovery() -> void:
 # --- Inventory --------------------------------------------------------------------------------
 
 func _on_day_started(_day: int) -> void:
+	_deliver_pending()
 	for id in ids():
 		var s := st(id)
 		# Prices drift a little every day.
@@ -331,6 +336,11 @@ func buy_block_reason(id: String, index: int, mode: String = "cash") -> String:
 		return "They won't sell to you"
 	if index < 0 or index >= (s.get("stock", []) as Array).size():
 		return "Gone"
+	var o: Dictionary = s["stock"][index]
+	if str(o.get("kind", "")) == "tool":
+		var tid := StringName(str(o["tool"]))
+		if InventoryManager.owns_tool(tid) or deliveries.any(func(dv: Dictionary) -> bool: return str(dv["offer"].get("tool", "")) == String(tid)):
+			return "You already have one"
 	var price := price_for(id, index, mode)
 	match mode:
 		"credit":
@@ -370,30 +380,80 @@ func buy(id: String, index: int, mode: String = "cash") -> String:
 	ReputationManager.change_dim(&"black_market", 1)
 	change_trust(id, 3)
 	s["bought"] = int(s["bought"]) + 1
-	# Unreliable suppliers sometimes deliver worse than promised.
-	var damaged := _rng.randf() > float(supplier(id).get("reliability", 0.8))
 	var text := ""
+	if mode == "rush":
+		text = _deliver(id, o)
+	else:
+		# Ordinary orders come with tomorrow's first run; RUSH is now.
+		deliveries.append({"supplier": id, "offer": o.duplicate(true)})
+		text = "%s: arrives at opening tomorrow." % _offer_name(o)
+	StoryManager.bump(&"bm_buy")
+	changed.emit()
+	EventBus.black_market_changed.emit()
+	return text
+
+
+## Hands an order over: tools, packs or chrome. Unreliable suppliers
+## sometimes deliver worse than promised.
+func _deliver(id: String, o: Dictionary) -> String:
+	var damaged := _rng.randf() > float(supplier(id).get("reliability", 0.8))
 	match str(o["kind"]):
 		"tool":
 			var t := InventoryManager.get_tool(StringName(str(o["tool"])))
-			InventoryManager.owned_tools.append(t.id)
+			if t == null:
+				return ""
+			if not InventoryManager.owns_tool(t.id):
+				InventoryManager.owned_tools.append(t.id)
 			EventBus.inventory_changed.emit()
 			EventBus.modifiers_changed.emit()
-			text = "%s, no serial." % t.display_name
+			return "%s, no serial." % t.display_name
 		"supplies":
 			InventoryManager.add_supplies(int(o["amount"]))
-			text = "%d sterile packs%s." % [int(o["amount"]), ", some look opened" if damaged else ""]
+			return "%d sterile packs%s." % [int(o["amount"]), ", some look opened" if damaged else ""]
 		_:
 			var inst := ImplantInstance.from_dict(o["instance"])
 			inst.uid = "imp_%d_%d" % [Time.get_ticks_usec(), _rng.randi() % 100000]
 			if damaged:
 				inst.condition = maxf(10.0, inst.condition - 25.0)
 			InventoryManager.add_instance(inst)
-			text = "%s%s." % [inst.display_name(), " (arrived damaged)" if damaged else ""]
-	StoryManager.bump(&"bm_buy")
+			return "%s%s." % [inst.display_name(), " (arrived damaged)" if damaged else ""]
+
+
+func _offer_name(o: Dictionary) -> String:
+	match str(o.get("kind", "")):
+		"tool":
+			var t := InventoryManager.get_tool(StringName(str(o["tool"])))
+			return t.display_name if t else "Tool"
+		"supplies":
+			return "%d sterile packs" % int(o["amount"])
+	return ImplantInstance.from_dict(o["instance"]).display_name()
+
+
+## Orders placed yesterday arrive with the morning run.
+func _deliver_pending() -> void:
+	var lines: Array[String] = []
+	for dv in deliveries:
+		var t := _deliver(str(dv["supplier"]), dv["offer"])
+		if t != "":
+			lines.append("%s: %s" % [supplier(str(dv["supplier"])).get("name", ""), t])
+	deliveries.clear()
+	if not lines.is_empty():
+		CommsManager.send_raw("message", "", "Morning delivery", "Left at the back door before opening:\n" + "\n".join(lines), [], "supplier_delivery")
+
+
+## After dark, contacts bring out more (night stock multipliers).
+func _on_period_changed(p: StringName) -> void:
+	if p != &"night":
+		return
+	for id in discovered():
+		if is_cut_off(id):
+			continue
+		var extra := int(round((float(supplier(id).get("night", 1.0)) - 1.0) * 4.0))
+		for i in maxi(0, extra):
+			var o := _make_offer(id, false)
+			if not o.is_empty():
+				(st(id)["stock"] as Array).append(o)
 	changed.emit()
-	EventBus.black_market_changed.emit()
-	return text
 
 
 # --- Relationship ------------------------------------------------------------------------------
@@ -542,7 +602,7 @@ func identify(uid: String) -> bool:
 # --- Save -----------------------------------------------------------------------------------------
 
 func get_save_data() -> Dictionary:
-	return {"state": state.duplicate(true), "contraband": contraband.duplicate(true)}
+	return {"state": state.duplicate(true), "contraband": contraband.duplicate(true), "deliveries": deliveries.duplicate(true)}
 
 
 func load_save_data(d: Dictionary) -> void:
@@ -555,3 +615,6 @@ func load_save_data(d: Dictionary) -> void:
 	for c: Variant in d.get("contraband", []):
 		if c is Dictionary:
 			contraband.append(c)
+	for dv: Variant in d.get("deliveries", []):
+		if dv is Dictionary:
+			deliveries.append(dv)

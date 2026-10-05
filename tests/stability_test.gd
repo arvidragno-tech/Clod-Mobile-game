@@ -104,6 +104,10 @@ func _soak(shifts: int) -> void:
 		GameManager.open_customer()
 		await _settle()
 		check(UIManager.current_screen_id == UIManager.SCREEN_CUSTOMER, "shift %d: customer screen" % shift)
+		if await _living_intake(shift):
+			_spend()
+			_invariants(shift)
+			continue
 		GameManager.accept_customer()
 		await _settle()
 		var c := GameManager.get_current_customer()
@@ -130,20 +134,32 @@ func _soak(shifts: int) -> void:
 			await _settle()
 			completed += 1
 		_spend()
+		await _living_world(shift)
 		_invariants(shift)
 		if shift % 5 == 4:
 			# Save -> wipe -> load must restore the exact same state.
 			var money := EconomyManager.money
 			var level := ProgressionManager.level
 			var ops := EventManager.operations
+			var people := PeopleManager.people.size()
+			var minute := TimeManager.minute
+			var wall := ClinicLifeManager.wall.size()
+			var cases := SecurityManager.cases.size()
+			var owed := PeopleManager.total_owed_to_you()
+			var known := SupplierManager.discovered().size()
 			SaveManager.save_game()
 			SaveManager.reset_all()
 			check(SaveManager.load_game() and EconomyManager.money == money and ProgressionManager.level == level and EventManager.operations == ops, "shift %d: save/load round-trip" % shift)
+			check(PeopleManager.people.size() == people and TimeManager.minute == minute and ClinicLifeManager.wall.size() == wall and SecurityManager.cases.size() == cases
+				and PeopleManager.total_owed_to_you() == owed and SupplierManager.discovered().size() == known, "shift %d: living world survives save/load" % shift)
 	await _go(UIManager.SCREEN_CLINIC)
 	await _frames(30)
 	var nodes := int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT))
 	var orphans := int(Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT))
 	print("  completed %d ops; nodes %d (baseline %d), orphans %d (baseline %d), static mem %.1f MB" % [completed, nodes, baseline_nodes, orphans, baseline_orphans, Performance.get_monitor(Performance.MEMORY_STATIC) / 1048576.0])
+	print("  living world: dilemmas %d, %s" % [_dilemmas, _living_counts])
+	print("  people %d, memories %d, news %d, wall %d, cases %d, suppliers known %d, day %d" % [PeopleManager.people.size(), MemoryManager.memories.size(), WorldEventManager.news.size(),
+		ClinicLifeManager.wall.size(), SecurityManager.cases.size(), SupplierManager.discovered().size(), BusinessManager.day])
 	if OS.get_cmdline_user_args().has("--orphans"):
 		print_orphan_nodes()
 	check(completed >= shifts * 0.6, "soak completed most shifts (%d/%d)" % [completed, shifts])
@@ -157,6 +173,16 @@ func _complete_surgery(shift: int) -> bool:
 	var t := 0.0
 	while UIManager.current_screen_id == UIManager.SCREEN_SURGERY and t < 60.0:
 		var screen := UIManager.current_screen as SurgeryScreen
+		if not SurgeryManager.active_dilemma.is_empty():
+			# Answer the dilemma with any choice that's allowed.
+			var opts: Array = SurgeryManager.active_dilemma["choices"]
+			for k in opts.size():
+				var pick := (k + _rng.randi()) % opts.size()
+				if SurgicalDilemmas.block_reason(opts[pick]) == "":
+					SurgeryManager.resolve_dilemma(pick)
+					break
+			UIManager.close_modal()
+			_dilemmas += 1
 		if SurgeryManager.active_complication and _rng.randf() < 0.9:
 			SurgeryManager.use_quick_action(SurgeryManager.active_complication.counter_action)
 		if screen and screen.current_stage and not screen.current_stage.is_finished and not UIManager.is_transitioning():
@@ -174,7 +200,122 @@ func _complete_surgery(shift: int) -> bool:
 	return UIManager.current_screen_id == UIManager.SCREEN_RESULTS
 
 
+var _dilemmas := 0
+var _living_counts := {}
+
+
+func _count(k: String) -> void:
+	_living_counts[k] = int(_living_counts.get(k, 0)) + 1
+
+
+## Intake choices of the living world: payment terms, dependency care,
+## triage instead of surgery, assigning staff. Returns true if the
+## customer was dealt with without the operating table.
+func _living_intake(shift: int) -> bool:
+	var c := GameManager.get_current_customer()
+	if c == null:
+		return false
+	var terms := PeopleManager.available_terms(c)
+	c.terms = terms[_rng.randi() % terms.size()]
+	_count("terms_" + String(c.terms))
+	if c.dependency > 0:
+		GameManager.set_care([&"feed", &"profit", &"safer"][_rng.randi() % 3])
+		_count("dependency")
+	if c.is_emergency:
+		var roll := _rng.randf()
+		if roll < 0.3 and InventoryManager.supplies >= GameManager.STABILIZE_SUPPLIES:
+			check(not GameManager.triage_stabilize().is_empty(), "shift %d: stabilise works" % shift)
+			_count("triage_stabilize")
+			UIManager.close_modal()
+			return true
+		if roll < 0.5 and EconomyManager.can_afford(GameManager.specialist_cost(c)):
+			check(not GameManager.triage_specialist().is_empty(), "shift %d: specialist works" % shift)
+			_count("triage_specialist")
+			return true
+		if InventoryManager.parts >= GameManager.RIG_PARTS:
+			GameManager.triage_experimental()
+			_count("triage_rig")
+	if not StaffManager.at_clinic(ClinicManager.tier).is_empty() and _rng.randf() < 0.25:
+		var e: Dictionary = StaffManager.at_clinic(ClinicManager.tier)[0]
+		var r := GameManager.assign_customer(StringName(str(e["id"])), true)
+		_count("assigned")
+		UIManager.close_modal()
+		if not bool(r.get("refused", true)):
+			return true
+	return false
+
+
+## Between jobs: answer COMMS, settle debts, deal with suppliers and
+## break-ins, visit the new screens.
+func _living_world(shift: int) -> void:
+	if shift == 2:
+		for k in 2:
+			var e := StaffManager.generate_candidate()
+			e["clinic"] = ClinicManager.tier
+			for o in StaffManager.employees:
+				o["relationships"][str(e["id"])] = _rng.randi_range(-40, 40)
+				e["relationships"][str(o["id"])] = o["relationships"][str(e["id"])]
+			StaffManager.employees.append(e)
+		StaffManager.staff_changed.emit()
+		StoryManager.set_flag(&"bm_access")
+	for m in CommsManager.inbox:
+		if int(m["resolved"]) < 0 and not (m.get("actions", []) as Array).is_empty():
+			CommsManager.act(int(m["uid"]), _rng.randi() % (m["actions"] as Array).size())
+			_count("comms_" + str(m.get("template", "")).get_slice("_", 0))
+	var debts := PeopleManager.open_debts()
+	if not debts.is_empty():
+		var id := int(debts[0]["id"])
+		match _rng.randi() % 5:
+			0: PeopleManager.demand(id)
+			1: PeopleManager.set_plan(id)
+			2: PeopleManager.write_off(id)
+			3: PeopleManager.send_collector(id)
+			_: PeopleManager.favor(id)
+		_count("debt_action")
+	if BlackMarketManager.is_unlocked():
+		if _rng.randf() < 0.3:
+			SupplierManager.reveal_random_lead("soak")
+		for sid in SupplierManager.discovered():
+			var stock: Array = SupplierManager.st(sid)["stock"]
+			if not stock.is_empty() and _rng.randf() < 0.4:
+				var mode: String = ["cash", "credit", "rush"][_rng.randi() % 3]
+				if SupplierManager.buy_block_reason(sid, 0, mode) == "":
+					check(SupplierManager.buy(sid, 0, mode) != "", "shift %d: supplier buy works" % shift)
+					_count("supplier_buy_" + mode)
+				break
+	for c in SecurityManager.open_cases():
+		var cid := int(c["id"])
+		for a: String in ["cameras", "question", "ask"]:
+			if SecurityManager.can_use(cid, a) == "":
+				SecurityManager.investigate(cid, a)
+		var sus := SecurityManager.suspects(cid)
+		if not sus.is_empty():
+			SecurityManager.confront(cid, str(sus[_rng.randi() % sus.size()]["key"]))
+			_count("case_confronted")
+		break
+	if shift % 3 == 0:
+		for sid: StringName in [UIManager.SCREEN_BUSINESS, UIManager.SCREEN_STAFF, UIManager.SCREEN_BLACK_MARKET]:
+			await _go(sid)
+		for tab in [2, 4, 6, 7]:
+			UIManager.go_to(UIManager.SCREEN_DOSSIER, {"tab": tab})
+			await _settle()
+		await _go(UIManager.SCREEN_CLINIC)
+		var sec := SecurityPanel.new()
+		UIManager.show_modal(sec)
+		await _frames(5)
+		UIManager.close_modal()
+		await _frames(3)
+
+
 func _invariants(shift: int) -> void:
+	for d in PeopleManager.debts:
+		check(int(d["amount"]) >= 0, "shift %d: debts never negative" % shift)
+	check(TimeManager.minute >= TimeManager.open_minute() - 1 and TimeManager.minute <= TimeManager.close_minute() + 120, "shift %d: clock in range (%d)" % [shift, TimeManager.minute])
+	check(ClinicLifeManager.waiting.size() <= ClinicLifeManager.capacity(), "shift %d: waiting room within capacity" % shift)
+	for sid in SupplierManager.ids():
+		var st := SupplierManager.st(sid)
+		check(int(st["trust"]) >= 0 and int(st["trust"]) <= 100 and int(st["suspicion"]) >= 0 and int(st["debt"]) >= 0, "shift %d: supplier %s in range" % [shift, sid])
+	check(SurgeryManager.active_dilemma.is_empty(), "shift %d: no dilemma left open" % shift)
 	check(EconomyManager.money >= 0, "shift %d: money never negative" % shift)
 	check(InventoryManager.supplies >= 0 and InventoryManager.parts >= 0 and InventoryManager.tokens >= 0, "shift %d: resources never negative" % shift)
 	check(not SurgeryManager.is_active, "shift %d: no surgery left running" % shift)

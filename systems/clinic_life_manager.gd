@@ -229,7 +229,8 @@ func _apply(fx: Dictionary) -> void:
 			e["stress"] = clampf(float(e["stress"]) + float(fx["stress"]), 0.0, 100.0)
 	if fx.has("patience"):
 		for w in waiting:
-			w["since"] = int(w["since"]) - int(fx["patience"])
+			# Negative patience = they've effectively waited longer.
+			w["since"] = int(w["since"]) + int(fx["patience"])
 
 
 func post(text: String) -> void:

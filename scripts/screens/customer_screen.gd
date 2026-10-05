@@ -14,9 +14,7 @@ var _panels: Array[Control] = []
 var _staff_box: VBoxContainer
 var _terms_preview: Label
 ## Emergencies: real seconds before the patient crashes (paused by modals).
-const EMERGENCY_SECONDS := 75.0
-const CRASH_SECONDS := 45.0
-var _crash_left: float = -1.0
+var _crash_shown: bool = false
 var _crash_bar: ProgressBar
 var _crash_label: Label
 
@@ -471,7 +469,12 @@ func _triage_section(parent: Control, c: CustomerData) -> void:
 	_crash_bar.custom_minimum_size.y = 10
 	_crash_bar.max_value = 1.0
 	v.add_child(_crash_bar)
-	_crash_left = CRASH_SECONDS if c.crashes > 0 else EMERGENCY_SECONDS
+	_crash_shown = true
+	if not CustomerManager.emergency_crashed.is_connected(_on_crashed):
+		CustomerManager.emergency_crashed.connect(_on_crashed)
+	if Settings.time_pressure_mult() <= 0.0:
+		_crash_label.text = "COUNTDOWN OFF (SETTINGS). They wait for you."
+		_crash_bar.value = 1.0
 	var flow := HFlowContainer.new()
 	flow.add_theme_constant_override(&"h_separation", 8)
 	flow.add_theme_constant_override(&"v_separation", 8)
@@ -497,33 +500,39 @@ func _triage_section(parent: Control, c: CustomerData) -> void:
 	v.add_child(UIKit.label("Or operate now (PERFORM SURGERY) · assign a ripperdoc · refuse. Waiting costs them.", &"DimLabel", true, null, 13))
 
 
-func _process(delta: float) -> void:
-	if _crash_left < 0.0 or _crash_bar == null:
+## The countdown runs in CustomerManager (so it can't be reset by
+## reopening this screen or paused by walking away); this only shows it.
+func _process(_delta: float) -> void:
+	if not _crash_shown or _crash_bar == null or Settings.time_pressure_mult() <= 0.0:
 		return
-	if UIManager.has_modal() or UIManager.is_transitioning():
-		return
-	_crash_left -= delta
 	var c := GameManager.get_current_customer()
-	var total := CRASH_SECONDS if c and c.crashes > 0 else EMERGENCY_SECONDS
-	_crash_bar.value = clampf(_crash_left / total, 0.0, 1.0)
-	_crash_label.text = "%s IN %ds" % ["THEY DIE" if c and c.crashes > 0 else "THEY CRASH", maxi(0, ceili(_crash_left))]
-	if _crash_left <= 0.0:
-		_crash_left = -1.0
-		var died := GameManager.emergency_crash()
-		AudioManager.play_sfx(&"failure" if died else &"warning", 0.0)
-		if died:
-			var ok: Array[Dictionary] = [{"label": "BACK TO THE CLINIC", "style": &"AccentButton", "name": "CrashClose", "callback": GameManager.go_to_clinic}]
-			UIManager.show_dialog("PATIENT LOST", "You took too long. %s stopped breathing on your floor." % (c.display_name if c else "They"), ok)
-		else:
-			UIManager.show_toast("%s is crashing. Neural stability dropping, bleeding faster." % (c.display_name if c else "They"), &"danger")
-			UIManager.go_to(UIManager.SCREEN_CUSTOMER)
+	if c == null or not c.is_emergency:
+		return
+	var left := CustomerManager.emergency_seconds_left()
+	_crash_bar.value = clampf(left / CustomerManager.emergency_total(c), 0.0, 1.0)
+	_crash_label.text = "%s IN %ds" % ["THEY DIE" if c.crashes > 0 else "THEY CRASH", maxi(0, ceili(left))]
+
+
+func _exit_tree() -> void:
+	if CustomerManager.emergency_crashed.is_connected(_on_crashed):
+		CustomerManager.emergency_crashed.disconnect(_on_crashed)
+
+
+func _on_crashed(who: String, died: bool) -> void:
+	if not is_inside_tree():
+		return
+	if died:
+		var ok: Array[Dictionary] = [{"label": "BACK TO THE CLINIC", "style": &"AccentButton", "name": "CrashClose", "callback": GameManager.go_to_clinic}]
+		UIManager.show_dialog("PATIENT LOST", "You took too long. %s stopped breathing on your floor." % who, ok)
+	else:
+		UIManager.go_to(UIManager.SCREEN_CUSTOMER)
 
 
 func _triage_done(r: Dictionary, title: String) -> void:
 	if r.is_empty():
 		AudioManager.play_sfx(&"denied", 0.0)
 		return
-	_crash_left = -1.0
+	_crash_shown = false
 	AudioManager.play_sfx(&"cash" if int(r.get("pay", 0)) > 0 or bool(r.get("success", true)) else &"failure", 0.0)
 	var ok: Array[Dictionary] = [{"label": "BACK TO THE CLINIC", "style": &"AccentButton", "name": "TriageClose", "callback": GameManager.go_to_clinic}]
 	UIManager.show_dialog(title, str(r["text"]), ok)

@@ -338,6 +338,20 @@
         "rel": -10
        }
       }
+     ],
+     "variants": [
+      {
+       "if": {
+        "identity": "shark"
+       },
+       "text": "A week, I said. And I hear you charge the desperate double. Lovely. Then you can certainly pay me what's owed."
+      },
+      {
+       "if": {
+        "identity": "saint"
+       },
+       "text": "A week, I said. I hear you treat people for free. Charming. I don't. Pay me what's owed."
+      }
      ]
     },
     "ok": {
@@ -591,6 +605,26 @@
        },
        "mod": -0.2
       }
+     ],
+     "variants": [
+      {
+       "if": {
+        "identity": "gang_doc"
+       },
+       "text": "The crews already call you their doc. Rook says you're good with a blade, and my boys come back stitched straight. So let's make it official: help Mother, or be a problem for Mother."
+      },
+      {
+       "if": {
+        "identity": "saint"
+       },
+       "text": "The Sump says you treat anyone for nothing. Sweet. My crews are anyone too. Help Mother, or be a problem for Mother. Which are you?"
+      },
+      {
+       "if": {
+        "identity": "contractor"
+       },
+       "text": "Rook says you patch corporate suits down here. Brave. On this street, every night, someone's got to choose: help Mother, or be a problem for Mother."
+      }
      ]
     },
     "terms": {
@@ -623,7 +657,32 @@
         "path": {
          "network": 1,
          "kingpin": 1
+        },
+        "memory": "PLAYER_KEPT_PROMISE"
+       }
+      },
+      {
+       "text": "Half my bench already wears your colours. We're square.",
+       "kind": "negotiate",
+       "next": "square",
+       "fail_next": "nohaggle",
+       "requires": {
+        "dim_min": {
+         "criminal": 20
         }
+       },
+       "mod": 0.15,
+       "effects": {
+        "flag": "crew_medic",
+        "faction": {
+         "street_gangs": 6
+        },
+        "rel": 8,
+        "memory": "PLAYER_KEPT_PROMISE"
+       },
+       "fail_effects": {
+        "flag": "protection_paid",
+        "rel": -3
        }
       },
       {
@@ -660,7 +719,8 @@
         "consequence": {
          "id": "d_crew_raid",
          "days": 4
-        }
+        },
+        "memory": "PLAYER_BETRAYED_FACTION"
        }
       }
      ]
@@ -709,6 +769,12 @@
     },
     "laugh": {
      "text": "Out of your clinic? Sweetheart, this whole street is mine. Enjoy the next few nights.",
+     "expr": "smirk",
+     "speaker": "npc",
+     "end": true
+    },
+    "square": {
+     "text": "...Square. You've earned that word. Don't wear it out.",
      "expr": "smirk",
      "speaker": "npc",
      "end": true
@@ -821,6 +887,24 @@
      "speaker": "npc",
      "options": [
       {
+       "text": "I'm already the fence on this street. Fifty-fifty or I go direct.",
+       "kind": "negotiate",
+       "next": "cut_good",
+       "fail_next": "cut_bad",
+       "requires": {
+        "dim_min": {
+         "black_market": 20
+        }
+       },
+       "mod": 0.2,
+       "effects": {
+        "rel": 3,
+        "path": {
+         "kingpin": 1
+        }
+       }
+      },
+      {
        "text": "What's the cut?",
        "kind": "negotiate",
        "next": "cut_good",
@@ -853,6 +937,14 @@
          "respected": 1
         }
        }
+      }
+     ],
+     "variants": [
+      {
+       "if": {
+        "identity": "fence"
+       },
+       "text": "Darling. You already move more unregistered chrome than half my contacts, which is bad for a person in your line and good for me. Let's make it official."
       }
      ]
     },
@@ -1025,11 +1117,51 @@
        "requires": {
         "flag": "static_seen"
        }
+      },
+      {
+       "text": "Look at my waiting room. Shut me down and they go to nobody.",
+       "kind": "empathy",
+       "next": "convinced",
+       "fail_next": "fine",
+       "requires": {
+        "identity": [
+         "saint",
+         "surgeon"
+        ]
+       },
+       "mod": 0.15,
+       "effects": {
+        "rel": 8,
+        "memory": "PLAYER_KEPT_SECRET",
+        "path": {
+         "respected": 1
+        }
+       }
       }
      ],
      "effects": {
       "flag": "met_moor_beat"
-     }
+     },
+     "variants": [
+      {
+       "if": {
+        "identity": "saint"
+       },
+       "text": "Inspector Moor, Civic Medical Board. Half the Sump swears you're a saint. Saints still need licences. You're unlicensed, unregistered, and two of your patients turned up at Mercy General seizing."
+      },
+      {
+       "if": {
+        "identity": "butcher"
+       },
+       "text": "Inspector Moor, Civic Medical Board. I've been counting your dead, Doctor. Unlicensed, unregistered, and two more of your patients turned up at Mercy General seizing."
+      },
+      {
+       "if": {
+        "identity": "gang_doc"
+       },
+       "text": "Inspector Moor, Civic Medical Board. Your waiting room is a crew clubhouse with gauze. You're unlicensed, unregistered, and two of your patients turned up at Mercy General seizing."
+      }
+     ]
     },
     "bribed": {
      "text": "...I'll file this as a wasted afternoon.",
@@ -1047,7 +1179,15 @@
      "text": "Alive. Hm. Keep them alive and keep them out of my files.",
      "expr": "neutral",
      "speaker": "npc",
-     "end": true
+     "end": true,
+     "variants": [
+      {
+       "if": {
+        "identity": "saint"
+       },
+       "text": "...I've seen your bench. Fine. Keep them alive and keep them out of my files. I never saw your back door."
+      }
+     ]
     },
     "fine": {
      "text": "Two hundred, unlicensed practice, payable now. Next time it's closure.",
@@ -1520,6 +1660,24 @@
        "fail_next": "firm"
       },
       {
+       "text": "Your people already trust my table. That's worth four.",
+       "kind": "negotiate",
+       "next": "signed_more",
+       "fail_next": "firm",
+       "requires": {
+        "dim_min": {
+         "corporate": 20
+        }
+       },
+       "mod": 0.2,
+       "effects": {
+        "rel": 4,
+        "path": {
+         "corporate": 1
+        }
+       }
+      },
+      {
        "text": "A stabiliser for grief? What's it really for?",
        "kind": "persuade",
        "next": "slip",
@@ -1545,6 +1703,14 @@
          "respected": 2
         }
        }
+      }
+     ],
+     "variants": [
+      {
+       "if": {
+        "identity": "contractor"
+       },
+       "text": "Doctor. Cassian Voss, Lyra Biocomp, clinical outreach. Several of our people speak well of your discretion, so I'll be brief."
       }
      ]
     },
@@ -1950,6 +2116,14 @@
         "rel": -3
        }
       }
+     ],
+     "variants": [
+      {
+       "if": {
+        "memory": "PLAYER_SAVED_EMPLOYEE"
+       },
+       "text": "Can we talk? Not as boss and staff. You paid for my... you didn't have to do that. So I owe you honesty."
+      }
      ]
     },
     "talk": {
@@ -1972,6 +2146,19 @@
        "fail_effects": {
         "flag": "teo_gone",
         "rel": -20
+       }
+      },
+      {
+       "text": "I paid your debt when nobody else would. Trust me once more.",
+       "kind": "persuade",
+       "next": "doubt",
+       "fail_next": "leave",
+       "requires": {
+        "memory": "PLAYER_SAVED_EMPLOYEE"
+       },
+       "mod": 0.2,
+       "effects": {
+        "rel": 6
        }
       },
       {
@@ -2007,6 +2194,14 @@
         "flag": "teo_gone",
         "rel": -40
        }
+      }
+     ],
+     "variants": [
+      {
+       "if": {
+        "memory": "PLAYER_FORCED_MY_HAND"
+       },
+       "text": "You made me put chrome in a kid. I said no and you made me anyway. I keep seeing her face. I said one rule, Doctor. One."
       }
      ]
     },

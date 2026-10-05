@@ -44,6 +44,8 @@ var dilemma_stage: int = -1
 var active_dilemma: Dictionary = {}
 var dilemma_pay: float = 1.0
 var dilemma_notes: Array[String] = []
+## Whether the implant actually went in (an early abort can return it to stock).
+var implant_installed: bool = false
 var complication_time_left: float = 0.0
 var complications_total: int = 0
 var complications_handled: int = 0
@@ -125,6 +127,7 @@ func start_session(p_surgery: SurgeryData, p_customer: CustomerData, p_diagnosis
 	_queued_complications = 0
 	_plan_complications()
 	active_dilemma = {}
+	implant_installed = false
 	dilemma_pay = 1.0
 	dilemma_notes.clear()
 	dilemma_stage = SurgicalDilemmas.plan(self, _rng)
@@ -245,7 +248,8 @@ func resolve_dilemma(index: int) -> Dictionary:
 	if int(req.get("supplies", 0)) > 0:
 		InventoryManager.use_supplies(int(req["supplies"]))
 	var helper := SurgicalDilemmas.helper(customer) if bool(req.get("staff", false)) else {}
-	var ok := _rng.randf() < SurgicalDilemmas.odds(self, ch)
+	# A choice with no failure outcome can't go wrong.
+	var ok := not ch.has("fail") or _rng.randf() < SurgicalDilemmas.odds(self, ch)
 	var out: Dictionary = ch.get("success" if ok else "fail", ch.get("success", {}))
 	if out.has("vitals"):
 		vitals.apply_effects(out["vitals"])
@@ -254,6 +258,7 @@ func resolve_dilemma(index: int) -> Dictionary:
 	if out.has("heat"):
 		FactionManager.add_heat(float(out["heat"]))
 	if out.has("memory") and customer:
+		PeopleManager.register(customer)  # first-time patients become people first
 		MemoryManager.remember(customer.id, StringName(str(out["memory"])))
 	if not helper.is_empty() and out.has("stress"):
 		helper["stress"] = clampf(float(helper["stress"]) + float(out["stress"]), 0.0, 100.0)
@@ -272,8 +277,8 @@ func resolve_dilemma(index: int) -> Dictionary:
 	vitals_changed.emit(vitals)
 	if bool(r["aborted"]):
 		_finish(false, &"aborted")
-	else:
-		is_running = is_active
+	# Otherwise the patient stays frozen until the result is dismissed
+	# (DilemmaPanel calls resume()).
 	return r
 
 
@@ -288,6 +293,7 @@ func _apply_stage_outputs(stage: SurgeryStageData, data: Dictionary) -> void:
 		&"incision":
 			vitals.set_wound_open(true)
 		&"install_implant":
+			implant_installed = true
 			implant_alignment = float(data.get("alignment", 1.0)) * anchor_quality
 		&"anchor_drill":
 			anchor_quality = clampf(0.6 + 0.4 * float(data.get("anchor_quality", 1.0)), 0.3, 1.0)
@@ -324,6 +330,10 @@ func _finish(success: bool, reason: StringName) -> void:
 	r.diagnosis_correct = diagnosis_correct
 	r.implant_id = implant_item.id if implant_item else &""
 	r.implant_name = implant_item.display_name if implant_item else ""
+	if implant and not implant.identified:
+		# You find out what it was once it's in (or out).
+		implant.identified = true
+		r.implant_name = "%s (installed blind)" % r.implant_name
 	r.install_difficulty = implant_item.install_difficulty if implant_item else 1
 	r.neural_load_before = neural_load_before
 	r.neural_load_after = neural_load_after
