@@ -81,7 +81,8 @@ static func info(term: String) -> Button:
 	b.text = "?"
 	b.theme_type_variation = &"InfoButton"
 	b.name = "Info_%s" % term
-	b.custom_minimum_size = Vector2(30, 28)
+	# A full-size click target (GameConfig.MIN_CONTROL), small glyph.
+	b.custom_minimum_size = Vector2.ONE * (GameConfig.MIN_CONTROL - 4.0)
 	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	b.focus_mode = Control.FOCUS_ALL
 	b.mouse_default_cursor_shape = Control.CURSOR_HELP
