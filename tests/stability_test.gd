@@ -293,6 +293,8 @@ func _living_world(shift: int) -> void:
 			SecurityManager.confront(cid, str(sus[_rng.randi() % sus.size()]["key"]))
 			_count("case_confronted")
 		break
+	if shift % 2 == 1:
+		await _city_outing(shift)
 	if shift % 3 == 0:
 		for sid: StringName in [UIManager.SCREEN_BUSINESS, UIManager.SCREEN_STAFF, UIManager.SCREEN_BLACK_MARKET]:
 			await _go(sid)
@@ -305,6 +307,61 @@ func _living_world(shift: int) -> void:
 		await _frames(5)
 		UIManager.close_modal()
 		await _frames(3)
+
+
+## A trip into the city between jobs: travel there (through the UI flow),
+## deal with whatever happens, use what the place offers, come home.
+func _city_outing(shift: int) -> void:
+	var open: Array[StringName] = []
+	for id in LocationManager.known_locations():
+		if id != LocationManager.CLINIC and LocationManager.leave_block(id) == "":
+			open.append(id)
+	if open.is_empty() or EventManager.has_pending() or UIManager.has_modal():
+		return
+	var to: StringName = open[_rng.randi() % open.size()]
+	var minute := TimeManager.minute
+	if not TravelFlow.go(to):
+		return
+	_count("city_trip")
+	await _settle()
+	if WorldSimulationManager.has_encounter():
+		var n := (WorldSimulationManager.encounter.get("choices", []) as Array).size()
+		WorldSimulationManager.resolve_encounter(_rng.randi() % maxi(1, n))
+		WorldSimulationManager.encounter = {}
+		UIManager.close_modal()
+		await _settle()
+		_count("city_encounter")
+	if UIManager.current_screen_id != UIManager.SCREEN_LOCATION:
+		UIManager.go_to(UIManager.SCREEN_LOCATION)
+		await _settle()
+	check(UIManager.current_screen_id == UIManager.SCREEN_LOCATION and LocationManager.player_location == to, "shift %d: arrived at %s" % [shift, to])
+	check(TimeManager.minute >= minute, "shift %d: travel moves the clock forward" % shift)
+	var ev := WorldSimulationManager.event_at(to)
+	if not ev.is_empty():
+		WorldSimulationManager.resolve_event(to, _rng.randi() % maxi(1, (ev.get("choices", []) as Array).size()))
+		_count("city_event")
+	for sv in LocationServices.list(to):
+		if sv["block"] == "" and not sv.has("screen") and _rng.randf() < 0.5:
+			LocationServices.perform(to, str(sv["id"]))
+			_count("city_service")
+			break
+	for p in WorldSimulationManager.people_at(to):
+		if WorldSimulationManager.can_talk(str(p["kind"]), str(p["id"])) and str(p["kind"]) != "cast":
+			WorldSimulationManager.talk(str(p["kind"]), str(p["id"]))
+			_count("city_talk")
+			break
+	await _frames(5)
+	TravelFlow.go(LocationManager.CLINIC)
+	await _settle()
+	if WorldSimulationManager.has_encounter():
+		WorldSimulationManager.resolve_encounter(0)
+		WorldSimulationManager.encounter = {}
+		UIManager.close_modal()
+		await _settle()
+	if LocationManager.is_away():
+		LocationManager.player_location = LocationManager.CLINIC
+		check(false, "shift %d: couldn't get home from %s" % [shift, to])
+	await _go(UIManager.SCREEN_CLINIC)
 
 
 func _invariants(shift: int) -> void:
@@ -321,6 +378,9 @@ func _invariants(shift: int) -> void:
 	check(not SurgeryManager.is_active, "shift %d: no surgery left running" % shift)
 	check(ReputationManager.reputation >= GameConfig.MIN_REPUTATION and ReputationManager.reputation <= GameConfig.MAX_REPUTATION, "shift %d: rep in range" % shift)
 	check(FactionManager.heat >= 0.0 and FactionManager.heat <= 100.0, "shift %d: heat in range" % shift)
+	check(not LocationManager.is_away() or UIManager.current_screen_id == UIManager.SCREEN_LOCATION, "shift %d: never stranded out in the city" % shift)
+	check(WorldSimulationManager.feed.size() <= WorldSimulationManager.FEED_MAX, "shift %d: street feed bounded" % shift)
+	check(LocationManager.is_known(LocationManager.CLINIC), "shift %d: the clinic is always on the map" % shift)
 	# Conversations and night reports are legitimate modals: a stray one is
 	# anything else, or a conversation the story doesn't know about.
 	var talking := DialogueManager.is_active() or StoryManager.has_talk()

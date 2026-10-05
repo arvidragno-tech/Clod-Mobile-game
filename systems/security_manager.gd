@@ -102,6 +102,8 @@ func theft_chance() -> float:
 	for e in StaffManager.at_clinic(ClinicManager.tier):
 		if bool(StaffLifeManager.ensure_life(e).get("desperate", false)) or float(e["loyalty"]) < 25.0:
 			p += 0.05
+	# Nobody home: hours out in the city after dark make it easier.
+	p += minf(0.12, LocationManager.away_minutes_night / 60.0 * 0.03)
 	p -= float(t.get("security_cut", 0.035)) * maxi(0, ClinicManager.security_rating() - 1)
 	return clampf(p, 0.01, float(t.get("max", 0.45)))
 

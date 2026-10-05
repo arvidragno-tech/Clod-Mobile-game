@@ -122,6 +122,10 @@ func _contact_card(c: CustomerData, role: String) -> Control:
 	v.add_child(UIKit.label(c.get_display_title(), &"HeaderLabel", true))
 	v.add_child(UIKit.label("%s · %s" % [role, FactionManager.get_name_of(c.faction_id)], &"SubHeaderLabel", true, FactionManager.get_color(c.faction_id)))
 	v.add_child(UIKit.label(c.occupation, &"DimLabel", true, null, 13))
+	if CharacterManager.has_met(c.id):
+		var w := WorldSimulationManager.where_is_cast(c.id)
+		if w != &"" and LocationManager.is_known(w):
+			v.add_child(UIKit.label("Right now: %s" % LocationManager.location_name(w), &"DimLabel", true, Palette.OK, 13))
 	return card
 
 
@@ -318,8 +322,10 @@ func _patient_card(p: Dictionary) -> Control:
 	var v := UIKit.vbox(3)
 	UIKit.expand(v)
 	row.add_child(v)
-	var dead := str(p.get("status", "alive")) != "alive"
-	v.add_child(UIKit.label(("%s%s" % [str(p["name"]), "  †" if dead else ""]).to_upper(), &"SubHeaderLabel", true, Palette.TEXT_DIM if dead else Palette.ACCENT))
+	var status := str(p.get("status", "alive"))
+	var dead := status == "dead"
+	v.add_child(UIKit.label(("%s%s" % [str(p["name"]), "  †" if dead else ("  [MISSING]" if status == "missing" else "")]).to_upper(), &"SubHeaderLabel", true,
+		Palette.TEXT_DIM if dead else (Palette.WARN if status == "missing" else Palette.ACCENT)))
 	v.add_child(UIKit.label("PATIENT · %s · %s · %d visit(s)" % [str(p.get("occupation", "")), FactionManager.get_name_of(StringName(str(p.get("faction", "")))), int(p.get("visits", 0))], &"DimLabel", true, null, 13))
 	var st := PeopleManager.rel_state(id)
 	v.add_child(UIKit.label("%s  %+d · paid you %d cr in all" % [st.to_upper(), int(p.get("rel", 0)), int(p.get("paid_total", 0))], &"SubHeaderLabel", false,
@@ -335,7 +341,22 @@ func _patient_card(p: Dictionary) -> Control:
 		v.add_child(UIKit.label(str(h), &"DimLabel", true, null, 12))
 	if PeopleManager.owed_by(id) > 0:
 		v.add_child(UIKit.label("Owes you %d cr" % PeopleManager.owed_by(id), &"DimLabel", true, Palette.WARN, 13))
+	if status == "alive":
+		v.add_child(UIKit.label(_whereabouts(p), &"DimLabel", true, Palette.TEXT_DIM, 12))
+	elif status == "missing":
+		v.add_child(UIKit.label("Missing. Their family asked you for help: start at their home.", &"DimLabel", true, Palette.WARN, 12))
 	return card
+
+
+## Home / work / now, for the places you know.
+func _whereabouts(p: Dictionary) -> String:
+	WorldSimulationManager.ensure_routine(p)
+	var name_of := func(key: String) -> String:
+		var l := StringName(str(p.get(key, "")))
+		return LocationManager.location_name(l) if LocationManager.is_known(l) else "somewhere you don't know"
+	var now := WorldSimulationManager.person_place(p)
+	return "Lives: %s · Works: %s · Now: %s" % [name_of.call("home"), name_of.call("work"),
+		(LocationManager.location_name(now) if LocationManager.is_known(now) else "?") + " (%s)" % WorldSimulationManager.activity_of(p)]
 
 
 func _person_card(id: StringName) -> Control:

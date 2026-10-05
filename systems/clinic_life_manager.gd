@@ -172,7 +172,7 @@ func _on_time_changed(minute: int, _period: StringName) -> void:
 	_patience_check()
 	var w: Dictionary = data.get("waiting", {})
 	# Walk-ins while you're busy with someone.
-	if CustomerManager.has_customer() or SurgeryManager.is_active:
+	if CustomerManager.has_customer() or SurgeryManager.is_active or LocationManager.is_away():
 		var p := 1.0 - pow(1.0 - float(w.get("walk_in_per_hour", 0.35)), hours)
 		if _rng.randf() < p and can_seat():
 			seat(CustomerManager.generator.generate())

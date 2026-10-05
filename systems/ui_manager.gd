@@ -22,6 +22,7 @@ const SCREEN_CREDITS := &"credits"
 const SCREEN_BUSINESS := &"business"
 const SCREEN_MAP := &"map"
 const SCREEN_STAFF := &"staff"
+const SCREEN_LOCATION := &"location"
 
 const SCREEN_SCENES := {
 	SCREEN_MAIN_MENU: "res://scenes/main_menu/main_menu.tscn",
@@ -43,6 +44,7 @@ const SCREEN_SCENES := {
 	SCREEN_BUSINESS: "res://scenes/business/business_screen.tscn",
 	SCREEN_MAP: "res://scenes/map/map_screen.tscn",
 	SCREEN_STAFF: "res://scenes/staff/staff_screen.tscn",
+	SCREEN_LOCATION: "res://scenes/location/location_screen.tscn",
 }
 
 const DIALOG_SCENE := preload("res://ui/components/dialog.tscn")
@@ -66,7 +68,7 @@ const HAPTICS := {
 }
 ## Which sound profile (music + ambience) each screen uses.
 const SCREEN_AUDIO := {
-	SCREEN_MAIN_MENU: &"menu", SCREEN_SURGERY: &"surgery", SCREEN_BLACK_MARKET: &"market", SCREEN_MAP: &"city",
+	SCREEN_MAIN_MENU: &"menu", SCREEN_SURGERY: &"surgery", SCREEN_BLACK_MARKET: &"market", SCREEN_MAP: &"city", SCREEN_LOCATION: &"city",
 }
 
 var _screen_host: Control
@@ -350,7 +352,7 @@ func _on_button_hover(b: BaseButton) -> void:
 
 ## Screens where the global hotkeys (I, J, B, M, C, F5/F9) navigate.
 const HUB_SCREENS := [SCREEN_CLINIC, SCREEN_SHOP, SCREEN_SKILLS, SCREEN_UPGRADES, SCREEN_DOSSIER, SCREEN_INVENTORY,
-	SCREEN_DATABASE, SCREEN_BLACK_MARKET, SCREEN_SETTINGS, SCREEN_CUSTOMER, SCREEN_BUSINESS, SCREEN_MAP, SCREEN_STAFF]
+	SCREEN_DATABASE, SCREEN_BLACK_MARKET, SCREEN_SETTINGS, SCREEN_CUSTOMER, SCREEN_BUSINESS, SCREEN_MAP, SCREEN_STAFF, SCREEN_LOCATION]
 
 
 func _input(event: InputEvent) -> void:

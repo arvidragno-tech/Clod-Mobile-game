@@ -101,6 +101,9 @@ func request_next_customer(delay: float = GameConfig.CUSTOMER_ARRIVAL_DELAY_SEC)
 	# Nobody new after closing time (the night's books come first).
 	if BusinessManager.is_day_full():
 		return
+	# Nobody opens the door while you're out in the city.
+	if LocationManager.is_away():
+		return
 	if delay <= 0.0:
 		_on_arrival_timer_timeout()
 	else:
@@ -114,6 +117,12 @@ func _notification(what: int) -> void:
 		set_arrivals_paused(true)
 	elif what == NOTIFICATION_APPLICATION_FOCUS_IN and not DialogueManager.is_active():
 		set_arrivals_paused(false)
+
+
+## Going out: whoever was about to knock waits until you're back.
+func stop_arrivals() -> void:
+	if _arrival_timer:
+		_arrival_timer.stop()
 
 
 ## Pause during dialogue / focus loss: nobody walks in meanwhile.
@@ -131,6 +140,8 @@ func dismiss_current() -> void:
 
 
 func _on_arrival_timer_timeout() -> void:
+	if LocationManager.is_away():
+		return
 	# Whoever has been waiting on the bench goes first.
 	var seated := ClinicLifeManager.take_next()
 	current_customer = seated if seated else _next_customer()

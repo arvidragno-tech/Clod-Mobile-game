@@ -57,6 +57,12 @@ func _ready() -> void:
 	await _measure(&"staff", "staff")
 	await _measure(&"business", "business")
 	await _measure(&"map", "city map")
+	TimeManager.minute = 1320
+	LocationManager.travel(&"glow_night_market")
+	WorldSimulationManager.encounter = {}
+	await _measure(&"location", "location (market)")
+	LocationManager.return_to_clinic()
+	WorldSimulationManager.encounter = {}
 	await _measure(&"main_menu", "main_menu")
 	ClinicManager.tier = 0
 	await _measure(&"clinic", "clinic")

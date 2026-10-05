@@ -344,6 +344,13 @@ func apply_effects(e: Dictionary, char_id: StringName = &"") -> Array[String]:
 			out.append("%s rep %+d" % [str(ReputationManager.DIMENSION_LABELS.get(StringName(str(d)), d)).to_lower(), int(e["dims"][d])])
 	if e.has("memory") and char_id != &"":
 		MemoryManager.remember(char_id, StringName(str(e["memory"])))
+	if e.has("discover"):
+		var ds: Variant = e["discover"]
+		for l: Variant in (ds if ds is Array else [ds]):
+			LocationManager.discover(StringName(str(l)), "You were told where to find it.")
+	var cn: Dictionary = e.get("counters", {})
+	for k: Variant in cn:
+		bump(StringName(str(k)), int(cn[k]))
 	if e.has("ending"):
 		choose_ending(StringName(str(e["ending"])))
 	return out

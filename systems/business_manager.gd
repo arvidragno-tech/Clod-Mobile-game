@@ -13,14 +13,14 @@ const HISTORY_DAYS := 30
 const DEBT_INTEREST := 0.08
 const DEBT_WARNING := 500
 
-const INCOME := [&"revenue", &"staff_revenue", &"black_market", &"events", &"other"]
+const INCOME := [&"revenue", &"staff_revenue", &"black_market", &"events", &"city", &"other"]
 const LABELS := {
 	&"revenue": "Surgery revenue", &"staff_revenue": "Staff-run clinics", &"black_market": "Black market",
 	&"events": "Deals and incidents", &"clinics": "Clinic purchases", &"upgrades": "Upgrades",
 	&"supplies": "Medical supplies", &"cyberware": "Cyberware stock", &"tools": "Tools and service",
 	&"rent": "Rent", &"operating": "Running costs", &"upkeep": "Upgrade upkeep", &"salaries": "Salaries",
 	&"security": "Security", &"bribes": "Bribes", &"debt": "Debt repayment", &"interest": "Debt interest",
-	&"other": "Other",
+	&"travel": "Travel", &"city": "Work around the city", &"other": "Other",
 }
 
 var day: int = 1

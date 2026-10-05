@@ -47,7 +47,7 @@ func continue_game() -> void:
 		start_new_game()
 		return
 	_begin_play()
-	UIManager.go_to(UIManager.SCREEN_CLINIC)
+	UIManager.go_to(UIManager.SCREEN_LOCATION if LocationManager.is_away() else UIManager.SCREEN_CLINIC)
 
 
 func load_slot(n: int) -> bool:
@@ -56,7 +56,7 @@ func load_slot(n: int) -> bool:
 		UIManager.show_toast("Slot %d could not be loaded" % n, &"danger")
 		return false
 	_begin_play()
-	UIManager.go_to(UIManager.SCREEN_CLINIC)
+	UIManager.go_to(UIManager.SCREEN_LOCATION if LocationManager.is_away() else UIManager.SCREEN_CLINIC)
 	return true
 
 
@@ -83,7 +83,11 @@ func quick_load() -> void:
 func navigate(id: StringName) -> void:
 	match id:
 		&"clinic":
-			go_to_clinic()
+			# Out in the city, the CLINIC button takes you home (the trip takes its time).
+			if LocationManager.is_away() and UIManager.current_screen_id == UIManager.SCREEN_LOCATION:
+				TravelFlow.go(LocationManager.CLINIC)
+			else:
+				go_to_clinic()
 		&"inventory":
 			UIManager.go_to(UIManager.SCREEN_INVENTORY)
 		&"database":
@@ -168,6 +172,10 @@ func _begin_play() -> void:
 # --- Navigation helpers -------------------------------------------------------
 
 func go_to_clinic() -> void:
+	# Out in the city, "back" means back to where you are.
+	if LocationManager.is_away():
+		UIManager.go_to(UIManager.SCREEN_LOCATION)
+		return
 	UIManager.go_to(UIManager.SCREEN_CLINIC)
 	if BusinessManager.is_day_full() and not CustomerManager.has_customer() and not EventManager.has_pending():
 		close_for_the_night()
@@ -187,6 +195,8 @@ func close_for_the_night() -> void:
 ## The single most useful next step for the player (clinic "NEXT" line).
 ## Returns {"text": String, "kind": &"info"|&"warn"}.
 func get_next_objective() -> Dictionary:
+	if LocationManager.is_away():
+		return {"text": "You're at %s: RETURN TO CLINIC when you're done" % LocationManager.location_name(LocationManager.player_location), "kind": &"info"}
 	if EventManager.has_pending():
 		return {"text": "Someone is waiting: deal with the incident", "kind": &"warn"}
 	if StoryManager.has_talk():

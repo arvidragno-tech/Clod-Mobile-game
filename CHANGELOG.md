@@ -4,6 +4,36 @@ All notable changes to *UNDERCITY: RIPPER*. Versions follow
 `application/config/version` in `project.godot` and the Windows file version
 in `export_presets.cfg`.
 
+## 3.2.0 — The living city
+
+Caldera has places now: few of them, each with a job, people and things
+that happen. DISTRICT → LOCATION → PEOPLE → FUNCTION → EVENTS.
+
+### Places
+- Twelve places in the seven districts: your clinic, the Pipeworks Tenements and Caldera Stacks (residential), the Rusty Valve and the Orchid Room (bars), the Flood Tunnels (the Undermarket in person), Furnace Line Works (industrial), the Glow Strip Night Market, Spindle Interchange (transit), Meridian Medical Plaza (corporate), and in the Lyra Exclusion Zone, Checkpoint 9 and the Research Annex.
+- Each place has opening hours, activity by hour, danger, police, faction presence, a street view drawn from its district's palette and its kind, and a state: busy, quiet, dangerous, police presence, monitored, someone's turf, unwelcome, black market active, closed, something happening, a lead.
+- What you can do there (22 services): visit your patients at home, ask around, buy a round and listen, look for staff, hand out cards (someone comes to your clinic), work the room, meet a fixer, the Undermarket in person (10% cheaper) and walking the stalls (new stock, maybe a new supplier), a forged badge, salvage, a cheap tool service, market-price supplies (cheaper after dark), fencing parts, courier jobs, a metro pass, a licensed shift, certified stock, a contractor pass, the checkpoint (bribe or fence), the annex's cold storage and records.
+
+### Getting around
+- The city map shows the places you know, their state, where you are and where something is happening. Click a place: what it's like, who's there, what you can do, and how to get there.
+- Walk (free, slow, risky after dark in the lower city), metro (cheap, 06:00–01:00, down in a blackout, never into the Zone) or cab (fast, dearer at night). The clock moves with every trip. Things can happen on the way (a mugging, a checkpoint, a wounded stranger, a courier offer).
+- Out of the clinic, nobody new walks in; whoever was at the door sits down if there's room; you can't walk out on an emergency; nights out make break-ins likelier. RETURN TO CLINIC is always one click.
+
+### People
+- Your patients live somewhere, work somewhere and drink somewhere, and follow a routine through the day (home → work → the interchange → the bar → home; night workers the other way round). You can find them, check on them (the shaky ones come in), and they tell you about places.
+- The story cast keep haunts (Rook at the Valve, Wire in the Orchid Room and the tunnels, Voss and Moor at the Plaza...), and a conversation waiting for you can happen where you find them. Staff take a break at their bar. Suppliers keep tables at their haunts; strangers with sample cases become contacts.
+- A patient with risky chrome can go missing: their family writes, their home has a clue, the clue leads somewhere, and what you do there decides whether they live.
+
+### Events and factions
+- Forty ambient events at places: bar fights, fixer meetings, raids, accidents on Line 3, stings in the tunnels, inspections, cover-ups, an extraction in the Plaza, a strike, and in the annex, bed 14. Many send someone to your clinic.
+- Faction presence is physical: news of a takeover or a gang war puts that faction on the street; what you do at a place shifts who feels at home there (and it drifts back). Hostile to whoever runs a place: unwelcome, services closed, prices up. Friends get a discount.
+- Discovery: start near the clinic; more opens with your level, black-market contacts and the story; patients, the cast, fixers, rumours and suppliers tell you about the rest. The Exclusion Zone opens through a contractor pass, a forged badge, a bribe, the fence, or a scavenger's route.
+
+### Under the hood
+- New: `LocationManager`, `WorldSimulationManager` (both saved), `LocationServices`, `TravelFlow`, `ChoicePanel`, `LocationView`, the location screen, `data/locations.json`. Old saves load with the places they should know.
+- The journal shows where your patients live and work and where they are now, and where the cast are right now.
+- Tests: `tests/living_city_tests.gd` in the unit run, `tests/city_probe.tscn` (rendered, mouse + keyboard, 4 resolutions, 3 window modes), city outings in the stability soak, a place in the release smoke test.
+
 ## 3.1.1 — Follow-ups and audit fixes
 
 ### Follow-ups

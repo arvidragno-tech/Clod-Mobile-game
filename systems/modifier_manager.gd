@@ -35,7 +35,7 @@ func get_all() -> Dictionary:
 func _rebuild() -> void:
 	_cache.clear()
 	for source: Dictionary in [SkillManager.get_modifiers(), ClinicManager.get_modifiers(),
-			InventoryManager.get_tool_modifiers(), EventManager.get_temp_modifiers(), TimeManager.get_modifiers(), WorldEventManager.get_modifiers()]:
+			InventoryManager.get_tool_modifiers(), EventManager.get_temp_modifiers(), TimeManager.get_modifiers(), WorldEventManager.get_modifiers(), LocationManager.get_modifiers()]:
 		for key: Variant in source:
 			var k := StringName(str(key))
 			_cache[k] = float(_cache.get(k, 0.0)) + float(source[key])

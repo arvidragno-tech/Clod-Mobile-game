@@ -367,3 +367,91 @@ clinic log become people you've met (`SaveManager._migrate`).
   `waiting_feet` for the room overlays.
 - Music: `clinic_night` and `clinic_tension` (tools/generate_audio.py
   `music_reactive`), chosen by `AudioManager._score_for`.
+
+## 3.2: the living city (locations)
+
+Few places, each with a job: DISTRICT → LOCATION → PEOPLE → FUNCTION →
+EVENTS. The seven districts of `WorldManager` stay as they are; twelve
+places live inside them (`data/locations.json`), one of each kind and two
+bars, two residential blocks and two restricted sites. Two autoloads and one
+helper class were added; nothing was removed and no existing system was
+duplicated: shops are the supply terminal, the Undermarket is
+`BlackMarketManager` + `SupplierManager`, hires go on `StaffManager`'s
+candidate list, people sent to your clinic go into `CustomerManager.queue`,
+event outcomes reuse `EventManager.apply_outcomes` and
+`StoryManager.apply_effects`, prices go through `ModifierManager`.
+
+| Autoload / class | Owns |
+|---|---|
+| `LocationManager` | The registry, discovery (`discover(id, how)`, `check_discovery()`, `reveal_random()`), where the player is (`player_location`, `is_away()`), opening hours on the 06:00–30:00 dial (`is_open`, `hours_text`), access (`access_block`, Exclusion Zone access: route / forged / pass, or a practice inside the Zone), travel (`trip`, `trips`, `best_trip`, `leave_block`, `travel`, `return_to_clinic`, `spend_minutes`), the place's price modifiers while you're there (`get_modifiers`), metro pass, nights away (theft risk). Saved |
+| `WorldSimulationManager` | What a place is like now (`state(id)`: activity, danger, police, faction presence, dominant faction, flags closed / after_hours / busy / quiet / dangerous / police / monitored / controlled / unwelcome / restricted / bm_active / event / lead; `state_label`, `price_mult`), who is where (`cast_at`, `patients_at`, `staff_at`, `suppliers_at`, `people_at`, `person_place`, `ensure_routine`, `residents`), talking (`talk`, `can_talk`), ambient events (`roll_events`, `start_event`, `event_at`, `resolve_event`, `apply`), travel encounters (`roll_encounter`, `resolve_encounter`), the missing-patient chain (`start_missing`, `missing_at`, `act_missing`), faction presence shifts, closures, the street feed. Saved |
+| `LocationServices` (class) | What you can do at a place: 22 services (`list`, `block`, `cost`, `perform`), most once a day per place |
+
+### How it simulates (cheaply)
+
+Nothing walks around frame by frame. Every answer is computed from the
+clock when asked and cached until the clock moves (`refresh()` on
+`time_changed`):
+- **Patients** get `home`, `work` and `social` place ids the first time
+  they're needed (stored on the person, so saved with `PeopleManager`).
+  A routine (default or night shift) maps the period to a slot
+  (home → work → transit → bar → home); 15% of the time they skip it.
+  Closed places fall back to home.
+- **Cast** haunts are rolled per day and period from a hash, so nobody
+  flickers; unmet cast and cast who are gone (`unless` flags) are nowhere.
+- **Staff** take one break a night at their bar (on call).
+- **Suppliers** keep tables at their haunt; unknown ones are strangers you
+  can introduce yourself to.
+
+### Where the city bends the loop
+
+```
+travel: LocationManager.travel → cost, TimeManager.advance(minutes) (periods, appointments,
+        waiting-room patience), maybe an encounter (risk × danger × night)
+away:   no arrivals (CustomerManager gates the timer); whoever was at the door sits on the
+        bench or leaves; walk-ins still sit down; night minutes raise theft_chance
+place:  an event (choices with requires / minutes / outcomes), people (talk: relationship,
+        loyalty, trust, leads, queued story conversations), services
+out:    patients → CustomerManager.queue (emergencies first); candidates → StaffManager;
+        leads → SupplierManager / LocationManager; zone access; faction presence shifts
+back:   GameManager.go_to_clinic goes to the place you're at while away; the clinic
+        screen brings you home (with the trip's time) if you get there any other way
+dawn:   everyone starts at the clinic; closures lift; presence drifts back; a patient with
+        risky chrome may go missing; missing deadlines
+```
+
+Event outcome keys on top of the incident vocabulary: `effects`
+(StoryManager), `patient` {archetype, emergency, category, pay, line},
+`lead`, `candidate`, `zone`, `close`, `staff_loyalty` / `person_rel` /
+`person_visit` (with the event's vars). `StoryManager.apply_effects` gained
+`discover` (reveal places from conversations and quests) and `counters`.
+
+### UI
+
+- `CityMapView` draws the known places (type colour, state ring, events
+  and leads blink, a dashed route, YOU) and emits `location_clicked`.
+- The map screen's side panel shows a place: state, presence, people you
+  know there, what you can do, and one button per way to get there
+  (`Travel_walk` / `Travel_metro` / `Travel_taxi`, time · cost, risk).
+- `location_screen.gd` (`UIManager.SCREEN_LOCATION`): `LocationView` (the
+  street, drawn from the district palette and the place's kind, with the
+  hour's tint, activity, police lights, rain), state, the event / missing
+  trail, the street feed, people (TALK), services, RETURN TO CLINIC.
+- `TravelFlow` (travel → encounter modal → destination) and `ChoicePanel`
+  (a decision modal).
+
+### Tests
+
+- `tests/living_city_tests.gd` (unit run, ~200 checks): registry integrity,
+  discovery, hours and states, travel (modes, costs, blocks, the clock,
+  always home), being away, routines, cast and staff presence, events,
+  factions, the Undermarket in person, services, the Exclusion Zone, the
+  missing chain, encounters, talk, save / load and old saves, and a
+  week-long soak.
+- `tests/city_probe.tscn` (rendered): M opens the map, a mouse click on a
+  marker, travel, the location screen, an event, a service, TAB, an
+  encounter, ESC, GO IN, RETURN TO CLINIC, every place at two hours, F5 /
+  F9 while out; 1920×1080, 1600×900, 1366×768, 1280×720 windowed, plus
+  borderless and fullscreen.
+- `tests/stability_test.tscn` makes a city outing every other shift and
+  checks the player is never stranded.

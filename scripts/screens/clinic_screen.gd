@@ -34,6 +34,11 @@ var _close_row: HBoxContainer
 
 
 func on_enter(_params: Dictionary) -> void:
+	# The clinic screen is the clinic: if you were out, you come back (the
+	# trip home takes its time).
+	if LocationManager.is_away():
+		if not bool(LocationManager.return_to_clinic().get("ok", false)):
+			LocationManager.player_location = LocationManager.CLINIC
 	_build()
 	EventBus.customer_arrived.connect(_on_customer_arrived)
 	EventBus.inventory_changed.connect(_refresh_status)

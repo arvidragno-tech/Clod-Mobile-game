@@ -125,7 +125,11 @@ func _on_money(amount: int, _delta: int) -> void:
 
 
 func _refresh() -> void:
-	_location.text = "%s · %s · %s" % [TimeManager.stamp(), ClinicManager.get_tier_name().to_upper(), WorldManager.district_name().to_upper()]
+	if LocationManager.is_away():
+		var here := LocationManager.player_location
+		_location.text = "%s · %s · %s" % [TimeManager.stamp(), LocationManager.location_name(here).to_upper(), WorldManager.district_name(LocationManager.district_of(here)).to_upper()]
+	else:
+		_location.text = "%s · %s · %s" % [TimeManager.stamp(), ClinicManager.get_tier_name().to_upper(), WorldManager.district_name().to_upper()]
 	_location.tooltip_text = _location.text
 	_level.text = "LV %d" % ProgressionManager.level
 	var need := ProgressionManager.xp_required_for_level(ProgressionManager.level + 1)

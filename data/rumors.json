@@ -67,6 +67,20 @@
    "conditions": {
     "min_level": 3
    }
+  },
+  {
+   "id": "lyra_trials",
+   "text": "Lyra ran neural trials on Sump residents through 'free clinics'. The subjects were listed as volunteers. Some of them are still in the annex past Checkpoint 9.",
+   "conditions": {
+    "flag": "lyra_gossip"
+   }
+  },
+  {
+   "id": "city_routes",
+   "text": "The Spindle Interchange sees everyone sooner or later. If someone in Caldera is hiding, ask the freight handlers.",
+   "conditions": {
+    "min_rep": 5
+   }
   }
  ]
 }

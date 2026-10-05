@@ -48,7 +48,18 @@ func _smoke_test() -> void:
 			UIManager.SCREEN_SKILLS, UIManager.SCREEN_UPGRADES, UIManager.SCREEN_DOSSIER, UIManager.SCREEN_STAFF,
 			UIManager.SCREEN_BUSINESS, UIManager.SCREEN_MAP, UIManager.SCREEN_SETTINGS]:
 		await step.call(id, {"return_to": UIManager.SCREEN_CLINIC})
+	# Out into the city: a place's screen, then home.
+	await step.call(UIManager.SCREEN_CLINIC)
+	UIManager.close_modal()
+	if bool(LocationManager.travel(&"sump_tenements").get("ok", false)):
+		WorldSimulationManager.encounter = {}
+		await step.call(UIManager.SCREEN_LOCATION)
+		LocationManager.return_to_clinic()
+		WorldSimulationManager.encounter = {}
+	else:
+		fails.append("could not travel")
 	# A conversation (5x portrait, dialogue bus, voice) in the release build.
+
 	await step.call(UIManager.SCREEN_CLINIC)
 	UIManager.close_modal()
 	DialogueManager.start(&"d_ilse_intro")

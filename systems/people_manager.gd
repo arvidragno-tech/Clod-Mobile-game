@@ -186,20 +186,7 @@ func after_visit(c: CustomerData, outcome: String, paid: int = 0) -> void:
 			MemoryManager.remember(id, &"PLAYER_FAILED_OPERATION")
 			note(id, "Operation went wrong.")
 		"death":
-			p["status"] = "dead"
-			p["next_day"] = -1
-			note(id, "Died on the table.")
-			# The dead don't pay: their debts close.
-			for d in debts:
-				if str(d["person"]) == String(id) and str(d["status"]) in ["open", "plan", "favor"]:
-					d["status"] = "deceased"
-					(d["history"] as Array).append("D%d died; debt closed" % BusinessManager.day)
-			p["favor"] = false
-			debt_changed.emit()
-			# The people who loved them remember.
-			for other: String in p["links"]:
-				if has_person(StringName(other)):
-					MemoryManager.remember(StringName(other), &"PLAYER_KILLED_FRIEND", String(id))
+			mark_dead(id, "Died on the table.", true)
 		"refused":
 			p["refused"] = int(p.get("refused", 0)) + 1
 			MemoryManager.remember(id, &"PLAYER_REFUSED_TREATMENT")
@@ -272,6 +259,29 @@ func _schedule_return(p: Dictionary, outcome: String) -> void:
 
 
 ## Someone they know comes because of them (good care) or stays away (bad).
+## Someone you treated is dead (on your table, or out in the city).
+func mark_dead(id: StringName, why: String, on_table: bool = false) -> void:
+	var p := get_person(id)
+	if p.is_empty():
+		return
+	p["status"] = "dead"
+	p["next_day"] = -1
+	note(id, why)
+	# The dead don't pay: their debts close.
+	for d in debts:
+		if str(d["person"]) == String(id) and str(d["status"]) in ["open", "plan", "favor"]:
+			d["status"] = "deceased"
+			(d["history"] as Array).append("D%d died; debt closed" % BusinessManager.day)
+	p["favor"] = false
+	debt_changed.emit()
+	# The people who loved them remember (when it was your table).
+	if on_table:
+		for other: String in p["links"]:
+			if has_person(StringName(other)):
+				MemoryManager.remember(StringName(other), &"PLAYER_KILLED_FRIEND", String(id))
+	person_changed.emit(id)
+
+
 func referral(from: CustomerData) -> CustomerData:
 	var fac := String(from.faction_id)
 	# Good people know bad people: a grateful patient's friend may run with a crew.

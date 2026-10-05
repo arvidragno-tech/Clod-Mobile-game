@@ -39,6 +39,8 @@ const SAVEABLE_SYSTEMS: Array[String] = [
 	"WorldEventManager",
 	"SupplierManager",
 	"SecurityManager",
+	"LocationManager",
+	"WorldSimulationManager",
 	"TutorialManager",
 ]
 

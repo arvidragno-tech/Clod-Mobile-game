@@ -7,12 +7,18 @@ almost nothing, take customers, install cyberware at a surgical workstation,
 hire staff, buy clinics across the city, and decide what you become while a
 corporate conspiracy spreads through your patients' nerves.
 
-**Status: 3.1.1, "The world reacts"**: patients who remember you and come
+**Status: 3.2.0, "The living city"**: twelve places across Caldera's seven
+districts (bars, a night market, the Undermarket's tunnels, the works, the
+Plaza, tenements, the interchange, the Exclusion Zone), travel that costs
+time and money, patients and the cast with routines you can follow, events
+at every kind of place, faction presence you can see and shift, and a
+missing-patient trail; on top of 3.1 "The world reacts": patients who remember you and come
 back changed, staff with lives, a clock from 09:00 to 04:00, a waiting room
 and a Clinic Wall, a city with its own situations and news, surgical
 dilemmas, emergency triage, a black-market supplier network, break-ins and
 investigations, on top of 3.0 "The Underground" (characters, clinics,
 staff, business, districts and a five-act story). The game has:
+- a living city: twelve places with hours, states, people, 22 services and 40 events; walk / metro / cab; encounters on the way; NPC routines; discovery; the Exclusion Zone
 - a living world: people, memories, payment terms and debts, staff lives and bonds, day and night, waiting room, the Wall, city situations and news, surgical dilemmas, triage, six black-market contacts, heat levels, thefts and investigations
 - a dark, grimy look: seven lit clinic interiors with grime, waste and failing light; very little neon
 - detailed characters: layered portraits and bodies built from parts, occupation and faction looks, a ten-person story cast whose looks change with the story, idle animation everywhere
@@ -206,6 +212,8 @@ LICENSES/                Font licences (SIL OFL 1.1)
 | `SkillManager` | Skill tree: Surgery / Cybernetics / Medicine / Underworld |
 | `ClinicManager` | Seven clinics (owned / active), upgrades and overlays |
 | `WorldManager` | Districts of Caldera, influence, walk-in and event weights |
+| `LocationManager` | Places in the city: discovery, hours, access, where you are, travel (walk / metro / cab) |
+| `WorldSimulationManager` | What each place is like now, who is there (routines, haunts), ambient events, encounters, the missing-patient chain |
 | `BusinessManager` | Business days, ledger, nightly costs, debt |
 | `StaffManager` / `EmployeeAI` | Hiring board, staff, assignment odds and refusals, nightly growth |
 | `CharacterManager` / `CharacterAppearanceManager` / `CharacterPortraitManager` / `CharacterAnimationManager` | Story cast, appearance rules and events, portraits, idle animation |
@@ -434,6 +442,7 @@ tests/run_tests.sh   # compile check, balance sim, stability suite, E2E (mouse +
   6. optic install on a generated customer
 
   It also plays the story conversations that open in the clinic (picking answers, with a screenshot of each), buys a clinic, installs an upgrade, visits BUSINESS and the CITY MAP (clicking a district), hires a ripperdoc and assigns a customer to them, checks the journal QUESTS / COMMS / PEOPLE / STORY tabs, rebinds a key through the conflict dialog and a mouse button, and covers the Wire story event, black-market buy/study/sell, a skill upgrade, a clinic upgrade, all journal tabs, **I** (inventory: right-click compare, drag & drop onto a compare slot, tabs), **B** (database), **ESC** pause open/close, **F5** quick save, **TAB** focus, the settings tabs (graphics, audio slider drag, controls, gameplay toggles), and a reload. A layout guard asserts that every button is on-screen and nothing overflows the canvas. It runs rendered under Xvfb (headless Godot measures fonts differently).
+- **City probe** (`tests/city_probe.tscn`, needs a display or Xvfb): opens the map with M, clicks a place, travels, uses the location screen (event, service, TAB, an encounter, ESC, GO IN, RETURN TO CLINIC), visits every place by day and night, and F5 / F9 while out, at 1920×1080, 1600×900, 1366×768, 1280×720 windowed, borderless and fullscreen, with screenshots and on-screen checks.
 - **Display probe** (`tests/display_probe.tscn`, needs a display or Xvfb): drives the real window through 1920×1080, 1600×900, 1366×768, 1280×720 windowed, borderless, fullscreen and a 5:4 window; checks the window size/mode, the uniform 16:9 canvas, nearest filtering and that every button stays on-screen on the menu, clinic, inventory, staff, business, city map, facility, journal, settings and an open conversation, with screenshots.
 - **Balance simulator** (`tests/balance_sim.tscn`): 40 jobs through the real economy for normal and struggling players. It asserts pacing milestones and that there are no dead ends.
 - **Stability suite** (`tests/stability_test.tscn`):

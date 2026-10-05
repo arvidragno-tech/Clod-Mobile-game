@@ -14,6 +14,7 @@ const STEP_TIMEOUT := 20.0
 const DRAG_STEP_PX := 6.0
 const UnitTests := preload("res://tests/unit_tests.gd")
 const LivingWorldTests := preload("res://tests/living_world_tests.gd")
+const LivingCityTests := preload("res://tests/living_city_tests.gd")
 
 var _failures: Array[String] = []
 var _dilemmas_seen: bool = false
@@ -52,6 +53,7 @@ func _run_all() -> void:
 	UnitTests.new().run(self)
 	print("== LIVING WORLD TESTS ==")
 	LivingWorldTests.new().run(self)
+	LivingCityTests.new().run(self)
 	if OS.get_cmdline_user_args().has("--unit-only"):
 		_finish()
 		return

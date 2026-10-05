@@ -1,7 +1,10 @@
 extends BaseScreen
-## CITY MAP: Caldera and its seven districts. Click a district to read it
-## (architecture, light, population, factions, who walks in, danger,
-## your influence) and to see, buy or move to the clinic there.
+## CITY MAP: Caldera, its seven districts and the places you know. Click a
+## district to read it (architecture, light, population, factions, who
+## walks in, danger, your influence, its places) and to see, buy or move to
+## the clinic there. Click a place to see what it's like right now, who's
+## there, what you can do there, and how to get there (walk, metro, cab:
+## time, cost, risk).
 
 const MAP_PATH := "res://assets/sprites/ui/city_map.png"
 
@@ -11,9 +14,10 @@ var _selected: StringName = &""
 var _panels: Array[Control] = []
 
 
-func on_enter(_params: Dictionary) -> void:
+func on_enter(params: Dictionary) -> void:
 	var col := UIKit.workstation(self, &"map")
-	col.add_child(UIKit.header("CALDERA · %d DISTRICTS" % WorldManager.order.size(), "CITY MAP", GameManager.go_to_clinic))
+	col.add_child(UIKit.header("CALDERA · %d DISTRICTS · %d PLACES KNOWN · YOU: %s" % [WorldManager.order.size(), LocationManager.known_locations().size(),
+		LocationManager.location_name(LocationManager.player_location).to_upper()], "CITY MAP", GameManager.go_to_clinic))
 	var row := UIKit.hbox(16)
 	UIKit.expand(row, true, true)
 	col.add_child(row)
@@ -24,10 +28,12 @@ func on_enter(_params: Dictionary) -> void:
 	_map = CityMapView.new()
 	_map.name = "CityMap"
 	_map.district_clicked.connect(_select)
+	_map.location_clicked.connect(select_location)
 	var mcol := UIKit.vbox(6)
 	frame.add_child(mcol)
 	mcol.add_child(_map)
-	mcol.add_child(UIKit.label("◆ district  ·  ■ your clinics  ·  pulsing ring = your practice  ·  click a district for details", &"SubHeaderLabel", true))
+	mcol.add_child(UIKit.label("◆ district  ·  ■ place (colour = kind; dim = closed)  ·  green ring = you  ·  click a place to travel", &"SubHeaderLabel", true))
+	_legend(mcol)
 	var side := UIKit.panel(&"AccentPanel")
 	UIKit.expand(side, true, true)
 	row.add_child(side)
@@ -40,20 +46,123 @@ func on_enter(_params: Dictionary) -> void:
 	sc.add_child(_info)
 	EventBus.clinic_upgraded.connect(func(_t: int) -> void: _refresh())
 	EventBus.clinic_purchased.connect(func(_i: int) -> void: _refresh())
-	_select(WorldManager.current_district_id())
+	EventBus.time_changed.connect(func(_m: int, _p: StringName) -> void: _refresh())
+	var focus := StringName(str(params.get("location", "")))
+	if focus != &"" and LocationManager.is_known(focus):
+		select_location(focus)
+	else:
+		_select(LocationManager.district_of(LocationManager.player_location))
+	if WorldSimulationManager.has_encounter():
+		TravelFlow.show_encounter.call_deferred()
 
 
 func get_panels() -> Array[Control]:
 	return _panels
 
 
+func _legend(parent: Control) -> void:
+	var row := UIKit.hbox(14)
+	parent.add_child(row)
+	for t: String in ["clinic", "bar", "night_market", "black_market", "industrial", "residential", "transit", "corporate", "restricted"]:
+		var item := UIKit.hbox(4)
+		var sw := ColorRect.new()
+		sw.color = CityMapView.TYPE_COLORS.get(t, Palette.TEXT)
+		sw.custom_minimum_size = Vector2(12, 12)
+		sw.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		item.add_child(sw)
+		item.add_child(UIKit.label(str(LocationManager.types.get(t, {}).get("label", t)).split(" ")[0], &"DimLabel", false, null, 13))
+		row.add_child(item)
+
+
 func _refresh() -> void:
+	if not is_inside_tree() or _info == null:
+		return
 	_map.queue_redraw()
-	_select(_selected)
+	if _selected_location != &"":
+		select_location(_selected_location)
+	else:
+		_select(_selected)
+
+
+var _selected_location: StringName = &""
+
+
+## A place: what it's like now, who's there, what you can do, how to get there.
+func select_location(id: StringName) -> void:
+	_selected_location = id
+	_map.selected_location = id
+	_map.selected = LocationManager.district_of(id)
+	_map.queue_redraw()
+	UIKit.clear(_info)
+	var l := LocationManager.get_location(id)
+	var st := WorldSimulationManager.state(id)
+	var here := LocationManager.player_location == id
+	_info.add_child(UIKit.label("%s · %s" % [LocationManager.type_label(id), WorldManager.district_name(LocationManager.district_of(id)).to_upper()], &"SubHeaderLabel", false, Palette.ACCENT))
+	_info.add_child(UIKit.label(LocationManager.location_name(id).to_upper(), &"HeaderLabel", true))
+	_info.add_child(UIKit.label("%s%s · %s" % ["YOU ARE HERE · " if here else "", WorldSimulationManager.state_label(id), LocationManager.hours_text(id)], &"MonoLabel", true, WorldSimulationManager.state_color(id)))
+	_info.add_child(UIKit.label(str(l.get("description", "")) if id != LocationManager.CLINIC else "Your practice in %s." % WorldManager.district_name(), &"", true))
+	_info.add_child(UIKit.label("Activity %s · Danger %s · Police %s" % [WorldSimulationManager.activity_label(int(st["activity"])), UIKit.pips(int(st["danger"]), 4), UIKit.pips(int(st["authority"]), 4)], &"MonoLabel", true, Palette.TEXT_DIM, 17))
+	var facs: Dictionary = st["factions"]
+	if not facs.is_empty():
+		var fl: Array[String] = []
+		for f: Variant in facs:
+			if float(facs[f]) >= 0.5:
+				fl.append("%s %s" % [FactionManager.get_name_of(StringName(str(f))), UIKit.pips(roundi(float(facs[f])), 4)])
+		_info.add_child(UIKit.label("PRESENCE  " + "  ·  ".join(fl), &"DimLabel", true))
+	var people := WorldSimulationManager.people_at(id)
+	if not people.is_empty():
+		var names: Array[String] = []
+		for p: Dictionary in people:
+			names.append(str(p["name"]))
+		_info.add_child(UIKit.label("PEOPLE HERE NOW", &"SubHeaderLabel"))
+		_info.add_child(UIKit.label(", ".join(names), &"DimLabel", true))
+	var ev := WorldSimulationManager.event_at(id)
+	if not ev.is_empty():
+		_info.add_child(UIKit.label("HAPPENING NOW: %s" % str(ev.get("title", "")), &"SubHeaderLabel", true, Palette.WARN))
+	var services := LocationServices.DEFS
+	var sl: Array[String] = []
+	for sid: Variant in l.get("services", []):
+		sl.append(str(services.get(str(sid), {}).get("label", sid)).to_lower())
+	if not sl.is_empty():
+		_info.add_child(UIKit.label("YOU CAN", &"SubHeaderLabel"))
+		_info.add_child(UIKit.label(", ".join(sl), &"DimLabel", true))
+	# Getting there.
+	var card := UIKit.panel(&"CardPanel")
+	_info.add_child(card)
+	var v := UIKit.vbox(6)
+	card.add_child(v)
+	if here:
+		v.add_child(UIKit.label("YOU ARE HERE", &"SubHeaderLabel", false, Palette.OK))
+		if id != LocationManager.CLINIC:
+			v.add_child(UIKit.button("GO IN", &"AccentButton", func() -> void: UIManager.go_to(UIManager.SCREEN_LOCATION), "MapEnter", 44))
+		else:
+			v.add_child(UIKit.label("Your clinic. Pick a place on the map to go out.", &"DimLabel", true))
+		return
+	var block := LocationManager.leave_block(id)
+	v.add_child(UIKit.label("GET THERE  (now %s)" % TimeManager.clock_text(), &"SubHeaderLabel"))
+	if block != "":
+		v.add_child(UIKit.label(block, &"DimLabel", true, Palette.WARN))
+		return
+	var best := str(LocationManager.best_trip(id).get("mode", ""))
+	for t: Dictionary in LocationManager.trips(id):
+		if str(t["block"]).begins_with("Same district"):
+			continue
+		var cost := int(t["cost"])
+		var risk := "low risk" if float(t["risk"]) < 0.3 else ("some risk" if float(t["risk"]) < 0.7 else "risky after dark")
+		var txt := "%s · %s · %s" % [str(t["label"]), TimeManager.duration_text(int(t["minutes"])), EconomyManager.format_money(cost) if cost > 0 else "free"]
+		var b := UIKit.button(txt, &"AccentButton" if str(t["mode"]) == best else &"Button", func() -> void: TravelFlow.go(id, str(t["mode"])), "Travel_%s" % str(t["mode"]), 44)
+		b.clip_text = true
+		b.custom_minimum_size.x = 0
+		b.disabled = str(t["block"]) != ""
+		b.tooltip_text = str(t["block"]) if str(t["block"]) != "" else risk
+		v.add_child(b)
+		v.add_child(UIKit.label("  " + (str(t["block"]) if str(t["block"]) != "" else risk), &"DimLabel", true, Palette.TEXT_DIM, 13))
 
 
 func _select(id: StringName) -> void:
 	_selected = id
+	_selected_location = &""
+	_map.selected_location = &""
 	_map.selected = id
 	_map.queue_redraw()
 	UIKit.clear(_info)
@@ -81,6 +190,20 @@ func _select(id: StringName) -> void:
 	_info.add_child(UIKit.label(", ".join(cl), &"DimLabel", true))
 	_info.add_child(UIKit.label("Danger %s · Heat x%.2f · Pay x%.2f · Influence %d" % [UIKit.pips(int(d.get("danger", 1)), 3),
 		float(d.get("heat_mult", 1.0)), float(d.get("wealth", 1.0)), WorldManager.get_influence(id)], &"MonoLabel", true, Palette.TEXT_DIM, 17))
+	_info.add_child(UIKit.label("PLACES", &"SubHeaderLabel"))
+	var places := LocationManager.in_district(id)
+	for lid in places:
+		var b := UIKit.button("%s · %s" % [LocationManager.location_name(lid).to_upper(), WorldSimulationManager.state_label(lid)],
+			&"GhostButton", select_location.bind(lid), "Loc_%s" % String(lid), 40)
+		b.clip_text = true
+		b.custom_minimum_size.x = 0
+		b.tooltip_text = LocationManager.type_label(lid)
+		_info.add_child(b)
+	var unknown := LocationManager.in_district(id, false).size() - places.size()
+	if unknown > 0:
+		_info.add_child(UIKit.label("%d place%s here you haven't found yet. Patients, fixers and staff know things." % [unknown, "s" if unknown > 1 else ""], &"DimLabel", true, Palette.TEXT_DIM, 13))
+	elif places.is_empty():
+		_info.add_child(UIKit.label("Nothing you know of.", &"DimLabel", true, Palette.TEXT_DIM, 13))
 	for i in ClinicManager.tiers.size():
 		var t := ClinicManager.get_tier_data(i)
 		if StringName(str(t.get("district", ""))) != id:
