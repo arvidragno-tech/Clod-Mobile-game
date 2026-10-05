@@ -1,7 +1,9 @@
 class_name LocationView
 extends Control
-## The street-level view of a place, drawn in whole art pixels from the
-## district's palette (data/districts.json) and the place's kind: a skyline,
+## The street-level view of a place: the place's HD street scene
+## (assets/sprites/streets/<id>_night|day.png, tools/art/streets_hd.py) with
+## the moving parts drawn on top in whole art pixels. Without a scene it
+## falls back to drawing from the district's palette and the place's kind: a skyline,
 ## the place's own shapes (stalls, tunnel, stacks, towers, fence...), lit
 ## windows by hour and activity, people walking past (more when it's busy),
 ## police lights when the police are there, rain in the lower city, and the
@@ -15,6 +17,8 @@ var _pal: Array[Color] = []
 var _buildings: Array[Rect2] = []
 var _walkers: Array[Vector3] = []  # x, speed, kind
 var _drops: Array[Vector2] = []
+## Street-scene ground line (art px from the top of the scene texture).
+const SCENE_GROUND := 124
 
 
 func _ready() -> void:
@@ -38,18 +42,18 @@ func setup(id: StringName) -> void:
 	rng.seed = _seed
 	_buildings.clear()
 	var x := -4.0
-	while x < 420.0:
+	while x < 620.0:
 		var w := rng.randf_range(14, 34)
 		_buildings.append(Rect2(x, rng.randf_range(10, 52), w, 0))
 		x += w + rng.randf_range(-2, 3)
 	_walkers.clear()
 	var act := int(WorldSimulationManager.state(id)["activity"]) if id != &"" else 1
 	for i in act * 4 + 1:
-		_walkers.append(Vector3(rng.randf_range(0, 400), rng.randf_range(4, 11) * (1 if rng.randf() < 0.5 else -1), rng.randi() % 3))
+		_walkers.append(Vector3(rng.randf_range(0, 600), rng.randf_range(6, 16) * (1 if rng.randf() < 0.5 else -1), rng.randi() % 3))
 	_drops.clear()
 	if _rainy():
 		for i in 70:
-			_drops.append(Vector2(rng.randf_range(0, 420), rng.randf_range(0, 110)))
+			_drops.append(Vector2(rng.randf_range(0, 620), rng.randf_range(0, 170)))
 	queue_redraw()
 
 
@@ -71,7 +75,7 @@ func _process(delta: float) -> void:
 		_walkers[i] = w
 	for i in _drops.size():
 		var d := _drops[i]
-		d += Vector2(-12, 120) * delta
+		d += Vector2(-18, 180) * delta
 		if d.y > _art().y:
 			d = Vector2(fmod(d.x + 37.0 * (i + 1), _art().x + 20), -4)
 		_drops[i] = d
@@ -79,7 +83,12 @@ func _process(delta: float) -> void:
 
 
 func _s() -> float:
-	return float(GameConfig.PIXEL_SCALE)
+	return float(GameConfig.ART_SCALE)
+
+
+func _scene() -> Texture2D:
+	var path := "res://assets/sprites/streets/%s_%s.png" % [String(location_id), "night" if TimeManager.is_night() else "day"]
+	return PixelArt.tex(path) if ResourceLoader.exists(path) else null
 
 
 func _art() -> Vector2:
@@ -101,14 +110,27 @@ func _draw() -> void:
 	var act := int(st["activity"])
 	var flags: Array = st["flags"]
 	var ground := a.y - 14
-	# Sky: dark at the top, the district's glow at the horizon.
 	var top := _pal[0].darkened(0.75 if night else 0.45)
 	var low := _pal[1].darkened(0.4 if night else 0.0)
-	for y in int(ground):
-		_r(0, y, a.x, 1, top.lerp(low, float(y) / ground))
-	# Far skyline.
 	var rng := RandomNumberGenerator.new()
 	rng.seed = _seed
+	var scene := _scene()
+	if scene:
+		# The HD street, bottom-aligned and centred; sky colour above it.
+		var ts := Vector2(scene.get_size())
+		var o := Vector2(floorf((a.x - ts.x) / 2.0), a.y - ts.y)
+		draw_rect(Rect2(Vector2.ZERO, size), top)
+		draw_texture_rect(scene, Rect2(o * _s(), ts * _s()), false)
+		ground = o.y + SCENE_GROUND + 6
+	else:
+		_draw_procedural(a, ground, night, act, top, low, rng)
+	_draw_life(a, ground, night, flags)
+
+
+func _draw_procedural(a: Vector2, ground: float, night: bool, act: int, top: Color, low: Color, rng: RandomNumberGenerator) -> void:
+	# Sky: dark at the top, the district's glow at the horizon.
+	for y in int(ground):
+		_r(0, y, a.x, 1, top.lerp(low, float(y) / ground))
 	for b in _buildings:
 		if b.position.x > a.x:
 			break
@@ -130,28 +152,40 @@ func _draw() -> void:
 	_r(0, ground, a.x, 1, _pal[2].darkened(0.2))
 	for i in int(a.x / 16):
 		_r(i * 16 + 4, ground + 7, 6, 1, _pal[1].darkened(0.3))
-	# People.
+
+
+## People walking past, police lights, rain, the hour's light, shutters.
+func _draw_life(a: Vector2, ground: float, night: bool, flags: Array) -> void:
+	# People: silhouettes with a head, shoulders, swinging legs and a coat.
 	for w in _walkers:
 		var c := Color(0.04, 0.04, 0.06) if not night else Color(0.02, 0.02, 0.03)
-		var hgt := 6 if int(w.z) != 1 else 5
+		var hgt := 13 if int(w.z) != 1 else 11
 		var step := int(_time * 6.0 + w.x) % 2
-		_r(w.x, ground - hgt + 1, 2, hgt - 2, c)
-		_r(w.x, ground - hgt, 2, 1, c.lightened(0.15))
-		_r(w.x - (1 if step == 0 else 0), ground - 2, 1, 2, c)
-		_r(w.x + 1 + (1 if step == 1 else 0), ground - 2, 1, 2, c)
+		var x := floorf(w.x)
+		_r(x + 1, ground - hgt, 2, 2, c.lightened(0.12))            # head
+		_r(x, ground - hgt + 2, 4, hgt - 6, c)                         # torso / coat
+		_r(x - (1 if step == 0 else 0), ground - 4, 2, 4, c)         # legs
+		_r(x + 2 + (1 if step == 1 else 0), ground - 4, 2, 4, c)
+		_r(x + (4 if w.y > 0 else -1), ground - hgt + 3, 1, 4, c)    # an arm
+		if night:
+			_r(x + (3 if w.y > 0 else 0), ground - hgt + 2, 1, hgt - 7, Color(0.5, 0.6, 0.9, 0.18))  # rim light
 		if int(w.z) == 2:
-			_r(w.x + (2 if w.y > 0 else -1), ground - 4, 1, 1, Palette.ACCENT)  # a glowing implant
+			_r(x + (3 if w.y > 0 else 0), ground - hgt, 1, 1, Palette.ACCENT)  # a glowing implant
 	# Police lights.
 	if flags.has(&"police"):
 		var on := fmod(_time, 0.5) < 0.25
-		_r(a.x - 26, ground - 6, 14, 5, Color(0.08, 0.08, 0.1))
-		_r(a.x - 24, ground - 8, 4, 2, Color("ff3040") if on else Color("3050ff"))
-		_r(a.x - 18, ground - 8, 4, 2, Color("3050ff") if on else Color("ff3040"))
+		_r(a.x - 46, ground - 10, 30, 9, Color(0.08, 0.08, 0.1))
+		_r(a.x - 42, ground - 14, 10, 4, Color(0.1, 0.1, 0.13))
+		_r(a.x - 41, ground - 15, 4, 1, Color("ff3040") if on else Color("3050ff"))
+		_r(a.x - 37, ground - 15, 4, 1, Color("3050ff") if on else Color("ff3040"))
+		_r(a.x - 44, ground - 2, 5, 2, Color(0.02, 0.02, 0.02))
+		_r(a.x - 24, ground - 2, 5, 2, Color(0.02, 0.02, 0.02))
 		var glow := Color("ff3040") if on else Color("3050ff")
-		_r(a.x - 40, ground - 20, 40, 20, Color(glow, 0.08))
+		_r(a.x - 70, ground - 34, 70, 34, Color(glow, 0.08))
+		_r(a.x - 70, ground, 70, 10, Color(glow, 0.12))  # on the wet street
 	# Rain.
 	for d in _drops:
-		_r(d.x, d.y, 1, 3, Color(0.6, 0.7, 0.85, 0.35))
+		_r(d.x, d.y, 1, 4, Color(0.6, 0.7, 0.85, 0.3))
 	# The hour's light.
 	var t := TimeManager.tint()
 	if t.a > 0.0:

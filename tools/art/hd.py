@@ -100,6 +100,11 @@ class Scene:
         if x1 > x0 and y1 > y0:
             getattr(self, buf)[y0:y1, x0:x1] = c
 
+    def occlude(self, x, y, w, h):
+        """Solid foreground: hide any glow drawn behind this box."""
+        x0, y0, x1, y1 = self._clip(x, y, x + w, y + h)
+        self.emissive[y0:y1, x0:x1] = 0
+
     def px(self, x, y, c, buf="albedo"):
         x, y = int(x), int(y)
         if 0 <= x < self.w and 0 <= y < self.h:
