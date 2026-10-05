@@ -45,11 +45,28 @@ func _smoke_test() -> void:
 	GameManager.start_new_game_in_slot(3)
 	TutorialManager.skip()
 	for id: StringName in [UIManager.SCREEN_CLINIC, UIManager.SCREEN_INVENTORY, UIManager.SCREEN_DATABASE, UIManager.SCREEN_SHOP,
-			UIManager.SCREEN_SKILLS, UIManager.SCREEN_UPGRADES, UIManager.SCREEN_DOSSIER, UIManager.SCREEN_SETTINGS]:
+			UIManager.SCREEN_SKILLS, UIManager.SCREEN_UPGRADES, UIManager.SCREEN_DOSSIER, UIManager.SCREEN_STAFF,
+			UIManager.SCREEN_BUSINESS, UIManager.SCREEN_MAP, UIManager.SCREEN_SETTINGS]:
 		await step.call(id, {"return_to": UIManager.SCREEN_CLINIC})
+	# A conversation (5x portrait, dialogue bus, voice) in the release build.
+	await step.call(UIManager.SCREEN_CLINIC)
+	UIManager.close_modal()
+	DialogueManager.start(&"d_ilse_intro")
+	var talk := DialoguePanel.new()
+	talk.name = "DialoguePanel"
+	UIManager.show_modal(talk)
+	for i in 90:
+		await get_tree().process_frame
+	await RenderingServer.frame_post_draw
+	var timg := get_viewport().get_texture().get_image()
+	if timg:
+		timg.save_png("%s/dialogue.png" % dir)
+	if not DialogueManager.is_active() or DialogueManager.options().is_empty():
+		fails.append("dialogue did not start")
+	UIManager.close_modal()
 	var money := EconomyManager.money + 123
 	EconomyManager.add_money(123)
-	if not SaveManager.save_game():
+	if not SaveManager.save_game(&"manual"):
 		fails.append("save failed")
 	SaveManager.reset_all()
 	if not SaveManager.load_game() or EconomyManager.money != money:

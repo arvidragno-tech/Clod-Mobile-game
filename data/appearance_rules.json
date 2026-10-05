@@ -856,7 +856,7 @@
    "faction_default": "independent_mercs"
   },
   "netrunner": {
-   "label": "Netrunner",
+   "label": "Signal jockey",
    "outfit": {
     "netrunner": 4,
     "civilian": 1

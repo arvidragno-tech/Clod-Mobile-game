@@ -93,9 +93,22 @@ func _run_case(c: Dictionary) -> void:
 		GameManager.go_to_clinic()
 	await _settle()
 	await _shot(label, "clinic")
-	UIManager.go_to(UIManager.SCREEN_INVENTORY)
+	UIManager.close_modal()
+	for sid: StringName in [UIManager.SCREEN_INVENTORY, UIManager.SCREEN_STAFF, UIManager.SCREEN_BUSINESS, UIManager.SCREEN_MAP,
+			UIManager.SCREEN_UPGRADES, UIManager.SCREEN_DOSSIER, UIManager.SCREEN_SETTINGS]:
+		UIManager.go_to(sid)
+		await _settle()
+		await _shot(label, String(sid))
+	# A conversation at this window size.
+	DialogueManager.start(&"d_ilse_intro")
+	var panel := DialoguePanel.new()
+	panel.name = "DialoguePanel"
+	UIManager.go_to(UIManager.SCREEN_CLINIC)
 	await _settle()
-	await _shot(label, "inventory")
+	UIManager.show_modal(panel)
+	await _frames(20)
+	await _shot(label, "dialogue")
+	UIManager.close_modal()
 	UIManager.go_to(UIManager.SCREEN_CLINIC)
 	await _settle()
 

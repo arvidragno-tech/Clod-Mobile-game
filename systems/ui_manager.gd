@@ -288,6 +288,13 @@ func confirm(title: String, body: String, confirm_label: String, on_confirm: Cal
 	show_dialog(title, body, buttons)
 
 
+func suppress_tooltip(panel: PopupPanel) -> void:
+	panel.add_theme_stylebox_override(&"panel", StyleBoxEmpty.new())
+	for c in panel.get_children():
+		if c is CanvasItem:
+			(c as CanvasItem).visible = false
+
+
 ## Dangerous actions ask first (unless the player turned that off).
 func guard(title: String, body: String, label: String, action: Callable) -> void:
 	if Settings.confirm_dangerous:
@@ -318,6 +325,13 @@ func has_modal() -> bool:
 ## Every button in the game gets a click sound, a hover tick and the hand
 ## cursor automatically.
 func _on_node_added(node: Node) -> void:
+	# TOOLTIPS off: Godot builds each tooltip as a PopupPanel themed
+	# "TooltipPanel" with its content already inside, then parents it under
+	# the hovered control. Blank it as it arrives (no frame, no text).
+	if node is PopupPanel and (node as PopupPanel).theme_type_variation == &"TooltipPanel":
+		if not Settings.tooltips:
+			suppress_tooltip(node as PopupPanel)
+		return
 	if node is BaseButton and not node.has_meta(&"silent"):
 		var b := node as BaseButton
 		b.pressed.connect(_on_any_button_pressed)

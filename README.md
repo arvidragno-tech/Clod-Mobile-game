@@ -27,7 +27,9 @@ districts and a five-act story on top of the 2.0 PC game. The game has:
 
 [CHANGELOG.md](CHANGELOG.md) lists the changes. Design and code are documented in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and [docs/ART_BIBLE.md](docs/ART_BIBLE.md).
 
-![Screens](docs/screenshots/overview.png)
+![3.0: conversation, clinic, delegation, facility, staff, city map, business, people, story](docs/screenshots/overview_3.png)
+
+![2.0 screens](docs/screenshots/overview.png)
 
 ---
 
@@ -405,7 +407,7 @@ Any PNG can be replaced 1:1 by hand-made art of the same size.
 tests/run_tests.sh   # compile check, balance sim, stability suite, E2E (mouse + keyboard) and display probe
 ```
 
-- **Compile check:** loads every script and scene.
+- **Compile check:** loads every script and scene, and fails on scripts that load but don't compile.
 - **Unit and system tests:**
   - vitals, scoring, progression, economy and inventory
   - **insufficient money**, **insufficient tools**, **invalid cyberware** (wrong category or tier), **excessive neural load** (drain, complications, consent, neural break)
@@ -413,7 +415,11 @@ tests/run_tests.sh   # compile check, balance sim, stability suite, E2E (mouse +
   - modifiers and skills, factions and heat, clinic upgrades
   - events (including post-op complications), **black-market purchases**, study, sell and modify
   - death and failure
-  - save round-trip, corrupt-save recovery and **v1 → v2 migration**
+  - save round-trip, corrupt-save recovery, **v1 → v2** and **v3 → v4 migration**, a full v4 round-trip of every new system
+  - clinics, upgrades (slots, modifiers, every clinic × category × level overlay exists), business days, ledger, debt and interest, districts and walk-in mix
+  - staff: hiring board, capacity, ethics refusals and insisting, specialization and stress odds, visible growth, nightly pay, staff-run clinics
+  - story: content integrity (every option, beat, quest and comms id resolves), dialogue effects and checks, delayed consequences, quests (complete and fail), acts, contracts, endings, and **two full-campaign playthroughs** that reach Act V and different endings
+  - settings: every new option persists and takes effect (frame cap, integer scaling, UI and text scale, tooltips, shake, flashing), the six audio buses, difficulty, autosave modes; controls: ten categories, no default conflicts, context-aware clashes, swap / keep, mouse buttons, reset one or all, menus follow movement keys
 - **End-to-end bot** on the 1920×1080 canvas: plays the game through real mouse events (clicks, drags, holds, right-clicks) and key events:
   1. clean neural install (the whole tutorial)
   2. sloppy run
@@ -422,16 +428,16 @@ tests/run_tests.sh   # compile check, balance sim, stability suite, E2E (mouse +
   5. reckless run that kills the patient
   6. optic install on a generated customer
 
-  It also covers the Wire story event, black-market buy/study/sell, a skill upgrade, a clinic upgrade, all journal tabs, **I** (inventory: right-click compare, drag & drop onto a compare slot, tabs), **B** (database), **ESC** pause open/close, **F5** quick save, **TAB** focus, the settings tabs (graphics, audio slider drag, controls, gameplay toggles), and a reload. A layout guard asserts that every button is on-screen and nothing overflows the canvas. It runs rendered under Xvfb (headless Godot measures fonts differently).
-- **Display probe** (`tests/display_probe.tscn`, needs a display or Xvfb): drives the real window through 1920×1080, 1600×900, 1366×768, 1280×720 windowed, borderless, fullscreen and a 5:4 window; checks the window size/mode, the uniform 16:9 canvas, nearest filtering and that every button stays on-screen, with screenshots.
+  It also plays the story conversations that open in the clinic (picking answers, with a screenshot of each), buys a clinic, installs an upgrade, visits BUSINESS and the CITY MAP (clicking a district), hires a ripperdoc and assigns a customer to them, checks the journal QUESTS / COMMS / PEOPLE / STORY tabs, rebinds a key through the conflict dialog and a mouse button, and covers the Wire story event, black-market buy/study/sell, a skill upgrade, a clinic upgrade, all journal tabs, **I** (inventory: right-click compare, drag & drop onto a compare slot, tabs), **B** (database), **ESC** pause open/close, **F5** quick save, **TAB** focus, the settings tabs (graphics, audio slider drag, controls, gameplay toggles), and a reload. A layout guard asserts that every button is on-screen and nothing overflows the canvas. It runs rendered under Xvfb (headless Godot measures fonts differently).
+- **Display probe** (`tests/display_probe.tscn`, needs a display or Xvfb): drives the real window through 1920×1080, 1600×900, 1366×768, 1280×720 windowed, borderless, fullscreen and a 5:4 window; checks the window size/mode, the uniform 16:9 canvas, nearest filtering and that every button stays on-screen on the menu, clinic, inventory, staff, business, city map, facility, journal, settings and an open conversation, with screenshots.
 - **Balance simulator** (`tests/balance_sim.tscn`): 40 jobs through the real economy for normal and struggling players. It asserts pacing milestones and that there are no dead ends.
 - **Stability suite** (`tests/stability_test.tscn`):
-  - a soak through the real screens, with save → wipe → load every 5 shifts
+  - a soak through the real screens, with save → wipe → load every 5 shifts, closing for the night and answering the story's conversations as they come
   - random monkey input: left clicks, drags, long presses, **right-clicks, wheel and random hotkeys**; afterwards the game must still navigate
   - rapid screen-change spam
   - 60 fuzzed save files (byte flips, truncation, garbage)
   - node and orphan leak checks
-- **Release smoke test:** the exported game itself accepts `--smoke-test` (`UndercityRipper.exe -- --smoke-test`): it starts a game in slot 3, opens every main screen, saves, reloads, checks the save file, writes screenshots to `%APPDATA%\UndercityRipper\smoke\`, prints `SMOKE OK` and quits.
+- **Release smoke test:** the exported game itself accepts `--smoke-test` (`UndercityRipper.exe -- --smoke-test`): it starts a game in slot 3, opens every main screen (including staff, business and the city map) and a conversation, saves, reloads, checks the save file, writes screenshots to `%APPDATA%\UndercityRipper\smoke\`, prints `SMOKE OK` and quits.
 - **Perf probe:** `xvfb-run -a godot --path . --rendering-driver opengl3 --resolution 1920x1080 res://tests/perf_probe.tscn` prints load time, frame time, draw calls, nodes and memory per screen.
 
 With rendering, the bot also saves screenshots of each step:
@@ -453,13 +459,20 @@ Any Windows GPU renders far faster, so treat them as upper bounds.
 | Shop / inventory / database | 180–300 | 31–36 | 28–30 | 199–205 | 232–437 | 21–21.5 |
 | Skills / facility / journal / settings | 135–240 | 28–37 | 23–32 | 65–253 | 116–288 | 32–36 |
 | Black market (full-screen glitch shader) | 320–440 | 55–60 | 28–30 | 79 | 139 | 25–33 |
+| 3.0: clinic back alley / elite with all 18 upgrade overlays | 310 / 344 | 43 / 47 | | 145 / 150 | 226 | 26–27 |
+| 3.0: staff / business / city map | 245 / 208 / 249 | 41 / 39 / 41 | | 151 / 124 / 146 | 218 / 208 / 180 | 41–42 |
+| 3.0: conversation (5× animated portrait over the clinic) | 31 | 55 | | 164 | 250 | 42.6 |
 
 On llvmpipe the cost is dominated by filling 2 million pixels per frame on the
 CPU (the base 1080p canvas is ~23–28 ms by itself), so the numbers mostly
 measure the full-screen passes: **effects LOW** removes the CRT overlay and the
 black-market glitch pass (that screen drops from ~55 ms to ~28 ms). Static
 memory is 42–51 MB and texture memory peaks at about 38 MB. Over a 20-operation
-soak the node count stays flat (188 → 202 between screens).
+soak the node count stays flat (212 → 236 between screens) with no orphaned
+nodes. (3.0 rows were measured with the default 60 FPS cap; static memory
+peaks at about 63 MB.) Character animation is one ticker for every portrait
+and body (no per-character processing), and views redraw only when their
+animation state changes.
 
 Design choices that keep it light at 1080p:
 - One 1920×1080 canvas; pixel art is drawn from small textures scaled ×3 with nearest sampling (no large pre-scaled atlases, no mipmaps).

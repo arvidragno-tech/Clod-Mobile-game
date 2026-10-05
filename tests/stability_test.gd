@@ -82,6 +82,7 @@ func _soak(shifts: int) -> void:
 	for shift in shifts:
 		await _go(UIManager.SCREEN_CLINIC)
 		_resolve_event()
+		await _play_story()
 		if shift == 3:
 			await _frames(30)
 			baseline_nodes = int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT))
@@ -90,6 +91,8 @@ func _soak(shifts: int) -> void:
 			GameManager.close_for_the_night()
 			await _frames(3)
 			UIManager.close_modal()
+			_resolve_event()
+			await _play_story()
 		var waited := 0.0
 		while not CustomerManager.has_customer() and waited < 8.0:
 			CustomerManager.request_next_customer()
@@ -141,6 +144,8 @@ func _soak(shifts: int) -> void:
 	var nodes := int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT))
 	var orphans := int(Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT))
 	print("  completed %d ops; nodes %d (baseline %d), orphans %d (baseline %d), static mem %.1f MB" % [completed, nodes, baseline_nodes, orphans, baseline_orphans, Performance.get_monitor(Performance.MEMORY_STATIC) / 1048576.0])
+	if OS.get_cmdline_user_args().has("--orphans"):
+		print_orphan_nodes()
 	check(completed >= shifts * 0.6, "soak completed most shifts (%d/%d)" % [completed, shifts])
 	check(nodes <= baseline_nodes + 60, "no node leak across the soak (%d -> %d)" % [baseline_nodes, nodes])
 	check(orphans <= baseline_orphans + 20, "no orphan-node leak (%d -> %d)" % [baseline_orphans, orphans])
@@ -175,7 +180,34 @@ func _invariants(shift: int) -> void:
 	check(not SurgeryManager.is_active, "shift %d: no surgery left running" % shift)
 	check(ReputationManager.reputation >= GameConfig.MIN_REPUTATION and ReputationManager.reputation <= GameConfig.MAX_REPUTATION, "shift %d: rep in range" % shift)
 	check(FactionManager.heat >= 0.0 and FactionManager.heat <= 100.0, "shift %d: heat in range" % shift)
-	check(not UIManager.has_modal() or EventManager.has_pending(), "shift %d: no stray modal" % shift)
+	# Conversations and night reports are legitimate modals: a stray one is
+	# anything else, or a conversation the story doesn't know about.
+	var talking := DialogueManager.is_active() or StoryManager.has_talk()
+	check(not UIManager.has_modal() or EventManager.has_pending() or talking or _find("DayReportClose") != null, "shift %d: no stray modal" % shift)
+
+
+## Answers queued story conversations (first available option) so the
+## soak keeps moving; closes night reports.
+func _play_story() -> void:
+	for guard in 8:
+		await _frames(3)
+		if not DialogueManager.is_active() and StoryManager.has_talk() and not UIManager.has_modal():
+			DialogueManager.start(StoryManager.pop_talk())
+		if not DialogueManager.is_active():
+			break
+		var steps := 0
+		while DialogueManager.is_active() and steps < 40:
+			steps += 1
+			var opts := DialogueManager.options().filter(func(o: Dictionary) -> bool: return str(o["locked"]) == "")
+			if opts.is_empty():
+				DialogueManager.advance()
+			else:
+				DialogueManager.choose(int(opts[_rng.randi() % opts.size()]["index"]))
+	UIManager.close_modal()
+
+
+func _find(node_name: String) -> Node:
+	return get_tree().root.find_child(node_name, true, false)
 
 
 func _resolve_event() -> void:

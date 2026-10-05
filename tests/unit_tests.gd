@@ -348,9 +348,30 @@ func _settings() -> void:
 	Settings.set_value("ui_scale", 2)
 	Settings.apply_runtime()
 	check(is_equal_approx((Engine.get_main_loop() as SceneTree).root.content_scale_factor, 1.1), "UI scale applies")
+	# Tooltips off: a tooltip panel (built the way Godot builds one) is blanked
+	# the moment it enters the tree.
 	Settings.set_value("tooltips", false)
-	Settings.apply_runtime()
-	check(float(ProjectSettings.get_setting("gui/timers/tooltip_delay_sec")) > 1000.0, "tooltips off")
+	var tree := Engine.get_main_loop() as SceneTree
+	# In the game Main connects this when it registers the UI layers.
+	if not tree.node_added.is_connected(UIManager._on_node_added):
+		tree.node_added.connect(UIManager._on_node_added)
+	var owner_ctl := Control.new()
+	(Engine.get_main_loop() as SceneTree).root.add_child(owner_ctl)
+	var tip := PopupPanel.new()
+	tip.theme_type_variation = &"TooltipPanel"
+	var tip_label := Label.new()
+	tip_label.text = "TIP"
+	tip.add_child(tip_label)
+	owner_ctl.add_child(tip)
+	check(not tip_label.visible and tip.get_theme_stylebox(&"panel") is StyleBoxEmpty, "tooltips off hides tooltip panels")
+	Settings.set_value("tooltips", true)
+	var tip2 := PopupPanel.new()
+	tip2.theme_type_variation = &"TooltipPanel"
+	var tip_label2 := Label.new()
+	tip2.add_child(tip_label2)
+	owner_ctl.add_child(tip2)
+	check(tip_label2.visible, "tooltips on leaves them alone")
+	owner_ctl.queue_free()
 	Settings.set_value("reduced_shake", true)
 	check(Settings.shake_scale() < 0.5, "reduced shake scales shake down")
 	Settings.set_value("reduced_flashing", true)

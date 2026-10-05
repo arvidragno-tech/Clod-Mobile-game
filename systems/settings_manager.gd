@@ -26,7 +26,6 @@ const PIXEL_SCALING_NAMES: Array[String] = ["FIT (FILL WINDOW)", "INTEGER (PIXEL
 const DIFFICULTY_NAMES: Array[String] = ["STORY", "STANDARD", "BRUTAL"]
 const AUTOSAVE_NAMES: Array[String] = ["OFF", "EVERY JOB", "EVERY NIGHT"]
 const UI_SCALES: Array[float] = [0.9, 1.0, 1.1]
-const TOOLTIP_DELAY := 0.45
 const UI_SCALE_NAMES: Array[String] = ["SMALL", "NORMAL", "LARGE"]
 
 const DEFAULTS := {
@@ -228,8 +227,6 @@ func apply_display() -> void:
 ## pixel scaling mode, UI scale.
 func apply_runtime() -> void:
 	Engine.max_fps = FPS_LIMITS[fps_limit]
-	# Tooltips off = a delay nobody will ever wait out.
-	ProjectSettings.set_setting("gui/timers/tooltip_delay_sec", TOOLTIP_DELAY if tooltips else 1.0e6)
 	apply_filter()
 	var tree := Engine.get_main_loop() as SceneTree
 	if tree:

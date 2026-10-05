@@ -13,7 +13,6 @@ var _name: Label
 var _faction_tag: Label
 var _occupation: Label
 var _request_box: HBoxContainer
-var _request: Label
 var _offer: Label
 var _risk: Label
 var _load_meter: NeuralLoadMeter
@@ -105,7 +104,6 @@ func _build() -> void:
 	text.add_child(_occupation)
 	_request_box = UIKit.hbox(12)
 	_info_box.add_child(_request_box)
-	_request = UIKit.label("", &"", true)
 	_offer = UIKit.label("", &"MonoLabel", false, Palette.WARN)
 	_info_box.add_child(_offer)
 	_risk = UIKit.label("", &"DimLabel", true)

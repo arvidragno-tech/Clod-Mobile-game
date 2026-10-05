@@ -38,9 +38,11 @@ func _ready() -> void:
 	print("effects quality: ", Settings.EFFECTS_NAMES[Settings.effects_quality])
 	print("renderer: ", RenderingServer.get_video_adapter_name(), " / ", ProjectSettings.get_setting("rendering/renderer/rendering_method"))
 	print("%-14s %8s %8s %8s %7s %6s %8s %8s" % ["screen", "load ms", "avg ms", "max ms", "draws", "nodes", "mem MB", "tex MB"])
-	for tier in [0, 5]:
+	# Worst case: the elite facility with every upgrade overlay installed.
+	ClinicManager.upgrades["elite"] = {"surgery": 3, "diagnostics": 3, "security": 3, "black_market": 3, "staff": 3, "customer": 3}
+	for tier in [0, 6]:
 		ClinicManager.tier = tier
-		await _measure(&"clinic", "clinic_t%d" % tier)
+		await _measure(&"clinic", "clinic_%s" % ClinicManager.clinic_id())
 	await _measure(&"shop", "shop")
 	await _measure(&"inventory", "inventory")
 	await _measure(&"database", "database")
@@ -51,9 +53,21 @@ func _ready() -> void:
 	await _measure(&"upgrades", "upgrades")
 	await _measure(&"dossier", "dossier")
 	await _measure(&"settings", "settings")
+	StaffManager.refresh_candidates()
+	await _measure(&"staff", "staff")
+	await _measure(&"business", "business")
+	await _measure(&"map", "city map")
 	await _measure(&"main_menu", "main_menu")
 	ClinicManager.tier = 0
 	await _measure(&"clinic", "clinic")
+	# A conversation over the clinic (5x animated portrait).
+	DialogueManager.start(&"d_ilse_intro")
+	var panel := DialoguePanel.new()
+	var td := Time.get_ticks_usec()
+	UIManager.show_modal(panel)
+	await _settle()
+	await _sample("dialogue", (Time.get_ticks_usec() - td) / 1000.0)
+	UIManager.close_modal()
 	CustomerManager.debug_set_customer(CustomerManager.get_customer(&"mara_quill"))
 	await _measure(&"customer", "customer")
 	await _measure(&"diagnosis", "diagnosis")

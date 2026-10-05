@@ -256,14 +256,17 @@ func _on_line_input(event: InputEvent) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if not event.is_pressed() or event.is_echo():
 		return
+	# Mark it handled first: answering can end the conversation and take the
+	# panel out of the tree (no viewport afterwards).
+	var vp := get_viewport()
 	if (event.is_action("dialogue_next") or event.is_action("context")) and DialogueManager.options().is_empty():
+		vp.set_input_as_handled()
 		_continue()
-		get_viewport().set_input_as_handled()
 		return
 	for i in 4:
 		if event.is_action("dialogue_%d" % (i + 1)):
+			vp.set_input_as_handled()
 			var b := _options.get_node_or_null("DialogueOption_%d" % i) as Button
 			if b and not b.disabled:
 				b.pressed.emit()
-			get_viewport().set_input_as_handled()
 			return
