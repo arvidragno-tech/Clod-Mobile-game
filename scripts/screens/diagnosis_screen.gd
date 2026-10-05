@@ -21,6 +21,9 @@ var _panels: Array[Control] = []
 var _begin: Button
 var _selected: StringName = &""
 var _option_buttons: Dictionary = {}
+var _region_buttons: Dictionary = {}
+var _ready_note: Label
+var _region_text: Dictionary = {}
 
 
 func on_enter(_params: Dictionary) -> void:
@@ -56,7 +59,7 @@ func _build_diagnose(col: VBoxContainer, customer: CustomerData, surgery: Surger
 	UIKit.expand(row, true, true)
 	_diagnose.add_child(row)
 	var frame := UIKit.panel(&"AccentPanel")
-	frame.custom_minimum_size = Vector2(400, 560)
+	frame.custom_minimum_size = Vector2(620, 560)
 	frame.tooltip_text = "Click a body region to scan it"
 	row.add_child(frame)
 	_panels.append(frame)
@@ -71,19 +74,41 @@ func _build_diagnose(col: VBoxContainer, customer: CustomerData, surgery: Surger
 	_panels.append(fc)
 	var sc := UIKit.scroll()
 	fc.add_child(sc)
-	_findings = UIKit.vbox(6)
+	_findings = UIKit.vbox(8)
 	UIKit.expand(_findings)
 	sc.add_child(_findings)
-	_findings.add_child(UIKit.label("FINDINGS", &"SubHeaderLabel"))
+	_findings.add_child(UIKit.section_head("FINDINGS", "", "diagnosis"))
 	var item := GameManager.get_requested_item()
-	_findings.add_child(UIKit.label("Site: %s (%s)" % [ScanView.REGION_LABELS.get(surgery.scan_region, "?"), item.category.to_upper() if item else "?"], &"DimLabel", true, Palette.BRAND, 13))
+	_findings.add_child(UIKit.label("Surgical site: %s (%s), glowing pink on the scan. Scan at least %d regions; hidden conditions show up in red." % [
+		ScanView.REGION_LABELS.get(surgery.scan_region, "?"), item.category.to_upper() if item else "?", MIN_SCANS_TO_DIAGNOSE], &"DimLabel", true))
+	# One row per region: status, what the scan found, a SCAN button.
+	for region: StringName in ScanView.REGIONS:
+		var card := UIKit.panel(&"CardPanel")
+		card.name = "Region_%s" % region
+		_findings.add_child(card)
+		var rv := UIKit.vbox(4)
+		card.add_child(rv)
+		var head := UIKit.hbox(10)
+		rv.add_child(head)
+		var site := region == surgery.scan_region
+		var t := UIKit.label(str(ScanView.REGION_LABELS[region]) + ("  · SURGICAL SITE" if site else ""), &"SubHeaderLabel", false, Palette.BRAND if site else Palette.TEXT)
+		UIKit.expand(t)
+		head.add_child(t)
+		var b := UIKit.button("SCAN", &"GhostButton", _scan_region.bind(region), "Scan_%s" % region, 36)
+		b.custom_minimum_size.x = 110
+		head.add_child(b)
+		_region_buttons[region] = b
+		var body := UIKit.label("Not scanned yet. Click it on the body or press SCAN.", &"DimLabel", true)
+		body.name = "Finding_%s" % region
+		rv.add_child(body)
+		_region_text[region] = body
 	var side := UIKit.panel(&"CardPanel")
 	side.custom_minimum_size.x = 460
 	_diagnose.add_child(side)
 	_panels.append(side)
 	var sv := UIKit.vbox(10)
 	side.add_child(sv)
-	sv.add_child(UIKit.label("DIAGNOSIS", &"SubHeaderLabel", false, Palette.ACCENT))
+	sv.add_child(UIKit.section_head("DIAGNOSIS", "", "diagnosis"))
 	_hint = UIKit.label("", &"DimLabel", true)
 	sv.add_child(_hint)
 	_options = UIKit.vbox(8)
@@ -100,6 +125,9 @@ func _build_diagnose(col: VBoxContainer, customer: CustomerData, surgery: Surger
 		b.disabled = true
 		_options.add_child(b)
 		_option_buttons[id] = b
+		var desc := str(option.get("description", option.get("hint", "")))
+		if desc != "":
+			_options.add_child(UIKit.label(desc, &"DimLabel", true, null, 15))
 	_confirm = UIKit.button("CONFIRM DIAGNOSIS   [ENTER]", &"AccentButton", _on_confirm, "ConfirmButton", 64)
 	_confirm.disabled = true
 	sv.add_child(_confirm)
@@ -133,8 +161,11 @@ func _build_plan(col: VBoxContainer) -> void:
 	_panels.append(side)
 	var buttons := UIKit.vbox(12)
 	side.add_child(buttons)
-	buttons.add_child(UIKit.label("READY?", &"SubHeaderLabel", false, Palette.ACCENT))
+	buttons.add_child(UIKit.section_head("READY?", "", "vitals"))
 	buttons.add_child(UIKit.label("Operating starts the clock. Vitals drift while you work: keep COAG, SEDATE and STABIL in reach.", &"DimLabel", true))
+	_ready_note = UIKit.label("", &"", true)
+	_ready_note.name = "ReadyNote"
+	buttons.add_child(_ready_note)
 	buttons.add_child(UIKit.expand(Control.new(), false, true))
 	_begin = UIKit.button("BEGIN OPERATION   [ENTER]", &"BrandButton", GameManager.begin_surgery, "BeginButton", 72)
 	_begin.set_meta(&"default", true)
@@ -157,23 +188,36 @@ func _show_diagnose() -> void:
 	_title.text = "BODY SCAN"
 
 
+func _scan_region(region: StringName) -> void:
+	if _scan.scan(region):
+		var b: Button = _region_buttons.get(region)
+		if b:
+			b.disabled = true
+			b.text = "SCANNING"
+
+
 func _on_region_scanned(region: StringName) -> void:
 	var customer := GameManager.get_current_customer()
 	var text := str(customer.scan_findings.get(String(region), "No anomalies."))
-	_add_finding("> %s: %s" % [ScanView.REGION_LABELS.get(region, region), text], Palette.TEXT)
+	var found := false
+	var body: Label = _region_text.get(region)
+	if body:
+		body.text = text
+		body.add_theme_color_override(&"font_color", Palette.TEXT)
 	for cid in CustomerManager.try_reveal_conditions(customer, region):
 		var cond := CustomerManager.get_condition(cid)
-		_add_finding("! %s: %s" % [str(cond.get("name", cid)).to_upper(), str(cond.get("hint", ""))], Palette.DANGER)
+		found = true
+		var warn := UIKit.label("! %s: %s" % [str(cond.get("name", cid)).to_upper(), str(cond.get("hint", ""))], &"", true, Palette.DANGER, 16)
+		warn.name = "Condition_%s" % cid
+		if body:
+			body.get_parent().add_child(warn)
 		AudioManager.play_sfx(&"warning", 0.0)
+	var b: Button = _region_buttons.get(region)
+	if b:
+		b.disabled = true
+		b.text = "FOUND" if found else "SCANNED"
 	AudioManager.play_sfx(&"stage", 0.0)
 	_update_hint()
-
-
-func _add_finding(text: String, color: Color) -> void:
-	var label := UIKit.label(text, &"MonoLabel", true, color, 18)
-	_findings.add_child(label)
-	label.modulate.a = 0.0
-	create_tween().tween_property(label, "modulate:a", 1.0, 0.2)
 
 
 func _update_hint() -> void:
@@ -182,7 +226,7 @@ func _update_hint() -> void:
 	for b: Button in _option_buttons.values():
 		b.disabled = not unlocked
 	if not unlocked:
-		_hint.text = "Click body regions to scan (%d/%d). The surgical site glows pink." % [count, MIN_SCANS_TO_DIAGNOSE]
+		_hint.text = "Scan at least %d regions first (%d done). Start with the surgical site (pink)." % [MIN_SCANS_TO_DIAGNOSE, count]
 	elif _selected == &"":
 		_hint.text = "Pick the diagnosis the findings point to."
 	else:
@@ -230,7 +274,7 @@ func _build_plan_contents() -> void:
 		hv.add_child(UIKit.label("WARNING: %s load after install. Risk of neural break." % str(band["name"]), &"DimLabel", true, Palette.DANGER, 14))
 	_plan_info.add_child(head)
 	# Implant choice
-	_plan_list.add_child(UIKit.label("IMPLANT UNIT · click to choose which unit goes in", &"SubHeaderLabel", false, Palette.ACCENT))
+	_plan_list.add_child(UIKit.section_head("IMPLANT UNIT", "click to choose which unit goes in", "condition"))
 	var opts := GameManager.get_implant_options()
 	var selected := GameManager.get_selected_implant()
 	if opts.is_empty():
@@ -240,19 +284,23 @@ func _build_plan_contents() -> void:
 	for i in opts.size():
 		_plan_list.add_child(_implant_option(i, opts[i], opts[i] == selected, item))
 	# Checks
-	_plan_info.add_child(UIKit.label("CHECKS", &"SubHeaderLabel", false, Palette.ACCENT))
+	_plan_info.add_child(UIKit.section_head("CHECKS", "", "odds"))
 	var missing: Array = r["missing_tools"]
 	_check("TOOLS", "READY" if missing.is_empty() else "MISSING " + ", ".join(missing), missing.is_empty())
 	_check("SUPPLIES", "%d / need %d" % [InventoryManager.supplies, surgery.supplies], bool(r["supplies_ok"]))
 	var refusal := "REFUSES: LOAD TOO HIGH" if GameManager.consent_risk_needed(float(r["neural_after"])) > 0.0 else "REFUSES THIS UNIT"
 	_check("CONSENT", "AGREES" if bool(r["accepts"]) else refusal, bool(r["accepts"]))
 	_check("REVEALED", "%d condition(s)" % customer.revealed_conditions.size(), customer.revealed_conditions.is_empty())
-	_plan_info.add_child(UIKit.label("PROCEDURE", &"SubHeaderLabel", false, Palette.ACCENT))
+	_plan_info.add_child(UIKit.section_head("PROCEDURE", "%d steps" % surgery.stages.size(), "vitals"))
 	for k in surgery.stages.size():
 		var st := surgery.stages[k]
 		var tool := "  [%s]" % String(st.tool_category).to_upper() if st.tool_category != &"" else ""
 		_plan_info.add_child(UIKit.label("%02d  %s%s" % [k + 1, st.title, tool], &"DimLabel"))
 	_begin.disabled = not bool(r["ok"])
+	# Say why BEGIN is blocked (or that you're good to go).
+	var adv := JobVerdict.advice(customer)
+	_ready_note.text = adv["text"] if _begin.disabled or adv["level"] != &"good" else "Everything's ready. Keep COAG [Z], SEDATE [X] and STABIL [V] in reach."
+	_ready_note.add_theme_color_override(&"font_color", JobVerdict.color(adv["level"]) if _begin.disabled or adv["level"] != &"good" else Palette.OK)
 
 
 func _implant_option(i: int, inst: ImplantInstance, selected: bool, requested: CyberwareData) -> Control:
@@ -295,7 +343,7 @@ func _implant_option(i: int, inst: ImplantInstance, selected: bool, requested: C
 
 func _check(caption: String, value: String, good: bool) -> void:
 	var row := UIKit.hbox(8)
-	var c := UIKit.label(caption, &"SubHeaderLabel")
+	var c := UIKit.caption(caption)
 	c.custom_minimum_size.x = 150
 	row.add_child(c)
 	# Symbol + colour: "+" ready, "x" blocked (readable without colour).

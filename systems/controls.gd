@@ -67,6 +67,7 @@ const ACTIONS := {
 	"cycle_panel": {"label": "Cycle panels", "group": "General", "keys": [KEY_TAB]},
 	"quicksave": {"label": "Quick save", "group": "General", "keys": [KEY_F5]},
 	"quickload": {"label": "Quick load", "group": "General", "keys": [KEY_F9]},
+	"help": {"label": "Field guide (help)", "group": "General", "keys": [KEY_F1]},
 }
 ## Movement actions feed Godot's built-in menu navigation.
 const UI_FROM := {"ui_up": "move_up", "ui_down": "move_down", "ui_left": "move_left", "ui_right": "move_right"}

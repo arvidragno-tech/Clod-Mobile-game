@@ -7,7 +7,10 @@ almost nothing, take customers, install cyberware at a surgical workstation,
 hire staff, buy clinics across the city, and decide what you become while a
 corporate conspiracy spreads through your patients' nerves.
 
-**Status: 3.2.0, "The living city"**: twelve places across Caldera's seven
+**Status: 3.3.0**: a clearer, better-looking UI: a searchable FIELD GUIDE
+(F1), every stat explained on hover and click, an AT A GLANCE verdict for
+each patient, a redesigned body scan, new character eyes and hair, bodies
+that match their portraits, and adjustable room brightness. 3.2 "The living city" added twelve places across Caldera's seven
 districts (bars, a night market, the Undermarket's tunnels, the works, the
 Plaza, tenements, the interchange, the Exclusion Zone), travel that costs
 time and money, patients and the cast with routines you can follow, events
@@ -37,6 +40,8 @@ staff, business, districts and a five-act story). The game has:
 - a layered soundscape and detailed, animated pixel art at one crisp density
 
 [CHANGELOG.md](CHANGELOG.md) lists the changes. Design and code are documented in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and [docs/ART_BIBLE.md](docs/ART_BIBLE.md).
+
+![3.3: clinic with AT A GLANCE, customer file, body scan, field guide](docs/screenshots/overview_33.png)
 
 ![3.0: conversation, clinic, delegation, facility, staff, city map, business, people, story](docs/screenshots/overview_3.png)
 
@@ -75,6 +80,7 @@ mode and resolution in **SETTINGS → GRAPHICS**.
 | Put the tool down / cancel / compare | right click | |
 | Scroll lists, zoom the operating field | wheel | + / − |
 | Inspect | double click | F |
+| Field guide (every term explained) | FIELD GUIDE in the sidebar, or click any stat | F1 |
 | Pause / back | | ESC |
 | Cycle panels | | TAB |
 | Navigate menus | | WASD / arrows |
@@ -442,6 +448,7 @@ tests/run_tests.sh   # compile check, balance sim, stability suite, E2E (mouse +
   6. optic install on a generated customer
 
   It also plays the story conversations that open in the clinic (picking answers, with a screenshot of each), buys a clinic, installs an upgrade, visits BUSINESS and the CITY MAP (clicking a district), hires a ripperdoc and assigns a customer to them, checks the journal QUESTS / COMMS / PEOPLE / STORY tabs, rebinds a key through the conflict dialog and a mouse button, and covers the Wire story event, black-market buy/study/sell, a skill upgrade, a clinic upgrade, all journal tabs, **I** (inventory: right-click compare, drag & drop onto a compare slot, tabs), **B** (database), **ESC** pause open/close, **F5** quick save, **TAB** focus, the settings tabs (graphics, audio slider drag, controls, gameplay toggles), and a reload. A layout guard asserts that every button is on-screen and nothing overflows the canvas. It runs rendered under Xvfb (headless Godot measures fonts differently).
+- **UI probe** (`tests/ui_probe.tscn`, needs a display or Xvfb): F1 opens the field guide (topics, close), clicking a status-bar value and a "?" chip opens its explanation, the door card and customer file show AT A GLANCE, SCAN buttons scan regions and unlock diagnoses, the plan explains readiness, settings has ROOM BRIGHTNESS; at 1920×1080, 1600×900, 1366×768, 1280×720 windowed, borderless and fullscreen, with on-screen checks.
 - **City probe** (`tests/city_probe.tscn`, needs a display or Xvfb): opens the map with M, clicks a place, travels, uses the location screen (event, service, TAB, an encounter, ESC, GO IN, RETURN TO CLINIC), visits every place by day and night, and F5 / F9 while out, at 1920×1080, 1600×900, 1366×768, 1280×720 windowed, borderless and fullscreen, with screenshots and on-screen checks.
 - **Display probe** (`tests/display_probe.tscn`, needs a display or Xvfb): drives the real window through 1920×1080, 1600×900, 1366×768, 1280×720 windowed, borderless, fullscreen and a 5:4 window; checks the window size/mode, the uniform 16:9 canvas, nearest filtering and that every button stays on-screen on the menu, clinic, inventory, staff, business, city map, facility, journal, settings and an open conversation, with screenshots.
 - **Balance simulator** (`tests/balance_sim.tscn`): 40 jobs through the real economy for normal and struggling players. It asserts pacing milestones and that there are no dead ends.

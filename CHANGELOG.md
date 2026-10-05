@@ -4,6 +4,26 @@ All notable changes to *UNDERCITY: RIPPER*. Versions follow
 `application/config/version` in `project.godot` and the Windows file version
 in `export_presets.cfg`.
 
+## 3.3.0 — Clearer, better-looking UI
+
+### Easier to understand
+- **FIELD GUIDE (F1, also in the sidebar and the pause menu):** every number and word in the game explained in plain language, by topic (basics, patients, surgery, money, street and factions, the city, staff, controls) and searchable.
+- **Explanations where you need them:** hover any status-bar value (credits, level, reputation, heat, supplies, parts, tokens, today's jobs) for what it means plus the live details; click it for the full explanation. Stat captions across the inventory, shop, database, customer file, plan and staff screens do the same (help cursor), and section headers carry a "?" chip. Sidebar sections say what they're for on hover.
+- **AT A GLANCE:** the customer file and the door card now say whether you can do the job right now (implant, tools, supplies, difficulty and time, neural load, risk, pay) with ✓ / ! / ✕ marks and one line of advice ("You're missing tools: buy them in SUPPLY first, or defer"). The door card and the customer file use the same fee and risk.
+- **The body scan, redesigned:** a bigger scanner with readable labels beside the body, a findings list with one row per region (status, what the scan found, conditions in red) and a SCAN button for each (keyboard-friendly), and each diagnosis shows its description.
+- **The operation plan** says why BEGIN OPERATION is blocked, or that you're ready.
+- **TODAY on the clinic screen:** four labelled meters (night left, jobs and tonight's bill, supplies and implants, heat) instead of lines of text; the status bar's JOBS is now today's jobs out of what the clinic can take.
+- **Waiting** tells you what to do meanwhile, and what to do when the day's work is done.
+
+### Better looking
+- One readable bold face on every button (the wide pixel title font stays for titles), larger tooltips, section headers with a coloured bar and a rule, panels lit from above with a soft inner line.
+- **Character art:** new eyes (almond shape, round iris with a dark rim, pupil, catch-light, lid crease and lash line; fear, anger, sadness and pain change them), hair drawn in strands instead of speckle, cleaner portraits (no scanlines over faces). In-room bodies get a nose, mouth and cheek shading and now wear what the portrait wears on the face and head (masks, scarves, eyewear, caps, hoods, helmets).
+- **ROOM BRIGHTNESS** (Settings > Graphics): the clinic and the street views lift their shadows (a little brighter by default) without washing out the light.
+
+### Under the hood
+- `Glossary` (data/glossary.json), `JobVerdict`, `UIKit.section_head / info / caption`, `assets/shaders/room_light.gdshader`, `Settings.brightness`, the `help` action (F1).
+- Tests: `tests/ui_overhaul_tests.gd` in the unit run; `tests/ui_probe.tscn` (rendered, mouse + keyboard, 4 resolutions, 3 window modes); `tests/ui_tour.tscn` and `tests/portrait_sheet.tscn` for screenshots.
+
 ## 3.2.0 — The living city
 
 Caldera has places now: few of them, each with a job, people and things

@@ -377,6 +377,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		_on_escape()
 		return
+	if event.is_action("help"):
+		get_viewport().set_input_as_handled()
+		Glossary.open_guide()
+		return
 	if has_modal():
 		return
 	var hub := HUB_SCREENS.has(current_screen_id)
@@ -398,8 +402,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		GameManager.quick_load()
 
 
-## ESC: close the dialog, else go back, else pause.
+## ESC: close the help, else the dialog, else go back, else pause.
 func _on_escape() -> void:
+	if Glossary.is_open():
+		Glossary.close()
+		return
 	if has_modal():
 		var m := _modal_host.get_child(_modal_host.get_child_count() - 1)
 		if m.has_method("on_escape"):

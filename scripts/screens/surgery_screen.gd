@@ -246,7 +246,7 @@ func _build_side_panels() -> void:
 	var surgery := SurgeryManager.surgery
 	_procedure.text = "%s  ·  %s" % [surgery.display_name.to_upper(), c.display_name if c else "?"]
 	# Patient
-	_patient_box.add_child(UIKit.label("PATIENT", &"SubHeaderLabel", false, Palette.ACCENT))
+	_patient_box.add_child(UIKit.section_head("PATIENT", "", "vitals"))
 	var row := UIKit.hbox(12)
 	_patient_box.add_child(row)
 	if c:
@@ -263,7 +263,7 @@ func _build_side_panels() -> void:
 		info.add_child(UIKit.label(FactionManager.get_name_of(c.faction_id).to_upper(), &"SubHeaderLabel", true, FactionManager.get_color(c.faction_id)))
 	# Implant
 	var item := SurgeryManager.implant_item
-	_implant_box.add_child(UIKit.label("IMPLANT", &"SubHeaderLabel", false, Palette.ACCENT))
+	_implant_box.add_child(UIKit.section_head("IMPLANT", "", "neural_load"))
 	if item and SurgeryManager.implant and not SurgeryManager.implant.identified:
 		_implant_box.add_child(UIKit.label("UNIDENTIFIED DEVICE", &"", true, Palette.BRAND, 16))
 		_implant_box.add_child(UIKit.label("Installing blind: model and properties unknown.", &"SubHeaderLabel", true, Palette.WARN))
@@ -293,7 +293,7 @@ func _build_side_panels() -> void:
 ## Procedure checklist: done (green), current (cyan, pulsing marker), next (dim).
 func _refresh_steps(current: int) -> void:
 	UIKit.clear(_step_list)
-	_step_list.add_child(UIKit.label("PROCEDURE", &"SubHeaderLabel", false, Palette.ACCENT))
+	_step_list.add_child(UIKit.section_head("PROCEDURE", "", "vitals"))
 	var stages := SurgeryManager.surgery.stages
 	for i in stages.size():
 		var st: SurgeryStageData = stages[i]

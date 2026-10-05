@@ -19,6 +19,7 @@ var _load_meter: NeuralLoadMeter
 var _see_button: Button
 var _waiting: Label
 var _info_box: VBoxContainer
+var _verdict_box: VBoxContainer
 var _rumor: Label
 var _stock_label: Label
 var _status_box: VBoxContainer
@@ -97,9 +98,15 @@ func _build() -> void:
 	_panels.append(_card)
 	var cv := UIKit.vbox(12)
 	_card.add_child(cv)
-	cv.add_child(UIKit.label("AT THE DOOR", &"SubHeaderLabel"))
+	cv.add_child(UIKit.section_head("AT THE DOOR", "", "loop"))
+	# The details scroll if they're long; SEE CUSTOMER always stays visible.
+	var isc := UIKit.scroll()
+	isc.name = "DoorScroll"
+	UIKit.expand(isc, true, true)
+	cv.add_child(isc)
 	_info_box = UIKit.vbox(10)
-	cv.add_child(_info_box)
+	UIKit.expand(_info_box, true, false)
+	isc.add_child(_info_box)
 	var who := UIKit.hbox(14)
 	_info_box.add_child(who)
 	_portrait = PixelPortrait.new()
@@ -123,12 +130,16 @@ func _build() -> void:
 	_info_box.add_child(_risk)
 	_load_meter = NeuralLoadMeter.new()
 	_info_box.add_child(_load_meter)
-	_waiting = UIKit.label("Waiting for customers...", &"DimLabel")
+	_verdict_box = UIKit.vbox(4)
+	_verdict_box.name = "DoorVerdict"
+	_info_box.add_child(_verdict_box)
+	_waiting = UIKit.label("Nobody at the door yet.\n\nWhile you wait: restock in SUPPLY, spend skill points, check the JOURNAL, or go out into the city (CITY MAP, M).", &"DimLabel", true)
+	_waiting.name = "WaitingLabel"
 	_waiting.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_waiting.custom_minimum_size.y = 120
+	UIKit.expand(_waiting, true, true)
 	_waiting.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	cv.add_child(_waiting)
-	cv.add_child(UIKit.expand(Control.new(), false, true))
 	_see_button = UIKit.button("SEE CUSTOMER  [%s]" % Controls.key_name("customer_info"), &"AccentButton", GameManager.open_customer, "SeeButton", 56)
 	_see_button.set_meta(&"default", true)
 	cv.add_child(_see_button)
@@ -169,10 +180,11 @@ func _build() -> void:
 	var cards := UIKit.hbox(14)
 	UIKit.expand(cards, true, true)
 	centre.add_child(cards)
-	_status_box = UIKit.section(cards, "CLINIC STATUS")
+	_status_box = UIKit.section(cards, "TODAY", &"CardPanel", "", "time")
 	(_status_box.get_parent() as Control).size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_panels.append(_status_box.get_parent())
 	_stock_label = UIKit.label("", &"MonoLabel")
+	_stock_label.visible = false
 	_status_box.add_child(_stock_label)
 	_close_button = UIKit.button("CLOSE FOR THE NIGHT", &"GhostButton", _close_day, "CloseDayButton", 40)
 	_close_button.tooltip_text = "End the business day: pay rent, running costs and salaries, see the ledger."
@@ -188,7 +200,7 @@ func _build() -> void:
 	(rumors.get_parent() as Control).size_flags_stretch_ratio = 1.4
 	_rumor = UIKit.label("", &"DimLabel", true, Palette.ACCENT)
 	rumors.add_child(_rumor)
-	_factions_box = UIKit.section(cards, "FACTIONS")
+	_factions_box = UIKit.section(cards, "FACTIONS", &"CardPanel", "", "factions")
 	(_factions_box.get_parent() as Control).size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_panels.append(_factions_box.get_parent())
 
@@ -200,7 +212,10 @@ func _process(delta: float) -> void:
 		_refresh_objective()
 	if _waiting and _waiting.visible:
 		_waiting_dots += delta * 2.0
-		_waiting.text = (("It's %s. Door's locked. Close up for the night." % TimeManager.clock_text()) if BusinessManager.is_day_full() else "Waiting for customers") + ".".repeat(int(_waiting_dots) % 4)
+		if BusinessManager.is_day_full():
+			_waiting.text = "It's %s. The day's work is done.\n\nPress CLOSE FOR THE NIGHT (below the room) to pay the bills and start tomorrow." % TimeManager.clock_text()
+		else:
+			_waiting.text = "Waiting for the next customer" + ".".repeat(int(_waiting_dots) % 4) + "\n\nWhile you wait: restock in SUPPLY, spend skill points, read the JOURNAL, or go out into the city (CITY MAP, %s)." % Controls.key_name("map")
 
 
 func _show_event() -> void:
@@ -273,15 +288,16 @@ func _show_customer(customer: CustomerData, animate: bool) -> void:
 		rv.add_child(UIKit.label(item.display_name, &"", true))
 		rv.add_child(UIKit.label("T%d %s · difficulty %d/5" % [item.tier, item.category.to_upper(), item.install_difficulty], &"DimLabel", true))
 		_request_box.add_child(rv)
-	var expected := 0
-	if surgery and item:
-		expected = int(round((surgery.base_pay + item.price * GameConfig.IMPLANT_PRICE_MARKUP) * customer.pay_multiplier))
-	_offer.text = "OFFERS %s" % EconomyManager.format_money(expected)
-	var risk_word := "LOW" if customer.complication_risk < 0.95 else ("HIGH" if customer.complication_risk > 1.1 else "MEDIUM")
-	_risk.text = "Risk: %s · patience %d · %s" % [risk_word, customer.patience, "known conditions: %d" % customer.revealed_conditions.size()]
+	# Same numbers as the customer file (one source of truth).
+	var expected := CustomerGenerator.estimate_fee(customer) if surgery and item else 0
+	_offer.text = "PAYS ≈ %s" % EconomyManager.format_money(expected)
+	_risk.text = "Patience %d · known conditions %d" % [customer.patience, customer.revealed_conditions.size()]
+	UIKit.clear(_verdict_box)
+	JobVerdict.build(_verdict_box, customer, true)
 	_load_meter.set_load(NeuralLoad.compute(customer), NeuralLoad.projected(customer, ImplantInstance.create(item.id)) if item else NeuralLoad.compute(customer))
 	_waiting.visible = false
 	_info_box.visible = true
+	(_info_box.get_parent() as Control).visible = true
 	_see_button.visible = true
 	if animate:
 		_card.modulate.a = 0.0
@@ -297,6 +313,7 @@ func _show_waiting() -> void:
 	_view.hide_customer()
 	_waiting.visible = true
 	_info_box.visible = false
+	(_info_box.get_parent() as Control).visible = false
 	_see_button.visible = false
 
 
@@ -310,12 +327,18 @@ func _refresh_status() -> void:
 	var full := BusinessManager.is_day_full()
 	_close_button.disabled = CustomerManager.has_customer() or SurgeryManager.is_active
 	_close_button.theme_type_variation = &"AccentButton" if full else &"GhostButton"
-	_status_box.add_child(UIKit.label("DAY %d · jobs %d/%d · tonight's bill %d%s" % [BusinessManager.day, BusinessManager.jobs_today, BusinessManager.capacity(),
-		BusinessManager.projected_total(), ("  · DEBT %d" % BusinessManager.debt) if BusinessManager.debt > 0 else ""], &"DimLabel", true, Palette.WARN if BusinessManager.debt > 0 else null))
 	if _loc:
 		_loc.text = "%s · %s · %s" % [ClinicManager.get_tier_name().to_upper(), WorldManager.district_name().to_upper(), TimeManager.stamp()]
-	_status_box.add_child(UIKit.label("Supplies %d / %d · Parts %d · Tokens %d" % [InventoryManager.supplies, ClinicManager.get_supplies_capacity(), InventoryManager.parts, InventoryManager.tokens], &"DimLabel", true))
-	_status_box.add_child(UIKit.label("Heat %d · %s%s" % [roundi(FactionManager.heat), SecurityManager.level_label(), "  · inspections likely" if FactionManager.heat >= 35.0 else ""], &"DimLabel", true, Palette.DANGER if FactionManager.heat >= 35.0 else null))
+	# Four meters: how much night is left, the day's jobs, supplies, heat.
+	var span := float(TimeManager.close_minute() - TimeManager.open_minute())
+	_meter_row("NIGHT LEFT", 1.0 - clampf(float(TimeManager.minute - TimeManager.open_minute()) / span, 0.0, 1.0),
+		Palette.WARN if TimeManager.minutes_left() < 120 else Palette.ACCENT, "%s · doors lock 04:00" % TimeManager.duration_text(TimeManager.minutes_left()), "time")
+	var cap := maxi(1, BusinessManager.capacity())
+	_meter_row("JOBS", float(BusinessManager.jobs_today) / cap, Palette.OK if full else Palette.ACCENT, "%d / %d · bill %s%s" % [BusinessManager.jobs_today, cap,
+		EconomyManager.format_money(BusinessManager.projected_total()), (" · DEBT %d" % BusinessManager.debt) if BusinessManager.debt > 0 else ""], "jobs")
+	var scap := maxi(1, ClinicManager.get_supplies_capacity())
+	_meter_row("SUPPLIES", float(InventoryManager.supplies) / scap, Palette.WARN if InventoryManager.supplies < 2 else Palette.OK, "%d / %d · %d implants" % [InventoryManager.supplies, scap, InventoryManager.get_instances().size()], "supplies")
+	_meter_row("HEAT", FactionManager.heat / 100.0, Palette.DANGER if FactionManager.heat >= 35.0 else Palette.TEXT_DIM, "%d · %s" % [roundi(FactionManager.heat), SecurityManager.level_label()], "heat")
 	var open := SecurityManager.open_cases().size()
 	_security_button.text = "SECURITY" if open == 0 else "%d OPEN CASE%s" % [open, "S" if open > 1 else ""]
 	_security_button.theme_type_variation = &"DangerButton" if open > 0 else &"GhostButton"
@@ -345,6 +368,32 @@ func _refresh_status() -> void:
 		var rep := FactionManager.get_rep(id)
 		line.add_child(UIKit.label("%+d" % rep, &"MonoLabel", false, Palette.OK if rep > 5 else (Palette.DANGER if rep < -5 else Palette.TEXT_DIM)))
 		grid.add_child(line)
+
+
+## One labelled meter in the TODAY card (hover/click the caption to learn more).
+func _meter_row(caption: String, ratio: float, color: Color, text: String, term: String) -> void:
+	var row := UIKit.hbox(8)
+	row.name = "Today_%s" % caption.replace(" ", "_")
+	var cap := UIKit.label(caption, &"SubHeaderLabel")
+	cap.custom_minimum_size.x = 104
+	cap.mouse_filter = Control.MOUSE_FILTER_STOP
+	cap.mouse_default_cursor_shape = Control.CURSOR_HELP
+	cap.tooltip_text = Glossary.short(term)
+	cap.gui_input.connect(func(e: InputEvent) -> void:
+		var mb := e as InputEventMouseButton
+		if mb and mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT:
+			Glossary.show(term))
+	row.add_child(cap)
+	var m := UIKit.meter(clampf(ratio, 0.0, 1.0), color, 10)
+	m.custom_minimum_size.x = 120
+	m.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(m)
+	var v := UIKit.label(text, &"DimLabel", false, null, 15)
+	v.clip_text = true
+	v.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	UIKit.expand(v)
+	row.add_child(v)
+	_status_box.add_child(row)
 
 
 func _refresh_rumor() -> void:

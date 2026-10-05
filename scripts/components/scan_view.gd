@@ -53,13 +53,30 @@ func get_region_center(region: StringName) -> Vector2:
 	return _origin + r.get_center() * _scale
 
 
+## Room for the region labels on each side of the body.
+const LABEL_ROOM := 175.0
+const LABEL_SIZE := 24
+
+
 func _layout() -> void:
 	var img := Vector2(BODY.get_size())
 	var avail := size - Vector2(PADDING, PADDING) * 2.0
-	# Prefer the game's pixel density; drop to 1x only on very small screens.
-	_scale = float(GameConfig.PIXEL_SCALE) if avail.y >= img.y * GameConfig.PIXEL_SCALE else 1.0
+	# As big as the panel allows (whole pixels), leaving room for labels.
+	var sx := floorf((avail.x - LABEL_ROOM * 2.0) / img.x)
+	var sy := floorf(avail.y / img.y)
+	_scale = clampf(minf(sx, sy), 1.0, 6.0)
 	_origin = ((size - img * _scale) / 2.0).floor()
 	queue_redraw()
+
+
+## Starts scanning a region (buttons and keys use this too).
+func scan(region: StringName) -> bool:
+	if is_busy() or _scanned.has(region) or not REGIONS.has(region):
+		return false
+	_scanning = region
+	_scan_t = 0.0
+	AudioManager.play_sfx(&"tool")
+	return true
 
 
 func _process(delta: float) -> void:
@@ -85,10 +102,7 @@ func _gui_input(event: InputEvent) -> void:
 		if d < best_dist:
 			best_dist = d
 			best = region
-	if best != &"" and best_dist <= GameConfig.MIN_CONTROL and not _scanned.has(best):
-		_scanning = best
-		_scan_t = 0.0
-		AudioManager.play_sfx(&"tool")
+	if best != &"" and best_dist <= GameConfig.MIN_CONTROL * maxf(1.0, _scale / 3.0) and scan(best):
 		accept_event()
 
 
@@ -123,10 +137,20 @@ func _draw() -> void:
 			var sy := rect.position.y + floorf(rect.size.y * _scan_t / s) * s
 			draw_rect(Rect2(rect.position.x, sy, rect.size.x, s), Palette.ACCENT)
 		_draw_brackets(rect, color, s)
-		var label_pos := Vector2(rect.end.x + 2 * s, rect.get_center().y + 4)
-		if region == &"arms":
-			label_pos = Vector2(rect.position.x, rect.end.y + 10)
-		draw_string(font, label_pos.floor(), REGION_LABELS[region], HORIZONTAL_ALIGNMENT_LEFT, -1, 8 * int(s), color)
+		# Labels sit beside the body on a dark tag, joined by a leader line,
+		# so they never cover the figure or each other.
+		var text: String = REGION_LABELS[region] + (" OK" if _scanned.has(region) else "")
+		var tw := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, LABEL_SIZE).x
+		var body_right := _origin.x + BODY.get_size().x * s
+		var left_side := region == &"arms"
+		var ly := rect.get_center().y
+		var lx := (_origin.x - tw - 14.0) if left_side else (body_right + 14.0)
+		var anchor := Vector2(rect.position.x if left_side else rect.end.x, ly)
+		var tag_edge := Vector2((lx + tw + 6.0) if left_side else (lx - 6.0), ly)
+		draw_line(anchor, tag_edge, Color(color, 0.7), 2.0)
+		draw_rect(Rect2(lx - 6.0, ly - 16.0, tw + 12.0, 30.0), Color(0.02, 0.03, 0.05, 0.85))
+		draw_rect(Rect2(lx - 6.0, ly - 16.0, tw + 12.0, 30.0), Color(color, 0.6), false, 2.0)
+		draw_string(font, Vector2(lx, ly + 8.0).floor(), text, HORIZONTAL_ALIGNMENT_LEFT, -1, LABEL_SIZE, color)
 
 
 func _draw_brackets(rect: Rect2, color: Color, s: float) -> void:

@@ -16,6 +16,8 @@ var _rep: Label
 var _tier: Label
 var _values: Dictionary = {}
 var _location: Label
+## Stat boxes by glossary term (hover = live explanation, click = more).
+var _boxes: Dictionary = {}
 
 
 func _ready() -> void:
@@ -40,7 +42,7 @@ func _ready() -> void:
 	brand.add_child(_location)
 	row.add_child(brand)
 	row.add_child(_sep())
-	_money = _stat(row, "CREDITS", "res://assets/sprites/ui/icons/money.png", Palette.WARN, 150)
+	_money = _stat(row, "CREDITS", "res://assets/sprites/ui/icons/money.png", Palette.WARN, 150, "credits")
 	row.add_child(_sep())
 	# Level + XP bar
 	var lv := UIKit.vbox(2)
@@ -56,6 +58,7 @@ func _ready() -> void:
 	lv.add_child(lv_row)
 	_xp = UIKit.meter(0.0, Palette.ACCENT, 8)
 	lv.add_child(_xp)
+	_explain(lv, "level")
 	row.add_child(lv)
 	row.add_child(_sep())
 	var rep := UIKit.vbox(0)
@@ -67,13 +70,14 @@ func _ready() -> void:
 	rep.add_child(rep_row)
 	_tier = UIKit.label("", &"SubHeaderLabel")
 	rep.add_child(_tier)
+	_explain(rep, "rep")
 	row.add_child(rep)
 	row.add_child(_sep())
-	_values[&"heat"] = _stat(row, "HEAT", "res://assets/sprites/ui/icons/heat.png", Palette.TEXT, 90)
-	_values[&"supplies"] = _stat(row, "SUPPLIES", "res://assets/sprites/ui/icons/supplies.png", Palette.TEXT, 110)
-	_values[&"parts"] = _stat(row, "PARTS", "res://assets/sprites/ui/icons/parts.png", Palette.TEXT, 80)
-	_values[&"tokens"] = _stat(row, "TOKENS", "res://assets/sprites/ui/icons/tokens.png", Palette.BRAND, 80)
-	_values[&"ops"] = _stat(row, "JOBS", "res://assets/sprites/ui/icons/dossier.png", Palette.TEXT, 70)
+	_values[&"heat"] = _stat(row, "HEAT", "res://assets/sprites/ui/icons/heat.png", Palette.TEXT, 90, "heat")
+	_values[&"supplies"] = _stat(row, "SUPPLIES", "res://assets/sprites/ui/icons/supplies.png", Palette.TEXT, 110, "supplies")
+	_values[&"parts"] = _stat(row, "PARTS", "res://assets/sprites/ui/icons/parts.png", Palette.TEXT, 80, "parts")
+	_values[&"tokens"] = _stat(row, "TOKENS", "res://assets/sprites/ui/icons/tokens.png", Palette.BRAND, 80, "tokens")
+	_values[&"ops"] = _stat(row, "TODAY", "res://assets/sprites/ui/icons/dossier.png", Palette.TEXT, 90, "jobs")
 	row.add_child(UIKit.expand(Control.new()))
 	var menu := UIKit.button("MENU  [%s]" % Controls.key_name("pause"), &"GhostButton", menu_pressed.emit, "MenuButton")
 	menu.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -101,7 +105,19 @@ func _sep() -> Control:
 	return s
 
 
-func _stat(row: HBoxContainer, caption: String, icon: String, color: Color, width: float) -> Label:
+## Hover: what it means; click: the full explanation.
+func _explain(box: Control, term: String) -> void:
+	_boxes[term] = box
+	box.mouse_filter = Control.MOUSE_FILTER_STOP
+	box.mouse_default_cursor_shape = Control.CURSOR_HELP
+	box.tooltip_text = Glossary.short(term)
+	box.gui_input.connect(func(e: InputEvent) -> void:
+		var mb := e as InputEventMouseButton
+		if mb and mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT:
+			Glossary.show(term))
+
+
+func _stat(row: HBoxContainer, caption: String, icon: String, color: Color, width: float, term: String = "") -> Label:
 	var box := UIKit.vbox(0)
 	box.custom_minimum_size.x = width
 	box.add_child(UIKit.label(caption, &"SubHeaderLabel"))
@@ -112,6 +128,8 @@ func _stat(row: HBoxContainer, caption: String, icon: String, color: Color, widt
 	box.add_child(line)
 	box.tooltip_text = caption.capitalize()
 	box.mouse_filter = Control.MOUSE_FILTER_PASS
+	if term != "":
+		_explain(box, term)
 	row.add_child(box)
 	return v
 
@@ -143,4 +161,17 @@ func _refresh() -> void:
 	_values[&"supplies"].add_theme_color_override(&"font_color", Palette.WARN if InventoryManager.supplies < 2 else Palette.TEXT)
 	_values[&"parts"].text = str(InventoryManager.parts)
 	_values[&"tokens"].text = str(InventoryManager.tokens)
-	_values[&"ops"].text = str(EventManager.operations)
+	_values[&"ops"].text = "%d/%d" % [BusinessManager.jobs_today, BusinessManager.capacity()]
+	_values[&"ops"].add_theme_color_override(&"font_color", Palette.OK if BusinessManager.is_day_full() else Palette.TEXT)
+	_tip("credits", "%s. Tonight's bill: about %s." % [EconomyManager.format_money(EconomyManager.money), EconomyManager.format_money(BusinessManager.projected_total())])
+	_tip("level", "Level %d: %d XP to the next. %s" % [ProgressionManager.level, maxi(0, need - ProgressionManager.total_xp), "%d skill point(s) to spend." % SkillManager.points if SkillManager.points > 0 else ""])
+	_tip("rep", "Reputation %d. The street calls you: %s." % [ReputationManager.reputation, str(ReputationManager.identity().get("title", "nobody")).to_lower()])
+	_tip("heat", "Heat %d (%s)." % [roundi(FactionManager.heat), SecurityManager.level_label()])
+	_tip("supplies", "%d of %d. Each operation uses some." % [InventoryManager.supplies, ClinicManager.get_supplies_capacity()])
+	_tip("jobs", "%d of %d jobs done today%s." % [BusinessManager.jobs_today, BusinessManager.capacity(), ": close for the night" if BusinessManager.is_day_full() else ""])
+
+
+func _tip(term: String, live: String) -> void:
+	var b: Control = _boxes.get(term)
+	if b:
+		b.tooltip_text = "%s\n%s\n(click for more)" % [live, Glossary.short(term)]

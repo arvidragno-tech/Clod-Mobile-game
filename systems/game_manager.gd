@@ -110,6 +110,8 @@ func navigate(id: StringName) -> void:
 			UIManager.go_to(UIManager.SCREEN_MAP)
 		&"settings":
 			UIManager.go_to(UIManager.SCREEN_SETTINGS, {"return_to": UIManager.current_screen_id})
+		&"help":
+			Glossary.open_guide()
 		&"blackmarket":
 			if BlackMarketManager.is_unlocked():
 				UIManager.go_to(UIManager.SCREEN_BLACK_MARKET)
@@ -129,9 +131,9 @@ func open_pause_menu() -> void:
 			UIManager.go_to(UIManager.SCREEN_LOAD, {"return_to": UIManager.current_screen_id})},
 		{"label": "SETTINGS", "style": &"", "name": "PauseSettings", "callback": func() -> void:
 			UIManager.go_to(UIManager.SCREEN_SETTINGS, {"return_to": UIManager.current_screen_id})},
-		{"label": "HOW TO PLAY", "style": &"", "name": "PauseHelp", "callback": func() -> void:
-			var ok: Array[Dictionary] = [{"label": "GOT IT", "style": &"AccentButton", "name": "HelpClose"}]
-			UIManager.show_dialog("HOW TO PLAY", TutorialManager.HELP_TEXT, ok)},
+		{"label": "FIELD GUIDE (F1)", "style": &"", "name": "PauseHelp", "callback": func() -> void:
+			UIManager.close_modal()
+			Glossary.open_guide()},
 		{"label": "SAVE & MAIN MENU", "style": &"GhostButton", "name": "PauseQuit", "callback": quit_to_menu},
 		{"label": "SAVE & QUIT TO DESKTOP", "style": &"DangerButton", "name": "PauseExit", "callback": quit_to_desktop},
 	]

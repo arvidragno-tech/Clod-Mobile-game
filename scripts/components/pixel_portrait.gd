@@ -119,14 +119,10 @@ func _draw() -> void:
 			if Settings.glow:
 				draw_texture_rect_region(tex[1], clip, src_clip, Color(1, 1, 1, 0.35 * glow))
 		_draw_action(r, s, cr)
-	# Grime vignette + scanlines + refresh sweep.
+	# Grime vignette (no scanlines: faces stay clean and readable).
 	for i in 4:
 		draw_rect(Rect2(r.position.x, r.position.y + i * s, r.size.x, s), Color(0, 0, 0, 0.18 - i * 0.04))
 		draw_rect(Rect2(r.position.x, r.end.y - (i + 1) * s, r.size.x, s), Color(0, 0, 0, 0.22 - i * 0.05))
-	var y := r.position.y
-	while y < r.end.y:
-		draw_rect(Rect2(r.position.x, y, r.size.x, 1), Color(0, 0, 0, 0.1))
-		y += s * 2
 	# Frame + corner brackets
 	draw_rect(r.grow(2), Palette.LINE, false, 2.0)
 	for corner: Vector2 in [r.position, Vector2(r.end.x, r.position.y), Vector2(r.position.x, r.end.y), r.end]:

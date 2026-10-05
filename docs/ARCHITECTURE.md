@@ -455,3 +455,34 @@ Event outcome keys on top of the incident vocabulary: `effects`
   borderless and fullscreen.
 - `tests/stability_test.tscn` makes a city outing every other shift and
   checks the player is never stranded.
+
+## 3.3: a clearer UI
+
+- **Glossary** (`scripts/ui/glossary.gd`, `data/glossary.json`): terms
+  {topic, title, short, text} and topics. `short()` feeds tooltips,
+  `show(term)` opens a card by the mouse, `open_guide(topic, term)` the
+  FIELD GUIDE. Both are built in a `HelpHost` control at the end of the
+  overlay layer (above modals, so a conversation underneath is never
+  closed; not OS popups, so window focus can't close them). ESC
+  (`UIManager._on_escape`) and a click outside close them. `CAPTIONS` maps
+  stat captions to terms for `UIKit.caption`.
+- **UIKit:** `section_head(title, hint, term, color)` (bar + title + "?" +
+  rule; `section()` uses it), `info(term)` ("?" chip), `caption(text)`
+  (help cursor, tooltip, click to explain).
+- **JobVerdict** (`scripts/ui/job_verdict.gd`): `checks(c)` and
+  `advice(c)` from `GameManager.get_surgery_readiness`, so the door card,
+  the customer file and the plan always agree; `build(parent, c, compact)`.
+- **Theme** (`tools/build_theme.gd`): one bold body face on every button
+  variation, `InfoButton`, `SectionLabel`, `HintLabel`, `ValueLabel`;
+  frames (`tools/art/ui_art.py`) lit from above with an inner line.
+  `Accessibility.SCALED_TYPES` includes the new variations.
+- **Room light:** `Settings.room_material()` (shader
+  `assets/shaders/room_light.gdshader`, `lift` = `Settings.brightness`)
+  on `ClinicView` and `LocationView`. In Godot 4 a canvas shader's
+  `COLOR` already includes the texture.
+- **Character art** (`tools/art/characters2.py`): `draw_eyes` (almond,
+  iris rim, pupil, catch-light, crease), `_hair_px` (strands),
+  `draw_body_base` face details, body accessories `mask` and `eyewear`;
+  `CharacterArt.PORTRAIT_TO_BODY` mirrors face/head accessories onto the
+  body sprite. Regenerate with `python3 tools/generate_art.py chars`,
+  then reimport.

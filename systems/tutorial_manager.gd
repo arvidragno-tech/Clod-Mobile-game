@@ -31,7 +31,7 @@ const STEPS: Array[Dictionary] = [
 		"text": "You earned a skill point. Spend it in SKILLS on the left. SUPPLY sells tools and implants. ESC opens the menu. Good luck, ripper."},
 ]
 
-const HELP_TEXT := "1. See the customer (click them or press C) and accept the job (ENTER).\n2. Scan 2+ body regions, then pick the diagnosis.\n3. Check the plan and BEGIN.\n4. Each stage: pick the glowing instrument (click, 1-9 or Q/R), follow the instruction bar. Right-click puts the tool down; the wheel zooms the field.\n5. Complications: hit the flashing emergency action (Z COAG / X SEDATE / V STABIL).\n6. Get paid, spend skill points, upgrade your clinic.\n7. The clinic room is clickable; wheel or double-click to zoom. I inventory, B database, J journal, F5 quick save, ESC menu.\nColours: cyan = tech/OK, amber = careful, red = danger, magenta = black market."
+const HELP_TEXT := "1. See the customer (click them or press C) and accept the job (ENTER).\n2. Scan 2+ body regions, then pick the diagnosis.\n3. Check the plan and BEGIN.\n4. Each stage: pick the glowing instrument (click, 1-9 or Q/R), follow the instruction bar. Right-click puts the tool down; the wheel zooms the field.\n5. Complications: hit the flashing emergency action (Z COAG / X SEDATE / V STABIL).\n6. Get paid, spend skill points, upgrade your clinic.\n7. The clinic room is clickable; wheel or double-click to zoom. I inventory, B database, J journal, M city map, F1 field guide (click any stat to explain it), F5 quick save, ESC menu.\nColours: cyan = tech/OK, amber = careful, red = danger, magenta = black market."
 
 var active: bool = false
 var step_index: int = -1

@@ -65,7 +65,12 @@ func _rebuild() -> void:
 
 
 func _stat(parent: Control, label: String, v: int) -> void:
-	parent.add_child(UIKit.label("%-12s %s" % [label, UIKit.pips(v, 5)], &"MonoLabel", false, Palette.TEXT, 15))
+	var row := UIKit.hbox(8)
+	var cap := UIKit.caption(label)
+	cap.custom_minimum_size.x = 130
+	row.add_child(cap)
+	row.add_child(UIKit.label(UIKit.pips(v, 5), &"MonoLabel", false, Palette.TEXT, 15))
+	parent.add_child(row)
 
 
 func _person(e: Dictionary, candidate: bool, index: int) -> Control:

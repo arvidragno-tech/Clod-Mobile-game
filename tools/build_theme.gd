@@ -98,9 +98,11 @@ func button(type: StringName, frame: String, font: Color, font_pressed: Color, c
 
 func _build_buttons() -> void:
 	button(&"Button", "btn", P.TEXT, P.ACCENT)
-	theme.set_font(&"font", &"Button", font_title)
-	theme.set_font_size(&"font_size", &"Button", 24)
+	# One readable face for every button (Silkscreen stays for titles).
+	theme.set_font(&"font", &"Button", font_body_bold)
+	theme.set_font_size(&"font_size", &"Button", 21)
 	theme.set_constant(&"h_separation", &"Button", 8)
+	theme.set_constant(&"outline_size", &"Button", 0)
 	button(&"AccentButton", "btn_accent", P.TEXT_DARK, P.TEXT_DARK)
 	button(&"BrandButton", "btn_brand", P.TEXT_DARK, P.TEXT)
 	button(&"DangerButton", "btn_danger", P.TEXT, P.TEXT_DARK)
@@ -121,6 +123,13 @@ func _build_buttons() -> void:
 	button(&"TabButton", "btn_tool", P.TEXT_DIM, P.ACCENT, Vector4(12, 8, 12, 8))
 	theme.set_font(&"font", &"TabButton", font_body_bold)
 	theme.set_font_size(&"font_size", &"TabButton", 18)
+	for t in [&"AccentButton", &"BrandButton", &"DangerButton", &"GhostButton", &"CompactDangerButton", &"BMButton"]:
+		theme.set_font(&"font", t, font_body_bold)
+		theme.set_font_size(&"font_size", t, 21)
+	# Help "?" chips and small info buttons.
+	button(&"InfoButton", "btn_ghost", P.ACCENT, P.TEXT_DARK, Vector4(6, 2, 6, 2))
+	theme.set_font(&"font", &"InfoButton", font_body_bold)
+	theme.set_font_size(&"font_size", &"InfoButton", 16)
 
 
 func label(type: StringName, font: Font, size: int, color: Color) -> void:
@@ -146,6 +155,10 @@ func _build_labels() -> void:
 	# Silkscreen at its native 8px: used for text drawn inside the pixel field.
 	label(&"PixelLabel", font_title, 8, P.TEXT)
 	label(&"BMLabel", font_title, 24, P.BRAND)
+	# Section titles (with a coloured bar from UIKit.section) and big values.
+	label(&"SectionLabel", font_body_bold, 17, P.ACCENT)
+	label(&"ValueLabel", font_mono, 34, P.TEXT)
+	label(&"HintLabel", font_body, 17, P.TEXT_DIM)
 	theme.set_font(&"normal_font", &"RichTextLabel", font_body)
 	theme.set_font(&"mono_font", &"RichTextLabel", font_mono)
 	theme.set_font(&"bold_font", &"RichTextLabel", font_body_bold)
@@ -197,7 +210,8 @@ func _build_misc() -> void:
 	tip.set_border_width_all(2)
 	tip.set_content_margin_all(10)
 	theme.set_stylebox(&"panel", &"TooltipPanel", tip)
-	theme.set_font_size(&"font_size", &"TooltipLabel", 18)
+	theme.set_font_size(&"font_size", &"TooltipLabel", 19)
+	theme.set_font(&"font", &"TooltipLabel", font_body)
 	theme.set_color(&"font_color", &"TooltipLabel", P.TEXT)
 	# Dropdowns and checkboxes for the PC settings.
 	theme.set_font_size(&"font_size", &"OptionButton", 20)

@@ -37,20 +37,81 @@ static func workstation(screen: Control, nav_id: StringName) -> VBoxContainer:
 
 
 ## A titled section panel (PC workstation look). Returns the inner column.
-static func section(parent: Control, title: String, variation: StringName = &"CardPanel", hint: String = "") -> VBoxContainer:
+static func section(parent: Control, title: String, variation: StringName = &"CardPanel", hint: String = "", term: String = "") -> VBoxContainer:
 	var p := panel(variation)
 	parent.add_child(p)
 	var v := vbox(10)
 	p.add_child(v)
-	var head := hbox(10)
-	var t := label(title, &"SubHeaderLabel")
-	t.add_theme_color_override(&"font_color", Palette.ACCENT)
+	v.add_child(section_head(title, hint, term))
+	return v
+
+
+## Section title row: a coloured bar, the title, an optional hint and an
+## optional "?" (glossary term), with a thin rule under it.
+static func section_head(title: String, hint: String = "", term: String = "", color: Color = Palette.ACCENT) -> VBoxContainer:
+	var wrap := vbox(4)
+	var head := hbox(8)
+	wrap.add_child(head)
+	var bar := ColorRect.new()
+	bar.color = color
+	bar.custom_minimum_size = Vector2(4, 18)
+	bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	head.add_child(bar)
+	var t := label(title, &"SectionLabel")
+	t.add_theme_color_override(&"font_color", color)
 	expand(t)
 	head.add_child(t)
 	if hint != "":
 		head.add_child(label(hint, &"SubHeaderLabel"))
-	v.add_child(head)
-	return v
+	if term != "":
+		head.add_child(info(term))
+	var rule := ColorRect.new()
+	rule.color = Color(color, 0.22)
+	rule.custom_minimum_size.y = 2
+	rule.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	wrap.add_child(rule)
+	return wrap
+
+
+## A small "?" chip that explains a game term (data/glossary.json): hover
+## for the short version, click for the full explanation.
+static func info(term: String) -> Button:
+	var b := Button.new()
+	b.text = "?"
+	b.theme_type_variation = &"InfoButton"
+	b.name = "Info_%s" % term
+	b.custom_minimum_size = Vector2(30, 28)
+	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	b.focus_mode = Control.FOCUS_ALL
+	b.mouse_default_cursor_shape = Control.CURSOR_HELP
+	b.tooltip_text = Glossary.short(term)
+	b.pressed.connect(func() -> void: Glossary.show(term))
+	return b
+
+
+## A stat caption. If the glossary explains it, hovering shows what it
+## means and clicking opens the full explanation (help cursor).
+static func caption(text: String, variation: StringName = &"SubHeaderLabel") -> Label:
+	var l := label(text, variation)
+	var term := Glossary.term_for(text)
+	if term != "" and Glossary.has(term):
+		l.mouse_filter = Control.MOUSE_FILTER_STOP
+		l.mouse_default_cursor_shape = Control.CURSOR_HELP
+		l.tooltip_text = Glossary.short(term) + "\n(click for more)"
+		l.gui_input.connect(func(e: InputEvent) -> void:
+			var mb := e as InputEventMouseButton
+			if mb and mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT:
+				Glossary.show(term))
+	return l
+
+
+## A label plus its "?" in one row.
+static func label_with_info(text: String, term: String, variation: StringName = &"SubHeaderLabel", color: Variant = null) -> HBoxContainer:
+	var h := hbox(6)
+	h.add_child(label(text, variation, false, color))
+	h.add_child(info(term))
+	return h
 
 
 ## Expandable section: a header button toggles the body. Returns the body.

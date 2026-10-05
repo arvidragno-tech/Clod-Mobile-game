@@ -56,6 +56,7 @@ const DEFAULTS := {
 	"crt_filter": true,
 	"scanlines": true,
 	"shake_intensity": 1.0,
+	"brightness": 1.2,
 	"lighting_quality": 2,
 	"glow": true,
 	"environment_effects": true,
@@ -105,6 +106,8 @@ var pixel_scaling: String = "fit"
 var crt_filter: bool = true
 var scanlines: bool = true
 var shake_intensity: float = 1.0
+## Shadow lift for the clinic room and street views (1.0 = as drawn).
+var brightness: float = 1.2
 var lighting_quality: int = 2
 var glow: bool = true
 var environment_effects: bool = true
@@ -163,6 +166,7 @@ func load_settings() -> void:
 	if not PIXEL_SCALING.has(pixel_scaling):
 		pixel_scaling = "fit"
 	shake_intensity = clampf(shake_intensity, 0.0, 1.5)
+	brightness = clampf(brightness, 0.8, 1.8)
 	lighting_quality = clampi(lighting_quality, 0, 2)
 	dialogue_volume = clampf(dialogue_volume, 0.0, 1.0)
 	ui_volume = clampf(ui_volume, 0.0, 1.0)
@@ -171,6 +175,19 @@ func load_settings() -> void:
 	ui_scale = clampi(ui_scale, 0, UI_SCALES.size() - 1)
 	text_scale = clampf(text_scale, 0.85, 1.4)
 	changed.emit()
+
+
+## A shared material that lifts dark scenes by the brightness setting.
+var _room_material: ShaderMaterial
+
+
+func room_material() -> ShaderMaterial:
+	if _room_material == null:
+		_room_material = ShaderMaterial.new()
+		_room_material.shader = load("res://assets/shaders/room_light.gdshader")
+		changed.connect(func() -> void: _room_material.set_shader_parameter(&"lift", brightness))
+	_room_material.set_shader_parameter(&"lift", brightness)
+	return _room_material
 
 
 func save_settings() -> void:

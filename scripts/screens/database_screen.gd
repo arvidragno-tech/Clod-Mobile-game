@@ -256,12 +256,12 @@ func _build_spec(c: CyberwareData) -> void:
 		["HIDDEN TRAITS", "%d unknown" % c.unknown_traits if unknown else "none"],
 		["IN STOCK", "%d unit(s)%s" % [stock.size(), (" · condition " + ", ".join(conds)) if not conds.is_empty() else ""]],
 	]:
-		g.add_child(UIKit.label(pair[0], &"SubHeaderLabel"))
+		g.add_child(UIKit.caption(pair[0]))
 		var vl := UIKit.label(str(pair[1]), &"", true, Palette.WARN if str(pair[1]).contains("✕") or str(pair[1]).begins_with("locked") else null)
 		UIKit.expand(vl)
 		g.add_child(vl)
 	if not c.benefits.is_empty():
-		_spec.add_child(UIKit.label("EFFECTS", &"SubHeaderLabel", false, Palette.ACCENT))
+		_spec.add_child(UIKit.section_head("EFFECTS"))
 		for e in c.benefits:
 			_spec.add_child(UIKit.label("+ " + e, &"", true, Palette.OK))
 	var actions := UIKit.hbox(10)
@@ -273,7 +273,7 @@ func _build_spec(c: CyberwareData) -> void:
 
 func _refresh_compare() -> void:
 	UIKit.clear(_compare)
-	_compare.add_child(UIKit.label("COMPARISON", &"SubHeaderLabel", false, Palette.ACCENT))
+	_compare.add_child(UIKit.section_head("COMPARISON", "", "performance"))
 	if _new == null:
 		return
 	if _current == null:

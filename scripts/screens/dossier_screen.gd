@@ -423,7 +423,7 @@ func _story() -> void:
 	_list.add_child(paths)
 	var pv := UIKit.vbox(6)
 	paths.add_child(pv)
-	pv.add_child(UIKit.label("WHO YOU ARE BECOMING", &"SubHeaderLabel", false, Palette.ACCENT))
+	pv.add_child(UIKit.section_head("WHO YOU ARE BECOMING"))
 	var best := 1
 	for p in StoryManager.PATHS:
 		best = maxi(best, StoryManager.path_score(p))
@@ -440,7 +440,7 @@ func _story() -> void:
 	_list.add_child(recent)
 	var rv := UIKit.vbox(4)
 	recent.add_child(rv)
-	rv.add_child(UIKit.label("CHOICES THAT WILL MATTER", &"SubHeaderLabel", false, Palette.ACCENT))
+	rv.add_child(UIKit.section_head("CHOICES THAT WILL MATTER"))
 	var ch := DialogueManager.choices.duplicate()
 	ch.reverse()
 	for c: Dictionary in ch.slice(0, 10):

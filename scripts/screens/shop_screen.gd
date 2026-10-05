@@ -154,7 +154,7 @@ func _show_tool(t: ToolData) -> void:
 ## Owned instruments with condition, plus SERVICE (restores 100%).
 func _show_owned_tools() -> void:
 	UIKit.clear(_detail)
-	_detail.add_child(UIKit.label("YOUR INSTRUMENTS", &"SubHeaderLabel", false, Palette.ACCENT))
+	_detail.add_child(UIKit.section_head("YOUR INSTRUMENTS"))
 	for id in InventoryManager.owned_tools:
 		var t := InventoryManager.get_tool(id)
 		if t == null:

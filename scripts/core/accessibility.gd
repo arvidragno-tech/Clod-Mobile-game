@@ -6,7 +6,8 @@ extends RefCounted
 ## Settings change.
 
 ## Theme types whose font size scales with "Large text".
-const SCALED_TYPES: Array[StringName] = [&"Label", &"DimLabel", &"MonoLabel", &"SubHeaderLabel", &"Button", &"TabButton", &"NavButton", &"QuickButton"]
+const SCALED_TYPES: Array[StringName] = [&"Label", &"DimLabel", &"MonoLabel", &"SubHeaderLabel", &"Button", &"TabButton", &"NavButton", &"QuickButton",
+	&"AccentButton", &"BrandButton", &"DangerButton", &"GhostButton", &"BMButton", &"InfoButton", &"SectionLabel", &"HintLabel", &"ValueLabel", &"TooltipLabel"]
 const DIM_NORMAL := Color("6b7c8c")
 const DIM_HIGH := Color("a3b3c2")
 
@@ -29,7 +30,7 @@ static func apply(theme: Theme) -> void:
 	for k in [&"normal_font_size", &"bold_font_size"]:
 		theme.set_font_size(k, &"RichTextLabel", roundi(int(_base_sizes[&"__rich"]) * sc) + bonus)
 	var dim := DIM_HIGH if Settings.high_contrast else DIM_NORMAL
-	for t in [&"DimLabel", &"SubHeaderLabel"]:
+	for t in [&"DimLabel", &"SubHeaderLabel", &"HintLabel"]:
 		theme.set_color(&"font_color", t, dim)
 	for t in [&"Button", &"GhostButton", &"NavButton", &"TabButton", &"ToolButton"]:
 		theme.set_color(&"font_disabled_color", t, Color(dim, 0.8))

@@ -13,6 +13,14 @@ def rgba(h, a=255):
     return (r, g, b, a)
 
 
+def shade(h, k):
+    """Lightens (k > 0) or darkens (k < 0) a hex colour."""
+    r, g, b = pal.hex_to_rgb(h)
+    if k >= 0:
+        return (int(r + (255 - r) * k), int(g + (255 - g) * k), int(b + (255 - b) * k))
+    return (int(r * (1 + k)), int(g * (1 + k)), int(b * (1 + k)))
+
+
 def frame(fill, border, bracket, size=16, bracket_len=4, alpha=225, chamfer=2, rivet=None, tape=False, notch=False):
     cv = Canvas(size, size)
     for y in range(size):
@@ -20,7 +28,13 @@ def frame(fill, border, bracket, size=16, bracket_len=4, alpha=225, chamfer=2, r
             # chamfered corners
             if min(x, size - 1 - x) + min(y, size - 1 - y) < chamfer:
                 continue
-            cv.set(x, y, rgba(fill, alpha))
+            # Lit from above: the top rows glow a little, the base sinks.
+            k = 0.0
+            if y < 5:
+                k = 0.06 * (5 - y) / 5
+            elif y > size - 4:
+                k = -0.18 * (y - (size - 4)) / 3
+            cv.set(x, y, shade(fill, k) + (alpha,))
     for y in range(size):
         for x in range(size):
             if cv.get(x, y) is None:
@@ -29,9 +43,12 @@ def frame(fill, border, bracket, size=16, bracket_len=4, alpha=225, chamfer=2, r
             diag = min(x, size - 1 - x) + min(y, size - 1 - y) == chamfer
             if edge or diag:
                 cv.set(x, y, rgba(border))
-    # Inner top highlight line (bevel)
+    # Inner top highlight line (bevel) and a faint inner frame line.
     for x in range(chamfer + 1, size - chamfer - 1):
-        cv.set(x, 1, rgba(border, 120))
+        cv.set(x, 1, rgba(border, 150))
+    for y in range(chamfer + 2, size - chamfer - 2):
+        cv.set(1, y, shade(border, -0.35) + (110,))
+        cv.set(size - 2, y, shade(border, -0.35) + (110,))
     # Corner brackets
     b = rgba(bracket)
     for (cx, cy, sx, sy) in ((0, 0, 1, 1), (size - 1, 0, -1, 1), (0, size - 1, 1, -1), (size - 1, size - 1, -1, -1)):

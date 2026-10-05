@@ -59,7 +59,7 @@ static func build_cyberware_table(parent: Control, current: CyberwareData, new: 
 	var new_rows := cyberware_rows(new, new_inst)
 	for i in new_rows.size():
 		var nr: Array = new_rows[i]
-		g.add_child(UIKit.label(str(nr[0]), &"SubHeaderLabel"))
+		g.add_child(UIKit.caption(str(nr[0])))
 		g.add_child(UIKit.label(str(cur_rows[i][1]) if current else "-", &"MonoLabel", false, Palette.TEXT_DIM))
 		g.add_child(UIKit.label(str(nr[1]), &"MonoLabel"))
 		var v := Verdict.SAME
@@ -90,7 +90,7 @@ static func build_tool_table(parent: Control, current: ToolData, new: ToolData) 
 		["TIER", float(current.tier) if current else 0.0, float(new.tier), true],
 	]
 	for r: Array in rows:
-		g.add_child(UIKit.label(str(r[0]), &"SubHeaderLabel"))
+		g.add_child(UIKit.caption(str(r[0])))
 		g.add_child(UIKit.label("x%.2f" % float(r[1]) if current else "-", &"MonoLabel", false, Palette.TEXT_DIM))
 		g.add_child(UIKit.label("x%.2f" % float(r[2]), &"MonoLabel"))
 		var v := verdict(float(r[1]), float(r[2]), bool(r[3])) if current else Verdict.BETTER

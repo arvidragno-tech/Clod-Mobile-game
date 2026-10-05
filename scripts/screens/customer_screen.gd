@@ -54,7 +54,7 @@ func on_enter(_params: Dictionary) -> void:
 	statement.name = "DialogueCard"
 	var sv := UIKit.vbox(8)
 	statement.add_child(sv)
-	sv.add_child(UIKit.label("STATEMENT", &"SubHeaderLabel", false, Palette.ACCENT))
+	sv.add_child(UIKit.section_head("STATEMENT"))
 	_dialogue = UIKit.label(c.dialogue, &"MonoLabel", true)
 	sv.add_child(_dialogue)
 	statement.gui_input.connect(_on_dialogue_input)
@@ -76,7 +76,14 @@ func on_enter(_params: Dictionary) -> void:
 	var right := UIKit.vbox(14)
 	right.custom_minimum_size.x = 400
 	row.add_child(right)
-	var load_box := UIKit.section(right, "NEURAL LOAD")
+	# Neural load and the at-a-glance card scroll; the decision stays put.
+	var rsc := UIKit.scroll()
+	UIKit.expand(rsc, true, true)
+	right.add_child(rsc)
+	var rtop := UIKit.vbox(14)
+	UIKit.expand(rtop, true, false)
+	rsc.add_child(rtop)
+	var load_box := UIKit.section(rtop, "NEURAL LOAD", &"CardPanel", "", "neural_load")
 	var meter := NeuralLoadMeter.new()
 	meter.name = "NeuralMeter"
 	load_box.add_child(meter)
@@ -88,8 +95,11 @@ func on_enter(_params: Dictionary) -> void:
 	load_box.add_child(UIKit.label("NOW %d%%  %s" % [roundi(now), band_now["name"]], &"MonoLabel", false, band_now["color"]))
 	load_box.add_child(UIKit.label("AFTER ≈ %d%%  %s" % [roundi(after), band_after["name"]], &"MonoLabel", false, band_after["color"]))
 	load_box.add_child(UIKit.label("Hidden conditions can add more. Scan before you cut.", &"DimLabel", true))
-	right.add_child(UIKit.expand(Control.new(), false, true))
-	var decide := UIKit.section(right, "DECISION", &"AccentPanel")
+	# At a glance: can you do it, what's in the way, one line of advice.
+	var glance := UIKit.section(rtop, "AT A GLANCE", &"CardPanel", "", "loop")
+	glance.get_parent().name = "AtAGlance"
+	JobVerdict.build(glance, c)
+	var decide := UIKit.section(right, "DECISION", &"AccentPanel", "", "loop")
 	var accept := UIKit.button("PERFORM SURGERY YOURSELF  [ENTER]", &"AccentButton", GameManager.accept_customer, "AcceptButton", 60)
 	accept.set_meta(&"default", true)
 	decide.add_child(accept)
@@ -192,12 +202,12 @@ func _history_block(v: VBoxContainer, c: CustomerData) -> void:
 		rl.name = "RelationshipLabel"
 		v.add_child(rl)
 	if not c.changes.is_empty():
-		v.add_child(UIKit.label("SINCE LAST TIME", &"SubHeaderLabel", false, Palette.ACCENT))
+		v.add_child(UIKit.section_head("SINCE LAST TIME"))
 		for ch in c.changes:
 			v.add_child(UIKit.label("· " + ch, &"DimLabel", true))
 	var mem := MemoryManager.of(c.id)
 	if not mem.is_empty():
-		v.add_child(UIKit.label("THEY REMEMBER", &"SubHeaderLabel", false, Palette.ACCENT))
+		v.add_child(UIKit.section_head("THEY REMEMBER"))
 		var seen := {}
 		for i in range(mem.size() - 1, -1, -1):
 			var tag := str(mem[i]["tag"])
@@ -217,7 +227,7 @@ func _grid(parent: Control, rows: Array) -> void:
 	g.add_theme_constant_override(&"v_separation", 4)
 	parent.add_child(g)
 	for pair: Array in rows:
-		var k := UIKit.label(pair[0], &"SubHeaderLabel")
+		var k := UIKit.caption(pair[0])
 		k.custom_minimum_size.x = 170
 		g.add_child(k)
 		var vl := UIKit.label(str(pair[1]), &"", true, pair[2] if pair.size() > 2 else null)
@@ -262,7 +272,7 @@ func _payment_section(parent: Control, c: CustomerData, item: CyberwareData, _su
 		["ALREADY OWES", EconomyManager.format_money(owed) if owed > 0 else "nothing", Palette.DANGER if owed > 0 else null],
 		["BONUS", "Clean work, speed and a stable patient raise the final pay."],
 	])
-	body.add_child(UIKit.label("TERMS", &"SubHeaderLabel", false, Palette.ACCENT))
+	body.add_child(UIKit.section_head("TERMS", "", "terms_payment"))
 	var flow := HFlowContainer.new()
 	flow.name = "TermsRow"
 	flow.add_theme_constant_override(&"h_separation", 8)
@@ -376,7 +386,7 @@ func _previous_section(parent: Control, c: CustomerData) -> void:
 
 func _stat_row(parent: Control, caption: String, ratio: float, color: Color) -> void:
 	var row := UIKit.hbox(12)
-	var l := UIKit.label(caption, &"SubHeaderLabel")
+	var l := UIKit.caption(caption)
 	l.custom_minimum_size.x = 170
 	row.add_child(l)
 	var bar := UIKit.meter(ratio, color, 8)

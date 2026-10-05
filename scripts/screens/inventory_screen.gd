@@ -102,7 +102,7 @@ func on_enter(params: Dictionary) -> void:
 	var slots := UIKit.hbox(12)
 	_compare_a = _drop_slot("CompareA", "CURRENT")
 	_compare_b = _drop_slot("CompareB", "NEW")
-	slots.add_child(UIKit.label("COMPARE", &"SubHeaderLabel", false, Palette.ACCENT))
+	slots.add_child(UIKit.section_head("COMPARE", "", "performance"))
 	slots.add_child(_compare_a)
 	slots.add_child(UIKit.label("vs", &"MonoLabel"))
 	slots.add_child(_compare_b)
@@ -369,7 +369,7 @@ func _show(kind: StringName, key: String) -> void:
 			g.add_theme_constant_override(&"h_separation", 18)
 			_detail.add_child(g)
 			for r: Array in rows:
-				g.add_child(UIKit.label(str(r[0]), &"SubHeaderLabel"))
+				g.add_child(UIKit.caption(str(r[0])))
 				g.add_child(UIKit.label("??" if bool(r[4]) else str(r[1]), &"MonoLabel", false, Palette.WARN if bool(r[4]) else null))
 			g.add_child(UIKit.label("SOURCE", &"SubHeaderLabel"))
 			g.add_child(UIKit.label(String(inst.source).to_upper().replace("_", " ") + (" · %s" % d.origin if d.origin != "" else ""), &"MonoLabel", true, Palette.BRAND if inst.source == &"black_market" else null))
@@ -405,7 +405,7 @@ func _show(kind: StringName, key: String) -> void:
 			_detail.add_child(g)
 			for pair: Array in [["CONDITION", "%d%%" % roundi(cond)], ["PRECISION", "x%.2f (x%.2f now)" % [t.precision, t.precision * InventoryManager.tool_condition_factor(t.id)]],
 					["SPEED", "x%.2f" % t.speed], ["RISK", "x%.2f" % t.risk]]:
-				g.add_child(UIKit.label(pair[0], &"SubHeaderLabel"))
+				g.add_child(UIKit.caption(pair[0]))
 				g.add_child(UIKit.label(pair[1], &"MonoLabel"))
 			if not t.modifiers.is_empty():
 				_detail.add_child(UIKit.label(UIKit.describe_modifiers(t.modifiers), &"", true, Palette.ACCENT))

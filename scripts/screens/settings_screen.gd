@@ -109,6 +109,7 @@ func _build_graphics() -> void:
 	_toggle(fx, "CRT FILTER", "crt_filter", "Vignette and grain over the whole screen.")
 	_toggle(fx, "SCANLINES", "scanlines", "Thin dark lines like an old monitor.")
 	_slider(fx, "SCREEN SHAKE", "shake_intensity", 0.0, 1.5, 0.05, true)
+	_slider(fx, "ROOM BRIGHTNESS", "brightness", 0.8, 1.8, 0.05, true)
 	_choice_int(fx, "LIGHTING QUALITY", "lighting_quality", Settings.EFFECTS_NAMES)
 	_choice_int(fx, "PARTICLE QUALITY", "effects_quality", Settings.EFFECTS_NAMES)
 	_toggle(fx, "GLOW", "glow", "Emissive cyberware, monitors and signs glow and flicker.")

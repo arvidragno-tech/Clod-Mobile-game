@@ -272,39 +272,62 @@ def draw_brows(c: Canvas, expr: str, heavy: bool):
 
 
 def draw_eyes(c: Canvas, expr: str, gaze: str):
+    """Almond eyes, 3 px tall: shaded sclera, a round iris with a dark rim,
+    pupil and catch-light, a heavy upper lid with a crease, soft corners.
+    Fear opens them, anger and pain narrow them, sadness drops the lid."""
     wide = expr == "fear"
     squint = expr in ("angry", "pain")
-    heavy_lid = expr in ("sad",)
+    heavy_lid = expr == "sad"
+    ox = {"center": 0, "left": -1, "right": 1, "closed": 0}[gaze]
     for i, ex in enumerate(EYE_X):
+        lit = i == 0  # key light from the left: the right eye sits in shadow
         y = EYE_Y
-        if gaze == "closed" or (expr == "pain" and i == 1 and False):
-            hl(c, ex - 3, ex + 3, y, SK, 1)
-            hl(c, ex - 2, ex + 2, y + 1, SK, 2)
+        if gaze == "closed":
+            # closed lid: a curved lash line and the lid's form
+            hl(c, ex - 3, ex + 3, y, SK, 0)
+            f(c, ex - 4, y - 1, SK, 1)
+            f(c, ex + 4, y - 1, SK, 1)
+            hl(c, ex - 2, ex + 2, y - 1, SK, 4 if lit else 3)
+            hl(c, ex - 2, ex + 2, y + 1, SK, 3 if lit else 2)
             continue
-        h = 3 if wide else (1 if squint else 2)
-        top = y - (1 if wide else 0)
-        # sclera
-        for yy in range(top, top + h):
-            hl(c, ex - 3, ex + 3, yy, FX, F_EYEW)
-        # inner/outer corners in skin shadow
-        f(c, ex - 3 if i == 0 else ex + 3, top + h - 1, SK, 2)
-        # iris + pupil
-        ox = {"center": 0, "left": -1, "right": 1}[gaze]
+        h = 4 if wide else (2 if squint else 3)
+        top = y - (1 if wide else 0) - (0 if squint else 1)
+        rows = list(range(top, top + h))
+        # Sclera: almond (the end columns only on the middle rows).
+        for k, yy in enumerate(rows):
+            edge = k == 0 or k == h - 1
+            x0, x1 = (ex - 2, ex + 2) if edge and h > 2 else (ex - 3, ex + 3)
+            hl(c, x0, x1, yy, FX, F_EYEW)
+            # the corner away from the light and the tear duct sink into shadow
+            f(c, x1 if lit else x0, yy, SK, 4 if lit else 3)
+        # Iris: 3 wide, round, darker rim, lighter lower half (light falls in).
         ix = ex + ox
-        for yy in range(top, top + h):
-            f(c, ix - 1, yy, IR, 3)
-            f(c, ix, yy, IR, 2)
-            f(c, ix + 1, yy, IR, 4)
-        f(c, ix, top + (1 if h > 1 else 0), FX, F_PUPIL)
-        f(c, ix - 1, top, IR, 6)  # catch-light
-        # upper lid line + lashes (heavier outer corner)
+        for k, yy in enumerate(rows):
+            for dx in (-1, 0, 1):
+                rim = dx != 0 and (k == 0 or k == h - 1)
+                shade = 2 if rim else (4 if k >= h // 2 else 3)
+                f(c, ix + dx, yy, IR, shade + (1 if lit and not rim else 0))
+        pupil_rows = {2: [top + 1], 3: [top + 1], 4: [top + 1, top + 2]}[h]
+        for py in pupil_rows:
+            f(c, ix, py, FX, F_PUPIL)
+        # Upper lid: a dark lash line, thicker at the outer corner, and the
+        # crease above it. The lid casts a little shadow onto the eye.
         hl(c, ex - 3, ex + 3, top - 1, SK, 0)
-        f(c, ex + (4 if i == 1 else -4), top - 1, SK, 0)
+        outer = ex + (4 if i == 1 else -4)
+        f(c, outer, top - 1, SK, 0)
+        f(c, outer, top, SK, 1)
+        hl(c, ex - 2, ex + 2, top - 3, SK, 3 if lit else 2)  # crease
         if heavy_lid:
             hl(c, ex - 3, ex + 3, top, SK, 2)
-            f(c, ix, top + 1, IR, 2)
-        # lower lid
-        hl(c, ex - 2, ex + 2, top + h, SK, 3)
+        elif not squint:
+            hl(c, ix - 1, ix + 1, top, IR, 1)  # lid shadow on the iris
+        if squint:
+            hl(c, ex - 3, ex + 3, top + h, SK, 2)
+        # Lower lid: a soft lit line and the waterline shadow.
+        hl(c, ex - 2, ex + 2, top + h, SK, 5 if lit else 3)
+        f(c, ex - 3 if lit else ex + 3, top + h, SK, 3)
+        # Catch-light last, so nothing covers it.
+        f(c, ix - 1, top + (1 if h > 2 else 0), FX, F_HI)
 
 
 def draw_age(c: Canvas, age: str):
@@ -502,8 +525,15 @@ def _hair_px(c, x, y, rng, base=2.0, light_x=None):
     nx = (x - CX) / 20.0
     ny = (y - 20) / 22.0
     v = base + 2.2 * clamp(-nx * 0.7 - ny * 0.8 + 0.4, 0, 1)
-    if rng.random() < 0.18:
-        v -= 1.0
+    # Strands: thin darker lines that run down and outwards from the crown
+    # (instead of salt-and-pepper noise), with a few stray hairs.
+    lean = int((x - CX) * 0.35 * max(0, y - 10) / 30.0)
+    if (x - lean + (y // 5)) % 4 == 0:
+        v -= 0.9
+    elif (x - lean) % 4 == 2 and v > base + 1.0:
+        v += 0.35
+    if rng.random() < 0.04:
+        v -= 0.8
     c.shade_px(x, y, HR, v)
 
 
@@ -1396,11 +1426,16 @@ def draw_body_base(b: Canvas, build: str, posture: str):
     rx, ry = sk["head_r"]
     b.sphere(hx, hy, rx, ry, SK, lo=1.0, hi=5.6)
     f(b, hx + rx - 0.5, hy, FX, F_RIM)
-    # eyes, brow shadow, mouth (1-px features keep the face readable at 3x)
+    # Face at 3x: brow shadow, eyes with a lit white on the light side,
+    # nose shadow, mouth, cheek and jaw shading.
+    hl(b, hx - 2.5, hx + 2.5, hy - 0.5, SK, 2)
+    f(b, hx - 2.5, hy + 0.5, FX, F_EYEW)
     f(b, hx - 1.5, hy + 0.5, FX, F_PUPIL)
     f(b, hx + 1.5, hy + 0.5, FX, F_PUPIL)
-    hl(b, hx - 2.5, hx + 2.5, hy - 0.5, SK, 2)
-    f(b, hx, hy + 3, SK, 1)
+    f(b, hx + 0.5, hy + 1.5, SK, 2)       # nose shadow (key light from the left)
+    hl(b, hx - 1, hx + 1, hy + 3, SK, 1)  # mouth
+    f(b, hx + rx - 1.0, hy + 1.5, SK, 2)  # cheek in shadow
+    hl(b, hx - 1, hx + 1, hy + ry - 0.4, SK, 2)  # under the jaw
 
 
 def _boots(b, sk, ramp=LT, tall=False, steel=False):
@@ -1733,7 +1768,8 @@ def draw_body_cyber(b: Canvas, kind: str, build: str, posture: str):
 
 
 BODY_ACC = ["backpack", "rifle", "holster", "blade", "toolbelt", "briefcase", "cane", "crutch", "cigarette",
-            "hood", "helmet", "medkit", "datapad", "bandolier", "shoulder_lamp", "respirator", "cap", "beanie"]
+            "hood", "helmet", "medkit", "datapad", "bandolier", "shoulder_lamp", "respirator", "cap", "beanie",
+            "mask", "eyewear"]
 
 
 def draw_body_acc(b: Canvas, kind: str, build: str, posture: str):
@@ -1808,6 +1844,15 @@ def draw_body_acc(b: Canvas, kind: str, build: str, posture: str):
         hl(b, hx - 2, hx + 2, hy + 2.5, CB, 2)
         f(b, hx - 2, hy + 3.5, MT, 4)
         f(b, hx + 2, hy + 3.5, MT, 2)
+    elif kind == "mask":
+        # Cloth over the lower face (bandana, scarf, surgical mask).
+        for y in range(int(hy + 1), int(hy + ry + 2)):
+            for x in range(int(hx - rx), int(hx + rx + 1)):
+                if ((x + 0.5 - hx) / (rx + 0.4)) ** 2 + ((y + 0.5 - hy) / (ry + 0.6)) ** 2 <= 1.15:
+                    f(b, x, y, CC, 4 - (x > hx) - (y > hy + 2))
+    elif kind == "eyewear":
+        hl(b, hx - 2.5, hx + 2.5, hy + 0.5, CC, 0)
+        f(b, hx - 1.5, hy + 0.5, FX, F_LENS)
     elif kind in ("cap", "beanie"):
         for y in range(int(hy - ry - 1), int(hy - 1)):
             for x in range(int(hx - rx - 1), int(hx + rx + 2)):

@@ -15,6 +15,7 @@ const DRAG_STEP_PX := 6.0
 const UnitTests := preload("res://tests/unit_tests.gd")
 const LivingWorldTests := preload("res://tests/living_world_tests.gd")
 const LivingCityTests := preload("res://tests/living_city_tests.gd")
+const UiOverhaulTests := preload("res://tests/ui_overhaul_tests.gd")
 
 var _failures: Array[String] = []
 var _dilemmas_seen: bool = false
@@ -54,6 +55,7 @@ func _run_all() -> void:
 	print("== LIVING WORLD TESTS ==")
 	LivingWorldTests.new().run(self)
 	LivingCityTests.new().run(self)
+	UiOverhaulTests.new().run(self)
 	if OS.get_cmdline_user_args().has("--unit-only"):
 		_finish()
 		return
@@ -420,9 +422,14 @@ func _e2e() -> void:
 	await _checkpoint("pause_menu")
 	await _click_named("PauseHelp")
 	await _frames(10)
-	await _checkpoint("how_to_play")
-	await _click_named("HelpClose")
+	check(Glossary.is_open(), "the pause menu opens the field guide")
+	await _click_named("GuideTopic_surgery")
 	await _frames(5)
+	check(_find_visible("Guide_neural_load") != null, "the guide's SURGERY topic explains neural load")
+	await _checkpoint("field_guide")
+	await _click_named("GuideClose")
+	await _frames(5)
+	check(not Glossary.is_open(), "the field guide closes")
 	await _click_named("MenuButton")
 	await _frames(5)
 	await _click_named("PauseSettings")

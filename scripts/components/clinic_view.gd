@@ -119,6 +119,7 @@ func _ready() -> void:
 	EventBus.clinic_upgraded.connect(func(_t: int) -> void: refresh_background())
 	EventBus.clinic_upgrade_installed.connect(func(_c: StringName, _l: int) -> void: refresh_background())
 	resized.connect(_layout)
+	material = Settings.room_material()
 	refresh_background()
 
 

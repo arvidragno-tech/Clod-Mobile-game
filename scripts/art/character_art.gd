@@ -95,6 +95,11 @@ static func parts_for(view: StringName, app: Dictionary, expr: String = "", gaze
 		var acc: Array = []
 		for a: Variant in app.get("body_acc", []):
 			acc.append("%s_%s" % [a, key])
+		# What the portrait wears on the face and head shows on the body too.
+		for a: Variant in app.get("accessories", []):
+			var mapped := str(PORTRAIT_TO_BODY.get(str(a), ""))
+			if mapped != "" and not acc.has("%s_%s" % [mapped, key]):
+				acc.append("%s_%s" % [mapped, key])
 		out["acc"] = acc
 		var hair := str(app.get("hair", "short"))
 		var hooded := false
@@ -102,6 +107,14 @@ static func parts_for(view: StringName, app: Dictionary, expr: String = "", gaze
 			hooded = hooded or str(a) in ["hood", "helmet"]
 		out["hair"] = [] if hooded or hair == "bald" else ["%s_%s" % [hair, key]]
 	return out
+
+
+## Portrait accessories that have a body-sprite version.
+const PORTRAIT_TO_BODY := {
+	"bandana": "mask", "scarf": "mask", "surgical_mask": "mask", "respirator": "respirator",
+	"shades": "eyewear", "goggles": "eyewear", "glasses": "eyewear", "monocle": "eyewear",
+	"beanie": "beanie", "cap": "cap", "hood": "hood", "helmet": "helmet",
+}
 
 
 static func _covers_hair(app: Dictionary) -> bool:

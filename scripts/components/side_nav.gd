@@ -20,7 +20,24 @@ const ITEMS := [
 	[&"dossier", "JOURNAL", "res://assets/sprites/ui/icons/dossier.png", "journal"],
 	[&"blackmarket", "BLACK MARKET", "res://assets/sprites/ui/icons/blackmarket.png", ""],
 	[&"settings", "SETTINGS", "res://assets/sprites/ui/icons/lock.png", ""],
+	[&"help", "FIELD GUIDE", "res://assets/sprites/ui/icons/dossier.png", "help"],
 ]
+## What each section is for (hover).
+const TIPS := {
+	&"clinic": "Your clinic: who's at the door, the room, today's status.",
+	&"inventory": "Implants, tools and supplies you own. Compare units.",
+	&"database": "Every implant: what it does, its load, its difficulty.",
+	&"supply": "Buy implants, tools and medical supplies.",
+	&"skills": "Spend skill points: surgery, cybernetics, medicine, underworld.",
+	&"upgrades": "Upgrade the clinic and buy new clinics in other districts.",
+	&"staff": "Hire ripperdocs to take jobs and run other clinics.",
+	&"business": "Today's money, tonight's bills, debts both ways.",
+	&"map": "The city: places, people, travel.",
+	&"dossier": "Quests, messages, people, factions, news, story.",
+	&"blackmarket": "The Undermarket: rare, cheap, risky chrome.",
+	&"settings": "Display, audio, controls, gameplay, accessibility.",
+	&"help": "Every number and word explained, searchable.",
+}
 
 var active: StringName = &""
 var _buttons: Dictionary = {}
@@ -41,6 +58,7 @@ func _ready() -> void:
 		b.theme_type_variation = &"NavButton"
 		b.custom_minimum_size = Vector2(0, 46)
 		b.toggle_mode = true
+		b.tooltip_text = TIPS.get(item[0], "")
 		b.pressed.connect(func() -> void: nav_pressed.emit(item[0]))
 		col.add_child(b)
 		_buttons[item[0]] = b
@@ -74,7 +92,7 @@ func _badge(id: StringName, on: bool, tip: String) -> void:
 	var b: Button = _buttons.get(id)
 	if b:
 		b.add_theme_color_override(&"font_color", Palette.WARN if on else Palette.TEXT_DIM)
-		b.tooltip_text = tip if on else ""
+		b.tooltip_text = tip if on else TIPS.get(id, "")
 
 
 func get_button(id: StringName) -> Button:
