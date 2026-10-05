@@ -1142,8 +1142,8 @@ def generate():
     from . import citymap
     # Clinic rooms are HD now: the "rooms" group (tools/art/rooms_hd.py).
     citymap.generate()
-    black_market_wide().save("blackmarket/den.png")
-    title_scene_wide().save("ui/title_keyart.png")
+    # The black-market banner is HD now: the "streets" group.
+    # The title key art is HD now: the "streets" group (tools/art/streets_hd.py).
     for lv in range(3):
         surgery_backdrop_wide(lv).save(f"surgery/backdrop_{lv}.png")
     print("environments: city map, black market, surgery x3")

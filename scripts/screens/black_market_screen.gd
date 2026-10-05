@@ -6,7 +6,8 @@ extends BaseScreen
 const TABS := ["/OFFERS", "/STASH", "/CASES", "/CONTACTS"]
 const DEN := "res://assets/sprites/blackmarket/den.png"
 ## Part of the den art shown as the header strip (art pixels).
-const DEN_CROP := Rect2(0, 44, 600, 74)
+## The HD banner (tools/art/streets_hd.py) is shown whole at ART_SCALE.
+const DEN_CROP := Rect2(0, 0, 900, 111)
 const GLYPHS := "#$%&*+=?@ABCDEF0123456789/<>[]{}"
 const FEED := [
 	"SHIPMENT: military optics, serials ground off. Ask twice, price doubles.",
@@ -153,12 +154,12 @@ func _process(delta: float) -> void:
 
 func _den_strip() -> Control:
 	var holder := Control.new()
-	holder.custom_minimum_size = Vector2(0, DEN_CROP.size.y * GameConfig.PIXEL_SCALE)
+	holder.custom_minimum_size = Vector2(0, DEN_CROP.size.y * GameConfig.ART_SCALE)
 	holder.clip_contents = true
 	var tex := TextureRect.new()
 	var at := AtlasTexture.new()
-	at.atlas = PixelArt.scaled(DEN)
-	at.region = Rect2(DEN_CROP.position * GameConfig.PIXEL_SCALE, DEN_CROP.size * GameConfig.PIXEL_SCALE)
+	at.atlas = PixelArt.scaled(DEN, GameConfig.ART_SCALE)
+	at.region = Rect2(DEN_CROP.position * GameConfig.ART_SCALE, DEN_CROP.size * GameConfig.ART_SCALE)
 	tex.texture = at
 	tex.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	tex.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED

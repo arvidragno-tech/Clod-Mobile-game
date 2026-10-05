@@ -409,3 +409,217 @@ def generate():
             s.save(f"streets/{loc['id']}_{'night' if night else 'day'}.png")
             out += 1
     print("HD streets: %d views" % out)
+    generate_title()
+    generate_den()
+
+
+# =============================================================================
+# Title key art (960x540): a deep neon alley, the clinic door on the right.
+# =============================================================================
+
+TW, TH = 960, 540
+T_GROUND = 430
+# Anchors mirrored in scripts/components/city_backdrop.gd.
+T_CROSS = (783, 300, 22, 22)
+T_DOOR_LIGHT = (770, 418, 44, 3)
+T_VENT = (600, 428)
+T_EYE = (688, 334)
+
+
+def _tsign_v(s, x, y, text, color, on=True):
+    """A vertical blade sign hanging off a wall: one letter per row."""
+    h = len(text) * 10 + 6
+    s.box(x - 3, y - 3, 14, h, C("void"), 0.1)
+    for k, ch in enumerate(text):
+        if on:
+            s.text(x + 1, y + k * 10, ch, C(color), "emissive", big=True)
+        else:
+            s.text(x + 1, y + k * 10, ch, shade(C(color), -0.6), "albedo", big=True)
+    if on:
+        s.light(x + 4, y + h / 2, C(color), 120, 0.75)
+    s.hline(x - 10, x - 3, y + 2, C("steel2"))  # bracket
+
+
+def title_scene() -> Scene:
+    rng = random.Random(1337)
+    s = Scene(TW, TH, ambient=(0.38, 0.36, 0.5), seed=1337)
+    s.haze = 0.4
+    s.haze_color = hexc("2a1840")
+    pal = ["1a1624", "3a2a48", "6a3c26", "c0a040"]
+    s.vgrad(0, 0, TW, T_GROUND, hexc("05040a"), hexc("2a1a3a"))
+    # Far towers seen through the alley's mouth, then two mid rows.
+    for depth, (y0, y1, dark, lit, step) in enumerate(((60, 200, -0.2, 0.2, (14, 34)), (140, 260, -0.45, 0.16, (20, 46)))):
+        x = 0
+        base = shade(hexc(pal[1]), dark)
+        while x < TW:
+            w = rng.randint(*step)
+            top = rng.randint(y0, y1)
+            col = shade(base, rng.uniform(-0.1, 0.06))
+            s.rect(x, top, w, T_GROUND - top, col)
+            s.vline(x, top, T_GROUND - 1, shade(col, 0.15))
+            for wy in range(top + 4, T_GROUND - 4, 6 + depth):
+                if rng.random() < lit * 1.4:
+                    c = C(rng.choice(["amber", "tungsten", "tungsten", "cyan", "pink"]))
+                    for wx in range(x + 2, x + w - 3, 5):
+                        if rng.random() < 0.6:
+                            s.glow(wx, wy, 3, 2, shade(c, -0.3 - 0.15 * depth), 0.5)
+            if top < y0 + 40 and rng.random() < 0.5:
+                s.vline(x + w // 2, top - 18, top, shade(col, 0.1))
+                s.gpx(x + w // 2, top - 18, C("red"), 1.0)
+            x += w + rng.randint(0, 3)
+    # A holo billboard high up.
+    s.box(780, 150, 120, 60, C("void"), 0.1)
+    s.glow(784, 154, 112, 52, shade(C("magenta"), -0.6), 1.0)
+    s.text(796, 166, "CHROME", C("pink"), "emissive", big=True)
+    s.text(804, 184, "ON CREDIT", C("cyan"), "emissive", big=True)
+    s.light(840, 180, C("magenta"), 200, 0.7)
+    # Near walls: the alley's left and right buildings.
+    s.occlude(330, 120, 150, T_GROUND - 120)
+    s.panel(330, 120, 150, T_GROUND - 120, shade(hexc(pal[1]), -0.3), seams=True, rivets=True)
+    for fy in range(140, T_GROUND - 30, 40):
+        for fx in (345, 395, 445):
+            if rng.random() < 0.6:
+                s.glow(fx, fy, 22, 24, shade(C(rng.choice(["amber", "tungsten"])), -0.62), 0.8)
+                for k in range(fy + 2, fy + 24, 3):  # blinds
+                    s.emissive[k, fx:fx + 22] *= 0.35
+                if rng.random() < 0.4:  # someone at the window
+                    s.emissive[fy + 8:fy + 24, fx + 8:fx + 14] *= 0.1
+            else:
+                s.rect(fx, fy, 22, 24, C("void"))
+            s.hline(fx - 2, fx + 23, fy + 25, C("steel3"))
+    _tsign_v(s, 480, 150, "RIPPER", "pink")
+    s.occlude(720, 230, 240, T_GROUND - 230)
+    s.panel(720, 230, 240, T_GROUND - 230, shade(hexc(pal[1]), -0.38), seams=True, rivets=True, vent=True)
+    for fy in range(250, 360, 36):
+        for fx in range(830, 950, 34):
+            if rng.random() < 0.55:
+                s.glow(fx, fy, 22, 22, shade(C(rng.choice(["amber", "tungsten", "pink"])), -0.6), 0.75)
+                for k in range(fy + 2, fy + 22, 3):
+                    s.emissive[k, fx:fx + 22] *= 0.35
+            else:
+                s.rect(fx, fy, 22, 22, C("void"))
+            s.hline(fx - 2, fx + 23, fy + 23, C("steel3"))
+    # The clinic door with a cross sign and a red work light.
+    s.rect(756, 330, 60, T_GROUND - 330, C("void"))
+    s.box(752, 326, 68, 6, C("steel2"), 0.2)
+    s.box(T_CROSS[0] - 2, T_CROSS[1] - 2, T_CROSS[2] + 4, T_CROSS[3] + 4, C("void"), 0.1)
+    s.glow(T_CROSS[0] + 8, T_CROSS[1] + 2, 6, 18, C("cyan"), 1.0)
+    s.glow(T_CROSS[0] + 2, T_CROSS[1] + 8, 18, 6, C("cyan"), 1.0)
+    s.light(T_CROSS[0] + 11, T_CROSS[1] + 11, C("cyan"), 140, 0.8)
+    s.glow(*T_DOOR_LIGHT, C("red"), 0.9)
+    s.light(T_DOOR_LIGHT[0] + 22, T_DOOR_LIGHT[1], C("red"), 110, 0.7)
+    s.text(772, 404, "DOC", C("red"), "emissive", big=True)
+    # Cables and wires across the alley.
+    for k in range(9):
+        y0 = rng.randint(110, 260)
+        s.cable(330 + rng.randint(0, 120), y0, 720 + rng.randint(0, 200), y0 + rng.randint(-30, 40), rng.randint(10, 40),
+                C("void"), thick=rng.choice((1, 1, 2)), hl=C("steel2"))
+    # AC units and pipes on the walls, a dumpster, the vent.
+    for (ax, ay) in ((482, 300), (484, 360), (722, 260)):
+        s.box(ax, ay, 22, 16, C("steel3"), 0.2)
+        for k in range(ay + 2, ay + 15, 2):
+            s.hline(ax + 2, ax + 13, k, C("steel1"))
+    s.rect(708, 230, 4, T_GROUND - 230, C("rust2"))
+    s.box(860, T_GROUND - 40, 80, 40, shade(C("teal"), -0.6), 0.2)
+    s.box(T_VENT[0] - 14, T_VENT[1] - 2, 28, 4, C("steel2"), 0.2)
+    # The street.
+    s.vgrad(0, T_GROUND, TW, TH - T_GROUND, hexc("0e0c16"), hexc("1c1826"))
+    s.noise(0, T_GROUND, TW, TH - T_GROUND, 0.1, seed=4, scale=2)
+    s.gloss[T_GROUND + 1:, :] = 0.85
+    s.floor_y = T_GROUND + 1
+    for k in range(10):
+        px_, py_ = rng.randint(340, TW - 80), rng.randint(T_GROUND + 8, TH - 8)
+        pw = rng.randint(40, 110)
+        for yy in range(py_, min(TH, py_ + 5)):
+            inset = abs(yy - py_ - 2) * 8
+            s.gloss[yy, max(0, px_ + inset):min(TW, px_ + pw - inset)] = 1.0
+    # The waiting customer: a coated silhouette with one red optic.
+    ex, ey = T_EYE
+    s.rect(ex - 6, ey - 4, 10, 10, C("void"))            # head + hood
+    s.poly([(ex - 12, ey + 6), (ex + 9, ey + 6), (ex + 12, T_GROUND - 18), (ex - 15, T_GROUND - 18)], C("void"))
+    s.rect(ex - 10, T_GROUND - 18, 6, 18, C("void"))
+    s.rect(ex + 1, T_GROUND - 18, 6, 18, C("void"))
+    s.vline(ex + 8, ey + 6, T_GROUND - 20, shade(C("cyan"), -0.2))  # rim light from the cross
+    s.vline(ex + 9, ey + 10, T_GROUND - 22, shade(C("cyan"), -0.5))
+    s.hline(ex - 5, ex + 3, ey - 4, shade(C("sodium"), -0.4))      # lamp light on the hood
+    s.vline(ex - 12, ey + 8, T_GROUND - 22, shade(C("sodium"), -0.55))
+    s.gpx(ex, ey, C("red"), 1.0)
+    # A street lamp near the left wall.
+    s.rect(560, T_GROUND - 170, 3, 170, C("steel1"))
+    s.hline(560, 582, T_GROUND - 170, C("steel2"))
+    s.glow(574, T_GROUND - 167, 8, 2, C("sodium"), 1.0)
+    s.light(578, T_GROUND - 160, C("sodium"), 220, 1.0, cone=(0, 1, 45))
+    return s
+
+
+def generate_title():
+    s = title_scene()
+    s.save("ui/title_keyart.png")
+    print("HD title key art: %dx%d" % (TW, TH))
+
+
+# =============================================================================
+# Black-market banner (900x111): the undermarket's back room.
+# =============================================================================
+
+def den_scene() -> Scene:
+    w, h, floor = 900, 111, 96
+    rng = random.Random(78)
+    s = Scene(w, h, ambient=(0.4, 0.34, 0.5), seed=78)
+    s.haze = 0.3
+    s.haze_color = hexc("2a1030")
+    s.vgrad(0, 0, w, floor, hexc("0a0610"), hexc("1e1024"))
+    # Steel grate wall.
+    for x in range(0, w, 6):
+        s.vline(x, 0, floor - 1, hexc("1a1420"))
+    for y in range(0, floor, 6):
+        s.hline(0, w, y, hexc("1a1420"))
+    # Rails of hooks with chrome hanging: arms, optics, spines.
+    for rail in (14, 34):
+        s.hline(0, w, rail, C("steel3"))
+        s.hline(0, w, rail + 1, C("steel1"))
+        for x in range(10, w, rng.randint(22, 30)):
+            kind = rng.random()
+            s.vline(x, rail + 1, rail + 4, C("steel4"))
+            if kind < 0.4:  # a chrome forearm
+                s.box(x - 2, rail + 4, 5, 14, C("steel4"), 0.3)
+                s.hline(x - 2, x + 2, rail + 10, C("steel2"))
+                s.gpx(x, rail + 7, C(rng.choice(["cyan", "pink", "green"])), 0.9)
+            elif kind < 0.7:  # an optic on a wire
+                s.box(x - 2, rail + 6, 5, 5, C("steel2"), 0.2)
+                s.gpx(x, rail + 8, C(rng.choice(["red", "cyan", "amber"])), 1.0)
+            else:  # a spine segment
+                for k in range(4):
+                    s.rect(x - 1, rail + 5 + k * 3, 3, 2, C("bone", -0.3))
+    # Booths with neon under the counters.
+    for i in range(6):
+        x = 20 + i * 150
+        col = C(["magenta", "pink", "violet", "cyan", "magenta", "green"][i])
+        s.occlude(x, 52, 120, floor - 52)
+        s.box(x, 66, 120, floor - 66, C("steel1"), 0.2)
+        s.box(x - 4, 52, 128, 6, shade(col, -0.55), 0.2)
+        s.glow(x - 4, 58, 128, 1, col, 0.9)
+        s.light(x + 60, 62, col, 120, 0.7)
+        for k in range(5):  # goods on the counter
+            gx = x + 8 + k * 22
+            s.box(gx, 60, 14, 6, C("steel3"), 0.2)
+            s.gpx(gx + 7, 62, C(rng.choice(["cyan", "pink", "amber", "green"])), 0.9)
+        s.text(x + 10, 72, rng.choice(["NO REFUNDS", "CASH ONLY", "CHROME", "WETWARE", "NO ID", "OPTICS"]), shade(col, -0.1), "emissive")
+    # Vendor silhouettes behind two booths, cables overhead.
+    for vx in (95, 545):
+        s.rect(vx, 40, 8, 12, C("void"))
+        s.rect(vx + 2, 36, 4, 4, C("void"))
+        s.gpx(vx + 4, 37, C("red"), 1.0)
+    for k in range(6):
+        x0 = rng.randint(-50, w - 150)
+        s.cable(x0, 2, x0 + rng.randint(100, 260), 4, rng.randint(6, 14), C("void"), thick=1, hl=C("steel2"))
+    # Wet floor.
+    s.vgrad(0, floor, w, h - floor, hexc("0e0a12"), hexc("1a1420"))
+    s.gloss[floor + 1:, :] = 0.8
+    s.floor_y = floor + 1
+    return s
+
+
+def generate_den():
+    den_scene().save("blackmarket/den.png")
+    print("HD black-market banner: 900x111")
