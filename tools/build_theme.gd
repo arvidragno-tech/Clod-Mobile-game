@@ -12,26 +12,28 @@ const PANEL_MARGIN := 18
 const BUTTON_MARGIN := 12
 
 var theme := Theme.new()
-var font_body: FontFile
-var font_body_bold: FontFile
-var font_title: FontFile
-var font_mono: FontFile
+var font_body: Font
+var font_body_bold: Font
+var font_title: Font
+var font_mono: Font
 ## Keyboard focus ring: a hard 2 px cyan outline just outside the control.
 var focus_box := StyleBoxFlat.new()
 
 
 func _init() -> void:
-	font_body = load("res://assets/fonts/pixelify_sans_regular.woff2")
-	font_body_bold = load("res://assets/fonts/pixelify_sans_bold.woff2")
-	font_title = load("res://assets/fonts/silkscreen_bold.woff2")
-	font_mono = load("res://assets/fonts/vt323_regular.woff2")
+	# Straight, squared and readable: Chakra Petch for text and titles,
+	# Share Tech Mono for numbers; DejaVu Sans fills in symbols (✓ ≈ → ▲).
+	font_body = _face("chakra_petch_medium.woff2", "ui_body.tres")
+	font_body_bold = _face("chakra_petch_semibold.woff2", "ui_bold.tres")
+	font_title = _face("chakra_petch_bold.woff2", "ui_title.tres", 1)
+	font_mono = _face("share_tech_mono.woff2", "ui_mono.tres")
 	focus_box.draw_center = false
 	focus_box.anti_aliasing = false
 	focus_box.border_color = P.ACCENT
 	focus_box.set_border_width_all(2)
 	focus_box.set_expand_margin_all(3)
 	theme.default_font = font_body
-	theme.default_font_size = 22
+	theme.default_font_size = 21
 	_build_panels()
 	_build_buttons()
 	_build_labels()
@@ -39,6 +41,19 @@ func _init() -> void:
 	var err := ResourceSaver.save(theme, OUT_PATH)
 	print("Theme saved to %s (%s)" % [OUT_PATH, error_string(err)])
 	quit(0 if err == OK else 1)
+
+
+## A font variation with the symbol fallback (and optional letter
+## spacing), saved next to the font so the theme can reference it.
+func _face(file: String, out: String, spacing: int = 0) -> Font:
+	var fv := FontVariation.new()
+	fv.base_font = load("res://assets/fonts/" + file)
+	fv.fallbacks = [load("res://assets/fonts/dejavu_sans_fallback.ttf")]
+	if spacing != 0:
+		fv.spacing_glyph = spacing
+	var path := "res://assets/fonts/" + out
+	ResourceSaver.save(fv, path)
+	return load(path)
 
 
 func tex_box(name: String, margin: int, content: Vector4) -> StyleBoxTexture:
@@ -112,7 +127,7 @@ func _build_buttons() -> void:
 	button(&"BMButton", "btn_bm", Color("ffb0cc"), P.TEXT_DARK)
 	button(&"ToolButton", "btn_tool", P.TEXT_DIM, P.ACCENT, Vector4(6, 6, 6, 6))
 	theme.set_font(&"font", &"ToolButton", font_mono)
-	theme.set_font_size(&"font_size", &"ToolButton", 24)
+	theme.set_font_size(&"font_size", &"ToolButton", 21)
 	button(&"QuickButton", "btn_quick", P.WARN, P.TEXT, Vector4(10, 6, 10, 8))
 	theme.set_font(&"font", &"QuickButton", font_body_bold)
 	theme.set_font_size(&"font_size", &"QuickButton", 18)
@@ -143,21 +158,21 @@ func label(type: StringName, font: Font, size: int, color: Color) -> void:
 func _build_labels() -> void:
 	theme.set_color(&"font_color", &"Label", P.TEXT)
 	theme.set_constant(&"line_spacing", &"Label", 2)
-	label(&"TitleLabel", font_title, 72, P.ACCENT)
+	label(&"TitleLabel", font_title, 66, P.ACCENT)
 	theme.set_color(&"font_shadow_color", &"TitleLabel", Color(P.ACCENT_DIM, 0.6))
 	theme.set_constant(&"shadow_offset_x", &"TitleLabel", 0)
 	theme.set_constant(&"shadow_offset_y", &"TitleLabel", 6)
-	label(&"HeaderLabel", font_title, 24, P.ACCENT)
-	label(&"SubHeaderLabel", font_body_bold, 16, P.TEXT_DIM)
+	label(&"HeaderLabel", font_title, 27, P.ACCENT)
+	label(&"SubHeaderLabel", font_body_bold, 17, P.TEXT_DIM)
 	label(&"DimLabel", null, 19, P.TEXT_DIM)
-	label(&"MonoLabel", font_mono, 28, P.TEXT)
-	label(&"BigMonoLabel", font_mono, 48, P.ACCENT)
-	# Silkscreen at its native 8px: used for text drawn inside the pixel field.
-	label(&"PixelLabel", font_title, 8, P.TEXT)
-	label(&"BMLabel", font_title, 24, P.BRAND)
+	label(&"MonoLabel", font_mono, 23, P.TEXT)
+	label(&"BigMonoLabel", font_mono, 40, P.ACCENT)
+	# Text drawn inside the pixel field (sizes are passed by the caller).
+	label(&"PixelLabel", font_title, 14, P.TEXT)
+	label(&"BMLabel", font_title, 26, P.BRAND)
 	# Section titles (with a coloured bar from UIKit.section) and big values.
 	label(&"SectionLabel", font_body_bold, 17, P.ACCENT)
-	label(&"ValueLabel", font_mono, 34, P.TEXT)
+	label(&"ValueLabel", font_mono, 30, P.TEXT)
 	label(&"HintLabel", font_body, 17, P.TEXT_DIM)
 	theme.set_font(&"normal_font", &"RichTextLabel", font_body)
 	theme.set_font(&"mono_font", &"RichTextLabel", font_mono)
@@ -165,7 +180,7 @@ func _build_labels() -> void:
 	theme.set_color(&"default_color", &"RichTextLabel", P.TEXT)
 	theme.set_font_size(&"normal_font_size", &"RichTextLabel", 21)
 	theme.set_font_size(&"bold_font_size", &"RichTextLabel", 21)
-	theme.set_font_size(&"mono_font_size", &"RichTextLabel", 26)
+	theme.set_font_size(&"mono_font_size", &"RichTextLabel", 22)
 
 
 func _build_misc() -> void:
