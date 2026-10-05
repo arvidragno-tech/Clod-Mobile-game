@@ -11,6 +11,7 @@ const WEALTH := ["BROKE", "GETTING BY", "COMFORTABLE", "LOADED"]
 var _dialogue: Label
 var _type_tween: Tween
 var _panels: Array[Control] = []
+var _staff_box: VBoxContainer
 
 
 func on_enter(_params: Dictionary) -> void:
@@ -80,10 +81,21 @@ func on_enter(_params: Dictionary) -> void:
 	load_box.add_child(UIKit.label("Hidden conditions can add more. Scan before you cut.", &"DimLabel", true))
 	right.add_child(UIKit.expand(Control.new(), false, true))
 	var decide := UIKit.section(right, "DECISION", &"AccentPanel")
-	var accept := UIKit.button("ACCEPT JOB   [ENTER]", &"AccentButton", GameManager.accept_customer, "AcceptButton", 64)
+	var accept := UIKit.button("PERFORM SURGERY YOURSELF  [ENTER]", &"AccentButton", GameManager.accept_customer, "AcceptButton", 60)
 	accept.set_meta(&"default", true)
 	decide.add_child(accept)
-	var decline := UIKit.button("DECLINE  (-%d REP)" % absi(GameConfig.DECLINE_REPUTATION_PENALTY), &"GhostButton", _on_decline, "DeclineButton", 52)
+	var staff_n := StaffManager.at_clinic(ClinicManager.tier).size()
+	var assign := UIKit.button("ASSIGN RIPPERDOC  (%d ON SHIFT)" % staff_n, &"GhostButton", _toggle_staff, "AssignButton", 48)
+	assign.disabled = staff_n == 0
+	assign.tooltip_text = "Hire staff in STAFF to delegate jobs." if staff_n == 0 else "Let one of your ripperdocs take the job."
+	decide.add_child(assign)
+	_staff_box = UIKit.vbox(6)
+	_staff_box.visible = false
+	decide.add_child(_staff_box)
+	var defer := UIKit.button("DEFER TO TOMORROW", &"GhostButton", _on_defer, "DeferButton", 44)
+	defer.tooltip_text = "They may not come back. Emergencies won't wait."
+	decide.add_child(defer)
+	var decline := UIKit.button("REFUSE  (-%d REP)" % absi(GameConfig.DECLINE_REPUTATION_PENALTY), &"GhostButton", _on_decline, "DeclineButton", 44)
 	decide.add_child(decline)
 	_panels.append(decide.get_parent())
 	accept.grab_focus.call_deferred()
@@ -128,6 +140,8 @@ func _profile_card(c: CustomerData) -> Control:
 	info.add_child(UIKit.label("%d yrs · %s" % [c.age, c.occupation.capitalize()], &"DimLabel", true))
 	if c.is_emergency:
 		info.add_child(UIKit.label("EMERGENCY", &"SubHeaderLabel", false, Palette.DANGER))
+	if c.age < 18:
+		info.add_child(UIKit.label("MINOR · %d YEARS OLD" % c.age, &"SubHeaderLabel", false, Palette.WARN))
 	var g := GridContainer.new()
 	g.columns = 2
 	g.add_theme_constant_override(&"h_separation", 14)
@@ -280,3 +294,54 @@ func _on_dialogue_input(event: InputEvent) -> void:
 func _on_decline() -> void:
 	UIManager.confirm("TURN THEM AWAY?", "Word gets around. Declining costs %d rep." % absi(GameConfig.DECLINE_REPUTATION_PENALTY),
 			"DECLINE", GameManager.decline_customer, true)
+
+
+func _toggle_staff() -> void:
+	_staff_box.visible = not _staff_box.visible
+	if not _staff_box.visible:
+		return
+	UIKit.clear(_staff_box)
+	var c := GameManager.get_current_customer()
+	for o: Dictionary in StaffManager.options_for(c):
+		var e: Dictionary = o["employee"]
+		var id := StringName(str(e["id"]))
+		var row := UIKit.hbox(8)
+		var p := PixelPortrait.new()
+		p.framing = PixelPortrait.Framing.HEAD
+		p.set_appearance(e["appearance"], Palette.ACCENT, &"clinic", StringName(str(e.get("anim", "calm"))))
+		row.add_child(p)
+		var v := UIKit.vbox(2)
+		UIKit.expand(v)
+		row.add_child(v)
+		v.add_child(UIKit.label(str(e["name"]), &"", true, Palette.TEXT, 15))
+		var chance := roundi(float(o["chance"]) * 100.0)
+		v.add_child(UIKit.label("%s · %d%% · stress %d" % [StaffManager.spec_label(e), chance, roundi(float(e["stress"]))], &"DimLabel", true, Palette.OK if chance >= 70 else (Palette.WARN if chance >= 45 else Palette.DANGER), 13))
+		var why := str(o["refusal"])
+		if why != "":
+			v.add_child(UIKit.label(why, &"DimLabel", true, Palette.WARN, 13))
+			if why.begins_with("\""):
+				v.add_child(UIKit.button("INSIST (costs loyalty)", &"DangerButton", _on_assign.bind(id, true), "Insist_%s" % id, 36))
+		else:
+			v.add_child(UIKit.button("ASSIGN", &"AccentButton", _on_assign.bind(id, false), "Assign_%s" % id, 36))
+		_staff_box.add_child(row)
+
+
+func _on_assign(id: StringName, insist: bool) -> void:
+	var r := GameManager.assign_customer(id, insist)
+	if bool(r.get("refused", true)):
+		UIManager.show_toast(str(r.get("text", "")), &"warn")
+		return
+	var ok := bool(r["success"])
+	AudioManager.play_sfx(&"cash" if ok else (&"failure" if bool(r["death"]) else &"denied"), 0.0)
+	var title := "JOB DONE" if ok else ("PATIENT LOST" if bool(r["death"]) else "JOB BOTCHED")
+	var body := "%s\n\n%s" % [str(r["text"]), ("Paid %s." % EconomyManager.format_money(int(r["pay"]))) if ok else "No pay. People will talk."]
+	var btn: Array[Dictionary] = [{"label": "BACK TO THE CLINIC", "style": &"AccentButton", "name": "AssignResultClose", "callback": GameManager.go_to_clinic}]
+	UIManager.show_dialog(title, body, btn)
+
+
+func _on_defer() -> void:
+	var c := GameManager.get_current_customer()
+	var name := c.display_name if c else ""
+	var back := GameManager.defer_customer()
+	UIManager.show_toast("%s will come back tomorrow." % name if back else "%s won't be back." % name, &"info" if back else &"warn")
+	GameManager.go_to_clinic()

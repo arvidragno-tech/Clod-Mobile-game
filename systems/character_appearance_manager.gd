@@ -122,6 +122,10 @@ func generate(ctx: Dictionary, rng: RandomNumberGenerator = null) -> Dictionary:
 	var bacc := _pick_w(rng, occ.get("body_acc", {"none": 1}))
 	if bacc != "none" and bacc != "":
 		a["body_acc"].append(bacc)
+	if occ.has("body_cyber"):
+		var bcy := _pick_w(rng, occ["body_cyber"])
+		if bcy != "none" and bcy != "":
+			a["body_cyber"].append(bcy)
 	if acc == "hood":
 		a["body_acc"].append("hood")
 	elif acc == "helmet":

@@ -96,6 +96,8 @@ func navigate(id: StringName) -> void:
 			UIManager.go_to(UIManager.SCREEN_UPGRADES)
 		&"dossier":
 			UIManager.go_to(UIManager.SCREEN_DOSSIER)
+		&"staff":
+			UIManager.go_to(UIManager.SCREEN_STAFF)
 		&"business":
 			UIManager.go_to(UIManager.SCREEN_BUSINESS)
 		&"map":
@@ -237,6 +239,63 @@ func decline_customer() -> void:
 	CustomerManager.dismiss_current()
 	SaveManager.save_game()
 	UIManager.go_to(UIManager.SCREEN_CLINIC)
+
+
+## ASSIGN RIPPERDOC: an employee at this clinic takes the job.
+## Returns the result dictionary (see StaffManager.assign).
+func assign_customer(employee_id: StringName, insist: bool = false) -> Dictionary:
+	var c := get_current_customer()
+	if c == null:
+		return {"refused": true, "text": "Nobody is waiting."}
+	var r := StaffManager.assign(employee_id, c, insist)
+	if bool(r.get("refused", true)):
+		return r
+	var e := StaffManager.get_employee(employee_id)
+	if bool(r["success"]):
+		EconomyManager.add_money(int(r["pay"]), &"revenue")
+		ReputationManager.change(1 + (1 if EmployeeAI.has_trait(e, "gentle") else 0))
+		FactionManager.change(c.faction_id, GameConfig.FACTION_REP_SUCCESS)
+		c.existing_cyberware.append(c.requested_cyberware_id)
+	elif bool(r["death"]):
+		ReputationManager.change(-5)
+		FactionManager.change(c.faction_id, GameConfig.FACTION_REP_DEATH)
+		FactionManager.add_heat(5.0 * WorldManager.heat_mult())
+		StoryManager.schedule_consequence(&"angry_relative", 2, {"name": c.display_name})
+	else:
+		ReputationManager.change(-2)
+		FactionManager.change(c.faction_id, GameConfig.FACTION_REP_FAILURE)
+	var item := CyberwareManager.get_cyberware(c.requested_cyberware_id)
+	CustomerManager.history.append({"uid": String(c.id), "name": c.get_display_title(), "faction": String(c.faction_id),
+		"outcome": "success" if r["success"] else ("flatline" if r["death"] else "failed"), "grade": "staff",
+		"op": EventManager.operations, "surgery": item.display_name if item else "", "implant": item.display_name if item else "",
+		"visits": c.visits + 1, "regular": false, "character": String(c.character_id), "by": str(e.get("name", ""))})
+	CustomerManager.dismiss_current()
+	BusinessManager.record_job()
+	WorldManager.add_influence()
+	EventManager.on_operation_completed()
+	EventManager.roll_random_event()
+	SaveManager.save_game()
+	return r
+
+
+## DEFER: ask them to come back tomorrow. Some don't.
+func defer_customer() -> bool:
+	var c := get_current_customer()
+	if c == null:
+		return false
+	if c.is_emergency:
+		# Sending a bleeding patient away is a choice too.
+		ReputationManager.change(-3)
+		StoryManager.schedule_consequence(&"angry_relative", 1, {"name": c.display_name})
+		CustomerManager.dismiss_current()
+		SaveManager.save_game()
+		return false
+	var comes_back := _rng.randf() < 0.45 + c.patience / 200.0
+	if comes_back:
+		CustomerManager.queue.append({"customer": c.to_save_dict(), "due_day": BusinessManager.day + 1, "due_op": 0})
+	CustomerManager.dismiss_current()
+	SaveManager.save_game()
+	return comes_back
 
 
 func accept_customer() -> void:

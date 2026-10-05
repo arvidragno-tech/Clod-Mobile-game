@@ -21,6 +21,7 @@ const ACTIONS := {
 	"map": {"label": "City map", "group": "Screens", "keys": [KEY_M]},
 	"facility": {"label": "Facility and property", "group": "Screens", "keys": [KEY_K]},
 	"business": {"label": "Business ledger", "group": "Screens", "keys": [KEY_L]},
+	"staff": {"label": "Staff", "group": "Screens", "keys": [KEY_T]},
 	"journal": {"label": "Journal (dossier)", "group": "Screens", "keys": [KEY_J]},
 	"database": {"label": "Cyberware database", "group": "Screens", "keys": [KEY_B]},
 	"tool_prev": {"label": "Previous tool", "group": "Surgery", "keys": [KEY_Q]},

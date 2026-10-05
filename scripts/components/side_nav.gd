@@ -14,6 +14,7 @@ const ITEMS := [
 	[&"supply", "SUPPLY", "res://assets/sprites/ui/icons/supply.png", ""],
 	[&"skills", "SKILLS", "res://assets/sprites/ui/icons/skills.png", ""],
 	[&"upgrades", "FACILITY", "res://assets/sprites/ui/icons/upgrade.png", "facility"],
+	[&"staff", "STAFF", "res://assets/sprites/ui/icons/skills.png", "staff"],
 	[&"business", "BUSINESS", "res://assets/sprites/ui/icons/money.png", "business"],
 	[&"map", "CITY MAP", "res://assets/sprites/ui/icons/rep.png", "map"],
 	[&"dossier", "JOURNAL", "res://assets/sprites/ui/icons/dossier.png", "journal"],

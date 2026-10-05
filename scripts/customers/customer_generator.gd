@@ -49,6 +49,9 @@ func generate(context: Dictionary = {}) -> CustomerData:
 	c.display_name = "%s %s" % [pick(names["first"]), pick(names["last"])]
 	c.alias = str(pick(names["alias"])) if rng.randf() < 0.55 else ""
 	c.age = rng.randi_range(19, 64)
+	# Kids on the street want chrome too. Who operates on them is a choice.
+	if str(arch["id"]) in ["scavenger", "addict", "gang_member"] and rng.randf() < 0.07:
+		c.age = rng.randi_range(15, 17)
 	c.occupation = str(pick(arch["occupations"]))
 	c.personality = StringName(str(pick(arch["personalities"])))
 	var w: Array = arch["wealth"]

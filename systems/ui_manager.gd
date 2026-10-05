@@ -21,6 +21,7 @@ const SCREEN_LOAD := &"load_game"
 const SCREEN_CREDITS := &"credits"
 const SCREEN_BUSINESS := &"business"
 const SCREEN_MAP := &"map"
+const SCREEN_STAFF := &"staff"
 
 const SCREEN_SCENES := {
 	SCREEN_MAIN_MENU: "res://scenes/main_menu/main_menu.tscn",
@@ -41,6 +42,7 @@ const SCREEN_SCENES := {
 	SCREEN_CREDITS: "res://scenes/credits/credits_screen.tscn",
 	SCREEN_BUSINESS: "res://scenes/business/business_screen.tscn",
 	SCREEN_MAP: "res://scenes/map/map_screen.tscn",
+	SCREEN_STAFF: "res://scenes/staff/staff_screen.tscn",
 }
 
 const DIALOG_SCENE := preload("res://ui/components/dialog.tscn")
@@ -323,7 +325,7 @@ func _on_button_hover(b: BaseButton) -> void:
 
 ## Screens where the global hotkeys (I, J, B, M, C, F5/F9) navigate.
 const HUB_SCREENS := [SCREEN_CLINIC, SCREEN_SHOP, SCREEN_SKILLS, SCREEN_UPGRADES, SCREEN_DOSSIER, SCREEN_INVENTORY,
-	SCREEN_DATABASE, SCREEN_BLACK_MARKET, SCREEN_SETTINGS, SCREEN_CUSTOMER, SCREEN_BUSINESS, SCREEN_MAP]
+	SCREEN_DATABASE, SCREEN_BLACK_MARKET, SCREEN_SETTINGS, SCREEN_CUSTOMER, SCREEN_BUSINESS, SCREEN_MAP, SCREEN_STAFF]
 
 
 func _input(event: InputEvent) -> void:
@@ -351,7 +353,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if has_modal():
 		return
 	var hub := HUB_SCREENS.has(current_screen_id)
-	var routes := {"inventory": SCREEN_INVENTORY, "journal": SCREEN_DOSSIER, "database": SCREEN_DATABASE, "map": SCREEN_MAP, "facility": SCREEN_UPGRADES, "business": SCREEN_BUSINESS}
+	var routes := {"inventory": SCREEN_INVENTORY, "journal": SCREEN_DOSSIER, "database": SCREEN_DATABASE, "map": SCREEN_MAP, "facility": SCREEN_UPGRADES, "business": SCREEN_BUSINESS, "staff": SCREEN_STAFF}
 	for action: String in routes:
 		if event.is_action(action) and hub:
 			get_viewport().set_input_as_handled()

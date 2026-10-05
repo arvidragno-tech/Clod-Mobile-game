@@ -122,6 +122,8 @@ func _next_customer() -> CustomerData:
 	if op == 0 and TutorialManager.is_active():
 		return tutorial_customer()
 	for i in queue.size():
+		if int(queue[i].get("due_day", 0)) > BusinessManager.day:
+			continue
 		if int(queue[i]["due_op"]) <= op:
 			var entry: Dictionary = queue[i]
 			queue.remove_at(i)

@@ -21,6 +21,7 @@ func run(runner: Node) -> void:
 	_factions_and_heat()
 	_clinic_upgrade()
 	_business_and_world()
+	_staff()
 	_events()
 	_black_market()
 	_failure_and_death()
@@ -453,6 +454,73 @@ func _clinic_upgrade() -> void:
 	check(ClinicManager.clinic_id() == "professional", "legacy tier 3 maps to the Old Caldera Practice")
 	ClinicManager.load_save_data({"tier": 5})
 	check(ClinicManager.clinic_id() == "elite" and ClinicManager.owns(0), "legacy tier 5 maps to the elite facility")
+	SaveManager.reset_all()
+
+
+func _staff() -> void:
+	SaveManager.reset_all()
+	StaffManager.refresh_candidates()
+	check(StaffManager.candidates.size() >= 3, "hiring board has candidates")
+	var c0: Dictionary = StaffManager.candidates[0]
+	check(CharacterArt.validate(c0["appearance"]).is_empty(), "candidate portrait renders %s" % [CharacterArt.validate(c0["appearance"])])
+	check(int(c0["salary"]) > 0 and StaffManager.specializations.has(str(c0["specialization"])), "candidate has salary and specialization")
+	check(StaffManager.hire_block_reason(c0) != "", "no staff room in the back-alley room")
+	# Move to the Undercity clinic (1 staff) and hire Teo.
+	EconomyManager.add_money(5000)
+	ClinicManager.owned.append(1)
+	ClinicManager.move_to(1)
+	BusinessManager.day = 2
+	StaffManager.refresh_candidates()
+	check(StringName(str(StaffManager.candidates[0]["id"])) == &"teo_marr", "Teo Marr is offered from day 2")
+	check(StaffManager.hire(0) and StaffManager.count() == 1, "hire Teo")
+	check(StaffManager.hire_block_reason(StaffManager.candidates[0]) != "", "capacity reached at 1")
+	var teo := StaffManager.get_employee(&"teo_marr")
+	# Ethics: no chrome into kids.
+	var kid := CustomerManager.generator.generate({"archetype": "scavenger", "category": "dermal"})
+	kid.age = 16
+	check(EmployeeAI.refusal(teo, kid).contains("kid"), "Teo refuses to operate on a minor")
+	check(StaffManager.assign(&"teo_marr", kid)["refused"], "assignment refused without insisting")
+	var loyal := float(teo["loyalty"])
+	var r := StaffManager.assign(&"teo_marr", kid, true)
+	check(not r["refused"] and float(teo["loyalty"]) < loyal and StoryManager.has_flag(&"teo_crossed_line"), "insisting costs loyalty and Teo remembers")
+	# Odds: specialization and difficulty matter.
+	var limb := StaffManager.generate_candidate("cyber_limb")
+	var neuro := StaffManager.generate_candidate("neural")
+	for e: Dictionary in [limb, neuro]:
+		e["skill"] = 3
+		e["precision"] = 3
+		e["reliability"] = 3
+		e["stress"] = 0.0
+		e["traits"] = []
+	var arm := CustomerManager.generator.generate({"category": "arms"})
+	arm.hidden_conditions.clear()
+	check(EmployeeAI.success_chance(limb, arm) > EmployeeAI.success_chance(neuro, arm), "limb specialist is better at arms")
+	limb["stress"] = 90.0
+	var stressed := EmployeeAI.success_chance(limb, arm)
+	limb["stress"] = 0.0
+	check(stressed < EmployeeAI.success_chance(limb, arm), "stress lowers the odds")
+	# Growth shows on the face.
+	teo["xp"] = 0
+	StaffManager._gain_xp(teo, 60 * 2 + 1)
+	check(int(teo["skill"]) == 3 and str(teo["appearance"]["outfit"]) == "ripperdoc", "skill 3 earns a ripperdoc coat")
+	check(str(CharacterManager.appearance(&"teo_marr")["outfit"]) == "ripperdoc", "Teo's story portrait changes too")
+	# Days: stress recovers, salary paid.
+	teo["stress"] = 50.0
+	teo["jobs_today"] = 0
+	var money := EconomyManager.money
+	BusinessManager.end_day()
+	check(float(teo["stress"]) < 50.0, "a quiet day lowers stress")
+	check(EconomyManager.money < money and int(BusinessManager.last_report()["ledger"].get(&"salaries", 0)) < 0, "salaries are paid at night")
+	# Staff-run clinic earns money.
+	ClinicManager.upgrades["backalley"] = {"staff": 1}
+	check(StaffManager.transfer(&"teo_marr", 0), "staff upgrade makes room in the back alley")
+	BusinessManager.end_day()
+	check(int(BusinessManager.last_report()["ledger"].get(&"staff_revenue", 0)) >= 0 and str(BusinessManager.last_report()["notes"]).contains("Back-Alley"), "the back-alley room runs without you")
+	var d := StaffManager.get_save_data()
+	StaffManager.reset_state()
+	StaffManager.load_save_data(d)
+	check(StaffManager.get_employee(&"teo_marr").get("skill", 0) == 3, "staff persist")
+	check(StaffManager.fire(&"teo_marr") and StoryManager.has_flag(&"teo_gone"), "firing Teo is remembered")
 	SaveManager.reset_all()
 
 

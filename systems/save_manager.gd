@@ -21,6 +21,7 @@ const SAVEABLE_SYSTEMS: Array[String] = [
 	"WorldManager",
 	"BusinessManager",
 	"CharacterManager",
+	"StaffManager",
 	"CyberwareManager",
 	"InventoryManager",
 	"StoryManager",

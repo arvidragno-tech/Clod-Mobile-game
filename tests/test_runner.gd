@@ -300,6 +300,41 @@ func _e2e() -> void:
 		await _checkpoint("city_map_market")
 	await _click_named("BackButton")
 	await _wait_screen(UIManager.SCREEN_CLINIC)
+	# Staff: hire from the board, then delegate a job.
+	EconomyManager.add_money(300)
+	await _key(KEY_T)
+	await _wait_screen(UIManager.SCREEN_STAFF)
+	await _frames(4)
+	await _checkpoint("staff_hiring")
+	await _click_named("Hire_0")
+	check(StaffManager.count() == 1, "hired a ripperdoc via the UI")
+	await _click_named("StaffTab_0")
+	await _frames(3)
+	await _checkpoint("staff_team")
+	await _click_named("BackButton")
+	await _wait_screen(UIManager.SCREEN_CLINIC)
+	var hire_id := StringName(str(StaffManager.employees[0]["id"]))
+	StaffManager.employees[0]["traits"] = []
+	StaffManager.employees[0]["ethics"] = []
+	var delegate := CustomerManager.generator.generate({"category": "dermal"})
+	delegate.age = 30
+	CustomerManager.debug_set_customer(delegate)
+	await _frames(3)
+	GameManager.open_customer()
+	await _wait_screen(UIManager.SCREEN_CUSTOMER)
+	await _click_named("AssignButton")
+	await _frames(3)
+	await _checkpoint("customer_assign")
+	var jobs_before := BusinessManager.jobs_today
+	await _click_named("Assign_%s" % hire_id)
+	check(BusinessManager.jobs_today == jobs_before + 1 and not CustomerManager.has_customer(), "assigned a customer to staff via the UI")
+	await _checkpoint("assign_result")
+	await _click_named("AssignResultClose")
+	await _wait_screen(UIManager.SCREEN_CLINIC)
+	await _frames(5)
+	if _find_visible("DayReportClose") != null:
+		await _checkpoint("day_report")
+		await _click_named("DayReportClose")
 
 	# Dossier tabs
 	await _click_named("Nav_dossier")

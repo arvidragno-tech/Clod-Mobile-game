@@ -1003,6 +1003,297 @@
    "makeup": 0.0,
    "grime": 3,
    "faction_default": "none"
+  },
+  "street_ripper": {
+   "label": "Street ripperdoc",
+   "outfit": {
+    "ripperdoc": 4,
+    "medic": 1
+   },
+   "builds": {
+    "slim": 2,
+    "average": 3,
+    "heavy": 1
+   },
+   "postures": {
+    "slouch": 2,
+    "upright": 2,
+    "hunched": 1
+   },
+   "accessories": {
+    "headlamp": 3,
+    "surgical_mask": 2,
+    "glasses": 1,
+    "goggles": 1,
+    "cigarette": 1
+   },
+   "body_acc": {
+    "medkit": 2,
+    "toolbelt": 2,
+    "none": 1
+   },
+   "cyber": {
+    "optic": 2,
+    "twin_optics": 1,
+    "temple_ports": 2,
+    "patched_implant": 1
+   },
+   "body_cyber": {
+    "hands": 2,
+    "none": 3
+   },
+   "scar": 0.4,
+   "tattoo": 0.25,
+   "piercing": 0.25,
+   "makeup": 0.15,
+   "dye_chance": 0.15,
+   "grime": 2,
+   "age": [
+    24,
+    60
+   ]
+  },
+  "neural_surgeon": {
+   "label": "Neural surgeon",
+   "outfit": {
+    "ripperdoc": 2,
+    "netrunner": 2,
+    "medic": 1
+   },
+   "builds": {
+    "slim": 3,
+    "average": 2
+   },
+   "postures": {
+    "upright": 3,
+    "slouch": 1
+   },
+   "accessories": {
+    "monocle": 2,
+    "glasses": 2,
+    "headset": 2,
+    "none": 1
+   },
+   "body_acc": {
+    "datapad": 2,
+    "none": 2
+   },
+   "cyber": {
+    "temple_ports": 3,
+    "forehead_chip": 2,
+    "ear_module": 2,
+    "spine_cables": 1,
+    "skull_plate": 1
+   },
+   "body_cyber": {
+    "spine": 1,
+    "none": 3
+   },
+   "scar": 0.15,
+   "tattoo": 0.1,
+   "piercing": 0.2,
+   "makeup": 0.2,
+   "dye_chance": 0.2,
+   "grime": 1,
+   "age": [
+    28,
+    62
+   ]
+  },
+  "limb_mechanic": {
+   "label": "Cyber-limb mechanic",
+   "outfit": {
+    "technician": 3,
+    "worker": 1,
+    "ripperdoc": 1
+   },
+   "builds": {
+    "heavy": 2,
+    "muscular": 2,
+    "average": 1
+   },
+   "postures": {
+    "slouch": 2,
+    "wide": 1,
+    "upright": 1
+   },
+   "accessories": {
+    "goggles": 3,
+    "headlamp": 1,
+    "respirator": 1,
+    "bandana": 1
+   },
+   "body_acc": {
+    "toolbelt": 3,
+    "shoulder_lamp": 1
+   },
+   "cyber": {
+    "shoulder_chrome": 3,
+    "optic": 1,
+    "serial_marks": 1
+   },
+   "body_cyber": {
+    "arm_r": 3,
+    "hands": 2,
+    "arm_l": 1
+   },
+   "scar": 0.5,
+   "tattoo": 0.35,
+   "piercing": 0.2,
+   "makeup": 0.05,
+   "dye_chance": 0.1,
+   "grime": 3,
+   "age": [
+    25,
+    58
+   ]
+  },
+  "bm_cutter": {
+   "label": "Black-market cutter",
+   "outfit": {
+    "dealer": 2,
+    "ripperdoc": 2,
+    "technician": 1
+   },
+   "builds": {
+    "slim": 2,
+    "average": 2
+   },
+   "postures": {
+    "slouch": 3,
+    "hunched": 1
+   },
+   "accessories": {
+    "shades": 2,
+    "surgical_mask": 2,
+    "cigarette": 2,
+    "hood": 1
+   },
+   "body_acc": {
+    "blade": 1,
+    "medkit": 1,
+    "cigarette": 1,
+    "none": 1
+   },
+   "cyber": {
+    "serial_marks": 2,
+    "patched_implant": 2,
+    "neck_ports": 2,
+    "cheek_leds": 1
+   },
+   "body_cyber": {
+    "hands": 1,
+    "none": 3
+   },
+   "scar": 0.5,
+   "tattoo": 0.6,
+   "piercing": 0.6,
+   "makeup": 0.25,
+   "dye_chance": 0.4,
+   "grime": 3,
+   "age": [
+    22,
+    55
+   ],
+   "faction_default": "black_market"
+  },
+  "combat_medic": {
+   "label": "Combat medic",
+   "outfit": {
+    "military": 3,
+    "medic": 1,
+    "mercenary": 1
+   },
+   "builds": {
+    "muscular": 2,
+    "average": 2,
+    "heavy": 1
+   },
+   "postures": {
+    "upright": 3,
+    "wide": 1
+   },
+   "accessories": {
+    "dog_tags": 3,
+    "earpiece": 1,
+    "helmet": 1
+   },
+   "body_acc": {
+    "medkit": 3,
+    "holster": 1,
+    "bandolier": 1
+   },
+   "cyber": {
+    "optic": 2,
+    "jaw_plate": 1,
+    "spine_cables": 1,
+    "serial_marks": 1
+   },
+   "body_cyber": {
+    "arm_l": 1,
+    "legs": 1,
+    "none": 2
+   },
+   "scar": 0.8,
+   "tattoo": 0.3,
+   "piercing": 0.05,
+   "makeup": 0.0,
+   "dye_chance": 0.05,
+   "grime": 2,
+   "age": [
+    28,
+    60
+   ],
+   "faction_default": "independent_mercs"
+  },
+  "lab_surgeon": {
+   "label": "Experimental surgeon",
+   "outfit": {
+    "corporate": 2,
+    "medic": 1,
+    "ripperdoc": 1
+   },
+   "builds": {
+    "slim": 3,
+    "average": 1
+   },
+   "postures": {
+    "upright": 4
+   },
+   "accessories": {
+    "surgical_mask": 2,
+    "monocle": 1,
+    "glasses": 1,
+    "none": 1
+   },
+   "body_acc": {
+    "datapad": 2,
+    "briefcase": 1,
+    "none": 1
+   },
+   "cyber": {
+    "forehead_chip": 2,
+    "skull_plate": 1,
+    "organic_growth": 1,
+    "twin_optics": 1,
+    "skin_seam": 1
+   },
+   "body_cyber": {
+    "spine": 1,
+    "none": 3
+   },
+   "scar": 0.1,
+   "tattoo": 0.05,
+   "piercing": 0.1,
+   "makeup": 0.3,
+   "dye_chance": 0.1,
+   "grime": 0,
+   "age": [
+    30,
+    65
+   ],
+   "wealth": 2,
+   "faction_default": "lyra_biocomp"
   }
  },
  "cyber_by_category": {

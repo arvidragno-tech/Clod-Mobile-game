@@ -1,0 +1,281 @@
+{
+ "_doc": "Staff system (StaffManager / EmployeeAI): specializations, traits, ethics, candidate generation.",
+ "specializations": {
+  "general": {
+   "name": "General practice",
+   "short": "GENERAL",
+   "categories": [
+    "dermal",
+    "respiratory",
+    "internal",
+    "neural"
+   ],
+   "occupation": "street_ripper",
+   "premium": 0,
+   "text": "Steady hands for everyday chrome. Not brilliant at anything, rarely a disaster."
+  },
+  "neural": {
+   "name": "Neural surgery",
+   "short": "NEURAL",
+   "categories": [
+    "neural",
+    "spine",
+    "eyes"
+   ],
+   "occupation": "neural_surgeon",
+   "premium": 12,
+   "text": "Nerve splicing and lattice work. Fewer seizures, fewer patients who forget their own names."
+  },
+  "trauma": {
+   "name": "Trauma",
+   "short": "TRAUMA",
+   "categories": [
+    "internal",
+    "dermal",
+    "respiratory"
+   ],
+   "occupation": "street_ripper",
+   "premium": 6,
+   "text": "Gunshots, blades, crush injuries. Calm when the floor is red."
+  },
+  "cyber_limb": {
+   "name": "Cyber-limbs",
+   "short": "LIMBS",
+   "categories": [
+    "arms",
+    "legs",
+    "spine"
+   ],
+   "occupation": "limb_mechanic",
+   "premium": 8,
+   "text": "Half mechanic, half surgeon. Anchors, actuators, socket fits."
+  },
+  "black_market": {
+   "name": "Black-market work",
+   "short": "BLACK MKT",
+   "categories": [
+    "neural",
+    "eyes",
+    "arms"
+   ],
+   "occupation": "bm_cutter",
+   "premium": 6,
+   "black_market_bonus": 0.15,
+   "text": "Knows unregistered chrome, scrubbed serials and how to install things that shouldn't fit."
+  },
+  "military": {
+   "name": "Military medicine",
+   "short": "MILITARY",
+   "categories": [
+    "arms",
+    "legs",
+    "eyes",
+    "internal"
+   ],
+   "occupation": "combat_medic",
+   "premium": 10,
+   "text": "Field surgery under fire. Fast, unsentimental, reliable with combat chrome."
+  },
+  "experimental": {
+   "name": "Experimental",
+   "short": "EXPERIMENTAL",
+   "categories": [
+    "neural",
+    "spine",
+    "internal",
+    "eyes",
+    "arms",
+    "legs",
+    "dermal",
+    "respiratory"
+   ],
+   "occupation": "lab_surgeon",
+   "premium": 16,
+   "any_bonus": 0.04,
+   "text": "Trained in labs that don't exist anymore. Good at everything, honest about nothing."
+  }
+ },
+ "traits": {
+  "idealist": {
+   "name": "Idealist",
+   "text": "Believes street medicine can be real medicine. Refuses black-market chrome unless deeply loyal.",
+   "visible": true
+  },
+  "quick_learner": {
+   "name": "Quick learner",
+   "text": "Gains experience 50% faster.",
+   "visible": true,
+   "xp": 0.5
+  },
+  "steady_hands": {
+   "name": "Steady hands",
+   "text": "+6% success on every job.",
+   "visible": true,
+   "chance": 0.06
+  },
+  "butcher": {
+   "name": "Butcher",
+   "text": "Fast and careless: -5% success, never refuses a job, stress builds slowly.",
+   "visible": true,
+   "chance": -0.05,
+   "stress": -0.3
+  },
+  "perfectionist": {
+   "name": "Perfectionist",
+   "text": "+5% success, but every job costs extra stress.",
+   "visible": true,
+   "chance": 0.05,
+   "stress": 0.4
+  },
+  "money_only": {
+   "name": "Money first",
+   "text": "Won't touch jobs paying under 250. Expects a bigger salary.",
+   "visible": true,
+   "min_pay": 250,
+   "salary": 0.2
+  },
+  "hates_corps": {
+   "name": "Hates corps",
+   "text": "Refuses corporate and Lyra clients. Forcing it costs loyalty.",
+   "visible": true
+  },
+  "secret_agent": {
+   "name": "Informant",
+   "text": "Reports to a faction. Leaks your business and raises heat until discovered.",
+   "visible": false
+  },
+  "gambler": {
+   "name": "Gambler",
+   "text": "Debts of their own. Money sometimes goes missing from the till.",
+   "visible": false
+  },
+  "stim_user": {
+   "name": "Stim user",
+   "text": "Works through anything, until they don't: results swing wildly.",
+   "visible": true,
+   "variance": 0.15
+  },
+  "loyal": {
+   "name": "Loyal",
+   "text": "Sticks with you. Loyalty never drops below 40.",
+   "visible": true,
+   "loyalty_floor": 40
+  },
+  "ambitious": {
+   "name": "Ambitious",
+   "text": "Wants more: asks for raises as skills grow and leaves if ignored.",
+   "visible": true
+  },
+  "night_owl": {
+   "name": "Night owl",
+   "text": "Takes one extra job a day.",
+   "visible": true,
+   "jobs": 1
+  },
+  "gentle": {
+   "name": "Gentle bedside manner",
+   "text": "Patients trust them: +1 reputation on good jobs.",
+   "visible": true
+  }
+ },
+ "ethics": {
+  "no_minors": {
+   "name": "No minors",
+   "text": "Will not put chrome into anyone under 18."
+  },
+  "no_harvest": {
+   "name": "No black-market chrome",
+   "text": "Will not install unregistered or harvested chrome."
+  },
+  "no_corps": {
+   "name": "No corporate work",
+   "text": "Will not operate on corporate or Lyra clients."
+  }
+ },
+ "district_specs": {
+  "undercity": {
+   "general": 3,
+   "trauma": 3,
+   "black_market": 2,
+   "cyber_limb": 1
+  },
+  "industrial": {
+   "cyber_limb": 4,
+   "trauma": 2,
+   "military": 1,
+   "general": 1
+  },
+  "market": {
+   "black_market": 4,
+   "general": 1,
+   "cyber_limb": 1,
+   "neural": 1
+  },
+  "entertainment": {
+   "general": 2,
+   "neural": 2,
+   "black_market": 2
+  },
+  "oldcity": {
+   "neural": 3,
+   "general": 3,
+   "trauma": 1,
+   "military": 1
+  },
+  "corporate": {
+   "neural": 3,
+   "experimental": 2,
+   "military": 1
+  },
+  "restricted": {
+   "experimental": 4,
+   "military": 2,
+   "neural": 2
+  }
+ },
+ "backgrounds": {
+  "general": [
+   "Ran a free clinic out of a laundromat until the landlord sold the building.",
+   "Twenty years patching up dockhands; knows every cheap implant by the sound it makes.",
+   "Struck off by the Medical Board for treating the wrong people. Doesn't regret it."
+  ],
+  "neural": [
+   "Former Lyra lattice technician who walked out after a trial went quiet.",
+   "Self-taught from pirated surgical streams and a lot of practice on the dead.",
+   "Used to fix memory implants for the Velvet Tier's discreet clientele."
+  ],
+  "trauma": [
+   "Ten years in a Sump emergency ward that no longer exists.",
+   "Rustline field medic: bullets out, chrome in, no questions.",
+   "Worked the flood-line rescue boats. Has pulled people out of water and worse."
+  ],
+  "cyber_limb": [
+   "Foundry maintenance tech who started fitting arms when the union stopped paying for them.",
+   "Builds prosthetics from scrap in a garage on the Furnace Line.",
+   "Ex-factory floor; lost a hand, built a better one, then built them for everyone else."
+  ],
+  "black_market": [
+   "Cuts serials for the Undermarket and installs what comes back.",
+   "Learned surgery in a shipping container from a ripper who died owing money.",
+   "Knows who sells harvested chrome and refuses to say whether they ever did."
+  ],
+  "military": [
+   "Aegis Meridian field surgeon until a contract went bad on the drowned edge.",
+   "Mercenary medic with three wars' worth of muscle memory.",
+   "Ran a forward aid post during the flood riots. Still flinches at sirens."
+  ],
+  "experimental": [
+   "Worked in a Restricted Zone lab. The lab was flooded. The records were not recovered.",
+   "Corporate prodigy who left with patents in their head and nothing in their pockets.",
+   "Says they 'consulted' on THREAD. Changes the subject quickly."
+  ]
+ },
+ "personalities": [
+  "calm",
+  "nervous",
+  "aggressive",
+  "smooth",
+  "chatty",
+  "cold"
+ ]
+}
