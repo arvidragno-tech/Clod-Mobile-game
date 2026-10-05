@@ -41,6 +41,7 @@ func _ready() -> void:
 		await _time_of_day(res)
 		await _clinic_life(res)
 		await _world(res)
+		await _high_stakes(res)
 	SaveManager.delete_save()
 	DirAccess.remove_absolute(Settings.path)
 	print("")
@@ -223,6 +224,70 @@ func _world(label: String) -> void:
 	WorldEventManager.active.clear()
 	UIManager.go_to(UIManager.SCREEN_CLINIC)
 	await _settle()
+
+
+func _high_stakes(label: String) -> void:
+	var root := get_tree().root
+	# Emergency triage on the customer file.
+	InventoryManager.supplies = 8
+	InventoryManager.parts = 6
+	EconomyManager.add_money(3000)
+	var em := CustomerManager.spawn_emergency()
+	UIManager.go_to(UIManager.SCREEN_CUSTOMER)
+	await _settle()
+	_check(root.find_child("TriageSection", true, false) != null, "%s: emergency triage options" % label)
+	await _frames(40)
+	await _shot(label, "emergency_triage")
+	var rig := root.find_child("TriageRig", true, false) as Button
+	if rig and not rig.disabled:
+		rig.pressed.emit()
+		await _settle()
+		_check(em.triage.has(&"rig"), "%s: experimental rig applied from the UI" % label)
+	var stab := _find_visible_button("TriageStabilize")
+	_check(stab != null, "%s: stabilise available" % label)
+	if stab:
+		stab.pressed.emit()
+		await _frames(10)
+		_check(not CustomerManager.has_customer() and MemoryManager.has(em.id, &"PLAYER_STABILIZED_ME"), "%s: stabilised from the UI" % label)
+		var close := _find_visible_button("TriageClose")
+		if close:
+			close.pressed.emit()
+		await _settle()
+	# A dilemma on the operating table.
+	var c := CustomerManager.generator.generate({"full_difficulty": true, "category": "neural"})
+	CustomerManager.debug_set_customer(c)
+	var item := CyberwareManager.get_cyberware(c.requested_cyberware_id)
+	SurgeryManager.start_session(SurgeryManager.get_surgery(item.install_surgery_id), c, true, 1.0, -1, ImplantInstance.create(item.id))
+	UIManager.go_to(UIManager.SCREEN_SURGERY)
+	await _settle()
+	SurgeryManager.debug_trigger_dilemma(&"foreign_device")
+	await _frames(20)
+	_check(root.find_child("DilemmaPanel", true, false) != null and not SurgeryManager.is_running, "%s: the dilemma stops the table" % label)
+	await _shot(label, "surgery_dilemma")
+	var ch := _find_visible_button("DilemmaChoice_1")
+	if ch:
+		ch.pressed.emit()
+		await _frames(5)
+		await _shot(label, "surgery_dilemma_result")
+		var cont := _find_visible_button("DilemmaContinue")
+		_check(cont != null, "%s: dilemma outcome shown" % label)
+		if cont:
+			cont.pressed.emit()
+		await _frames(5)
+		_check(SurgeryManager.is_running and SurgeryManager.active_dilemma.is_empty(), "%s: back to the table" % label)
+	SurgeryManager.abort()
+	await _frames(10)
+	UIManager.close_modal()
+	CustomerManager.dismiss_current()
+	UIManager.go_to(UIManager.SCREEN_CLINIC)
+	await _settle()
+
+
+func _find_visible_button(n: String) -> Button:
+	for b in get_tree().root.find_children(n, "Button", true, false):
+		if (b as Button).is_visible_in_tree() and not (b as Button).disabled:
+			return b
+	return null
 
 
 func _check(ok: bool, msg: String) -> void:

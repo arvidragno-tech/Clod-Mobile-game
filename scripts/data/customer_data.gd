@@ -65,6 +65,12 @@ extends Resource
 ## Cyberware dependency stage (0 none .. 4 crisis).
 @export var dependency: int = 0
 @export var emergency_deadline: int = -1
+## Emergency triage already spent (experimental rig / premium chrome) and
+## how many times they've crashed while you decided.
+@export var triage: Array[StringName] = []
+@export var crashes: int = 0
+## Dependency care: "" (just install), &"feed", &"safer".
+@export var care: StringName = &""
 
 
 ## Authored recurring character (data/characters.json).

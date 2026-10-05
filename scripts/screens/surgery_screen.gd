@@ -94,6 +94,7 @@ func on_enter(_params: Dictionary) -> void:
 	SurgeryManager.mistake_made.connect(_on_mistake_made)
 	SurgeryManager.vital_warning.connect(_on_vital_warning)
 	SurgeryManager.complication_started.connect(_on_complication_started)
+	SurgeryManager.dilemma_started.connect(_on_dilemma_started)
 	SurgeryManager.complication_resolved.connect(_on_complication_resolved)
 	SurgeryManager.session_finished.connect(_on_session_finished)
 	_complication_banner.visible = false
@@ -111,7 +112,8 @@ func on_enter(_params: Dictionary) -> void:
 
 func on_exit() -> void:
 	for sig: Signal in [SurgeryManager.stage_started, SurgeryManager.mistake_made, SurgeryManager.vital_warning,
-			SurgeryManager.complication_started, SurgeryManager.complication_resolved, SurgeryManager.session_finished]:
+			SurgeryManager.complication_started, SurgeryManager.complication_resolved, SurgeryManager.session_finished,
+			SurgeryManager.dilemma_started]:
 		for c: Dictionary in sig.get_connections():
 			if c["callable"].get_object() == self:
 				sig.disconnect(c["callable"])
@@ -632,3 +634,14 @@ func pause_operation() -> void:
 
 func is_paused() -> bool:
 	return SurgeryManager.is_active and not SurgeryManager.is_running and not _ended
+
+
+## A surgical dilemma stops the operation until the player decides.
+func _on_dilemma_started(_d: Dictionary) -> void:
+	if not is_inside_tree():
+		return
+	AudioManager.play_sfx(&"warning", 0.0)
+	UIManager.haptic(&"critical")
+	var panel := DilemmaPanel.new()
+	panel.name = "DilemmaPanel"
+	UIManager.show_modal(panel)

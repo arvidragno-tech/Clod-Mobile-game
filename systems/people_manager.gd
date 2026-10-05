@@ -198,6 +198,11 @@ func after_visit(c: CustomerData, outcome: String, paid: int = 0) -> void:
 				p["next_day"] = BusinessManager.day + _rng.randi_range(2, 5)
 		"deferred":
 			note(id, "Told to come back tomorrow.")
+		"stabilized":
+			p["visits"] = int(p["visits"]) + 1
+			note(id, "Stabilised, no new chrome.")
+		"stopped":
+			note(id, "You stopped the operation and closed them up.")
 		"left":
 			MemoryManager.remember(id, &"PLAYER_MADE_ME_WAIT")
 			note(id, "Gave up waiting and left.")

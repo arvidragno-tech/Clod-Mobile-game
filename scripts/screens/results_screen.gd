@@ -81,6 +81,8 @@ func _add_aftermath(r: SurgeryResult) -> void:
 		notes.append("They'll be back for more chrome.")
 	if bool(r.consequences.get("regular", false)):
 		notes.append("REGULAR: loyal customer, pays better.")
+	for l in r.dilemma_notes:
+		notes.append(l)
 	for l: Variant in r.settlement.get("lines", []):
 		notes.append(str(l))
 	if r.levels_gained > 0:

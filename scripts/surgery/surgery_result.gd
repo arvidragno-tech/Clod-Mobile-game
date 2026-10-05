@@ -44,6 +44,8 @@ var neural_break: bool = false
 var consequences: Dictionary = {}
 ## Payment by the agreed terms (PeopleManager.settle): {fee, price, paid, debt, lines}.
 var settlement: Dictionary = {}
+## What happened at the surgical dilemma, if there was one.
+var dilemma_notes: Array[String] = []
 
 
 func get_failure_text() -> String:

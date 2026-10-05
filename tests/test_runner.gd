@@ -16,6 +16,7 @@ const UnitTests := preload("res://tests/unit_tests.gd")
 const LivingWorldTests := preload("res://tests/living_world_tests.gd")
 
 var _failures: Array[String] = []
+var _dilemmas_seen: bool = false
 var _checks: int = 0
 var _shots_dir: String = ""
 var _shot_index: int = 0
@@ -54,6 +55,8 @@ func _run_all() -> void:
 	if OS.get_cmdline_user_args().has("--unit-only"):
 		_finish()
 		return
+	# Scripted surgeries stay deterministic; dilemmas get their own probe.
+	SurgicalDilemmas.enabled = false
 	print("== END-TO-END ==")
 	_main = (load("res://scenes/main/main.tscn") as PackedScene).instantiate()
 	add_child(_main)
@@ -611,6 +614,23 @@ func _after_results() -> void:
 	UIManager.close_modal()
 
 
+## Surgical dilemma: take the first available option, then continue.
+func _handle_dilemma() -> void:
+	if not _dilemmas_seen:
+		_dilemmas_seen = true
+		await _checkpoint("dilemma")
+	for i in 4:
+		var b := _find_visible("DilemmaChoice_%d" % i) as Button
+		if b and not b.disabled:
+			await _click(b)
+			break
+	await _frames(3)
+	var c := _find_visible("DilemmaContinue")
+	if c:
+		await _click(c)
+	await _frames(3)
+
+
 func _resolve_incident() -> void:
 	var b := _first_enabled_choice()
 	if b:
@@ -1017,6 +1037,8 @@ func _wait_until(predicate: Callable, timeout: float) -> bool:
 	while not predicate.call():
 		if SurgeryManager.active_complication and UIManager.current_screen_id == UIManager.SCREEN_SURGERY and not UIManager.is_transitioning():
 			await _handle_complication()
+		if not SurgeryManager.active_dilemma.is_empty() and _find_visible("DilemmaPanel") != null:
+			await _handle_dilemma()
 		await get_tree().process_frame
 		t += get_process_delta_time()
 		if t > timeout:

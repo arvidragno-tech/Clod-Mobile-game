@@ -184,7 +184,7 @@ func spawn_emergency() -> CustomerData:
 	c.pay_multiplier *= 1.8
 	c.bleed_multiplier *= 1.4
 	c.complication_risk *= 1.3
-	c.dialogue = "He's bleeding through a rag and his chrome is sparking. No time to talk."
+	c.dialogue = "They're bleeding through a rag and their chrome is sparking. No time to talk."
 	generator.roll_budget(c)
 	_replace_current(c)
 	return c
@@ -240,7 +240,7 @@ func record_outcome(c: CustomerData, result: SurgeryResult) -> Dictionary:
 	if history.size() > 60:
 		history = history.slice(history.size() - 60)
 	notes["regular"] = regular
-	var outcome := "success" if result.success else ("death" if result.failure_reason == &"flatline" else "failed")
+	var outcome := "success" if result.success else ("death" if result.failure_reason == &"flatline" else ("stopped" if result.failure_reason == &"aborted" else "failed"))
 	PeopleManager.after_visit(c, outcome, result.pay)
 	var person := PeopleManager.get_person(c.id)
 	notes["returning"] = int(person.get("next_day", -1)) >= 0

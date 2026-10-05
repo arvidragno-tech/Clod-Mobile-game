@@ -322,6 +322,192 @@ func defer_customer() -> bool:
 	return comes_back
 
 
+# --- Emergency triage ------------------------------------------------------------
+
+const SPECIALIST_SHARE := 0.45
+const SPECIALIST_ODDS := 0.85
+const STABILIZE_SUPPLIES := 2
+const RIG_PARTS := 3
+
+## STABILIZE: stop the bleeding, send them on. A small fee now; they'll be
+## back for the real job.
+func triage_stabilize() -> Dictionary:
+	var c := get_current_customer()
+	if c == null or not c.is_emergency or InventoryManager.supplies < STABILIZE_SUPPLIES:
+		return {}
+	InventoryManager.use_supplies(STABILIZE_SUPPLIES)
+	var settled := PeopleManager.settle(c, int(round(CustomerGenerator.estimate_fee(c) * 0.35)))
+	EconomyManager.add_money(int(settled["paid"]), &"revenue")
+	ReputationManager.change_dim(&"medical", 1)
+	PeopleManager.after_visit(c, "stabilized", int(settled["paid"]))
+	MemoryManager.remember(c.id, &"PLAYER_STABILIZED_ME")
+	var p := PeopleManager.get_person(c.id)
+	if not p.is_empty():
+		p["next_day"] = BusinessManager.day + _rng.randi_range(1, 2)
+	_finish_quick_job(25, c)
+	return {"text": "You clamp, pack and stabilise %s. They'll live, and they'll be back for the chrome." % c.display_name, "pay": int(settled["paid"])}
+
+
+func specialist_cost(c: CustomerData) -> int:
+	return int(round(CustomerGenerator.estimate_fee(c) * SPECIALIST_SHARE))
+
+
+## CALL A SPECIALIST: someone better takes over. They take a big cut; odds
+## are good, not certain.
+func triage_specialist() -> Dictionary:
+	var c := get_current_customer()
+	if c == null or not c.is_emergency or not EconomyManager.can_afford(specialist_cost(c)):
+		return {}
+	EconomyManager.spend(specialist_cost(c), &"other")
+	var ok := _rng.randf() < SPECIALIST_ODDS
+	var text := ""
+	if ok:
+		var settled := PeopleManager.settle(c, CustomerGenerator.estimate_fee(c))
+		EconomyManager.add_money(int(settled["paid"]), &"revenue")
+		c.existing_cyberware.append(c.requested_cyberware_id)
+		PeopleManager.after_visit(c, "success", int(settled["paid"]))
+		MemoryManager.remember(c.id, &"PLAYER_SAVED_ME")
+		ReputationManager.change(1)
+		text = "The specialist works fast and says nothing. %s walks out on their own feet." % c.display_name
+	else:
+		PeopleManager.after_visit(c, "death")
+		ReputationManager.change(-4)
+		FactionManager.add_heat(3.0 * WorldManager.heat_mult())
+		text = "The specialist shakes their head after twenty minutes. %s didn't make it." % c.display_name
+	_finish_quick_job(45, c)
+	return {"text": text, "success": ok}
+
+
+## EXPERIMENTAL RIG: an untested haemostatic frame. Less bleeding and fewer
+## surprises on the table; it costs parts and some neural stability.
+func triage_experimental() -> bool:
+	var c := get_current_customer()
+	if c == null or not c.is_emergency or c.triage.has(&"rig") or InventoryManager.parts < RIG_PARTS:
+		return false
+	InventoryManager.add_parts(-RIG_PARTS)
+	c.triage.append(&"rig")
+	c.bleed_multiplier *= 0.6
+	c.complication_risk *= 0.7
+	c.neural_stability = maxf(20.0, c.neural_stability - 8.0)
+	return true
+
+
+## The best chrome of the same kind you can get right now (null = none better).
+func premium_option(c: CustomerData) -> CyberwareData:
+	var cur := CyberwareManager.get_cyberware(c.requested_cyberware_id) if c else null
+	if cur == null:
+		return null
+	var best: CyberwareData = null
+	for it in CyberwareManager.get_by_category(cur.category, CyberwareManager.get_available_tier()):
+		if it.tier > cur.tier and (best == null or it.tier > best.tier):
+			best = it
+	return best
+
+
+## PREMIUM CHROME: they're desperate enough to take the expensive unit.
+func triage_premium() -> bool:
+	var c := get_current_customer()
+	var it := premium_option(c)
+	if c == null or not c.is_emergency or it == null or c.triage.has(&"premium"):
+		return false
+	c.triage.append(&"premium")
+	c.requested_cyberware_id = it.id
+	c.requested_surgery_id = it.install_surgery_id
+	var s := SurgeryManager.get_surgery(it.install_surgery_id)
+	if s and not s.has_diagnosis(c.true_diagnosis_id):
+		c.true_diagnosis_id = StringName(str(s.diagnosis_options[0]["id"]))
+	CustomerManager.generator._build_findings(c)
+	c.pay_multiplier *= 1.3
+	CustomerManager.generator.roll_budget(c)
+	return true
+
+
+## Nobody decided in time. First they crash; then they die on the floor.
+func emergency_crash() -> bool:
+	var c := get_current_customer()
+	if c == null or not c.is_emergency:
+		return false
+	c.crashes += 1
+	if c.crashes == 1:
+		c.neural_stability = maxf(15.0, c.neural_stability - 15.0)
+		c.bleed_multiplier *= 1.3
+		return false
+	PeopleManager.after_visit(c, "death")
+	ReputationManager.change(-5)
+	FactionManager.add_heat(4.0 * WorldManager.heat_mult())
+	StoryManager.schedule_consequence(&"angry_relative", 1, {"name": c.display_name})
+	TimeManager.advance(15)
+	CustomerManager.dismiss_current()
+	SaveManager.save_game()
+	return true
+
+
+## A job done without the table (triage): it counts, time passes.
+func _finish_quick_job(minutes: int, _c: CustomerData) -> void:
+	CustomerManager.dismiss_current()
+	BusinessManager.record_job()
+	TimeManager.advance(minutes)
+	EventManager.on_operation_completed()
+	StoryManager.check()
+	SaveManager.save_game()
+
+
+# --- Dependency care ---------------------------------------------------------------
+
+## How to treat someone hooked on chrome: feed it (install, maybe at a
+## premium), a safer lower-load unit, or stabilise them without new chrome.
+func dependency_safer_option(c: CustomerData) -> CyberwareData:
+	var cur := CyberwareManager.get_cyberware(c.requested_cyberware_id) if c else null
+	if cur == null:
+		return null
+	var best: CyberwareData = null
+	for it in CyberwareManager.get_by_category(cur.category, CyberwareManager.get_available_tier()):
+		if it.neural_load < cur.neural_load and (best == null or it.neural_load < best.neural_load):
+			best = it
+	return best
+
+
+func set_care(care: StringName) -> bool:
+	var c := get_current_customer()
+	if c == null or c.dependency <= 0:
+		return false
+	match care:
+		&"feed":
+			c.care = &"feed"
+		&"profit":
+			c.care = &"feed"
+			c.terms = &"overcharge"
+		&"safer":
+			var it := dependency_safer_option(c)
+			if it == null:
+				return false
+			c.care = &"safer"
+			c.requested_cyberware_id = it.id
+			c.requested_surgery_id = it.install_surgery_id
+			var s := SurgeryManager.get_surgery(it.install_surgery_id)
+			if s and not s.has_diagnosis(c.true_diagnosis_id):
+				c.true_diagnosis_id = StringName(str(s.diagnosis_options[0]["id"]))
+			CustomerManager.generator._build_findings(c)
+		_:
+			return false
+	return true
+
+
+## STABILISE (dependency): talk them down, flush the stims, no new chrome.
+func dependency_stabilize() -> Dictionary:
+	var c := get_current_customer()
+	if c == null or c.dependency <= 0 or InventoryManager.supplies < STABILIZE_SUPPLIES:
+		return {}
+	InventoryManager.use_supplies(STABILIZE_SUPPLIES)
+	var settled := PeopleManager.settle(c, int(round(CustomerGenerator.estimate_fee(c) * 0.25)))
+	EconomyManager.add_money(int(settled["paid"]), &"revenue")
+	PeopleManager.dependency_choice(c, false)
+	ReputationManager.change_dim(&"medical", 2)
+	PeopleManager.after_visit(c, "stabilized", int(settled["paid"]))
+	_finish_quick_job(40, c)
+	return {"text": "No new chrome today. You flush the stims and talk %s down. It's not what they wanted." % c.display_name, "pay": int(settled["paid"])}
+
+
 func accept_customer() -> void:
 	chosen_diagnosis_id = &""
 	selected_implant_uid = ""
@@ -483,6 +669,9 @@ func _on_surgery_finished(result: SurgeryResult) -> void:
 	if c:
 		if result.success:
 			c.existing_cyberware.append(result.implant_id)
+			# More chrome into someone hooked on it feeds the habit.
+			if c.dependency > 0 and c.care != &"safer":
+				PeopleManager.dependency_choice(c, true)
 		result.consequences = CustomerManager.record_outcome(c, result)
 	CustomerManager.dismiss_current()
 	BusinessManager.record_job()

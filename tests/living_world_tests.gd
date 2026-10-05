@@ -18,6 +18,7 @@ func run(runner: Node) -> void:
 	_time_of_day()
 	_clinic_life()
 	_world_events()
+	_high_stakes()
 	SaveManager.reset_all()
 	WorldEventManager.auto_roll = true
 
@@ -258,11 +259,12 @@ func _staff_life() -> void:
 	StaffLifeManager.change_rel(a, b, 60 - StaffLifeManager.rel(a, b))
 	check(StaffLifeManager.bond(a, b) == "loyal" and StaffLifeManager.bond(b, a) == "loyal", "high regard is a loyal bond, both ways")
 	check(StaffLifeManager.team_modifier(a) > 0.0, "a loyal colleague steadies the hands")
-	var base_chance := EmployeeAI.success_chance(a, CustomerManager.generator.generate({"full_difficulty": true}))
+	var job := CustomerManager.generator.generate({"full_difficulty": true})
+	var base_chance := EmployeeAI.success_chance(a, job)
 	StaffLifeManager.change_rel(a, b, -110)
 	check(StaffLifeManager.bond(a, b) == "resentful", "a grudge becomes resentment")
 	check(StaffLifeManager.team_modifier(a) < 0.0, "resentment costs focus")
-	check(EmployeeAI.success_chance(a, CustomerManager.generator.generate({"full_difficulty": true})) <= base_chance + 0.2, "team mood feeds job odds")
+	check(EmployeeAI.success_chance(a, job) < base_chance or base_chance >= 0.97 or EmployeeAI.success_chance(a, job) <= 0.05, "team mood feeds job odds")
 	# An argument, resolved from COMMS.
 	var uid := StaffLifeManager.fire(&"argument", a, b)
 	var m := CommsManager.get_message(uid)
@@ -566,3 +568,109 @@ func _world_events() -> void:
 	SaveManager.reset_all()
 	check(SaveManager.load_game() and WorldEventManager.active.size() == act and WorldEventManager.news.size() == nws, "situations and news survive save/load")
 	SaveManager.delete_save()
+
+
+func _start_op(c: CustomerData) -> void:
+	var item := CyberwareManager.get_cyberware(c.requested_cyberware_id)
+	SurgeryManager.start_session(SurgeryManager.get_surgery(item.install_surgery_id), c, true, 1.0, 7, ImplantInstance.create(item.id))
+	SurgeryManager.resume()
+
+
+func _high_stakes() -> void:
+	_fresh()
+	EventManager.operations = 12
+	# --- Surgical dilemmas -------------------------------------------------
+	var c := CustomerManager.generator.generate({"full_difficulty": true, "category": "neural"})
+	_start_op(c)
+	check(SurgicalDilemmas.chance(SurgeryManager) > 0.0, "dilemmas can happen once you're past the basics")
+	c.hidden_conditions.clear()
+	c.is_emergency = false
+	var calm_chance := SurgicalDilemmas.chance(SurgeryManager)
+	c.is_emergency = true
+	c.hidden_conditions.append(CustomerManager.conditions.keys()[0])
+	check(SurgicalDilemmas.chance(SurgeryManager) > calm_chance, "riskier patients make dilemmas likelier")
+	c.is_emergency = false
+	check(SurgicalDilemmas.data()["dilemmas"].size() == 6, "six kinds of surgical dilemma")
+	SurgeryManager.debug_trigger_dilemma(&"internal_bleeding")
+	check(not SurgeryManager.active_dilemma.is_empty() and not SurgeryManager.is_running, "a dilemma stops the operation")
+	SurgeryManager.resume()
+	check(not SurgeryManager.is_running, "and nothing resumes it until you decide")
+	InventoryManager.supplies = 0
+	var pack: Dictionary = SurgeryManager.active_dilemma["choices"][1]
+	check(SurgicalDilemmas.block_reason(pack) != "", "options you can't afford are blocked")
+	check(SurgeryManager.resolve_dilemma(1).is_empty(), "and can't be chosen")
+	InventoryManager.supplies = 10
+	var r := SurgeryManager.resolve_dilemma(0)
+	check(not r.is_empty() and SurgeryManager.active_dilemma.is_empty() and SurgeryManager.is_running, "deciding resumes the operation")
+	check(SurgeryManager.dilemma_notes.size() == 1, "the outcome is recorded for the report")
+	# Stop safely.
+	SurgeryManager.debug_trigger_dilemma(&"cyberware_instability")
+	var finished := [null]
+	var cb := func(res: SurgeryResult) -> void: finished[0] = res
+	SurgeryManager.session_finished.connect(cb)
+	SurgeryManager.resolve_dilemma(2)
+	SurgeryManager.session_finished.disconnect(cb)
+	check(finished[0] != null and (finished[0] as SurgeryResult).failure_reason == &"aborted" and not SurgeryManager.is_active, "STOP ends the operation with the patient alive")
+	# Foreign device: what you pull out is yours.
+	_start_op(CustomerManager.generator.generate({"full_difficulty": true, "category": "neural"}))
+	SurgeryManager.debug_trigger_dilemma(&"foreign_device")
+	var units := InventoryManager.get_instances().size()
+	var choice: Dictionary = SurgeryManager.active_dilemma["choices"][0]
+	choice["odds"] = 1.0
+	SurgeryManager.resolve_dilemma(0)
+	choice["odds"] = 0.55
+	check(InventoryManager.get_instances().size() == units + 1, "extracting a foreign device puts it in your stash")
+	# Calling an employee needs one on shift.
+	SurgeryManager.debug_trigger_dilemma(&"nerve_damage")
+	check(SurgicalDilemmas.block_reason(SurgeryManager.active_dilemma["choices"][1]) != "", "no ripperdoc on shift, no help")
+	var e := StaffManager.generate_candidate()
+	e["clinic"] = ClinicManager.tier
+	StaffManager.employees.append(e)
+	check(SurgicalDilemmas.block_reason(SurgeryManager.active_dilemma["choices"][1]) == "" and SurgicalDilemmas.odds(SurgeryManager, SurgeryManager.active_dilemma["choices"][1]) > 0.0, "with one on shift you can call them in")
+	SurgeryManager.resolve_dilemma(1)
+	SurgeryManager.abort()
+	StaffManager.employees.clear()
+	# Learning players never see them.
+	EventManager.operations = 1
+	check(SurgicalDilemmas.chance(SurgeryManager) == 0.0, "no dilemmas while learning")
+	EventManager.operations = 12
+	# --- Emergency triage --------------------------------------------------
+	var em := CustomerManager.spawn_emergency()
+	InventoryManager.supplies = 10
+	var m0 := EconomyManager.money
+	var jobs := BusinessManager.jobs_today
+	var t0 := TimeManager.minute
+	var st := GameManager.triage_stabilize()
+	check(not st.is_empty() and EconomyManager.money > m0 and BusinessManager.jobs_today == jobs + 1 and TimeManager.minute > t0, "STABILISE: paid a little, a job done, time passes")
+	check(MemoryManager.has(em.id, &"PLAYER_STABILIZED_ME") and int(PeopleManager.get_person(em.id)["next_day"]) > BusinessManager.day, "and they come back for the real job")
+	check(not CustomerManager.has_customer(), "the door is free again")
+	em = CustomerManager.spawn_emergency()
+	EconomyManager.add_money(5000)
+	var sp := GameManager.triage_specialist()
+	check(not sp.is_empty() and (MemoryManager.has(em.id, &"PLAYER_SAVED_ME") or str(PeopleManager.get_person(em.id)["status"]) == "dead"), "a specialist saves them (or doesn't)")
+	em = CustomerManager.spawn_emergency()
+	InventoryManager.parts = 5
+	var bleed := em.bleed_multiplier
+	check(GameManager.triage_experimental() and em.bleed_multiplier < bleed and InventoryManager.parts == 2, "the experimental rig slows bleeding for parts")
+	check(not GameManager.triage_experimental(), "only once")
+	var prem := GameManager.premium_option(em)
+	if prem:
+		check(GameManager.triage_premium() and em.requested_cyberware_id == prem.id, "premium chrome swaps in the expensive unit")
+	check(not GameManager.emergency_crash() and em.crashes == 1, "waiting too long: they crash")
+	check(GameManager.emergency_crash() and str(PeopleManager.get_person(em.id)["status"]) == "dead" and not CustomerManager.has_customer(), "waiting longer: they die")
+	# --- Dependency --------------------------------------------------------
+	var d := CustomerManager.generator.generate({"full_difficulty": true, "category": "arms"})
+	d.dependency = 2
+	PeopleManager.register(d)
+	PeopleManager.get_person(d.id)["dependency"] = 2
+	CustomerManager.debug_set_customer(d)
+	check(GameManager.set_care(&"profit") and d.care == &"feed" and d.terms == &"overcharge", "PROFIT: overcharge and feed it")
+	var safer := GameManager.dependency_safer_option(d)
+	if safer:
+		check(GameManager.set_care(&"safer") and d.requested_cyberware_id == safer.id, "SAFER swaps to a lower-load unit")
+	PeopleManager.dependency_choice(d, true)
+	PeopleManager.dependency_choice(d, true)
+	check(int(PeopleManager.get_person(d.id)["dependency"]) == 4 and StoryManager.pending.any(func(x: Dictionary) -> bool: return str(x["id"]) == "c_dependency_crisis"), "feeding it to the limit schedules a crisis")
+	var dep := GameManager.dependency_stabilize()
+	check(not dep.is_empty() and int(PeopleManager.get_person(d.id)["dependency"]) == 2 and MemoryManager.has(d.id, &"PLAYER_STABILIZED_ME"), "STABILISE eases the dependency")
+	check(int(PeopleManager.get_person(d.id)["dependency"]) < 4, "dependency can be walked back")

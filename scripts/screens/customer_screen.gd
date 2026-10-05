@@ -13,6 +13,12 @@ var _type_tween: Tween
 var _panels: Array[Control] = []
 var _staff_box: VBoxContainer
 var _terms_preview: Label
+## Emergencies: real seconds before the patient crashes (paused by modals).
+const EMERGENCY_SECONDS := 75.0
+const CRASH_SECONDS := 45.0
+var _crash_left: float = -1.0
+var _crash_bar: ProgressBar
+var _crash_label: Label
 
 
 func on_enter(_params: Dictionary) -> void:
@@ -56,6 +62,10 @@ func on_enter(_params: Dictionary) -> void:
 	statement.gui_input.connect(_on_dialogue_input)
 	statement.tooltip_text = "Click to skip the typing"
 	mid.add_child(statement)
+	if c.is_emergency:
+		_triage_section(mid, c)
+	if c.dependency > 0 and not c.is_emergency:
+		_dependency_section(mid, c)
 	if item and surgery:
 		_request_section(mid, item, surgery)
 		_payment_section(mid, c, item, surgery)
@@ -443,3 +453,140 @@ func _on_defer() -> void:
 	var back := GameManager.defer_customer()
 	UIManager.show_toast("%s will come back tomorrow." % name if back else "%s won't be back." % name, &"info" if back else &"warn")
 	GameManager.go_to_clinic()
+
+
+# --- Emergency triage ----------------------------------------------------------------
+
+func _triage_section(parent: Control, c: CustomerData) -> void:
+	var box := UIKit.panel(&"DangerPanel")
+	box.name = "TriageSection"
+	parent.add_child(box)
+	var v := UIKit.vbox(8)
+	box.add_child(v)
+	v.add_child(UIKit.label("EMERGENCY · TRIAGE%s" % ("  ·  CRASHED ONCE" if c.crashes > 0 else ""), &"SubHeaderLabel", false, Palette.DANGER))
+	_crash_label = UIKit.label("", &"MonoLabel", false, Palette.WARN)
+	v.add_child(_crash_label)
+	_crash_bar = ProgressBar.new()
+	_crash_bar.show_percentage = false
+	_crash_bar.custom_minimum_size.y = 10
+	_crash_bar.max_value = 1.0
+	v.add_child(_crash_bar)
+	_crash_left = CRASH_SECONDS if c.crashes > 0 else EMERGENCY_SECONDS
+	var flow := HFlowContainer.new()
+	flow.add_theme_constant_override(&"h_separation", 8)
+	flow.add_theme_constant_override(&"v_separation", 8)
+	v.add_child(flow)
+	var st := UIKit.button("STABILISE (%d SUPPLIES)" % GameManager.STABILIZE_SUPPLIES, &"AccentButton", _on_stabilize, "TriageStabilize", 40)
+	st.disabled = InventoryManager.supplies < GameManager.STABILIZE_SUPPLIES
+	st.tooltip_text = "Stop the bleeding and send them on: about a third of the fee now. They come back for the chrome."
+	flow.add_child(st)
+	var cost := GameManager.specialist_cost(c)
+	var sp := UIKit.button("CALL A SPECIALIST (%d CR)" % cost, &"GhostButton", _on_specialist, "TriageSpecialist", 40)
+	sp.disabled = not EconomyManager.can_afford(cost)
+	sp.tooltip_text = "Someone better takes over: %d%% odds, they take %d cr. The patient pays you the fee if they live." % [roundi(GameManager.SPECIALIST_ODDS * 100.0), cost]
+	flow.add_child(sp)
+	var rig := UIKit.button("EXPERIMENTAL RIG (%d PARTS)" % GameManager.RIG_PARTS, &"GhostButton", _on_rig, "TriageRig", 40)
+	rig.disabled = c.triage.has(&"rig") or InventoryManager.parts < GameManager.RIG_PARTS
+	rig.tooltip_text = "Untested frame: 40% less bleeding, fewer surprises on the table, costs some neural stability. Then you operate."
+	flow.add_child(rig)
+	var prem := GameManager.premium_option(c)
+	var pb := UIKit.button(("PREMIUM CHROME: %s" % prem.display_name.to_upper()) if prem else "PREMIUM CHROME", &"GhostButton", _on_premium, "TriagePremium", 40)
+	pb.disabled = prem == null or c.triage.has(&"premium")
+	pb.tooltip_text = "They're desperate enough to take the expensive unit: harder job, +30% pay." if prem else "Nothing better available at your tier."
+	flow.add_child(pb)
+	v.add_child(UIKit.label("Or operate now (PERFORM SURGERY) · assign a ripperdoc · refuse. Waiting costs them.", &"DimLabel", true, null, 13))
+
+
+func _process(delta: float) -> void:
+	if _crash_left < 0.0 or _crash_bar == null:
+		return
+	if UIManager.has_modal() or UIManager.is_transitioning():
+		return
+	_crash_left -= delta
+	var c := GameManager.get_current_customer()
+	var total := CRASH_SECONDS if c and c.crashes > 0 else EMERGENCY_SECONDS
+	_crash_bar.value = clampf(_crash_left / total, 0.0, 1.0)
+	_crash_label.text = "%s IN %ds" % ["THEY DIE" if c and c.crashes > 0 else "THEY CRASH", maxi(0, ceili(_crash_left))]
+	if _crash_left <= 0.0:
+		_crash_left = -1.0
+		var died := GameManager.emergency_crash()
+		AudioManager.play_sfx(&"failure" if died else &"warning", 0.0)
+		if died:
+			var ok: Array[Dictionary] = [{"label": "BACK TO THE CLINIC", "style": &"AccentButton", "name": "CrashClose", "callback": GameManager.go_to_clinic}]
+			UIManager.show_dialog("PATIENT LOST", "You took too long. %s stopped breathing on your floor." % (c.display_name if c else "They"), ok)
+		else:
+			UIManager.show_toast("%s is crashing. Neural stability dropping, bleeding faster." % (c.display_name if c else "They"), &"danger")
+			UIManager.go_to(UIManager.SCREEN_CUSTOMER)
+
+
+func _triage_done(r: Dictionary, title: String) -> void:
+	if r.is_empty():
+		AudioManager.play_sfx(&"denied", 0.0)
+		return
+	_crash_left = -1.0
+	AudioManager.play_sfx(&"cash" if int(r.get("pay", 0)) > 0 or bool(r.get("success", true)) else &"failure", 0.0)
+	var ok: Array[Dictionary] = [{"label": "BACK TO THE CLINIC", "style": &"AccentButton", "name": "TriageClose", "callback": GameManager.go_to_clinic}]
+	UIManager.show_dialog(title, str(r["text"]), ok)
+
+
+func _on_stabilize() -> void:
+	_triage_done(GameManager.triage_stabilize(), "STABILISED")
+
+
+func _on_specialist() -> void:
+	var r := GameManager.triage_specialist()
+	_triage_done(r, "SPECIALIST" if r.is_empty() or bool(r.get("success", false)) else "PATIENT LOST")
+
+
+func _on_rig() -> void:
+	if GameManager.triage_experimental():
+		UIManager.show_toast("Rig strapped on. Bleeding slows.", &"info")
+		UIManager.go_to(UIManager.SCREEN_CUSTOMER)
+
+
+func _on_premium() -> void:
+	if GameManager.triage_premium():
+		UIManager.show_toast("They'll take the expensive unit.", &"info")
+		UIManager.go_to(UIManager.SCREEN_CUSTOMER)
+
+
+# --- Dependency ---------------------------------------------------------------------------
+
+func _dependency_section(parent: Control, c: CustomerData) -> void:
+	var box := UIKit.panel(&"DangerPanel")
+	box.name = "DependencySection"
+	parent.add_child(box)
+	var v := UIKit.vbox(8)
+	box.add_child(v)
+	v.add_child(UIKit.label("CHROME DEPENDENCY · %s" % PeopleManager.DEPENDENCY_LABELS[clampi(c.dependency, 0, 4)].to_upper(), &"SubHeaderLabel", false, Palette.WARN))
+	v.add_child(UIKit.label("They keep coming back for more and stronger. Every unit you put in feeds it. What do you do?", &"DimLabel", true))
+	var flow := HFlowContainer.new()
+	flow.add_theme_constant_override(&"h_separation", 8)
+	flow.add_theme_constant_override(&"v_separation", 8)
+	v.add_child(flow)
+	var feed := UIKit.button("GIVE THEM WHAT THEY WANT", &"GhostButton" if c.care != &"feed" else &"AccentButton", _on_care.bind(&"feed"), "CareFeed", 38)
+	feed.tooltip_text = "Install it. Their dependency deepens; at its worst it becomes a crisis."
+	flow.add_child(feed)
+	var profit := UIKit.button("PROFIT: +40%", &"GhostButton", _on_care.bind(&"profit"), "CareProfit", 38)
+	profit.tooltip_text = "They'll pay anything. Overcharge and install. They notice, eventually."
+	flow.add_child(profit)
+	var safer := GameManager.dependency_safer_option(c)
+	var sb := UIKit.button(("SAFER: %s" % safer.display_name.to_upper()) if safer else "SAFER ALTERNATIVE", &"GhostButton" if c.care != &"safer" else &"AccentButton", _on_care.bind(&"safer"), "CareSafer", 38)
+	sb.disabled = safer == null
+	sb.tooltip_text = "A lower-load unit. It doesn't feed the habit." if safer else "Nothing gentler in that category."
+	flow.add_child(sb)
+	var st := UIKit.button("STABILISE, NO CHROME", &"GhostButton", _on_dep_stabilize, "CareStabilize", 38)
+	st.disabled = InventoryManager.supplies < GameManager.STABILIZE_SUPPLIES
+	st.tooltip_text = "Flush the stims, talk them down: a small fee, dependency eases. They won't thank you today."
+	flow.add_child(st)
+
+
+func _on_care(care: StringName) -> void:
+	if GameManager.set_care(care):
+		UIManager.go_to(UIManager.SCREEN_CUSTOMER)
+	else:
+		AudioManager.play_sfx(&"denied", 0.0)
+
+
+func _on_dep_stabilize() -> void:
+	_triage_done(GameManager.dependency_stabilize(), "STABILISED")

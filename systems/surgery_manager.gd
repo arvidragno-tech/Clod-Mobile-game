@@ -11,6 +11,9 @@ signal mistake_made(kind: StringName, severity: float)
 signal vital_warning(vital: StringName)
 signal complication_started(complication: ComplicationData)
 signal complication_resolved(complication: ComplicationData, handled: bool)
+## A decision complication stopped the operation (SurgicalDilemmas).
+signal dilemma_started(dilemma: Dictionary)
+signal dilemma_resolved(result: Dictionary)
 signal quick_action_used(action_id: StringName)
 signal session_finished(result: SurgeryResult)
 
@@ -35,6 +38,12 @@ var anchor_quality: float = 1.0
 ## Multiplier for the implant itself (salvaged units perform worse).
 var implant_quality: float = 1.0
 var active_complication: ComplicationData = null
+## Decision complication: the stage it stops at, the one on screen, and
+## what the choices did to this operation.
+var dilemma_stage: int = -1
+var active_dilemma: Dictionary = {}
+var dilemma_pay: float = 1.0
+var dilemma_notes: Array[String] = []
 var complication_time_left: float = 0.0
 var complications_total: int = 0
 var complications_handled: int = 0
@@ -115,6 +124,10 @@ func start_session(p_surgery: SurgeryData, p_customer: CustomerData, p_diagnosis
 	_pending_complication_delay = -1.0
 	_queued_complications = 0
 	_plan_complications()
+	active_dilemma = {}
+	dilemma_pay = 1.0
+	dilemma_notes.clear()
+	dilemma_stage = SurgicalDilemmas.plan(self, _rng)
 	is_active = true
 	is_running = false
 	session_started.emit(surgery, customer)
@@ -124,7 +137,8 @@ func start_session(p_surgery: SurgeryData, p_customer: CustomerData, p_diagnosis
 
 ## Called by the surgery screen once it is ready for input.
 func resume() -> void:
-	is_running = is_active
+	# A decision on screen keeps the patient frozen until it's made.
+	is_running = is_active and active_dilemma.is_empty()
 
 
 func get_current_stage() -> SurgeryStageData:
@@ -200,6 +214,67 @@ func _advance_stage() -> void:
 	elif _queued_complications > 0 and active_complication == null:
 		_schedule_next_complication()
 	stage_started.emit(stage_index, stage)
+	if stage_index == dilemma_stage and active_dilemma.is_empty() and is_active:
+		_begin_dilemma(SurgicalDilemmas.pick(self, _rng))
+
+
+func _begin_dilemma(d: Dictionary) -> void:
+	if d.is_empty():
+		return
+	active_dilemma = d
+	is_running = false
+	dilemma_started.emit(d)
+
+
+## Test / debug hook: stop the operation with a specific dilemma now.
+func debug_trigger_dilemma(id: StringName) -> void:
+	if is_active and active_dilemma.is_empty():
+		_begin_dilemma(SurgicalDilemmas.get_dilemma(id))
+
+
+## The player's choice. Returns {success, text, aborted}.
+func resolve_dilemma(index: int) -> Dictionary:
+	var choices: Array = active_dilemma.get("choices", [])
+	if active_dilemma.is_empty() or index < 0 or index >= choices.size():
+		return {}
+	var ch: Dictionary = choices[index]
+	if SurgicalDilemmas.block_reason(ch) != "":
+		return {}
+	var req: Dictionary = ch.get("requires", {})
+	InventoryManager.add_parts(-int(req.get("parts", 0)))
+	if int(req.get("supplies", 0)) > 0:
+		InventoryManager.use_supplies(int(req["supplies"]))
+	var helper := SurgicalDilemmas.helper(customer) if bool(req.get("staff", false)) else {}
+	var ok := _rng.randf() < SurgicalDilemmas.odds(self, ch)
+	var out: Dictionary = ch.get("success" if ok else "fail", ch.get("success", {}))
+	if out.has("vitals"):
+		vitals.apply_effects(out["vitals"])
+	implant_quality *= float(out.get("perf", 1.0))
+	dilemma_pay *= float(out.get("pay", 1.0))
+	if out.has("heat"):
+		FactionManager.add_heat(float(out["heat"]))
+	if out.has("memory") and customer:
+		MemoryManager.remember(customer.id, StringName(str(out["memory"])))
+	if not helper.is_empty() and out.has("stress"):
+		helper["stress"] = clampf(float(helper["stress"]) + float(out["stress"]), 0.0, 100.0)
+	var text := str(out.get("text", ""))
+	if not helper.is_empty():
+		text = "%s comes in from the back. %s" % [helper["name"], text]
+	if out.has("find"):
+		var found := ImplantInstance.create(StringName(str(out["find"])), _rng.randf_range(55.0, 85.0), &"black_market")
+		BlackMarketManager.roll_traits(found, _rng)
+		InventoryManager.add_instance(found)
+		text += " It's in your stash now."
+	dilemma_notes.append("%s: %s" % [str(active_dilemma.get("title", "")), text])
+	var r := {"success": ok, "text": text, "aborted": bool(out.get("abort", false)), "choice": str(ch.get("id", ""))}
+	active_dilemma = {}
+	dilemma_resolved.emit(r)
+	vitals_changed.emit(vitals)
+	if bool(r["aborted"]):
+		_finish(false, &"aborted")
+	else:
+		is_running = is_active
+	return r
 
 
 func _schedule_next_complication() -> void:
@@ -253,7 +328,8 @@ func _finish(success: bool, reason: StringName) -> void:
 	r.neural_load_before = neural_load_before
 	r.neural_load_after = neural_load_after
 	r.black_market_implant = implant != null and implant.source == &"black_market"
-	r.implant_pay_mult = 1.0 + (implant.trait_effect("pay") if implant else 0.0)
+	r.implant_pay_mult = (1.0 + (implant.trait_effect("pay") if implant else 0.0)) * dilemma_pay
+	r.dilemma_notes = dilemma_notes.duplicate()
 	r.implant_price = implant_item.price if implant_item else 0
 	SurgeryScoring.apply_rewards(r, surgery, customer)
 	if reason != &"aborted" or stage_index > 0:
