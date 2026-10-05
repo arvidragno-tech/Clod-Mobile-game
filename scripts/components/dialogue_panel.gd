@@ -9,7 +9,7 @@ extends Control
 
 signal closed()
 
-const PORTRAIT_SCALE := 5
+const PORTRAIT_SCALE := 3
 
 var dialogue_id: StringName
 var _portrait: PixelPortrait

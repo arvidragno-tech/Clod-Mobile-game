@@ -1,11 +1,13 @@
 class_name PixelPortrait
 extends Control
-## A character portrait (96x112 art, v2) at the global pixel density on a
+## A character portrait (HD 144x168 art) at the world-art density on a
 ## lit, place-specific backdrop (clinic tiles, wet street, corporate glass,
 ## market haze...). Animated through CharacterAnimationManager: blinks,
 ## gaze shifts, a 1-pixel breath, tremor and cyberware flicker. Expression
 ## can change at any time (dialogue). `framing` picks how much of the bust
-## to show without ever changing pixel size.
+## to show without ever changing pixel size. Framings and crops are given
+## in the 96x112 layout units the screens were designed with and scaled to
+## whatever resolution the portrait atlas has.
 
 enum Framing { FULL, BUST, FACE, HEAD }
 const FRAMES := {
@@ -18,9 +20,10 @@ const BACKDROPS := ["clinic", "street", "market", "corporate", "medical", "indus
 
 @export var framing: Framing = Framing.FACE
 @export var accent: Color = Palette.ACCENT
-## Custom crop (art px) overriding `framing` when it has an area.
+## Custom crop (layout units) overriding `framing` when it has an area.
 var crop: Rect2i = Rect2i()
-## Integer pixel density override for large dialogue portraits (0 = global).
+## Integer screen units per portrait pixel for large dialogue portraits
+## (0 = the default, GameConfig.ART_SCALE).
 var pixel_scale: int = 0
 var appearance: Dictionary = {}
 var expression: String = ""
@@ -41,11 +44,18 @@ func _exit_tree() -> void:
 
 
 func _ps() -> float:
-	return float(pixel_scale if pixel_scale > 0 else GameConfig.PIXEL_SCALE)
+	return float(pixel_scale if pixel_scale > 0 else GameConfig.ART_SCALE)
+
+
+## Portrait pixels per layout unit (1.5 for the HD atlas).
+static func _k() -> float:
+	return float(CharacterArt.size_of(&"portrait").x) / 96.0
 
 
 func _rect() -> Rect2i:
-	return crop if crop.has_area() else FRAMES[framing]
+	var r: Rect2i = crop if crop.has_area() else FRAMES[framing]
+	var k := _k()
+	return Rect2i(Vector2i((Vector2(r.position) * k).round()), Vector2i((Vector2(r.size) * k).round()))
 
 
 func set_framing(f: Framing) -> void:
@@ -137,14 +147,14 @@ func _draw_action(r: Rect2, s: float, cr: Rect2i) -> void:
 	var act: StringName = _anim.get("action", &"")
 	var t := float(_anim.get("action_t", 0.0))
 	if act == &"smoke" and (appearance.get("accessories", []) as Array).has("cigarette"):
-		var base := Vector2(63, 60) - Vector2(cr.position)
+		var base := Vector2(63, 60) * _k() - Vector2(cr.position)
 		for k in 4:
-			var p := base + Vector2(sin(t * 6.0 + k) * 1.5 + k * 0.6, -t * 18.0 - k * 4.0)
+			var p := base + Vector2(sin(t * 6.0 + k) * 2.0 + k * 0.9, -t * 27.0 - k * 6.0)
 			var a := clampf(0.45 - t * 0.35 - k * 0.07, 0.0, 1.0)
 			if p.x >= 0 and p.y >= 0 and p.x < cr.size.x and p.y < cr.size.y:
 				draw_rect(Rect2(r.position + p.floor() * s, Vector2(2, 1) * s), Color(0.75, 0.78, 0.82, a))
 	elif act == &"check" and not (appearance.get("cyber", []) as Array).is_empty():
-		var p := Vector2(55, 42) - Vector2(cr.position)
+		var p := Vector2(55, 42) * _k() - Vector2(cr.position)
 		if p.x >= 0 and p.y >= 0:
 			draw_rect(Rect2(r.position + p * s, Vector2(s, s)), Color(accent, 0.7 * (1.0 - t)))
 

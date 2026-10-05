@@ -74,7 +74,7 @@ func _cell_app(app: Dictionary, label: String, bg: StringName) -> Control:
 func _body(app: Dictionary) -> Control:
 	var t := TextureRect.new()
 	t.texture = CharacterArt.body(CharacterAppearanceManager.normalize(app))
-	t.custom_minimum_size = Vector2(40, 80) * GameConfig.PIXEL_SCALE
+	t.custom_minimum_size = Vector2(CharacterArt.size_of(&"body")) * GameConfig.ART_SCALE
 	t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	t.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	return t

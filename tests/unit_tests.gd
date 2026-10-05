@@ -229,8 +229,8 @@ func _customer_generation() -> void:
 	var round_trip := CustomerData.from_save_dict(ca.to_save_dict())
 	check(round_trip.display_name == ca.display_name and round_trip.existing_cyberware == ca.existing_cyberware and round_trip.appearance == ca.appearance, "customer serialises losslessly")
 	var tex := CharacterArt.portrait(ca.appearance)
-	check(tex != null and tex.get_width() == 96 and tex.get_height() == 112, "portrait composites to 96x112")
-	check(CharacterArt.body(ca.appearance).get_height() == 80, "body sprite composites to 40x80")
+	check(tex != null and tex.get_width() == 144 and tex.get_height() == 168, "portrait composites to the HD 144x168")
+	check(CharacterArt.body(ca.appearance).get_height() == 120, "body sprite composites to the HD 60x120")
 	_character_system(gen)
 
 

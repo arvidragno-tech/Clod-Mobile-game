@@ -12,12 +12,12 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from tools.art import palette, characters2, cyberware_art, tools_art, regions, environments, ui_art, rooms_hd  # noqa: E402
+from tools.art import palette, characters_hd, cyberware_art, tools_art, regions, environments, ui_art, rooms_hd  # noqa: E402
 from tools.art.lib import ROOT  # noqa: E402
 
 GROUPS = {
     "palette": lambda: palette.export_json(os.path.join(ROOT, "data", "palettes.json")),
-    "chars": characters2.generate,
+    "chars": characters_hd.generate,
     "cyberware": cyberware_art.generate,
     "tools": tools_art.generate,
     "regions": regions.generate,

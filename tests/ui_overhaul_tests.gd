@@ -148,4 +148,4 @@ func _art() -> void:
 		ok = ok and found
 	check(ok, "the body atlas has mask and eyewear parts")
 	var tex := CharacterArt.portrait(app)
-	check(tex != null and tex.get_width() == 96 and tex.get_height() == 112, "portraits still build at 96x112")
+	check(tex != null and tex.get_width() == 144 and tex.get_height() == 168, "portraits build at the HD 144x168")
