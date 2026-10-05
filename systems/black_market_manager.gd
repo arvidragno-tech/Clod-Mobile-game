@@ -115,6 +115,7 @@ func sell(uid: String) -> int:
 	var value := sell_value(inst)
 	InventoryManager.remove_instance(uid)
 	EconomyManager.add_money(value, &"black_market")
+	StoryManager.bump(&"bm_sell")
 	if InventoryManager.tokens < 99 and inst.source == &"black_market":
 		InventoryManager.add_tokens(1)
 	EventBus.black_market_changed.emit()

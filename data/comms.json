@@ -1,0 +1,80 @@
+{
+ "_doc": "Communication templates (CommsManager): message, call, email, encrypted, contract.",
+ "comms": {
+  "c_landlord_notice": {
+   "kind": "message",
+   "from": "pell_ormond",
+   "subject": "Rent",
+   "body": "Lovely to have you in the building. Popping by later to discuss the arithmetic. — P.O."
+  },
+  "c_rook_message": {
+   "kind": "call",
+   "from": "rook_varga",
+   "subject": "Incoming call",
+   "body": "\"Mother wants a word. Be nice. She's nice back, mostly.\""
+  },
+  "c_act2": {
+   "kind": "message",
+   "from": "vesna_kalo",
+   "subject": "Your name came up",
+   "body": "Three people mentioned you this week. Two were customers, one was an inspector. Congratulations, darling: you exist. — W."
+  },
+  "c_voss_email": {
+   "kind": "email",
+   "from": "cassian_voss",
+   "subject": "Clinical outreach partnership (Lyra Biocomp)",
+   "body": "Dear Doctor, Lyra Biocomp's Community Neural Wellness programme is expanding into Sublevel 3. We believe you are the ideal partner. I will call in person. Warm regards, C. Voss, Clinical Outreach."
+  },
+  "c_static_report": {
+   "kind": "encrypted",
+   "from": "adaeze_moor",
+   "subject": "[ENCRYPTED] Case count",
+   "body": "41 static-fever cases. 38 had neural work in the last 60 days. 0 investigations opened by the Board. I'm done waiting. — A.M."
+  },
+  "c_finale": {
+   "kind": "message",
+   "from": "ilse_hartmann",
+   "subject": "Come see me",
+   "body": "My hands stopped this morning. Not the tremor. Everything. Come see me while I can still talk. — I."
+  },
+  "c_debt_warning": {
+   "kind": "message",
+   "from": "pell_ormond",
+   "subject": "Your tab",
+   "body": "You owe {debt}. At eight percent a day that grows faster than your patients' fingernails. — P.O."
+  },
+  "c_staff_raise": {
+   "kind": "message",
+   "from": "",
+   "subject": "About my pay",
+   "body": "{name}: I'm doing harder work than when you hired me. I'd like that to show up on the payroll."
+  },
+  "c_informant": {
+   "kind": "encrypted",
+   "from": "",
+   "subject": "[ENCRYPTED] Camera footage",
+   "body": "{name} has been meeting someone from {faction} after closing. Every night this week."
+  },
+  "c_contract_dune": {
+   "kind": "contract",
+   "from": "silas_dune",
+   "subject": "Overflow contract",
+   "body": "Partnership terms: my overflow to you, your hard cases to me. Sign by replying.",
+   "actions": [
+    {
+     "label": "SIGN",
+     "effects": {
+      "flag": "dune_partner",
+      "rel": 6
+     }
+    },
+    {
+     "label": "DECLINE",
+     "effects": {
+      "rel": -4
+     }
+    }
+   ]
+  }
+ }
+}

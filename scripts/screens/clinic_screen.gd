@@ -45,8 +45,11 @@ func on_enter(_params: Dictionary) -> void:
 		_show_customer(CustomerManager.current_customer, false)
 	else:
 		_show_waiting()
+	StoryManager.talk_queued.connect(func(_id: StringName) -> void: _show_talk.call_deferred())
 	if EventManager.has_pending():
 		_show_event.call_deferred()
+	elif StoryManager.has_talk():
+		_show_talk.call_deferred()
 	elif not CustomerManager.has_customer():
 		CustomerManager.request_next_customer()
 
@@ -188,10 +191,33 @@ func _show_event() -> void:
 	panel.closed.connect(_after_event)
 
 
+## Someone from the story wants a word (conversation modal).
+func _show_talk() -> void:
+	if not is_inside_tree() or not StoryManager.has_talk() or UIManager.has_modal() or EventManager.has_pending():
+		return
+	var panel := DialoguePanel.new()
+	panel.name = "DialoguePanel"
+	panel.dialogue_id = StoryManager.pop_talk()
+	AudioManager.play_sfx(&"customer", 0.0)
+	UIManager.show_modal(panel)
+	panel.closed.connect(_after_event)
+
+
 func _after_event() -> void:
 	if _nav:
 		_nav.refresh()
+	if StoryManager.ending != &"" and not StoryManager.has_flag(&"ending_shown") and is_inside_tree():
+		StoryManager.set_flag(&"ending_shown")
+		var e := StoryManager.ending_text()
+		var ok: Array[Dictionary] = [{"label": "KEEP THE CLINIC OPEN", "style": &"AccentButton", "name": "EndingClose"}]
+		UIManager.show_dialog.call_deferred("ENDING · %s" % str(e.get("title", "")), str(e.get("text", "")), ok)
+		return
 	_refresh_status()
+	if not is_inside_tree():
+		return
+	if StoryManager.has_talk():
+		_show_talk.call_deferred()
+		return
 	if CustomerManager.has_customer():
 		_show_customer(CustomerManager.current_customer, false)
 	else:

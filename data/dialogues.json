@@ -1,0 +1,2626 @@
+{
+ "_doc": "Conversations (DialogueManager). Option kinds: plain, persuade, intimidate, bribe, empathy, lie, negotiate, refuse. effects: rel, rel_other, fear, flag, money, debt, rep, faction, heat, path, quest, consequence, appearance_char, appearance_player, supplies, ending.",
+ "dialogues": {
+  "d_ilse_intro": {
+   "id": "d_ilse_intro",
+   "character": "ilse_hartmann",
+   "title": "The Old Surgeon",
+   "act": 1,
+   "start": "start",
+   "nodes": {
+    "start": {
+     "text": "You're the new one renting Kaspar's storeroom. Hm. You hold the scalpel like a pen. Good. Pens don't shake. ...Mine do, now.",
+     "expr": "neutral",
+     "speaker": "npc",
+     "options": [
+      {
+       "text": "Who are you?",
+       "kind": "plain",
+       "next": "who"
+      },
+      {
+       "text": "Your hands. How long have they been like that?",
+       "kind": "empathy",
+       "next": "hands",
+       "effects": {
+        "rel": 6
+       },
+       "fail_next": "hands_cold",
+       "mod": 0.15
+      },
+      {
+       "text": "I don't need a lecture. I need customers.",
+       "kind": "plain",
+       "next": "rude",
+       "effects": {
+        "rel": -4
+       }
+      }
+     ]
+    },
+    "who": {
+     "text": "Ilse Hartmann. I cut people in this district for thirty years. Before that I cut them for a company that paid better and asked worse questions.",
+     "expr": "neutral",
+     "speaker": "npc",
+     "options": [
+      {
+       "text": "Which company?",
+       "kind": "persuade",
+       "next": "company",
+       "fail_next": "company_no"
+      },
+      {
+       "text": "Then teach me.",
+       "kind": "plain",
+       "next": "teach"
+      }
+     ]
+    },
+    "company": {
+     "text": "...Lyra. Biocomp. Don't make that face; everyone with a medical licence worked for Lyra once. Some of us stopped.",
+     "expr": "sad",
+     "speaker": "npc",
+     "next": "teach"
+    },
+    "company_no": {
+     "text": "One that doesn't exist for people like us. Next question.",
+     "expr": "angry",
+     "speaker": "npc",
+     "next": "teach"
+    },
+    "hands": {
+     "text": "Since the implant in my ulnar nerve started rejecting. I built half the good ones on the market and I can't afford my own revision. Funny, isn't it.",
+     "expr": "sad",
+     "speaker": "npc",
+     "next": "teach"
+    },
+    "hands_cold": {
+     "text": "Long enough. Don't play nurse with me.",
+     "expr": "angry",
+     "speaker": "npc",
+     "next": "teach"
+    },
+    "rude": {
+     "text": "Customers come to people who don't kill them. Learn that first and the rest follows.",
+     "expr": "angry",
+     "speaker": "npc",
+     "next": "teach"
+    },
+    "teach": {
+     "text": "Here: my old retractor set. It's older than you and steadier than me. One condition. If a patient ever comes in with a lattice under the skull, fine grey threads, fever that comes and goes like static, you call me. Before anyone else. Promise me.",
+     "expr": "neutral",
+     "speaker": "npc",
+     "options": [
+      {
+       "text": "I promise.",
+       "kind": "plain",
+       "next": "promise",
+       "effects": {
+        "flag": "ilse_promise",
+        "rel": 8,
+        "quest": "q_mentor_lessons",
+        "path": {
+         "respected": 1
+        }
+       }
+      },
+      {
+       "text": "What is a 'lattice'?",
+       "kind": "persuade",
+       "next": "lattice",
+       "fail_next": "lattice_no",
+       "mod": -0.1
+      },
+      {
+       "text": "Depends what it's worth to you.",
+       "kind": "negotiate",
+       "next": "paid",
+       "effects": {
+        "money": 120,
+        "flag": "ilse_promise",
+        "rel": -2,
+        "quest": "q_mentor_lessons",
+        "path": {
+         "kingpin": 1
+        }
+       },
+       "fail_next": "promise"
+      }
+     ]
+    },
+    "lattice": {
+     "text": "A mistake I made a long time ago. Promise first. Questions later.",
+     "expr": "sad",
+     "speaker": "npc",
+     "options": [
+      {
+       "text": "Alright. I promise.",
+       "kind": "plain",
+       "next": "promise",
+       "effects": {
+        "flag": "ilse_promise",
+        "rel": 6,
+        "quest": "q_mentor_lessons"
+       }
+      }
+     ]
+    },
+    "lattice_no": {
+     "text": "Something you'll recognise if you ever see it. Promise.",
+     "expr": "neutral",
+     "speaker": "npc",
+     "options": [
+      {
+       "text": "I promise.",
+       "kind": "plain",
+       "next": "promise",
+       "effects": {
+        "flag": "ilse_promise",
+        "rel": 4,
+        "quest": "q_mentor_lessons"
+       }
+      }
+     ]
+    },
+    "paid": {
+     "text": "Mercenary. Good, actually. Mercenaries keep their contracts. Take the money and the tools.",
+     "expr": "smirk",
+     "speaker": "npc",
+     "next": "promise"
+    },
+    "promise": {
+     "text": "Do three clean jobs and come find me in the Old Caldera. I'll show you how to close a wound so it stays closed.",
+     "expr": "neutral",
+     "speaker": "npc",
+     "end": true
+    }
+   }
+  },
+  "d_landlord_rent": {
+   "id": "d_landlord_rent",
+   "character": "pell_ormond",
+   "title": "Rent Day",
+   "act": 1,
+   "start": "start",
+   "nodes": {
+    "start": {
+     "text": "Lovely little room. Lovely little operation. Lovely little problem: the building's worth more since you moved your blood in. Rent goes up. Two hundred, today, for the privilege.",
+     "expr": "smirk",
+     "speaker": "npc",
+     "options": [
+      {
+       "text": "Fine. Two hundred.",
+       "kind": "plain",
+       "next": "paid",
+       "effects": {
+        "rel": 5,
+        "flag": "landlord_paid"
+       },
+       "cost": {
+        "money": 200
+       }
+      },
+      {
+       "text": "You can wait till the end of the week.",
+       "kind": "negotiate",
+       "next": "waits",
+       "effects": {
+        "rel": 2,
+        "consequence": {
+         "id": "d_landlord_collect",
+         "days": 4
+        }
+       },
+       "fail_next": "nowait"
+      },
+      {
+       "text": "Touch my door again and you'll need a ripper yourself.",
+       "kind": "intimidate",
+       "next": "scared",
+       "effects": {
+        "fear": 25,
+        "rel": -10,
+        "path": {
+         "feared": 2
+        },
+        "consequence": {
+         "id": "d_landlord_enforcer",
+         "days": 3
+        }
+       },
+       "fail_next": "laughs",
+       "fail_effects": {
+        "rel": -6,
+        "debt": 200
+       }
+      },
+      {
+       "text": "I'll patch up your collectors for free instead.",
+       "kind": "plain",
+       "next": "service",
+       "effects": {
+        "flag": "landlord_service",
+        "rel": 8,
+        "path": {
+         "network": 1
+        }
+       }
+      }
+     ]
+    },
+    "paid": {
+     "text": "See? We're friends now. Friends pay on time.",
+     "expr": "smirk",
+     "speaker": "npc",
+     "end": true
+    },
+    "waits": {
+     "text": "A week. Not a day more. I'm a patient man; my interest isn't.",
+     "expr": "neutral",
+     "speaker": "npc",
+     "end": true
+    },
+    "nowait": {
+     "text": "End of the week is when I sell your lease to a noodle franchise. Two hundred goes on your tab.",
+     "expr": "angry",
+     "speaker": "npc",
+     "end": true,
+     "effects": {
+      "debt": 200
+     }
+    },
+    "scared": {
+     "text": "...Charming. We'll talk again. When you've cooled down.",
+     "expr": "fear",
+     "speaker": "npc",
+     "end": true
+    },
+    "laughs": {
+     "text": "Ha. Two hundred plus a nuisance fee. It's on your tab, butcher.",
+     "expr": "smirk",
+     "speaker": "npc",
+     "end": true
+    },
+    "service": {
+     "text": "Free? Nothing's free. But my lads do get cut a lot... Fine. Rent stays where it is, and you never ask what they were doing when they got hurt.",
+     "expr": "smirk",
+     "speaker": "npc",
+     "end": true
+    }
+   }
+  },
+  "d_landlord_collect": {
+   "id": "d_landlord_collect",
+   "character": "pell_ormond",
+   "title": "The Week Is Up",
+   "act": 1,
+   "start": "start",
+   "nodes": {
+    "start": {
+     "text": "A week, I said. You're breathing, the room's breathing. Pay me what's owed.",
+     "expr": "neutral",
+     "speaker": "npc",
+     "options": [
+      {
+       "text": "Here. Two hundred and fifty, for your patience.",
+       "kind": "plain",
+       "next": "ok",
+       "effects": {
+        "rel": 6
+       },
+       "cost": {
+        "money": 250
+       }
+      },
+      {
+       "text": "I can't. Put it on the tab.",
+       "kind": "plain",
+       "next": "tab",
+       "effects": {
+        "debt": 300,
+        "rel": -4
+       }
+      },
+      {
+       "text": "Lie: Lyra's paying me next week. Big contract.",
+       "kind": "lie",
+       "next": "lie_ok",
+       "effects": {
+        "rel": 2,
+        "consequence": {
+         "id": "d_landlord_collect",
+         "days": 5
+        }
+       },
+       "fail_next": "lie_bad",
+       "fail_effects": {
+        "debt": 350,
+        "rel": -10
+       }
+      }
+     ]
+    },
+    "ok": {
+     "text": "A pleasure doing business with someone sensible.",
+     "expr": "smirk",
+     "speaker": "npc",
+     "end": true
+    },
+    "tab": {
+     "text": "Three hundred on the tab. Eight percent a day. I do love arithmetic.",
+     "expr": "smirk",
+     "speaker": "npc",
+     "end": true
+    },
+    "lie_ok": {
+     "text": "Lyra. Well. Then I can wait for a corporate cheque.",
+     "expr": "neutral",
+     "speaker": "npc",
+     "end": true
+    },
+    "lie_bad": {
+     "text": "Lyra doesn't sign contracts with people who rent storerooms. Three-fifty on the tab, liar.",
+     "expr": "angry",
+     "speaker": "npc",
+     "end": true
+    }
+   }
+  },
+  "d_landlord_enforcer": {
+   "id": "d_landlord_enforcer",
+   "character": "pell_ormond",
+   "title": "A Visit From Friends",
+   "act": 1,
+   "start": "start",
+   "nodes": {
+    "start": {
+     "text": "My associates broke a few things on the way in. Clumsy lads. They'll be less clumsy if we're friends again.",
+     "expr": "smirk",
+     "speaker": "npc",
+     "options": [
+      {
+       "text": "How much to make them careful?",
+       "kind": "plain",
+       "next": "pay",
+       "effects": {
+        "rel": 4,
+        "fear": -10
+       },
+       "cost": {
+        "money": 150
+       }
+      },
+      {
+       "text": "Get out. Next time I see them, they're on my table, not standing.",
+       "kind": "intimidate",
+       "next": "out",
+       "effects": {
+        "fear": 20,
+        "path": {
+         "feared": 2
+        },
+        "heat": 4
+       },
+       "fail_next": "wreck",
+       "fail_effects": {
+        "money": -120,
+        "rel": -6
+       },
+       "mod": -0.05
+      }
+     ]
+    },
+    "pay": {
+     "text": "There. Friends again.",
+     "expr": "smirk",
+     "speaker": "npc",
+     "end": true
+    },
+    "out": {
+     "text": "...We'll see who's standing. Not today, though.",
+     "expr": "fear",
+     "speaker": "npc",
+     "end": true
+    },
+    "wreck": {
+     "text": "Pity about your lamp. And your till.",
+     "expr": "smirk",
+     "speaker": "npc",
+     "end": true
+    }
+   }
+  },
+  "d_teo_ask": {
+   "id": "d_teo_ask",
+   "character": "teo_marr",
+   "title": "The Kid With The Soldering Iron",
+   "act": 1,
+   "start": "start",
+   "nodes": {
+    "start": {
+     "text": "Hi. Sorry. Hi. I'm Teo. I fix people's implants on my floor with a soldering iron and I'm going to kill someone if I keep doing it alone. Do you... need hands?",
+     "expr": "fear",
+     "speaker": "npc",
+     "options": [
+      {
+       "text": "Show me your hands.",
+       "kind": "plain",
+       "next": "hands"
+      },
+      {
+       "text": "Why should I trust a dropout?",
+       "kind": "persuade",
+       "next": "why",
+       "fail_next": "why_bad"
+      },
+      {
+       "text": "I can't pay you.",
+       "kind": "plain",
+       "next": "nopay"
+      }
+     ]
+    },
+    "hands": {
+     "text": "They're steady. Mostly. I did forty eye-port cleanings last winter. Nobody went blind. One person went... a bit blurry.",
+     "expr": "smirk",
+     "speaker": "npc",
+     "next": "terms"
+    },
+    "why": {
+     "text": "Because I'd rather be supervised than be the guy kids go to because he's cheap. I've got one rule: I won't put chrome into kids. Ever.",
+     "expr": "neutral",
+     "speaker": "npc",
+     "next": "terms"
+    },
+    "why_bad": {
+     "text": "...You shouldn't, probably. But I'm here and nobody else is.",
+     "expr": "sad",
+     "speaker": "npc",
+     "next": "terms"
+    },
+    "nopay": {
+     "text": "Thirty-five a day. I'll eat noodles. I've eaten worse.",
+     "expr": "neutral",
+     "speaker": "npc",
+     "next": "terms"
+    },
+    "terms": {
+     "text": "So? Do I get a coat?",
+     "expr": "neutral",
+     "speaker": "npc",
+     "options": [
+      {
+       "text": "Welcome aboard. Hiring board's yours, Teo.",
+       "kind": "plain",
+       "next": "yes",
+       "effects": {
+        "rel": 10,
+        "flag": "teo_offered",
+        "path": {
+         "network": 1
+        }
+       }
+      },
+      {
+       "text": "No kids. Agreed. That's my rule too.",
+       "kind": "empathy",
+       "next": "yes",
+       "effects": {
+        "rel": 15,
+        "flag": [
+         "teo_offered",
+         "no_kids_pact"
+        ],
+        "path": {
+         "respected": 1
+        }
+       }
+      },
+      {
+       "text": "Not now. Maybe when I can pay.",
+       "kind": "plain",
+       "next": "later",
+       "effects": {
+        "rel": -2,
+        "flag": "teo_offered"
+       }
+      }
+     ]
+    },
+    "yes": {
+     "text": "Okay. Okay! I'll be on your hiring board tomorrow; the paperwork's in my head. Thank you.",
+     "expr": "smirk",
+     "speaker": "npc",
+     "end": true
+    },
+    "later": {
+     "text": "Sure. I'll keep my name on the board. In case.",
+     "expr": "sad",
+     "speaker": "npc",
+     "end": true
+    }
+   }
+  },
+  "d_mother_protection": {
+   "id": "d_mother_protection",
+   "character": "rika_kessel",
+   "title": "Mother's Terms",
+   "act": 1,
+   "start": "start",
+   "nodes": {
+    "start": {
+     "text": "Rook says you're good with a blade. That's nice. My crews bleed on this street every night, and every night someone's got to choose: help Mother, or be a problem for Mother. Which are you?",
+     "expr": "neutral",
+     "speaker": "npc",
+     "options": [
+      {
+       "text": "What does helping look like?",
+       "kind": "plain",
+       "next": "terms"
+      },
+      {
+       "text": "I don't pick sides. I pick up scalpels.",
+       "kind": "plain",
+       "next": "neutral_line",
+       "effects": {
+        "rel": -2
+       }
+      },
+      {
+       "text": "Get out of my clinic.",
+       "kind": "intimidate",
+       "next": "bold",
+       "effects": {
+        "rel": -10,
+        "fear": 10,
+        "path": {
+         "feared": 2
+        },
+        "consequence": {
+         "id": "d_crew_raid",
+         "days": 3
+        }
+       },
+       "fail_next": "laugh",
+       "fail_effects": {
+        "rel": -15,
+        "consequence": {
+         "id": "d_crew_raid",
+         "days": 2
+        }
+       },
+       "mod": -0.2
+      }
+     ]
+    },
+    "terms": {
+     "text": "Fifty a day, paid to Rook. Or: my wounded come in through the back, you patch them, no names, no Aegis. Your choice which coin.",
+     "expr": "neutral",
+     "speaker": "npc",
+     "options": [
+      {
+       "text": "Fifty a day. I'll pay.",
+       "kind": "plain",
+       "next": "pay",
+       "effects": {
+        "flag": "protection_paid",
+        "faction": {
+         "street_gangs": 6
+        },
+        "rel": 6
+       }
+      },
+      {
+       "text": "I'll be the crews' medic. No money changes hands.",
+       "kind": "plain",
+       "next": "medic",
+       "effects": {
+        "flag": "crew_medic",
+        "faction": {
+         "street_gangs": 10
+        },
+        "rel": 12,
+        "path": {
+         "network": 1,
+         "kingpin": 1
+        }
+       }
+      },
+      {
+       "text": "How about twenty-five?",
+       "kind": "negotiate",
+       "next": "haggle",
+       "effects": {
+        "flag": "protection_paid_half",
+        "faction": {
+         "street_gangs": 3
+        },
+        "rel": 2
+       },
+       "fail_next": "nohaggle",
+       "fail_effects": {
+        "flag": "protection_paid",
+        "rel": -3
+       }
+      },
+      {
+       "text": "I'll take my chances with Aegis.",
+       "kind": "plain",
+       "next": "aegis",
+       "effects": {
+        "flag": "called_aegis",
+        "faction": {
+         "corporate_security": 8,
+         "street_gangs": -15
+        },
+        "rel": -25,
+        "path": {
+         "corporate": 2
+        },
+        "consequence": {
+         "id": "d_crew_raid",
+         "days": 4
+        }
+       }
+      }
+     ]
+    },
+    "neutral_line": {
+     "text": "Everyone picks a side, Doctor. Some just pick late.",
+     "expr": "smirk",
+     "speaker": "npc",
+     "next": "terms"
+    },
+    "pay": {
+     "text": "Simple. Rook will come by. Smile at him; he's sensitive.",
+     "expr": "smirk",
+     "speaker": "npc",
+     "end": true
+    },
+    "medic": {
+     "text": "Better. Money can be stolen. Debts of blood can't. You'll see my people tonight.",
+     "expr": "smirk",
+     "speaker": "npc",
+     "end": true
+    },
+    "haggle": {
+     "text": "Twenty-five. You've got nerve. I like nerve, in small doses.",
+     "expr": "smirk",
+     "speaker": "npc",
+     "end": true
+    },
+    "nohaggle": {
+     "text": "Fifty. That was me being generous.",
+     "expr": "angry",
+     "speaker": "npc",
+     "end": true
+    },
+    "aegis": {
+     "text": "Aegis. Then Aegis can sit in your waiting room when we come.",
+     "expr": "angry",
+     "speaker": "npc",
+     "end": true
+    },
+    "bold": {
+     "text": "Hm. Brave, or stupid. We'll find out together.",
+     "expr": "angry",
+     "speaker": "npc",
+     "end": true
+    },
+    "laugh": {
+     "text": "Out of your clinic? Sweetheart, this whole street is mine. Enjoy the next few nights.",
+     "expr": "smirk",
+     "speaker": "npc",
+     "end": true
+    }
+   }
+  },
+  "d_crew_raid": {
+   "id": "d_crew_raid",
+   "character": "rook_varga",
+   "title": "Night Visitors",
+   "act": 1,
+   "start": "start",
+   "nodes": {
+    "start": {
+     "text": "Mother sends regards. And a lesson. Lights off, everyone on the floor.",
+     "expr": "angry",
+     "speaker": "npc",
+     "options": [
+      {
+       "text": "Take what you want. Nobody gets hurt.",
+       "kind": "plain",
+       "next": "take",
+       "effects": {
+        "money": -250,
+        "rel": 2,
+        "faction": {
+         "street_gangs": 2
+        }
+       }
+      },
+      {
+       "text": "Fight back.",
+       "kind": "intimidate",
+       "next": "fight",
+       "effects": {
+        "fear": 15,
+        "path": {
+         "feared": 3
+        },
+        "heat": 6,
+        "faction": {
+         "street_gangs": -6
+        }
+       },
+       "fail_next": "hurt",
+       "fail_effects": {
+        "money": -350,
+        "appearance_player": "injury",
+        "rep": -3
+       },
+       "mod": -0.1
+      },
+      {
+       "text": "Tell Mother I'll treat her crews. For free.",
+       "kind": "persuade",
+       "next": "deal",
+       "effects": {
+        "flag": "crew_medic",
+        "faction": {
+         "street_gangs": 8
+        },
+        "rel": 6,
+        "path": {
+         "network": 1
+        }
+       },
+       "fail_next": "take",
+       "fail_effects": {
+        "money": -250
+       }
+      }
+     ]
+    },
+    "take": {
+     "text": "Smart. Mother likes smart.",
+     "expr": "smirk",
+     "speaker": "npc",
+     "end": true
+    },
+    "fight": {
+     "text": "...Alright. Alright! We're going. You're crazy, you know that?",
+     "expr": "fear",
+     "speaker": "npc",
+     "end": true
+    },
+    "hurt": {
+     "text": "Brave. Stupid. Don't bleed on your own floor, Doctor.",
+     "expr": "smirk",
+     "speaker": "npc",
+     "end": true
+    },
+    "deal": {
+     "text": "Free. Huh. I'll tell her. She might even like you.",
+     "expr": "neutral",
+     "speaker": "npc",
+     "end": true
+    }
+   }
+  },
+  "d_wire_contract": {
+   "id": "d_wire_contract",
+   "character": "vesna_kalo",
+   "title": "A Job With No Name",
+   "act": 2,
+   "start": "start",
+   "nodes": {
+    "start": {
+     "text": "Darling. You're getting a name, which is bad for a person in your line, and good for me. I have a courier who needs an optic nobody can trace. Interested?",
+     "expr": "smirk",
+     "speaker": "npc",
+     "options": [
+      {
+       "text": "What's the cut?",
+       "kind": "negotiate",
+       "next": "cut_good",
+       "effects": {
+        "flag": "wire_contract",
+        "quest": "q_wire_courier",
+        "rel": 4,
+        "path": {
+         "kingpin": 1
+        }
+       },
+       "fail_next": "cut_bad"
+      },
+      {
+       "text": "Untraceable means stolen.",
+       "kind": "persuade",
+       "next": "stolen",
+       "fail_next": "stolen_no"
+      },
+      {
+       "text": "I don't do black chrome.",
+       "kind": "plain",
+       "next": "no",
+       "effects": {
+        "rel": -6,
+        "faction": {
+         "medical_authorities": 3
+        },
+        "path": {
+         "respected": 1
+        }
+       }
+      }
+     ]
+    },
+    "cut_good": {
+     "text": "Sixty-forty, your way, because I like your face. Install anything off my shelf and I'll send the courier's fee. Clean, quiet, done.",
+     "expr": "smirk",
+     "speaker": "npc",
+     "end": true
+    },
+    "cut_bad": {
+     "text": "Seventy-thirty, mine, because I can. Still interested?",
+     "expr": "neutral",
+     "speaker": "npc",
+     "options": [
+      {
+       "text": "Fine.",
+       "kind": "plain",
+       "next": "cut_good",
+       "effects": {
+        "flag": "wire_contract",
+        "quest": "q_wire_courier"
+       }
+      },
+      {
+       "text": "No.",
+       "kind": "plain",
+       "next": "no",
+       "effects": {
+        "rel": -3
+       }
+      }
+     ]
+    },
+    "stolen": {
+     "text": "Liberated. From a Lyra freight lift. Nobody died. Well. Nobody who mattered to Lyra.",
+     "expr": "smirk",
+     "speaker": "npc",
+     "options": [
+      {
+       "text": "Then I'm in.",
+       "kind": "plain",
+       "next": "cut_good",
+       "effects": {
+        "flag": "wire_contract",
+        "quest": "q_wire_courier",
+        "rel": 4
+       }
+      },
+      {
+       "text": "I'll pass.",
+       "kind": "plain",
+       "next": "no"
+      }
+     ]
+    },
+    "stolen_no": {
+     "text": "Darling, everything in this city is stolen. Including the city.",
+     "expr": "smirk",
+     "speaker": "npc",
+     "options": [
+      {
+       "text": "Then I'm in.",
+       "kind": "plain",
+       "next": "cut_good",
+       "effects": {
+        "flag": "wire_contract",
+        "quest": "q_wire_courier"
+       }
+      },
+      {
+       "text": "I'll pass.",
+       "kind": "plain",
+       "next": "no"
+      }
+     ]
+    },
+    "no": {
+     "text": "Principles. Adorable. They're expensive; call me when you can't afford them.",
+     "expr": "neutral",
+     "speaker": "npc",
+     "end": true
+    }
+   }
+  },
+  "d_moor_inspection": {
+   "id": "d_moor_inspection",
+   "character": "adaeze_moor",
+   "title": "The Inspector Knocks",
+   "act": 2,
+   "start": "start",
+   "nodes": {
+    "start": {
+     "text": "Inspector Moor, Civic Medical Board. You're unlicensed, unregistered, and two of your patients are in my files with 'seizure, unknown cause'. You can explain, or I can write.",
+     "expr": "angry",
+     "speaker": "npc",
+     "options": [
+      {
+       "text": "Bribe: three hundred and you never came.",
+       "kind": "bribe",
+       "next": "bribed",
+       "effects": {
+        "flag": "moor_bribed",
+        "rel": -5,
+        "heat": -10,
+        "path": {
+         "kingpin": 1
+        },
+        "consequence": {
+         "id": "d_moor_returns",
+         "days": 5
+        }
+       },
+       "fail_next": "bribe_fail",
+       "fail_effects": {
+        "heat": 15,
+        "rel": -15
+       },
+       "cost": {
+        "money": 300
+       }
+      },
+      {
+       "text": "I keep my patients alive. That's more than your board does.",
+       "kind": "persuade",
+       "next": "convinced",
+       "effects": {
+        "rel": 8,
+        "heat": -5,
+        "path": {
+         "respected": 1
+        }
+       },
+       "fail_next": "fine",
+       "fail_effects": {
+        "money": -200,
+        "heat": 10
+       }
+      },
+      {
+       "text": "Here: my patient records. Take what you need.",
+       "kind": "plain",
+       "next": "records",
+       "effects": {
+        "flag": "gave_records",
+        "rel": 15,
+        "heat": -15,
+        "faction": {
+         "medical_authorities": 8
+        },
+        "consequence": {
+         "id": "d_crew_raid",
+         "days": 3
+        },
+        "path": {
+         "investigator": 1
+        }
+       }
+      },
+      {
+       "text": "Seizures... with fever that comes and goes? I've seen that too.",
+       "kind": "empathy",
+       "next": "fever",
+       "effects": {
+        "flag": "moor_ally_seed",
+        "rel": 15,
+        "path": {
+         "investigator": 2
+        }
+       },
+       "requires": {
+        "flag": "static_seen"
+       }
+      }
+     ],
+     "effects": {
+      "flag": "met_moor_beat"
+     }
+    },
+    "bribed": {
+     "text": "...I'll file this as a wasted afternoon.",
+     "expr": "neutral",
+     "speaker": "npc",
+     "end": true
+    },
+    "bribe_fail": {
+     "text": "Attempting to bribe a Board inspector. Thank you; that's the easiest report I'll write all month.",
+     "expr": "angry",
+     "speaker": "npc",
+     "end": true
+    },
+    "convinced": {
+     "text": "Alive. Hm. Keep them alive and keep them out of my files.",
+     "expr": "neutral",
+     "speaker": "npc",
+     "end": true
+    },
+    "fine": {
+     "text": "Two hundred, unlicensed practice, payable now. Next time it's closure.",
+     "expr": "angry",
+     "speaker": "npc",
+     "end": true
+    },
+    "records": {
+     "text": "Cooperation. Rare down here. I'll remember this. So will your patients, if anyone else finds out.",
+     "expr": "neutral",
+     "speaker": "npc",
+     "end": true
+    },
+    "fever": {
+     "text": "...Twelve cases this month. All Sump. All with neural chrome nobody admits selling. The Board says 'drug interaction'. I don't believe the Board.",
+     "expr": "sad",
+     "speaker": "npc",
+     "end": true
+    }
+   }
+  },
+  "d_moor_returns": {
+   "id": "d_moor_returns",
+   "character": "adaeze_moor",
+   "title": "The Second Visit",
+   "act": 2,
+   "start": "start",
+   "nodes": {
+    "start": {
+     "text": "I took your money. My daughter's tuition chip took it next. And now someone at the Board is asking why I keep losing your file.",
+     "expr": "sad",
+     "speaker": "npc",
+     "options": [
+      {
+       "text": "Then lose it one more time. Here's five hundred.",
+       "kind": "bribe",
+       "next": "owned",
+       "effects": {
+        "flag": "moor_owned",
+        "path": {
+         "kingpin": 2
+        },
+        "rel": -10
+       },
+       "cost": {
+        "money": 500
+       }
+      },
+      {
+       "text": "Let's stop pretending. What do you actually need?",
+       "kind": "empathy",
+       "next": "truth",
+       "effects": {
+        "rel": 10,
+        "flag": "moor_ally_seed",
+        "path": {
+         "investigator": 1
+        }
+       }
+      },
+      {
+       "text": "You took a bribe. Report me and you go down too.",
+       "kind": "intimidate",
+       "next": "cornered",
+       "effects": {
+        "fear": 25,
+        "rel": -20,
+        "path": {
+         "feared": 2
+        }
+       },
+       "fail_next": "burned",
+       "fail_effects": {
+        "heat": 20
+       }
+      }
+     ]
+    },
+    "owned": {
+     "text": "...Bought and paid for. Don't make me regret it more than I already do.",
+     "expr": "sad",
+     "speaker": "npc",
+     "end": true
+    },
+    "truth": {
+     "text": "I need someone in the Sump who'll tell me when the fever cases come in. Not to arrest. To count.",
+     "expr": "neutral",
+     "speaker": "npc",
+     "end": true
+    },
+    "cornered": {
+     "text": "...Fine. You win. This time.",
+     "expr": "fear",
+     "speaker": "npc",
+     "end": true
+    },
+    "burned": {
+     "text": "Go ahead. I'll confess; you'll close. Let's see who sleeps better.",
+     "expr": "angry",
+     "speaker": "npc",
+     "end": true
+    }
+   }
+  },
+  "d_dune_offer": {
+   "id": "d_dune_offer",
+   "character": "silas_dune",
+   "title": "The Butcher Of Furnace Line",
+   "act": 2,
+   "start": "start",
+   "nodes": {
+    "start": {
+     "text": "So you're the backroom saint. Your prices are killing my margins. Here's a gift: join me. My name on the door, your hands on the table, sixty percent of nothing is better than a hundred percent of a closed clinic.",
+     "expr": "smirk",
+     "speaker": "npc",
+     "options": [
+      {
+       "text": "Partners, then. Equal names.",
+       "kind": "negotiate",
+       "next": "partner",
+       "effects": {
+        "flag": "dune_partner",
+        "rel": 15,
+        "path": {
+         "network": 2
+        }
+       },
+       "fail_next": "sub"
+      },
+      {
+       "text": "Lie: Lyra already offered me more.",
+       "kind": "lie",
+       "next": "rattled",
+       "effects": {
+        "rel": -5,
+        "flag": "dune_rattled"
+       },
+       "fail_next": "called",
+       "fail_effects": {
+        "rel": -10,
+        "consequence": {
+         "id": "d_dune_sabotage",
+         "days": 3
+        }
+       }
+      },
+      {
+       "text": "Get out of my clinic, Silas.",
+       "kind": "plain",
+       "next": "war",
+       "effects": {
+        "rel": -15,
+        "flag": "dune_war",
+        "consequence": {
+         "id": "d_dune_sabotage",
+         "days": 4
+        },
+        "path": {
+         "feared": 1
+        }
+       }
+      }
+     ]
+    },
+    "partner": {
+     "text": "Equal. Fine. Equal is still better than drowning. My clinic sends you its overflow; you send me your hard cases. We both get rich slowly.",
+     "expr": "neutral",
+     "speaker": "npc",
+     "end": true
+    },
+    "sub": {
+     "text": "Equal? You have one table. I have nine. Sixty-forty or nothing.",
+     "expr": "angry",
+     "speaker": "npc",
+     "options": [
+      {
+       "text": "Then nothing.",
+       "kind": "plain",
+       "next": "war",
+       "effects": {
+        "rel": -10,
+        "flag": "dune_war",
+        "consequence": {
+         "id": "d_dune_sabotage",
+         "days": 4
+        }
+       }
+      },
+      {
+       "text": "...Sixty-forty.",
+       "kind": "plain",
+       "next": "partner",
+       "effects": {
+        "flag": "dune_partner",
+        "rel": 6,
+        "money": 0,
+        "path": {
+         "network": 1
+        }
+       }
+      }
+     ]
+    },
+    "rattled": {
+     "text": "...Lyra. Huh. Then I'll be watching who walks through your door.",
+     "expr": "fear",
+     "speaker": "npc",
+     "end": true
+    },
+    "called": {
+     "text": "Lyra doesn't even know your name. But now I know you lie. Interesting.",
+     "expr": "smirk",
+     "speaker": "npc",
+     "end": true
+    },
+    "war": {
+     "text": "Have it your way. Supplies get expensive in a war.",
+     "expr": "angry",
+     "speaker": "npc",
+     "end": true
+    }
+   }
+  },
+  "d_dune_sabotage": {
+   "id": "d_dune_sabotage",
+   "character": "silas_dune",
+   "title": "Sabotage",
+   "act": 2,
+   "start": "start",
+   "nodes": {
+    "start": {
+     "text": "Heard your supply drop went into the canal. Tragic. My offer still stands, at worse terms.",
+     "expr": "smirk",
+     "speaker": "npc",
+     "options": [
+      {
+       "text": "Ruin him: tell Mother he's been selling her crews' chrome to Aegis.",
+       "kind": "lie",
+       "next": "ruined",
+       "effects": {
+        "flag": "dune_ruined",
+        "faction": {
+         "street_gangs": 4
+        },
+        "path": {
+         "feared": 2,
+         "kingpin": 1
+        }
+       },
+       "fail_next": "nope",
+       "fail_effects": {
+        "rep": -4
+       }
+      },
+      {
+       "text": "Fine. Your terms.",
+       "kind": "plain",
+       "next": "sub",
+       "effects": {
+        "flag": "dune_partner",
+        "path": {
+         "network": 1
+        }
+       }
+      },
+      {
+       "text": "Walk away.",
+       "kind": "plain",
+       "next": "leave",
+       "effects": {
+        "supplies": -6
+       }
+      }
+     ]
+    },
+    "ruined": {
+     "text": "...What did you do? Mother's people are at my doors. You absolute— this isn't over.",
+     "expr": "fear",
+     "speaker": "npc",
+     "end": true
+    },
+    "nope": {
+     "text": "Mother laughed you out of the room, I hear. Shame.",
+     "expr": "smirk",
+     "speaker": "npc",
+     "end": true
+    },
+    "sub": {
+     "text": "Smart. Overflow starts tomorrow.",
+     "expr": "neutral",
+     "speaker": "npc",
+     "end": true
+    },
+    "leave": {
+     "text": "Then lose more supplies. I can do this all year.",
+     "expr": "smirk",
+     "speaker": "npc",
+     "end": true
+    }
+   }
+  },
+  "d_mother_wounded": {
+   "id": "d_mother_wounded",
+   "character": "rika_kessel",
+   "title": "Three On The Floor",
+   "act": 2,
+   "start": "start",
+   "nodes": {
+    "start": {
+     "text": "Aegis caught three of mine in the Belt. They're bleeding out in your doorway. I'm not asking.",
+     "expr": "angry",
+     "speaker": "npc",
+     "options": [
+      {
+       "text": "Bring them in. All three. No charge.",
+       "kind": "plain",
+       "next": "saved",
+       "effects": {
+        "faction": {
+         "street_gangs": 12
+        },
+        "rel": 15,
+        "money": -150,
+        "rep": 2,
+        "heat": 8,
+        "path": {
+         "network": 1,
+         "respected": 1
+        }
+       }
+      },
+      {
+       "text": "I'll take them. Triple rate.",
+       "kind": "negotiate",
+       "next": "paid",
+       "effects": {
+        "money": 400,
+        "faction": {
+         "street_gangs": 2
+        },
+        "rel": -5,
+        "path": {
+         "kingpin": 1
+        }
+       },
+       "fail_next": "saved",
+       "fail_effects": {
+        "money": -150
+       }
+      },
+      {
+       "text": "I'm not dying for your war. Take them somewhere else.",
+       "kind": "plain",
+       "next": "refused",
+       "effects": {
+        "faction": {
+         "street_gangs": -15
+        },
+        "rel": -25,
+        "rep": -3,
+        "path": {
+         "corporate": 1
+        }
+       }
+      },
+      {
+       "text": "Call Aegis. They pay bounties.",
+       "kind": "plain",
+       "next": "sold",
+       "effects": {
+        "money": 600,
+        "faction": {
+         "corporate_security": 10,
+         "street_gangs": -40
+        },
+        "rel": -60,
+        "flag": "sold_crews",
+        "path": {
+         "corporate": 3,
+         "feared": 1
+        },
+        "consequence": {
+         "id": "d_crew_raid",
+         "days": 2
+        }
+       }
+      }
+     ]
+    },
+    "saved": {
+     "text": "...All three breathing. I don't forget, Doctor. Not the good things either.",
+     "expr": "sad",
+     "speaker": "npc",
+     "end": true
+    },
+    "paid": {
+     "text": "Triple. You're a businesswoman. Fine. They live; you eat.",
+     "expr": "angry",
+     "speaker": "npc",
+     "end": true
+    },
+    "refused": {
+     "text": "Two of them died on the stairs. I'll remember which stairs.",
+     "expr": "angry",
+     "speaker": "npc",
+     "end": true
+    },
+    "sold": {
+     "text": "You... You called them. Run, Doctor. Run fast.",
+     "expr": "angry",
+     "speaker": "npc",
+     "end": true
+    }
+   }
+  },
+  "d_voss_offer": {
+   "id": "d_voss_offer",
+   "character": "cassian_voss",
+   "title": "A Generous Client",
+   "act": 3,
+   "start": "start",
+   "nodes": {
+    "start": {
+     "text": "Doctor. Cassian Voss, Lyra Biocomp, clinical outreach. I'll be brief because your time is valuable and mine is billed. We have a lattice stabiliser - neural, gentle, wonderful for tremor and grief. We'd like it in the Sump. Your hands, our product, two thousand on signing.",
+     "expr": "neutral",
+     "speaker": "npc",
+     "options": [
+      {
+       "text": "Two thousand. Done.",
+       "kind": "plain",
+       "next": "signed",
+       "effects": {
+        "flag": "thread_contract",
+        "money": 2000,
+        "faction": {
+         "lyra_biocomp": 12
+        },
+        "rel": 10,
+        "quest": "q_thread_installs",
+        "path": {
+         "corporate": 3
+        },
+        "consequence": {
+         "id": "d_static_return",
+         "days": 6
+        }
+       }
+      },
+      {
+       "text": "Make it four.",
+       "kind": "negotiate",
+       "next": "signed_more",
+       "effects": {
+        "flag": "thread_contract",
+        "money": 4000,
+        "faction": {
+         "lyra_biocomp": 8
+        },
+        "rel": 4,
+        "quest": "q_thread_installs",
+        "path": {
+         "corporate": 2,
+         "kingpin": 1
+        },
+        "consequence": {
+         "id": "d_static_return",
+         "days": 6
+        }
+       },
+       "fail_next": "firm"
+      },
+      {
+       "text": "A stabiliser for grief? What's it really for?",
+       "kind": "persuade",
+       "next": "slip",
+       "effects": {
+        "flag": "thread_trial_known",
+        "path": {
+         "investigator": 1
+        }
+       },
+       "fail_next": "smooth",
+       "mod": -0.15
+      },
+      {
+       "text": "No. I don't test products on my patients.",
+       "kind": "plain",
+       "next": "refused",
+       "effects": {
+        "rel": -10,
+        "faction": {
+         "lyra_biocomp": -6
+        },
+        "path": {
+         "respected": 2
+        }
+       }
+      }
+     ]
+    },
+    "signed": {
+     "text": "Wonderful. Kits arrive tomorrow. Do report anything... unusual. Fevers, for example. We care very much about fevers.",
+     "expr": "smirk",
+     "speaker": "npc",
+     "end": true
+    },
+    "signed_more": {
+     "text": "You negotiate like someone who's been poor. Four. Report anything unusual.",
+     "expr": "smirk",
+     "speaker": "npc",
+     "end": true
+    },
+    "firm": {
+     "text": "Two, Doctor. I'm generous, not stupid.",
+     "expr": "neutral",
+     "speaker": "npc",
+     "options": [
+      {
+       "text": "Two, then.",
+       "kind": "plain",
+       "next": "signed",
+       "effects": {
+        "flag": "thread_contract",
+        "money": 2000,
+        "faction": {
+         "lyra_biocomp": 10
+        },
+        "quest": "q_thread_installs",
+        "path": {
+         "corporate": 2
+        },
+        "consequence": {
+         "id": "d_static_return",
+         "days": 6
+        }
+       }
+      },
+      {
+       "text": "No deal.",
+       "kind": "plain",
+       "next": "refused",
+       "effects": {
+        "rel": -6
+       }
+      }
+     ]
+    },
+    "slip": {
+     "text": "Grief... is a signal problem. THREAD - ah, the stabiliser - re-routes it. It's a trial, technically. Every miracle is, technically.",
+     "expr": "neutral",
+     "speaker": "npc",
+     "options": [
+      {
+       "text": "A trial on people who can't sue. Get out.",
+       "kind": "plain",
+       "next": "refused",
+       "effects": {
+        "rel": -15,
+        "faction": {
+         "lyra_biocomp": -8
+        },
+        "path": {
+         "respected": 1,
+         "investigator": 1
+        }
+       }
+      },
+      {
+       "text": "Then pay me like a trial site. Four thousand.",
+       "kind": "negotiate",
+       "next": "signed_more",
+       "effects": {
+        "flag": "thread_contract",
+        "money": 4000,
+        "faction": {
+         "lyra_biocomp": 6
+        },
+        "quest": "q_thread_installs",
+        "path": {
+         "corporate": 2
+        },
+        "consequence": {
+         "id": "d_static_return",
+         "days": 6
+        }
+       },
+       "fail_next": "firm"
+      }
+     ]
+    },
+    "smooth": {
+     "text": "For exactly what the leaflet says, Doctor. Would you like a leaflet?",
+     "expr": "smirk",
+     "speaker": "npc",
+     "options": [
+      {
+       "text": "Sign me up.",
+       "kind": "plain",
+       "next": "signed",
+       "effects": {
+        "flag": "thread_contract",
+        "money": 2000,
+        "faction": {
+         "lyra_biocomp": 10
+        },
+        "quest": "q_thread_installs",
+        "path": {
+         "corporate": 2
+        },
+        "consequence": {
+         "id": "d_static_return",
+         "days": 6
+        }
+       }
+      },
+      {
+       "text": "No.",
+       "kind": "plain",
+       "next": "refused",
+       "effects": {
+        "rel": -6
+       }
+      }
+     ]
+    },
+    "refused": {
+     "text": "Pity. The Sump will get its stabilisers either way. Only the hands change.",
+     "expr": "neutral",
+     "speaker": "npc",
+     "end": true
+    }
+   }
+  },
+  "d_static_return": {
+   "id": "d_static_return",
+   "character": "noor_sayeh",
+   "title": "The Static",
+   "act": 3,
+   "start": "start",
+   "nodes": {
+    "start": {
+     "text": "...Doctor? The patients from the Lyra kits. Four of them. Fever, then the static - like a radio between stations, in their heads. One of them stopped talking. I've had it for two years. I know what it sounds like.",
+     "expr": "pain",
+     "speaker": "npc",
+     "options": [
+      {
+       "text": "Who are you?",
+       "kind": "plain",
+       "next": "noor"
+      },
+      {
+       "text": "Can it be removed?",
+       "kind": "plain",
+       "next": "remove"
+      }
+     ],
+     "effects": {
+      "flag": "static_seen"
+     }
+    },
+    "noor": {
+     "text": "Noor Sayeh. Lyra called me 'Patient Zero' when they thought I couldn't hear. I can hear everything. That's the problem.",
+     "expr": "fear",
+     "speaker": "npc",
+     "next": "choice"
+    },
+    "remove": {
+     "text": "Maybe. By someone who knows what it is. There's an old surgeon in the Caldera who used to wake up screaming the word THREAD.",
+     "expr": "fear",
+     "speaker": "npc",
+     "next": "choice"
+    },
+    "choice": {
+     "text": "Will you help me, or will you call him? Voss. He's been looking for me.",
+     "expr": "fear",
+     "speaker": "npc",
+     "options": [
+      {
+       "text": "You're staying here. Hidden. I'll find out what this is.",
+       "kind": "plain",
+       "next": "hidden",
+       "effects": {
+        "flag": [
+         "noor_hidden",
+         "static_seen"
+        ],
+        "rel": 20,
+        "path": {
+         "creator": 2,
+         "investigator": 1
+        },
+        "quest": "q_noor"
+       }
+      },
+      {
+       "text": "I'll call Ilse. She promised she'd know.",
+       "kind": "plain",
+       "next": "ilse",
+       "effects": {
+        "flag": [
+         "noor_hidden",
+         "static_seen",
+         "called_ilse"
+        ],
+        "rel": 15,
+        "rel_other": {
+         "ilse_hartmann": 10
+        },
+        "path": {
+         "respected": 1,
+         "investigator": 1
+        },
+        "quest": "q_noor",
+        "consequence": {
+         "id": "d_ilse_truth",
+         "days": 1
+        }
+       },
+       "requires": {
+        "flag": "ilse_promise"
+       }
+      },
+      {
+       "text": "Voss pays well for lost property.",
+       "kind": "plain",
+       "next": "sold",
+       "effects": {
+        "flag": [
+         "noor_sold",
+         "static_seen"
+        ],
+        "money": 4000,
+        "faction": {
+         "lyra_biocomp": 20
+        },
+        "rel": -80,
+        "rel_other": {
+         "ilse_hartmann": -40
+        },
+        "path": {
+         "corporate": 4,
+         "feared": 1
+        },
+        "appearance_char": {
+         "id": "noor_sayeh",
+         "event": "expr:fear"
+        }
+       }
+      }
+     ]
+    },
+    "hidden": {
+     "text": "...Thank you. I'll be quiet. I'm always quiet. It's everyone else who's loud.",
+     "expr": "sad",
+     "speaker": "npc",
+     "end": true
+    },
+    "ilse": {
+     "text": "Hartmann? ...She's alive? Then maybe I'll be, too.",
+     "expr": "sad",
+     "speaker": "npc",
+     "end": true
+    },
+    "sold": {
+     "text": "No - please - you're like them. You're exactly like them.",
+     "expr": "fear",
+     "speaker": "npc",
+     "end": true
+    }
+   }
+  },
+  "d_mother_trade": {
+   "id": "d_mother_trade",
+   "character": "rika_kessel",
+   "title": "Mother's Offer",
+   "act": 3,
+   "start": "start",
+   "nodes": {
+    "start": {
+     "text": "You've grown. Four rooms, staff, a name. The crews need a ripper who belongs to us. Exclusive. Our chrome, our wounded, our enemies cut slow. In return the whole Belt is safe for you.",
+     "expr": "smirk",
+     "speaker": "npc",
+     "options": [
+      {
+       "text": "I'm yours. The crews' surgeon.",
+       "kind": "plain",
+       "next": "crew",
+       "effects": {
+        "flag": "crew_surgeon",
+        "faction": {
+         "street_gangs": 25,
+         "corporate_security": -15
+        },
+        "rel": 25,
+        "path": {
+         "kingpin": 2,
+         "feared": 2
+        }
+       }
+      },
+      {
+       "text": "I treat everyone. Your crews get priority, not ownership.",
+       "kind": "persuade",
+       "next": "priority",
+       "effects": {
+        "flag": "crew_priority",
+        "faction": {
+         "street_gangs": 10
+        },
+        "rel": 8,
+        "path": {
+         "respected": 1,
+         "network": 1
+        }
+       },
+       "fail_next": "insulted",
+       "fail_effects": {
+        "rel": -10
+       }
+      },
+      {
+       "text": "And if I say no?",
+       "kind": "intimidate",
+       "next": "standoff",
+       "effects": {
+        "rel": -5,
+        "fear": 10,
+        "path": {
+         "feared": 1
+        }
+       },
+       "fail_next": "threat",
+       "fail_effects": {
+        "rel": -15,
+        "consequence": {
+         "id": "d_crew_raid",
+         "days": 2
+        }
+       }
+      }
+     ]
+    },
+    "crew": {
+     "text": "Good. Rook will bring the first list. Some names on it won't be patients.",
+     "expr": "smirk",
+     "speaker": "npc",
+     "end": true
+    },
+    "priority": {
+     "text": "Priority. You bargain like a politician. ...Fine. For now.",
+     "expr": "neutral",
+     "speaker": "npc",
+     "end": true
+    },
+    "insulted": {
+     "text": "Ownership was the polite word, Doctor.",
+     "expr": "angry",
+     "speaker": "npc",
+     "end": true
+    },
+    "standoff": {
+     "text": "Then nothing. For now. You're useful; useful people get second chances. Once.",
+     "expr": "neutral",
+     "speaker": "npc",
+     "end": true
+    },
+    "threat": {
+     "text": "Then the Belt gets very unsafe for you.",
+     "expr": "angry",
+     "speaker": "npc",
+     "end": true
+    }
+   }
+  },
+  "d_teo_crossroads": {
+   "id": "d_teo_crossroads",
+   "character": "teo_marr",
+   "title": "Teo's Line",
+   "act": 3,
+   "nodes": {
+    "start": {
+     "text": "Can we talk? Not as boss and staff. As... you know.",
+     "expr": "sad",
+     "speaker": "npc",
+     "options": [
+      {
+       "text": "Always. What's wrong?",
+       "kind": "empathy",
+       "next": "talk",
+       "effects": {
+        "rel": 8
+       },
+       "fail_next": "talk"
+      },
+      {
+       "text": "Make it quick.",
+       "kind": "plain",
+       "next": "talk",
+       "effects": {
+        "rel": -3
+       }
+      }
+     ]
+    },
+    "talk": {
+     "text": "You made me put chrome in a kid. I keep seeing her face. I said one rule, and you said fine, and then you didn't. I need to know if that's who we are now.",
+     "expr": "angry",
+     "speaker": "npc",
+     "options": [
+      {
+       "text": "It was wrong. It won't happen again.",
+       "kind": "empathy",
+       "next": "forgive",
+       "effects": {
+        "rel": 20,
+        "flag": "teo_forgiven",
+        "path": {
+         "respected": 1
+        }
+       },
+       "fail_next": "leave",
+       "fail_effects": {
+        "flag": "teo_gone",
+        "rel": -20
+       }
+      },
+      {
+       "text": "That kid would have gone to a butcher. We were the better option.",
+       "kind": "persuade",
+       "next": "doubt",
+       "effects": {
+        "rel": 2
+       },
+       "fail_next": "leave",
+       "fail_effects": {
+        "flag": "teo_gone",
+        "rel": -25
+       }
+      },
+      {
+       "text": "You work for me. You do what the table needs.",
+       "kind": "intimidate",
+       "next": "cowed",
+       "effects": {
+        "fear": 30,
+        "rel": -20,
+        "path": {
+         "feared": 2
+        },
+        "appearance_char": {
+         "id": "teo_marr",
+         "event": "expr:fear"
+        }
+       },
+       "fail_next": "leave",
+       "fail_effects": {
+        "flag": "teo_gone",
+        "rel": -40
+       }
+      }
+     ]
+    },
+    "forgive": {
+     "text": "Okay. Okay. I'm holding you to it.",
+     "expr": "sad",
+     "speaker": "npc",
+     "end": true
+    },
+    "doubt": {
+     "text": "...Maybe. I don't know. I'll stay. For now.",
+     "expr": "sad",
+     "speaker": "npc",
+     "end": true
+    },
+    "cowed": {
+     "text": "...Yes, Doctor.",
+     "expr": "fear",
+     "speaker": "npc",
+     "end": true
+    },
+    "leave": {
+     "text": "I'm done. Keep the coat.",
+     "expr": "angry",
+     "speaker": "npc",
+     "end": true
+    }
+   },
+   "start": "start"
+  },
+  "d_teo_own_clinic": {
+   "id": "d_teo_own_clinic",
+   "character": "teo_marr",
+   "title": "A Clinic Of His Own",
+   "act": 3,
+   "start": "start",
+   "nodes": {
+    "start": {
+     "text": "I've been thinking. You've got a room nobody's working in. What if I ran it? Under your name. Your rules. Mine too.",
+     "expr": "smirk",
+     "speaker": "npc",
+     "options": [
+      {
+       "text": "It's yours to run. Make me proud.",
+       "kind": "plain",
+       "next": "yes",
+       "effects": {
+        "flag": "teo_runs_clinic",
+        "rel": 20,
+        "path": {
+         "network": 3
+        }
+       }
+      },
+      {
+       "text": "You're not ready.",
+       "kind": "plain",
+       "next": "no",
+       "effects": {
+        "rel": -8
+       }
+      }
+     ]
+    },
+    "yes": {
+     "text": "I won't let you down. ...I might let the plumbing down. But not you.",
+     "expr": "smirk",
+     "speaker": "npc",
+     "end": true
+    },
+    "no": {
+     "text": "Yeah. Maybe not. Ask me again sometime.",
+     "expr": "sad",
+     "speaker": "npc",
+     "end": true
+    }
+   }
+  },
+  "d_ilse_truth": {
+   "id": "d_ilse_truth",
+   "character": "ilse_hartmann",
+   "title": "What I Built",
+   "act": 4,
+   "start": "start",
+   "nodes": {
+    "start": {
+     "text": "Sit. I owe you the truth and I'm running out of steady days to tell it. THREAD was mine. A lattice that grows along the nerves and smooths the signal. It was meant for epilepsy. Lyra wanted obedience. When they got fevers instead, they buried the trial in the Sump.",
+     "expr": "sad",
+     "speaker": "npc",
+     "options": [
+      {
+       "text": "Then we tell everyone. With Moor, at a tribunal.",
+       "kind": "plain",
+       "next": "expose",
+       "effects": {
+        "flag": "expose_plan",
+        "rel": 15,
+        "path": {
+         "investigator": 3
+        },
+        "quest": "q_truth"
+       }
+      },
+      {
+       "text": "Can you take it out of Noor?",
+       "kind": "plain",
+       "next": "cure",
+       "effects": {
+        "flag": "cure_plan",
+        "rel": 10,
+        "path": {
+         "creator": 2,
+         "respected": 1
+        },
+        "quest": "q_truth"
+       },
+       "requires": {
+        "flag": "noor_hidden"
+       }
+      },
+      {
+       "text": "What would Voss pay to know where you are?",
+       "kind": "plain",
+       "next": "sell",
+       "effects": {
+        "flag": "ilse_sold",
+        "money": 3000,
+        "faction": {
+         "lyra_biocomp": 15
+        },
+        "rel": -100,
+        "path": {
+         "corporate": 3
+        }
+       }
+      },
+      {
+       "text": "Your secret is safe with me.",
+       "kind": "plain",
+       "next": "kept",
+       "effects": {
+        "flag": "ilse_secret",
+        "rel": 10,
+        "path": {
+         "network": 1
+        }
+       }
+      }
+     ],
+     "effects": {
+      "flag": "ilse_truth_known"
+     }
+    },
+    "expose": {
+     "text": "A tribunal. Adaeze Moor is honest; that's rare enough to be dangerous. I'll testify. I'm dying anyway.",
+     "expr": "neutral",
+     "speaker": "npc",
+     "end": true
+    },
+    "cure": {
+     "text": "Maybe. With your hands and my memory. It will be the hardest surgery of your life.",
+     "expr": "neutral",
+     "speaker": "npc",
+     "end": true
+    },
+    "sell": {
+     "text": "...I trained you. I trained you, and you're a Lyra doctor after all. Go on. Make your call.",
+     "expr": "angry",
+     "speaker": "npc",
+     "end": true
+    },
+    "kept": {
+     "text": "Kind. Not useful, but kind.",
+     "expr": "sad",
+     "speaker": "npc",
+     "end": true
+    }
+   }
+  },
+  "d_wire_betrayal": {
+   "id": "d_wire_betrayal",
+   "character": "vesna_kalo",
+   "title": "Wire's Debt",
+   "act": 4,
+   "start": "start",
+   "nodes": {
+    "start": {
+     "text": "I'm going to be honest with you, which should frighten you. Voss bought my debt. He wants your patient lists, your THREAD notes, and you, on a plate. I can sell you, or you can make me an offer.",
+     "expr": "neutral",
+     "speaker": "npc",
+     "options": [
+      {
+       "text": "Pay off your debt. Three thousand. Then you work for me.",
+       "kind": "plain",
+       "next": "bought",
+       "effects": {
+        "flag": "wire_loyal",
+        "rel": 30,
+        "faction": {
+         "black_market": 15
+        },
+        "path": {
+         "network": 2,
+         "kingpin": 2
+        }
+       },
+       "cost": {
+        "money": 3000
+       }
+      },
+      {
+       "text": "Give Voss fake lists. I'll forge them.",
+       "kind": "lie",
+       "next": "forged",
+       "effects": {
+        "flag": "voss_fooled",
+        "rel": 10,
+        "path": {
+         "investigator": 1,
+         "kingpin": 1
+        }
+       },
+       "fail_next": "caught",
+       "fail_effects": {
+        "heat": 25,
+        "faction": {
+         "lyra_biocomp": -20
+        }
+       }
+      },
+      {
+       "text": "Sell me and I'll find you, Vesna.",
+       "kind": "intimidate",
+       "next": "scared",
+       "effects": {
+        "fear": 30,
+        "rel": -15,
+        "path": {
+         "feared": 3
+        }
+       },
+       "fail_next": "sold",
+       "fail_effects": {
+        "flag": "wire_sold_you",
+        "heat": 30
+       }
+      }
+     ]
+    },
+    "bought": {
+     "text": "Three thousand. ...Nobody's ever bought me out, they've only bought me. Fine. I'm yours. Don't make it weird.",
+     "expr": "smirk",
+     "speaker": "npc",
+     "end": true
+    },
+    "forged": {
+     "text": "Fake lists for a real monster. I like it. He'll be chasing ghosts in the drowned district for a week.",
+     "expr": "smirk",
+     "speaker": "npc",
+     "end": true
+    },
+    "caught": {
+     "text": "He saw through it. Of course he did. Lock your doors, darling.",
+     "expr": "fear",
+     "speaker": "npc",
+     "end": true
+    },
+    "scared": {
+     "text": "...You would, wouldn't you. Fine. I'll stall him.",
+     "expr": "fear",
+     "speaker": "npc",
+     "end": true
+    },
+    "sold": {
+     "text": "Big words. Voss has bigger guards. Sorry, darling. Business.",
+     "expr": "neutral",
+     "speaker": "npc",
+     "end": true
+    }
+   }
+  },
+  "d_moor_evidence": {
+   "id": "d_moor_evidence",
+   "character": "adaeze_moor",
+   "title": "Evidence",
+   "act": 4,
+   "start": "start",
+   "nodes": {
+    "start": {
+     "text": "I've counted forty static cases. I have nothing a tribunal will accept. You have the implants, the records, the patients. Will you give them to me?",
+     "expr": "neutral",
+     "speaker": "npc",
+     "options": [
+      {
+       "text": "Everything. Take it to the tribunal.",
+       "kind": "plain",
+       "next": "given",
+       "effects": {
+        "flag": "evidence_given",
+        "rel": 25,
+        "faction": {
+         "medical_authorities": 20,
+         "lyra_biocomp": -30
+        },
+        "heat": 15,
+        "path": {
+         "investigator": 4,
+         "respected": 2
+        }
+       }
+      },
+      {
+       "text": "For a licence. A real one.",
+       "kind": "negotiate",
+       "next": "licence",
+       "effects": {
+        "flag": [
+         "evidence_given",
+         "licensed"
+        ],
+        "rel": 10,
+        "faction": {
+         "medical_authorities": 25,
+         "lyra_biocomp": -25
+        },
+        "path": {
+         "respected": 3,
+         "investigator": 2
+        }
+       },
+       "fail_next": "given"
+      },
+      {
+       "text": "The Undermarket pays better for Lyra secrets.",
+       "kind": "plain",
+       "next": "sold",
+       "effects": {
+        "flag": "evidence_sold",
+        "money": 5000,
+        "faction": {
+         "black_market": 25,
+         "lyra_biocomp": -10
+        },
+        "rel": -30,
+        "path": {
+         "kingpin": 4
+        }
+       }
+      },
+      {
+       "text": "No. This is too dangerous.",
+       "kind": "plain",
+       "next": "no",
+       "effects": {
+        "rel": -15,
+        "path": {
+         "corporate": 1
+        }
+       }
+      }
+     ]
+    },
+    "given": {
+     "text": "Then it begins. They'll come for both of us now. Thank you, Doctor.",
+     "expr": "neutral",
+     "speaker": "npc",
+     "end": true
+    },
+    "licence": {
+     "text": "A licence. You drive a hard bargain for a saint. ...Done. Board seal by morning.",
+     "expr": "smirk",
+     "speaker": "npc",
+     "end": true
+    },
+    "sold": {
+     "text": "You sold it. Of course you did. Everyone down here sells everything.",
+     "expr": "angry",
+     "speaker": "npc",
+     "end": true
+    },
+    "no": {
+     "text": "Then I'll keep counting. And one day I'll count you.",
+     "expr": "sad",
+     "speaker": "npc",
+     "end": true
+    }
+   }
+  },
+  "d_voss_ultimatum": {
+   "id": "d_voss_ultimatum",
+   "character": "cassian_voss",
+   "title": "The Ultimatum",
+   "act": 4,
+   "start": "start",
+   "nodes": {
+    "start": {
+     "text": "Doctor. You've been very busy for a backroom. Give me the girl, your notes and your silence, and you'll have a suite in Meridian Heights by Friday. Refuse, and I'm afraid the Sump will have a fire.",
+     "expr": "neutral",
+     "speaker": "npc",
+     "options": [
+      {
+       "text": "Accept. A suite sounds nice.",
+       "kind": "plain",
+       "next": "accept",
+       "effects": {
+        "flag": "joined_lyra",
+        "faction": {
+         "lyra_biocomp": 40,
+         "corporate_security": 20,
+         "street_gangs": -20
+        },
+        "money": 6000,
+        "path": {
+         "corporate": 5
+        }
+       }
+      },
+      {
+       "text": "Here's what I've got on THREAD. Walk away, or it's public tomorrow.",
+       "kind": "intimidate",
+       "next": "backs",
+       "effects": {
+        "flag": "voss_backed_down",
+        "path": {
+         "investigator": 2,
+         "feared": 2
+        }
+       },
+       "fail_next": "fire",
+       "fail_effects": {
+        "flag": "clinic_burned",
+        "money": -1000,
+        "rep": -5
+       },
+       "requires": {
+        "flag_any": [
+         "evidence_given",
+         "expose_plan",
+         "voss_fooled"
+        ]
+       }
+      },
+      {
+       "text": "Make me your partner instead. I can make THREAD work.",
+       "kind": "persuade",
+       "next": "partner",
+       "effects": {
+        "flag": "thread_partner",
+        "faction": {
+         "lyra_biocomp": 25
+        },
+        "path": {
+         "creator": 4,
+         "corporate": 1
+        }
+       },
+       "fail_next": "fire",
+       "fail_effects": {
+        "flag": "clinic_burned",
+        "money": -1000
+       },
+       "requires": {
+        "flag_any": [
+         "noor_hidden",
+         "cure_plan"
+        ]
+       }
+      },
+      {
+       "text": "Get out.",
+       "kind": "plain",
+       "next": "fire",
+       "effects": {
+        "flag": "clinic_burned",
+        "money": -800,
+        "rep": -3,
+        "path": {
+         "respected": 1,
+         "feared": 1
+        }
+       }
+      }
+     ]
+    },
+    "accept": {
+     "text": "Excellent. Wear something white. They like white upstairs.",
+     "expr": "smirk",
+     "speaker": "npc",
+     "end": true
+    },
+    "backs": {
+     "text": "...You'd really do it. How very inconvenient. Fine. For now, Doctor, you are not worth the paperwork.",
+     "expr": "angry",
+     "speaker": "npc",
+     "end": true
+    },
+    "partner": {
+     "text": "A street surgeon who can make THREAD stable. ...Prove it, and the lab is yours.",
+     "expr": "smirk",
+     "speaker": "npc",
+     "end": true
+    },
+    "fire": {
+     "text": "Such a shame about the wiring in these old buildings.",
+     "expr": "neutral",
+     "speaker": "npc",
+     "end": true
+    }
+   }
+  },
+  "d_finale": {
+   "id": "d_finale",
+   "character": "ilse_hartmann",
+   "title": "Consequence",
+   "act": 5,
+   "start": "start",
+   "nodes": {
+    "start": {
+     "text": "The city doesn't remember surgeons. It remembers what they made of it. So: what did you make?",
+     "expr": "neutral",
+     "speaker": "npc",
+     "next": "choose"
+    },
+    "choose": {
+     "text": "Choose who you are now. Everything you did decides which doors are open.",
+     "expr": "neutral",
+     "speaker": "npc",
+     "options": [
+      {
+       "text": "A doctor. People come to me because I keep them alive.",
+       "kind": "plain",
+       "next": "end",
+       "effects": {
+        "ending": "respected"
+       },
+       "requires": {
+        "ending": "respected"
+       }
+      },
+      {
+       "text": "The Undermarket answers to me.",
+       "kind": "plain",
+       "next": "end",
+       "effects": {
+        "ending": "kingpin"
+       },
+       "requires": {
+        "ending": "kingpin"
+       }
+      },
+      {
+       "text": "Lyra's surgeon, upstairs, in white.",
+       "kind": "plain",
+       "next": "end",
+       "effects": {
+        "ending": "corporate"
+       },
+       "requires": {
+        "ending": "corporate"
+       }
+      },
+      {
+       "text": "A network of clinics no one can shut down.",
+       "kind": "plain",
+       "next": "end",
+       "effects": {
+        "ending": "network"
+       },
+       "requires": {
+        "ending": "network"
+       }
+      },
+      {
+       "text": "The one who dragged THREAD into the light.",
+       "kind": "plain",
+       "next": "end",
+       "effects": {
+        "ending": "investigator"
+       },
+       "requires": {
+        "ending": "investigator"
+       }
+      },
+      {
+       "text": "The one who finished what Lyra started.",
+       "kind": "plain",
+       "next": "end",
+       "effects": {
+        "ending": "creator"
+       },
+       "requires": {
+        "ending": "creator"
+       }
+      },
+      {
+       "text": "The surgeon everyone is afraid of.",
+       "kind": "plain",
+       "next": "end",
+       "effects": {
+        "ending": "feared"
+       },
+       "requires": {
+        "ending": "feared"
+       }
+      }
+     ]
+    },
+    "end": {
+     "text": "Then that's your story. The Sump will tell it wrong, of course. It always does.",
+     "expr": "smirk",
+     "speaker": "npc",
+     "end": true
+    }
+   }
+  }
+ }
+}

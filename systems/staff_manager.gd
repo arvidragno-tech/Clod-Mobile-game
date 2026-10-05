@@ -247,6 +247,7 @@ func hire(index: int) -> bool:
 		StoryManager.set_flag(&"hired_teo")
 		CharacterManager.change_relationship(TEO, 10)
 	staff_changed.emit()
+	StoryManager.check()
 	return true
 
 
@@ -370,6 +371,7 @@ func _on_skill_up(e: Dictionary) -> void:
 	if EmployeeAI.has_trait(e, "ambitious") or float(e["ambition"]) > 60.0:
 		e["raise_pending"] = true
 		employee_event.emit(StringName(str(e["id"])), "%s wants a raise." % e["name"])
+		CommsManager.send(&"c_staff_raise", {"name": e["name"]})
 
 
 # --- Days ----------------------------------------------------------------------------
@@ -409,6 +411,7 @@ func end_of_day() -> Array[String]:
 				e["secret_known"] = true
 				notes.append("Camera footage: %s has been reporting to %s." % [e["name"], FactionManager.get_name_of(StringName(str(e["secret_faction"])))])
 				StoryManager.set_flag(&"informant_found")
+				CommsManager.send(&"c_informant", {"name": e["name"], "faction": FactionManager.get_name_of(StringName(str(e["secret_faction"])))})
 		if EmployeeAI.has_trait(e, "gambler") and _rng.randf() < 0.08:
 			var gone := mini(EconomyManager.money, _rng.randi_range(30, 90))
 			if gone > 0:

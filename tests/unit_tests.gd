@@ -22,6 +22,9 @@ func run(runner: Node) -> void:
 	_clinic_upgrade()
 	_business_and_world()
 	_staff()
+	_story()
+	_story_playthrough(0)
+	_story_playthrough(1)
 	_events()
 	_black_market()
 	_failure_and_death()
@@ -521,6 +524,151 @@ func _staff() -> void:
 	StaffManager.load_save_data(d)
 	check(StaffManager.get_employee(&"teo_marr").get("skill", 0) == 3, "staff persist")
 	check(StaffManager.fire(&"teo_marr") and StoryManager.has_flag(&"teo_gone"), "firing Teo is remembered")
+	SaveManager.reset_all()
+
+
+func _story() -> void:
+	SaveManager.reset_all()
+	var was_running := GameManager.is_running
+	GameManager.is_running = true
+	# Content integrity: every option points at a real node, every dialogue
+	# speaker is cast, every beat's talk/quest/comms exists.
+	var bad: Array[String] = []
+	for id: Variant in DialogueManager.dialogues:
+		var d: Dictionary = DialogueManager.dialogues[id]
+		if not CharacterManager.has_character(StringName(str(d["character"]))):
+			bad.append("%s speaker" % id)
+		for nid: Variant in d["nodes"]:
+			var nd: Dictionary = d["nodes"][nid]
+			for o: Variant in nd.get("options", []):
+				for k: String in ["next", "fail_next"]:
+					if o.has(k) and not d["nodes"].has(str(o[k])):
+						bad.append("%s/%s -> %s" % [id, nid, o[k]])
+				var q: Variant = o.get("effects", {}).get("quest", "")
+				if str(q) != "" and not QuestManager.quests.has(StringName(str(q))):
+					bad.append("%s quest %s" % [id, q])
+	for b: Variant in StoryManager.beats:
+		for a: Variant in b["do"]:
+			if a.has("talk") and not DialogueManager.has_dialogue(StringName(str(a["talk"]))):
+				bad.append("beat talk %s" % a["talk"])
+			if a.has("quest") and not QuestManager.quests.has(StringName(str(a["quest"]))):
+				bad.append("beat quest %s" % a["quest"])
+			if a.has("comms") and not CommsManager.templates.has(str(a["comms"])):
+				bad.append("beat comms %s" % a["comms"])
+	check(bad.is_empty(), "story content is consistent %s" % [bad])
+	check(DialogueManager.dialogues.size() >= 20 and QuestManager.quests.size() >= 20, "20+ conversations and quests")
+	var types := {}
+	for id: StringName in QuestManager.quests:
+		types[str(QuestManager.quests[id]["type"])] = true
+	check(types.size() == 7, "all seven quest types are used")
+	# Beats: day-1 quests start, Ilse wants to talk after the first job.
+	StoryManager.check()
+	check(QuestManager.is_active(&"q_find_wire") and QuestManager.is_active(&"q_fit_out"), "act I opening quests start")
+	EventManager.operations = 1
+	StoryManager.check()
+	check(StoryManager.peek_talk() == &"d_ilse_intro", "Ilse comes to talk after the first job")
+	# Dialogue: plain choice with effects, node expressions, quest start.
+	check(DialogueManager.start(StoryManager.pop_talk()), "conversation starts")
+	check(str(DialogueManager.current_node()["expr"]) == "neutral" and DialogueManager.options().size() == 3, "first line with three approaches")
+	DialogueManager.choose(0)
+	var rel := CharacterManager.relationship(&"ilse_hartmann")
+	var r := DialogueManager.choose(1)
+	check(not r.is_empty() and DialogueManager.is_active(), "branching continues")
+	while DialogueManager.is_active() and not DialogueManager.options().is_empty():
+		DialogueManager.choose(int(DialogueManager.options()[0]["index"]))
+	while DialogueManager.is_active():
+		DialogueManager.advance()
+	check(StoryManager.has_flag(&"ilse_promise") and QuestManager.is_active(&"q_mentor_lessons"), "promise recorded and quest started")
+	check(CharacterManager.relationship(&"ilse_hartmann") > rel and DialogueManager.choices.size() >= 2, "relationship changed; choices logged")
+	# Checks: odds come from the world.
+	DialogueManager.start(&"d_mother_protection")
+	var intim := {"kind": "intimidate"}
+	var low := DialogueManager.chance(intim)
+	FactionManager.add_heat(60.0)
+	check(DialogueManager.chance(intim) > low, "heat makes intimidation likelier")
+	var bribe_opt := {"kind": "bribe", "cost": {"money": 99999}}
+	check(DialogueManager.lock_reason(bribe_opt) != "", "can't bribe without the money")
+	DialogueManager.end()
+	# Delayed consequence: a choice schedules a conversation days later.
+	StoryManager.apply_effects({"consequence": {"id": "d_landlord_enforcer", "days": 2}})
+	BusinessManager.end_day()
+	check(not StoryManager.talk_queue.has("d_landlord_enforcer"), "not yet")
+	BusinessManager.end_day()
+	check(StoryManager.talk_queue.has("d_landlord_enforcer"), "the consequence arrives two days later")
+	# Quests complete against the world and pay out.
+	var money := EconomyManager.money
+	EventManager.operations = 3
+	StoryManager.check()
+	check(QuestManager.state_of(&"q_mentor_lessons") == "completed" and ProgressionManager.total_xp > 0, "quest completes and rewards")
+	QuestManager.start(&"q_wire_courier")
+	BusinessManager.day += 10
+	QuestManager.check_all()
+	check(QuestManager.state_of(&"q_wire_courier") == "failed", "deadline quests can fail")
+	# Acts advance on their conditions.
+	StoryManager.set_flag(&"bm_access")
+	ReputationManager.change(20)
+	StoryManager.check()
+	check(StoryManager.act >= 2, "act II: reputation")
+	check(CommsManager.inbox.size() > 0 and CommsManager.unread_count() > 0, "comms arrive with the story")
+	# Contracts: actions apply effects once.
+	var uid := CommsManager.send(&"c_contract_dune")
+	check(CommsManager.act(uid, 0) and StoryManager.has_flag(&"dune_partner"), "signing a contract applies it")
+	check(not CommsManager.act(uid, 1), "a contract resolves once")
+	# Endings: only the paths you walked.
+	check(not StoryManager.ending_available(&"investigator"), "no tribunal without evidence")
+	StoryManager.apply_effects({"flag": "evidence_given", "path": {"investigator": 3}})
+	check(StoryManager.ending_available(&"investigator") and StoryManager.ranked_endings()[0] == &"investigator", "the investigator ending opens")
+	# Save round trip of story state.
+	var sd := StoryManager.get_save_data()
+	var qd := QuestManager.get_save_data()
+	var cd := CommsManager.get_save_data()
+	StoryManager.reset_state()
+	QuestManager.reset_state()
+	CommsManager.reset_state()
+	StoryManager.load_save_data(sd)
+	QuestManager.load_save_data(qd)
+	CommsManager.load_save_data(cd)
+	check(StoryManager.act >= 2 and StoryManager.path_score(&"investigator") == 3 and QuestManager.state_of(&"q_mentor_lessons") == "completed" and CommsManager.inbox.size() > 0, "story, quests and comms persist")
+	GameManager.is_running = was_running
+	SaveManager.reset_all()
+
+
+## Simulates a whole campaign: every day the clinic works, every
+## conversation is answered (strategy 0 = first option, 1 = last), and
+## the world grows. The story must reach Act V and an ending.
+func _story_playthrough(strategy: int) -> void:
+	SaveManager.reset_all()
+	var was_running := GameManager.is_running
+	GameManager.is_running = true
+	var talks := 0
+	ClinicManager.owned.append(1)
+	for day in 45:
+		EventManager.operations += 3
+		EconomyManager.add_money(700, &"revenue")
+		ReputationManager.change(2)
+		ProgressionManager.add_xp(80)
+		if day == 8:
+			StoryManager.set_flag(&"bm_access")
+		StoryManager.check()
+		var guard := 0
+		while StoryManager.has_talk() and guard < 20:
+			guard += 1
+			DialogueManager.start(StoryManager.pop_talk())
+			talks += 1
+			var steps := 0
+			while DialogueManager.is_active() and steps < 30:
+				steps += 1
+				var opts := DialogueManager.options().filter(func(o: Dictionary) -> bool: return str(o["locked"]) == "")
+				if opts.is_empty():
+					DialogueManager.advance()
+				else:
+					DialogueManager.choose(int(opts[0 if strategy == 0 else opts.size() - 1]["index"]))
+		if StoryManager.ending != &"":
+			break
+		BusinessManager.end_day()
+	check(StoryManager.act == 5, "playthrough %d reaches Act V (act %d, day %d)" % [strategy, StoryManager.act, BusinessManager.day])
+	check(StoryManager.ending != &"", "playthrough %d reaches an ending (%s after %d conversations)" % [strategy, StoryManager.ending, talks])
+	GameManager.is_running = was_running
 	SaveManager.reset_all()
 
 

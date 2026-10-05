@@ -1,0 +1,477 @@
+{
+ "_doc": "Story acts, beats and endings (StoryManager). Beats fire once when their act is reached and conditions hold.",
+ "acts": [
+  {
+   "n": 1,
+   "id": "survival",
+   "title": "ACT I · SURVIVAL",
+   "theme": "Debt, hunger and the first compromise: what will you do to keep the lights on?",
+   "advance": {
+    "min_day": 5,
+    "flag_any": [
+     "bm_access",
+     "crew_medic",
+     "protection_paid",
+     "protection_paid_half",
+     "called_aegis"
+    ],
+    "min_rep": 12
+   }
+  },
+  {
+   "n": 2,
+   "id": "reputation",
+   "title": "ACT II · REPUTATION",
+   "theme": "A name is a target. Who do you serve when everyone wants your hands?",
+   "advance": {
+    "min_day": 12,
+    "min_rep": 25,
+    "clinics": 2
+   }
+  },
+  {
+   "n": 3,
+   "id": "power",
+   "title": "ACT III · POWER",
+   "theme": "Money, staff, territory. Power always asks for something back.",
+   "advance": {
+    "flag": "static_seen",
+    "min_day": 18
+   }
+  },
+  {
+   "n": 4,
+   "id": "conspiracy",
+   "title": "ACT IV · CONSPIRACY",
+   "theme": "THREAD, Lyra and the fever in the Sump. Truth is expensive, and so is silence.",
+   "advance": {
+    "flag_any": [
+     "evidence_given",
+     "evidence_sold",
+     "joined_lyra",
+     "voss_backed_down",
+     "thread_partner",
+     "clinic_burned"
+    ],
+    "min_day": 24
+   }
+  },
+  {
+   "n": 5,
+   "id": "consequence",
+   "title": "ACT V · CONSEQUENCE",
+   "theme": "Everything you did comes back. The city decides what you were."
+  }
+ ],
+ "beats": [
+  {
+   "id": "b_ilse",
+   "act": 1,
+   "when": {
+    "min_ops": 1
+   },
+   "do": [
+    {
+     "talk": "d_ilse_intro"
+    }
+   ]
+  },
+  {
+   "id": "b_landlord",
+   "act": 1,
+   "when": {
+    "min_day": 2
+   },
+   "do": [
+    {
+     "comms": "c_landlord_notice"
+    },
+    {
+     "talk": "d_landlord_rent"
+    },
+    {
+     "flag": "landlord_met"
+    },
+    {
+     "quest": "q_survive"
+    }
+   ]
+  },
+  {
+   "id": "b_teo",
+   "act": 1,
+   "when": {
+    "min_day": 2,
+    "min_ops": 2
+   },
+   "do": [
+    {
+     "talk": "d_teo_ask"
+    },
+    {
+     "quest": "q_first_hire"
+    }
+   ]
+  },
+  {
+   "id": "b_mother",
+   "act": 1,
+   "when": {
+    "min_day": 3,
+    "min_ops": 4
+   },
+   "do": [
+    {
+     "comms": "c_rook_message"
+    },
+    {
+     "talk": "d_mother_protection"
+    }
+   ]
+  },
+  {
+   "id": "b_wire_quest",
+   "act": 1,
+   "when": {
+    "min_day": 1
+   },
+   "do": [
+    {
+     "quest": "q_find_wire"
+    },
+    {
+     "quest": "q_fit_out"
+    },
+    {
+     "quest": "q_regulars"
+    }
+   ]
+  },
+  {
+   "id": "b_act2",
+   "act": 2,
+   "when": {},
+   "do": [
+    {
+     "comms": "c_act2"
+    },
+    {
+     "quest": "q_reputation"
+    },
+    {
+     "quest": "q_new_address"
+    },
+    {
+     "quest": "q_security"
+    },
+    {
+     "quest": "q_crew_medic"
+    },
+    {
+     "quest": "q_aegis_contract"
+    },
+    {
+     "quest": "q_undermarket_trade"
+    }
+   ]
+  },
+  {
+   "id": "b_wire_job",
+   "act": 2,
+   "when": {
+    "flag": "bm_access"
+   },
+   "do": [
+    {
+     "talk": "d_wire_contract"
+    }
+   ]
+  },
+  {
+   "id": "b_moor",
+   "act": 2,
+   "when": {
+    "min_heat": 15
+   },
+   "do": [
+    {
+     "talk": "d_moor_inspection"
+    }
+   ]
+  },
+  {
+   "id": "b_moor_late",
+   "act": 2,
+   "when": {
+    "min_day": 14,
+    "not_flag": "met_moor_beat"
+   },
+   "do": [
+    {
+     "talk": "d_moor_inspection"
+    }
+   ]
+  },
+  {
+   "id": "b_dune",
+   "act": 2,
+   "when": {
+    "min_day": 9
+   },
+   "do": [
+    {
+     "talk": "d_dune_offer"
+    },
+    {
+     "quest": "q_dune"
+    }
+   ]
+  },
+  {
+   "id": "b_wounded",
+   "act": 2,
+   "when": {
+    "min_day": 10
+   },
+   "do": [
+    {
+     "talk": "d_mother_wounded"
+    }
+   ]
+  },
+  {
+   "id": "b_teo_grow",
+   "act": 2,
+   "when": {
+    "flag": "hired_teo"
+   },
+   "do": [
+    {
+     "quest": "q_teo_grow"
+    }
+   ]
+  },
+  {
+   "id": "b_act3",
+   "act": 3,
+   "when": {},
+   "do": [
+    {
+     "comms": "c_voss_email"
+    },
+    {
+     "talk": "d_voss_offer"
+    },
+    {
+     "quest": "q_team"
+    }
+   ]
+  },
+  {
+   "id": "b_noor_backup",
+   "act": 3,
+   "when": {
+    "min_day_in_act": 4,
+    "not_flag": "static_seen"
+   },
+   "do": [
+    {
+     "talk": "d_static_return"
+    }
+   ]
+  },
+  {
+   "id": "b_mother_trade",
+   "act": 3,
+   "when": {
+    "min_day_in_act": 2
+   },
+   "do": [
+    {
+     "talk": "d_mother_trade"
+    }
+   ]
+  },
+  {
+   "id": "b_teo_line",
+   "act": 3,
+   "when": {
+    "flag": "teo_crossed_line",
+    "not_flag": "teo_gone"
+   },
+   "do": [
+    {
+     "talk": "d_teo_crossroads"
+    }
+   ]
+  },
+  {
+   "id": "b_teo_clinic",
+   "act": 3,
+   "when": {
+    "flag": "hired_teo",
+    "not_flag": "teo_gone",
+    "staff_skill": {
+     "id": "teo_marr",
+     "n": 3
+    },
+    "clinics": 2
+   },
+   "do": [
+    {
+     "talk": "d_teo_own_clinic"
+    }
+   ]
+  },
+  {
+   "id": "b_act4",
+   "act": 4,
+   "when": {},
+   "do": [
+    {
+     "comms": "c_static_report"
+    },
+    {
+     "quest": "q_truth"
+    }
+   ]
+  },
+  {
+   "id": "b_truth",
+   "act": 4,
+   "when": {
+    "not_flag": "ilse_truth_known"
+   },
+   "do": [
+    {
+     "talk": "d_ilse_truth"
+    }
+   ]
+  },
+  {
+   "id": "b_wire_betray",
+   "act": 4,
+   "when": {
+    "min_day_in_act": 1
+   },
+   "do": [
+    {
+     "talk": "d_wire_betrayal"
+    }
+   ]
+  },
+  {
+   "id": "b_evidence",
+   "act": 4,
+   "when": {
+    "min_day_in_act": 2,
+    "not_flag": "ilse_sold"
+   },
+   "do": [
+    {
+     "talk": "d_moor_evidence"
+    }
+   ]
+  },
+  {
+   "id": "b_ultimatum",
+   "act": 4,
+   "when": {
+    "min_day_in_act": 3
+   },
+   "do": [
+    {
+     "talk": "d_voss_ultimatum"
+    }
+   ]
+  },
+  {
+   "id": "b_act5",
+   "act": 5,
+   "when": {},
+   "do": [
+    {
+     "comms": "c_finale"
+    },
+    {
+     "quest": "q_final"
+    },
+    {
+     "talk": "d_finale"
+    }
+   ]
+  }
+ ],
+ "endings": {
+  "respected": {
+   "title": "THE DOCTOR OF THE SUMP",
+   "requires": {
+    "min_rep": 40,
+    "faction_min": {
+     "medical_authorities": 0
+    }
+   },
+   "path": "respected",
+   "text": "They still can't pronounce your name right in the Board's offices, but they send you their hard cases. The Sump learns a word it hadn't used in a long time: doctor. Your door stays open, and fewer people die in alleys. It isn't justice. It's the next best thing."
+  },
+  "kingpin": {
+   "title": "THE UNDERMARKET'S HAND",
+   "requires": {
+    "faction_min": {
+     "black_market": 30
+    }
+   },
+   "path": "kingpin",
+   "text": "Every unregistered optic, every scrubbed serial, every harvested spine in Caldera passes your table or pays your tax. Wire calls you 'boss' and means it. You sleep in a room with no windows. You sleep well."
+  },
+  "corporate": {
+   "title": "WHITE COAT, TOP FLOOR",
+   "requires": {
+    "faction_min": {
+     "lyra_biocomp": 30
+    }
+   },
+   "path": "corporate",
+   "text": "Meridian Heights gives you a view of the whole caldera and a contract that owns your hands. The Sump is a smudge down there. Sometimes, at night, the static in the city's patients sounds like it's saying your name."
+  },
+  "network": {
+   "title": "THE NETWORK",
+   "requires": {
+    "clinics": 3,
+    "staff": 3
+   },
+   "path": "network",
+   "text": "Five doors, three districts, a dozen surgeons who answer to you and to each other. When Aegis closes one clinic, two others open. You built something the city can't cut out. Teo runs the Sump room now; he still won't put chrome in a kid."
+  },
+  "investigator": {
+   "title": "THE TRIBUNAL",
+   "requires": {
+    "flag_any": [
+     "evidence_given"
+    ]
+   },
+   "path": "investigator",
+   "text": "Moor's tribunal runs for forty days. Ilse testifies until her voice gives out. Lyra pays, a little, which is more than corporations usually pay. The static cases get names, then treatment, then a memorial on the flood wall. Yours isn't on it. That's the point."
+  },
+  "creator": {
+   "title": "THE THREAD",
+   "requires": {
+    "flag_any": [
+     "thread_partner",
+     "cure_plan",
+     "noor_hidden"
+    ]
+   },
+   "path": "creator",
+   "text": "You learned to make THREAD hold. It hums now instead of screaming, and the people who carry it hear each other across the city. Some call it a cure, some call it a cult. Noor calls you 'the one who listened'. Lyra calls you 'competition'."
+  },
+  "feared": {
+   "title": "THE BUTCHER",
+   "requires": {
+    "min_heat": 0
+   },
+   "path": "feared",
+   "text": "Nobody in Caldera says your name above a whisper. Gangs pay you not to work for their rivals; Aegis pays you not to work at all. You fix anyone who can pay and break anyone who can't. The city respects one thing, and you became it."
+  }
+ }
+}

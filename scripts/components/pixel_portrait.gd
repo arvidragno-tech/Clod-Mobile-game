@@ -20,6 +20,8 @@ const BACKDROPS := ["clinic", "street", "market", "corporate", "medical", "indus
 @export var accent: Color = Palette.ACCENT
 ## Custom crop (art px) overriding `framing` when it has an area.
 var crop: Rect2i = Rect2i()
+## Integer pixel density override for large dialogue portraits (0 = global).
+var pixel_scale: int = 0
 var appearance: Dictionary = {}
 var expression: String = ""
 var backdrop: StringName = &"street"
@@ -31,11 +33,15 @@ var _time: float = 0.0
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	custom_minimum_size = Vector2(_rect().size) * GameConfig.PIXEL_SCALE + Vector2(6, 6)
+	custom_minimum_size = Vector2(_rect().size) * _ps() + Vector2(6, 6)
 
 
 func _exit_tree() -> void:
 	CharacterAnimationManager.unregister(self)
+
+
+func _ps() -> float:
+	return float(pixel_scale if pixel_scale > 0 else GameConfig.PIXEL_SCALE)
 
 
 func _rect() -> Rect2i:
@@ -44,7 +50,7 @@ func _rect() -> Rect2i:
 
 func set_framing(f: Framing) -> void:
 	framing = f
-	custom_minimum_size = Vector2(_rect().size) * GameConfig.PIXEL_SCALE + Vector2(6, 6)
+	custom_minimum_size = Vector2(_rect().size) * _ps() + Vector2(6, 6)
 	queue_redraw()
 
 
@@ -90,7 +96,7 @@ func _textures() -> Array:
 
 
 func _draw() -> void:
-	var s := float(GameConfig.PIXEL_SCALE)
+	var s := _ps()
 	var cr := _rect()
 	var area := Vector2(cr.size) * s
 	var origin := ((size - area) / 2.0).floor()

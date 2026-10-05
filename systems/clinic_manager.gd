@@ -121,6 +121,7 @@ func buy(i: int) -> bool:
 	owned.sort()
 	WorldManager.visit(StringName(str(get_tier_data(i).get("district", ""))))
 	EventBus.clinic_purchased.emit(i)
+	StoryManager.check()
 	return true
 
 
@@ -209,6 +210,7 @@ func install(cat: StringName) -> bool:
 		upgrades[cid] = {}
 	upgrades[cid][String(cat)] = lv
 	EventBus.clinic_upgrade_installed.emit(cat, lv)
+	StoryManager.check()
 	EventBus.modifiers_changed.emit()
 	return true
 

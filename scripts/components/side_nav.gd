@@ -65,6 +65,7 @@ func refresh() -> void:
 		bm.modulate = Color(1, 1, 1, 0.45) if locked else Color.WHITE
 		bm.tooltip_text = "No contact yet. Build street rep (%d) or meet a fixer." % GameConfig.BLACK_MARKET_REPUTATION if locked else "The Undermarket"
 	_badge(&"skills", SkillManager.points > 0, "%d skill point(s) to spend" % SkillManager.points)
+	_badge(&"dossier", CommsManager.unread_count() > 0, "%d unread message(s)" % CommsManager.unread_count())
 	_badge(&"upgrades", ClinicManager.get_upgrade_block_reason() == "", "A new clinic is within reach")
 	_badge(&"business", BusinessManager.debt > 0 or BusinessManager.is_day_full(), "Debt %d" % BusinessManager.debt if BusinessManager.debt > 0 else "Day's work done: close for the night")
 

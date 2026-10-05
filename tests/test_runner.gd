@@ -461,6 +461,21 @@ func _e2e() -> void:
 	await _click_named("ContinueButton", 10.0)
 	await _after_results()
 
+	# The story happened along the way.
+	check(_talks_seen.has("d_ilse_intro"), "Ilse's conversation played in the clinic")
+	check(DialogueManager.choices.size() >= 2 and QuestManager.by_state("active").size() + QuestManager.by_state("completed").size() >= 3, "dialogue choices logged, quests running")
+	await _key(KEY_J)
+	await _wait_screen(UIManager.SCREEN_DOSSIER)
+	await _checkpoint("journal_quests")
+	await _click_named("DossierTab_1")
+	await _checkpoint("journal_comms")
+	await _click_named("DossierTab_2")
+	await _checkpoint("journal_people")
+	await _click_named("DossierTab_6")
+	await _checkpoint("journal_story")
+	await _click_named("BackButton")
+	await _wait_screen(UIManager.SCREEN_CLINIC)
+
 	# Persistence across a simulated relaunch.
 	var m := EconomyManager.money
 	SaveManager.save_game()
@@ -908,6 +923,43 @@ func _wait_screen(id: StringName, timeout: float = STEP_TIMEOUT) -> void:
 	if not ok:
 		check(false, "reached screen '%s' (stuck on '%s')" % [id, UIManager.current_screen_id])
 	await _frames(2)
+	if id == UIManager.SCREEN_CLINIC:
+		await _play_talks()
+
+
+var _talks_seen: Dictionary = {}
+
+
+## Story conversations pop up on the clinic screen: play each through by
+## picking the first available option (screenshotting each new one).
+func _play_talks() -> void:
+	await _frames(4)
+	var guard := 0
+	while guard < 60:
+		guard += 1
+		var panel := _find_visible("DialoguePanel")
+		if panel == null:
+			await _frames(3)
+			if _find_visible("DialoguePanel") == null:
+				break
+			continue
+		var did := String(DialogueManager.current_id)
+		if did != "" and not _talks_seen.has(did):
+			_talks_seen[did] = true
+			await _frames(6)
+			await _checkpoint("talk_%s" % did)
+		var b: Control = _find_visible("DialogueOption_0")
+		if b == null or (b as Button).disabled:
+			b = _find_visible("DialogueNext")
+		if b == null:
+			b = _find_visible("DialogueEnd")
+		if b == null:
+			UIManager.close_modal()
+		else:
+			await _click(b)
+		await _frames(3)
+	if _find_visible("EndingClose"):
+		await _click_named("EndingClose")
 
 
 func _wait_until(predicate: Callable, timeout: float) -> bool:

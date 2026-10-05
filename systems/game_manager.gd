@@ -160,6 +160,7 @@ func _begin_play() -> void:
 	last_result = null
 	if BlackMarketManager.is_unlocked() and BlackMarketManager.stock.is_empty():
 		BlackMarketManager.refresh_stock()
+	StoryManager.check()
 
 
 # --- Navigation helpers -------------------------------------------------------
@@ -186,6 +187,9 @@ func close_for_the_night() -> void:
 func get_next_objective() -> Dictionary:
 	if EventManager.has_pending():
 		return {"text": "Someone is waiting: deal with the incident", "kind": &"warn"}
+	if StoryManager.has_talk():
+		var who := CharacterManager.get_character(StringName(str(DialogueManager.get_dialogue(StoryManager.peek_talk()).get("character", ""))))
+		return {"text": "%s wants to talk" % (who.display_name if who else "Someone"), "kind": &"warn"}
 	var c := get_current_customer()
 	if c:
 		return {"text": "See %s at the door%s" % [c.display_name, " (EMERGENCY)" if c.is_emergency else ""], "kind": &"warn" if c.is_emergency else &"info"}
@@ -253,6 +257,11 @@ func assign_customer(employee_id: StringName, insist: bool = false) -> Dictionar
 	var e := StaffManager.get_employee(employee_id)
 	if bool(r["success"]):
 		EconomyManager.add_money(int(r["pay"]), &"revenue")
+		var it := CyberwareManager.get_cyberware(c.requested_cyberware_id)
+		if it and it.category == &"neural":
+			StoryManager.bump(&"neural_install")
+		if it and it.black_market:
+			StoryManager.bump(&"bm_install")
 		ReputationManager.change(1 + (1 if EmployeeAI.has_trait(e, "gentle") else 0))
 		FactionManager.change(c.faction_id, GameConfig.FACTION_REP_SUCCESS)
 		c.existing_cyberware.append(c.requested_cyberware_id)
@@ -274,6 +283,7 @@ func assign_customer(employee_id: StringName, insist: bool = false) -> Dictionar
 	WorldManager.add_influence()
 	EventManager.on_operation_completed()
 	EventManager.roll_random_event()
+	StoryManager.check()
 	SaveManager.save_game()
 	return r
 
@@ -447,6 +457,12 @@ func _on_surgery_finished(result: SurgeryResult) -> void:
 	ReputationManager.change(result.reputation_delta)
 	ProgressionManager.record_surgery(result.surgery_id, result.success, result.grade)
 	_apply_faction_and_heat(result, c)
+	if result.success:
+		var installed := CyberwareManager.get_cyberware(result.implant_id)
+		if installed and installed.category == &"neural":
+			StoryManager.bump(&"neural_install")
+		if result.black_market_implant:
+			StoryManager.bump(&"bm_install")
 	if c:
 		if result.success:
 			c.existing_cyberware.append(result.implant_id)
@@ -458,9 +474,11 @@ func _on_surgery_finished(result: SurgeryResult) -> void:
 	BlackMarketManager.on_operation_completed()
 	if result.neural_break:
 		EventManager.queue_event(&"static_fever")
+		StoryManager.set_flag(&"static_seen")
 	else:
 		EventManager.roll_random_event()
 	StoryManager.update_rumors()
+	StoryManager.check()
 	last_result = result
 	SaveManager.save_game()
 	EventBus.surgery_rewarded.emit(result)
