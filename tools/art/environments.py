@@ -1139,11 +1139,11 @@ def black_market_wide() -> Canvas:
 
 
 def generate():
-    from . import clinics, citymap
-    clinics.generate()
+    from . import citymap
+    # Clinic rooms are HD now: the "rooms" group (tools/art/rooms_hd.py).
     citymap.generate()
     black_market_wide().save("blackmarket/den.png")
     title_scene_wide().save("ui/title_keyart.png")
     for lv in range(3):
         surgery_backdrop_wide(lv).save(f"surgery/backdrop_{lv}.png")
-    print("environments: clinics x7 (+ upgrade overlays), black market, surgery x3")
+    print("environments: city map, black market, surgery x3")

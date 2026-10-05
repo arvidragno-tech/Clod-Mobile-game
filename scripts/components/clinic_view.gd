@@ -1,7 +1,7 @@
 class_name ClinicView
 extends Control
 ## Draws the clinic backdrop for the current facility tier at exactly
-## GameConfig.PIXEL_SCALE (cropping to fit), places the waiting customer's
+## GameConfig.ART_SCALE (HD art, cropping to fit), places the waiting customer's
 ## composited body sprite in front of the door, and brings the room to life
 ## from the generator's animation anchors (data/clinic_fx.json): blinking
 ## status LEDs, monitor refresh lines and ECG traces, holo shimmer, spinning
@@ -13,18 +13,18 @@ signal customer_tapped()
 ## A room prop was clicked (PC: the clinic is an interactive room).
 signal hotspot_clicked(id: StringName)
 
-## Clickable props (art px in the 400x224 room) -> workstation section.
+## Clickable props (art px in the 600x336 HD room) -> workstation section.
 const HOTSPOTS := [
-	{"id": &"database", "rect": Rect2(78, 86, 36, 34), "label": "DIAGNOSTICS TERMINAL · cyberware database", "min_tier": 0},
-	{"id": &"upgrades", "rect": Rect2(160, 104, 80, 58), "label": "OPERATING TABLE · facility upgrades", "min_tier": 0},
-	{"id": &"inventory", "rect": Rect2(248, 100, 76, 62), "label": "STORAGE BENCH · inventory", "min_tier": 0},
-	{"id": &"supply", "rect": Rect2(332, 52, 36, 110), "label": "SUPPLY CABINET · buy tools and implants", "min_tier": 0},
-	{"id": &"dossier", "rect": Rect2(370, 74, 28, 88), "label": "RECORDS SERVER · journal", "min_tier": 2},
-	{"id": &"wall", "rect": Rect2(232, 42, 76, 34), "label": "THE WALL · the clinic's memory", "min_tier": 0},
+	{"id": &"database", "rect": Rect2(117, 129, 54, 51), "label": "DIAGNOSTICS TERMINAL · cyberware database", "min_tier": 0},
+	{"id": &"upgrades", "rect": Rect2(240, 156, 120, 87), "label": "OPERATING TABLE · facility upgrades", "min_tier": 0},
+	{"id": &"inventory", "rect": Rect2(372, 150, 114, 93), "label": "STORAGE BENCH · inventory", "min_tier": 0},
+	{"id": &"supply", "rect": Rect2(498, 78, 54, 165), "label": "SUPPLY CABINET · buy tools and implants", "min_tier": 0},
+	{"id": &"dossier", "rect": Rect2(555, 111, 42, 132), "label": "RECORDS SERVER · journal", "min_tier": 2},
+	{"id": &"wall", "rect": Rect2(348, 63, 114, 51), "label": "THE WALL · the clinic's memory", "min_tier": 0},
 ]
 
 ## Point (in background pixels) where the customer's feet stand.
-const CUSTOMER_FOOT := Vector2(27, 165)
+const CUSTOMER_FOOT := Vector2(42, 248)
 ## 0 = keep top edge, 1 = keep bottom edge when cropping vertically.
 const VERTICAL_FOCUS := 0.35
 const DUST_COUNT := 26
@@ -44,7 +44,7 @@ var _dust: Array[Vector3] = []
 ## Detail zoom: double-click or wheel doubles the (integer) pixel scale around the
 ## clicked point; drag pans while zoomed; double-click, wheel down or right-click resets.
 var zoomed: bool = false
-var _zoom_focus := Vector2(90, 120)  # art px kept centred when zoomed
+var _zoom_focus := Vector2(135, 180)  # art px kept centred when zoomed
 var _last_tap_ms: int = -1000
 var _last_tap_pos := Vector2.ZERO
 var _panning: bool = false
@@ -63,10 +63,12 @@ const FX_COLORS := {
 static var _fx_data: Dictionary = {}
 var _overlays: Array = []  # [Texture2D, Vector2 art px]
 ## Waiting room: where the people on the bench stand (art px, feet).
-const WAIT_FEET := [Vector2(134, 167), Vector2(152, 170), Vector2(118, 171), Vector2(168, 172)]
+const WAIT_FEET := [Vector2(201, 250), Vector2(228, 255), Vector2(177, 256), Vector2(252, 258)]
 ## The Clinic Wall: pinned notes, photos and notices on the back wall (art px).
-const WALL_ORIGIN := Vector2(236, 46)
+const WALL_ORIGIN := Vector2(354, 69)
 const WALL_COLS := 8
+## One pin's cell on the wall texture (art px): 8 x 3 pins fill the 114x51 board.
+const WALL_CELL := Vector2i(13, 16)
 var _waiting_tex: Dictionary = {}  # customer id -> Texture2D
 var _caption: Label
 var _caption_t: float = 0.0
@@ -87,7 +89,7 @@ func _ready() -> void:
 	_bubble.visible = false
 	add_child(_bubble)
 	for i in DUST_COUNT:
-		_dust.append(Vector3(randf_range(150, 250), randf_range(50, 160), randf_range(0.0, TAU)))
+		_dust.append(Vector3(randf_range(225, 375), randf_range(75, 240), randf_range(0.0, TAU)))
 	_caption = UIKit.label("", &"DimLabel", true, Palette.TEXT, 15)
 	_caption.name = "LifeCaption"
 	_caption.add_theme_color_override(&"font_outline_color", Palette.BG_0)
@@ -189,8 +191,9 @@ func refresh_background() -> void:
 	_layout()
 
 
-## Feet sit this many art pixels above the bottom of the 40x80 body sprite.
-const BODY_FOOT_PAD := 3
+## Feet sit this many body-texture pixels above the bottom of the sprite
+## (3 on the 40x80 bodies; scaled with the body width).
+const BODY_FOOT_PAD := 3.0
 var _customer_glow: Texture2D
 var _customer_app: Dictionary = {}
 var _anim: Dictionary = {}
@@ -223,18 +226,29 @@ func hide_customer() -> void:
 
 func get_customer_rect() -> Rect2:
 	if _customer_tex == null:
-		return Rect2(_offset + CUSTOMER_FOOT * _scale - Vector2(16, 64) * _scale, Vector2(32, 64) * _scale)
-	var s := Vector2(_customer_tex.get_size()) * _scale
-	return Rect2(_offset + CUSTOMER_FOOT * _scale - Vector2(s.x / 2.0, s.y - BODY_FOOT_PAD * _scale), s)
+		return Rect2(_offset + CUSTOMER_FOOT * _scale - Vector2(24, 96) * _scale, Vector2(48, 96) * _scale)
+	var bs := body_scale(_customer_tex)
+	var s := Vector2(_customer_tex.get_size()) * bs
+	return Rect2(_offset + CUSTOMER_FOOT * _scale - Vector2(s.x / 2.0, s.y - _foot_pad(_customer_tex) * bs), s)
+
+
+## Screen units per body-texture pixel: bodies fill BODY_ART_W art px at the
+## room's scale, whatever resolution they were drawn at.
+func body_scale(tex: Texture2D) -> float:
+	return _scale * GameConfig.BODY_ART_W / maxf(1.0, float(tex.get_width()))
+
+
+func _foot_pad(tex: Texture2D) -> float:
+	return roundf(BODY_FOOT_PAD * float(tex.get_width()) / 40.0)
 
 
 func _layout() -> void:
 	if _background == null or size.x <= 0.0:
 		return
 	var img := Vector2(_background.get_size())
-	# Always the global pixel density (3x on the 1920x1080 canvas) so the room
-	# matches every other sprite; the panel frame absorbs any leftover space.
-	_scale = float(GameConfig.PIXEL_SCALE)
+	# Always the HD world density (2 units per art px on the 1920x1080 canvas);
+	# the panel frame absorbs any leftover space.
+	_scale = float(GameConfig.ART_SCALE)
 	if zoomed:
 		_scale *= 2.0
 	var drawn := img * _scale
@@ -279,10 +293,10 @@ func _process(delta: float) -> void:
 	_update_fx(delta)
 	for i in _dust.size():
 		var d := _dust[i]
-		d.y -= delta * 3.0
-		d.x += sin(_time * 0.7 + d.z) * delta * 2.0
-		if d.y < 50.0:
-			d.y = 160.0
+		d.y -= delta * 4.5
+		d.x += sin(_time * 0.7 + d.z) * delta * 3.0
+		if d.y < 75.0:
+			d.y = 240.0
 		_dust[i] = d
 	if _bubble.visible:
 		_bubble.reset_size()
@@ -315,7 +329,7 @@ func _draw() -> void:
 		# Contact shadow (pixel-snapped ellipse)
 		var foot := _offset + CUSTOMER_FOOT * _scale
 		for k in 3:
-			var w := (14 - k * 4) * _scale
+			var w := (21 - k * 6) * _scale
 			draw_rect(Rect2(foot.x - w / 2.0, foot.y - _scale + k * 0.0, w, _scale), Color(0, 0, 0, 0.25 + k * 0.15))
 		_draw_customer(r)
 	if zoomed:
@@ -338,12 +352,13 @@ func _draw_waiting() -> void:
 		var tex: Texture2D = _waiting_tex.get(list[i].id, null)
 		if tex == null:
 			continue
-		var s := Vector2(tex.get_size()) * _scale
+		var bs := body_scale(tex)
+		var s := Vector2(tex.get_size()) * bs
 		var fp: Variant = feet[i]
 		var foot: Vector2 = _offset + (Vector2(float(fp[0]), float(fp[1])) if fp is Array else fp as Vector2) * _scale
-		var bob := (floorf(sin(_time * 1.6 + i * 1.3) + 1.0) * 0.5) * _scale if Settings.environment_effects else 0.0
-		var r := Rect2(foot - Vector2(s.x / 2.0, s.y - BODY_FOOT_PAD * _scale) + Vector2(0, -bob), s)
-		draw_rect(Rect2(foot.x - 5 * _scale, foot.y - _scale, 10 * _scale, _scale), Color(0, 0, 0, 0.35))
+		var bob := (floorf(sin(_time * 1.6 + i * 1.3) + 1.0) * 0.5) * bs if Settings.environment_effects else 0.0
+		var r := Rect2(foot - Vector2(s.x / 2.0, s.y - _foot_pad(tex) * bs) + Vector2(0, -bob), s)
+		draw_rect(Rect2(foot.x - 8 * _scale, foot.y - _scale, 16 * _scale, _scale), Color(0, 0, 0, 0.35))
 		draw_texture_rect(tex, r, false, Color(0.62, 0.62, 0.7, 1.0))
 
 
@@ -357,27 +372,32 @@ func _draw_wall() -> void:
 	if _wall_tex == null or _wall_tex_clinic != ClinicManager.clinic_id():
 		_wall_tex = _build_wall_texture(int(wd.get("cols", WALL_COLS)))
 		_wall_tex_clinic = ClinicManager.clinic_id()
-	var at := _offset + (origin - Vector2(1, 1)) * _scale
+	var at := _offset + (origin - Vector2(1, 2)) * _scale
 	draw_texture_rect(_wall_tex, Rect2(at, Vector2(_wall_tex.get_size()) * _scale), false)
 
 
 func _build_wall_texture(cols: int) -> ImageTexture:
-	var img := Image.create(cols * 9 + 4, 34, false, Image.FORMAT_RGBA8)
+	var img := Image.create(cols * WALL_CELL.x + 4, WALL_CELL.y * 3 + 4, false, Image.FORMAT_RGBA8)
 	img.fill(Color(0, 0, 0, 0))
 	var pins := ClinicLifeManager.wall
 	for i in mini(pins.size(), cols * 3):
 		var p: Dictionary = pins[i]
-		var cell := Vector2i((i % cols) * 9, (i / cols) * 10) + Vector2i((i * 7) % 3, (i * 5) % 2) + Vector2i(1, 1)
+		var cell := Vector2i((i % cols) * WALL_CELL.x, (i / cols) * WALL_CELL.y) + Vector2i((i * 7) % 3, (i * 5) % 2) + Vector2i(1, 2)
 		var col := ClinicLifeManager.pin_color(str(p["kind"])).darkened(0.25)
-		img.fill_rect(Rect2i(cell, Vector2i(7, 8)), Color(0, 0, 0, 0.45))
-		img.fill_rect(Rect2i(cell - Vector2i(1, 1), Vector2i(7, 8)), col)
+		var card := Vector2i(10, 12)
+		img.fill_rect(Rect2i(cell + Vector2i(1, 1), card), Color(0, 0, 0, 0.45))
+		img.fill_rect(Rect2i(cell, card), col)
+		img.fill_rect(Rect2i(cell, Vector2i(card.x, 1)), col.lightened(0.25))
 		if str(p["kind"]) == "patient":
-			img.fill_rect(Rect2i(cell + Vector2i(0, 0), Vector2i(5, 4)), Color(0.35, 0.3, 0.32))
-			img.fill_rect(Rect2i(cell + Vector2i(1, 1), Vector2i(3, 2)), Color(0.75, 0.58, 0.48))
+			# A tiny photo: dark frame, a face, shoulders.
+			img.fill_rect(Rect2i(cell + Vector2i(1, 1), Vector2i(8, 7)), Color(0.2, 0.18, 0.22))
+			img.fill_rect(Rect2i(cell + Vector2i(3, 2), Vector2i(4, 4)), Color(0.75, 0.58, 0.48))
+			img.fill_rect(Rect2i(cell + Vector2i(2, 6), Vector2i(6, 2)), Color(0.32, 0.36, 0.44))
+			img.fill_rect(Rect2i(cell + Vector2i(1, 9), Vector2i(7, 1)), col.darkened(0.5))
 		else:
-			for ln in 3:
-				img.fill_rect(Rect2i(cell + Vector2i(-1, ln * 2), Vector2i(5 - (ln % 2) * 2, 1)), col.darkened(0.45))
-		img.set_pixelv(cell + Vector2i(1, -1), Color(0.9, 0.2, 0.25))
+			for ln in 4:
+				img.fill_rect(Rect2i(cell + Vector2i(1, 2 + ln * 2), Vector2i(8 - (ln % 2) * 3, 1)), col.darkened(0.5))
+		img.fill_rect(Rect2i(cell + Vector2i(4, -1), Vector2i(2, 2)), Color(0.9, 0.2, 0.25))
 	return ImageTexture.create_from_image(img)
 
 
@@ -391,8 +411,10 @@ func _draw_customer(r: Rect2) -> void:
 	var head_dx := (-1.0 if gaze == "left" else (1.0 if gaze == "right" else 0.0))
 	var j: Vector2i = _anim.get("jitter", Vector2i.ZERO)
 	var lean := float(_anim.get("lean", 0))
-	var head_h := 19.0
-	var leg_y := 44.0
+	var k := tex_size.x / 40.0  # bands were laid out on the 40x80 body
+	var head_h := roundf(19.0 * k)
+	var leg_y := roundf(44.0 * k)
+	var bs := body_scale(_customer_tex)
 	var bands := [
 		[Rect2(0, leg_y, tex_size.x, tex_size.y - leg_y), Vector2.ZERO],
 		[Rect2(0, head_h, tex_size.x, leg_y - head_h), Vector2(j.x * 0.0 + lean, -inhale)],
@@ -403,17 +425,17 @@ func _draw_customer(r: Rect2) -> void:
 	for band: Array in bands:
 		var src: Rect2 = band[0]
 		var off: Vector2 = band[1]
-		var dst := Rect2(r.position + (src.position + off) * _scale, src.size * _scale)
+		var dst := Rect2(r.position + (src.position + off * k) * bs, src.size * bs)
 		draw_texture_rect_region(_customer_tex, dst, src, tint)
 		if _customer_glow:
 			draw_texture_rect_region(_customer_glow, dst, src, glow_tint)
 	# Smoke curling up from a cigarette in the left hand.
 	if _anim.get("action", &"") == &"smoke" and (_customer_app.get("body_acc", []) as Array).has("cigarette"):
 		var t := float(_anim.get("action_t", 0.0))
-		var hand := r.position + Vector2(13, 43) * _scale
-		for k in 4:
-			var p := hand + Vector2(sin(t * 5.0 + k) * 1.2 + k * 0.4, -t * 14.0 - k * 3.0) * _scale
-			draw_rect(Rect2(p.floor(), Vector2(_scale, _scale)), Color(0.7, 0.72, 0.78, clampf(0.4 - t * 0.3 - k * 0.06, 0.0, 1.0)))
+		var hand := r.position + Vector2(13, 43) * k * bs
+		for n in 4:
+			var p := hand + Vector2(sin(t * 5.0 + n) * 1.8 + n * 0.6, -t * 21.0 - n * 4.5) * _scale
+			draw_rect(Rect2(p.floor(), Vector2(_scale, _scale)), Color(0.7, 0.72, 0.78, clampf(0.4 - t * 0.3 - n * 0.06, 0.0, 1.0)))
 
 
 func _gui_input(event: InputEvent) -> void:
@@ -481,7 +503,7 @@ func _notification(what: int) -> void:
 func _hotspot_rect(h: Dictionary) -> Rect2:
 	if h["id"] == &"wall":
 		var wd: Dictionary = ClinicManager.get_tier_data().get("wall", {})
-		return Rect2(float(wd.get("x", WALL_ORIGIN.x)) - 4, float(wd.get("y", WALL_ORIGIN.y)) - 4, int(wd.get("cols", WALL_COLS)) * 9 + 6, 34)
+		return Rect2(float(wd.get("x", WALL_ORIGIN.x)) - 6, float(wd.get("y", WALL_ORIGIN.y)) - 6, int(wd.get("cols", WALL_COLS)) * WALL_CELL.x + 8, 51)
 	return h["rect"]
 
 

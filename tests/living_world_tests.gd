@@ -1054,8 +1054,12 @@ func _followups() -> void:
 	for i in ClinicManager.tiers.size():
 		var t := ClinicManager.get_tier_data(i)
 		var w: Dictionary = t.get("wall", {})
-		ok = ok and w.has("x") and int(w["x"]) + int(w["cols"]) * 9 <= 400 and int(w["y"]) + 30 <= 224
+		var bg := load(str(t.get("background", ""))) as Texture2D
+		var room := Vector2(bg.get_size()) if bg else Vector2(600, 336)
+		ok = ok and w.has("x") and int(w["x"]) + int(w["cols"]) * ClinicView.WALL_CELL.x <= room.x and int(w["y"]) + ClinicView.WALL_CELL.y * 3 <= room.y
 		ok = ok and (t.get("waiting_feet", []) as Array).size() >= 2
+		for f: Array in t.get("waiting_feet", []):
+			ok = ok and float(f[0]) < room.x and float(f[1]) < room.y
 	check(ok, "all seven clinics define wall space and waiting spots inside the room")
 	# 3. Time pressure setting.
 	var tp0 := Settings.time_pressure

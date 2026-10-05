@@ -8,8 +8,8 @@ extends BaseScreen
 ## Tab 1 (PROPERTY): the seven clinics of Caldera with price, rent, running
 ## costs, capacities, security and Undermarket access; buy, move in, sell.
 
-## Art window shown in the preview (art px of the 400x224 room).
-const PREVIEW := Rect2i(0, 14, 400, 112)
+## Art window shown in the preview (art px of the 600x336 HD room).
+const PREVIEW := Rect2i(0, 21, 600, 168)
 
 var _tab: int = 0
 var _body: VBoxContainer
@@ -149,7 +149,7 @@ func _clinic_row(i: int, is_next: bool) -> Control:
 	card.add_child(h)
 	var thumb := ClinicPreview.new()
 	thumb.clinic_index = i
-	thumb.region = Rect2i(140, 40, 120, 70)
+	thumb.region = Rect2i(228, 118, 124, 72)
 	thumb.scale_override = 2
 	h.add_child(thumb)
 	var v := UIKit.vbox(3)

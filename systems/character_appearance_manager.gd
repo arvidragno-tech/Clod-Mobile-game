@@ -257,7 +257,12 @@ func apply_event(app: Dictionary, event: String, rng: RandomNumberGenerator = nu
 	if rng == null:
 		rng = RandomNumberGenerator.new()
 		rng.seed = hash(event)
+	if app.is_empty():
+		return app  # no face to change (e.g. a record from before appearances)
 	var a := normalize(app).duplicate(true)
+	for k in ["scars", "cyber", "body_cyber", "accessories", "body_acc"]:
+		if not a.get(k) is Array:
+			a[k] = []
 	var parts := event.split(":")
 	var kind := parts[0]
 	var arg := parts[1] if parts.size() > 1 else ""

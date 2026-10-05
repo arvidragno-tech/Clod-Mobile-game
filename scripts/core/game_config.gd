@@ -238,6 +238,13 @@ const WRONG_DIAGNOSIS_PAY_MULT := 0.9
 ## Viewport units per art pixel. Every sprite, background and the surgical
 ## field render at exactly this scale (see docs/ART_BIBLE.md).
 const PIXEL_SCALE := 3
+## Viewport units per art pixel for the HD world art (clinic rooms, bodies,
+## street scenes): drawn at 1.5x the resolution of the UI sprites, so twice
+## the detail of the old 3x art on the same screen area.
+const ART_SCALE := 2
+## Body sprites are authored at this width (art px) for ART_SCALE; older,
+## narrower bodies are scaled up to match.
+const BODY_ART_W := 60.0
 ## Minimum height of a clickable control at the 1920x1080 design size.
 const MIN_CONTROL := 40.0
 ## Extra forgiveness (UI units) around small click targets.

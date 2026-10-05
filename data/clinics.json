@@ -32,26 +32,26 @@
    "index": 0,
    "background": "res://assets/sprites/clinic/clinic_backalley.png",
    "wall": {
-    "x": 236,
-    "y": 46,
+    "x": 354,
+    "y": 69,
     "cols": 8
    },
    "waiting_feet": [
     [
-     134,
-     167
+     201,
+     250
     ],
     [
-     152,
-     170
+     228,
+     255
     ],
     [
-     118,
-     171
+     177,
+     256
     ],
     [
-     168,
-     172
+     252,
+     258
     ]
    ]
   },
@@ -83,26 +83,26 @@
    "index": 1,
    "background": "res://assets/sprites/clinic/clinic_undercity.png",
    "wall": {
-    "x": 226,
-    "y": 30,
+    "x": 354,
+    "y": 69,
     "cols": 8
    },
    "waiting_feet": [
     [
-     134,
-     167
+     201,
+     250
     ],
     [
-     152,
-     170
+     228,
+     255
     ],
     [
-     118,
-     171
+     177,
+     256
     ],
     [
-     168,
-     172
+     252,
+     258
     ]
    ]
   },
@@ -137,26 +137,26 @@
    "index": 2,
    "background": "res://assets/sprites/clinic/clinic_industrial.png",
    "wall": {
-    "x": 236,
-    "y": 46,
+    "x": 354,
+    "y": 69,
     "cols": 8
    },
    "waiting_feet": [
     [
-     134,
-     167
+     201,
+     250
     ],
     [
-     152,
-     170
+     228,
+     255
     ],
     [
-     118,
-     171
+     177,
+     256
     ],
     [
-     168,
-     172
+     252,
+     258
     ]
    ]
   },
@@ -192,26 +192,26 @@
    "index": 3,
    "background": "res://assets/sprites/clinic/clinic_nightmarket.png",
    "wall": {
-    "x": 230,
-    "y": 44,
-    "cols": 7
+    "x": 354,
+    "y": 69,
+    "cols": 8
    },
    "waiting_feet": [
     [
-     134,
-     167
+     201,
+     250
     ],
     [
-     152,
-     170
+     228,
+     255
     ],
     [
-     118,
-     171
+     177,
+     256
     ],
     [
-     168,
-     172
+     252,
+     258
     ]
    ]
   },
@@ -247,26 +247,26 @@
    "index": 4,
    "background": "res://assets/sprites/clinic/clinic_professional.png",
    "wall": {
-    "x": 228,
-    "y": 44,
-    "cols": 7
+    "x": 354,
+    "y": 69,
+    "cols": 8
    },
    "waiting_feet": [
     [
-     134,
-     167
+     201,
+     250
     ],
     [
-     152,
-     170
+     228,
+     255
     ],
     [
-     118,
-     171
+     177,
+     256
     ],
     [
-     168,
-     172
+     252,
+     258
     ]
    ]
   },
@@ -304,26 +304,26 @@
    "index": 5,
    "background": "res://assets/sprites/clinic/clinic_corporate.png",
    "wall": {
-    "x": 236,
-    "y": 46,
+    "x": 354,
+    "y": 69,
     "cols": 8
    },
    "waiting_feet": [
     [
-     134,
-     167
+     201,
+     250
     ],
     [
-     152,
-     170
+     228,
+     255
     ],
     [
-     118,
-     171
+     177,
+     256
     ],
     [
-     168,
-     172
+     252,
+     258
     ]
    ]
   },
@@ -360,26 +360,26 @@
    "index": 6,
    "background": "res://assets/sprites/clinic/clinic_elite.png",
    "wall": {
-    "x": 236,
-    "y": 44,
-    "cols": 7
+    "x": 354,
+    "y": 69,
+    "cols": 8
    },
    "waiting_feet": [
     [
-     134,
-     167
+     201,
+     250
     ],
     [
-     152,
-     170
+     228,
+     255
     ],
     [
-     118,
-     171
+     177,
+     256
     ],
     [
-     168,
-     172
+     252,
+     258
     ]
    ]
   }

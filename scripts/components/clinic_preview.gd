@@ -1,11 +1,11 @@
 class_name ClinicPreview
 extends Control
 ## Static window into a clinic room (background + its installed upgrade
-## overlays) at the global pixel density, for the facility and property
+## overlays) at the HD world-art density (GameConfig.ART_SCALE), for the facility and property
 ## screens.
 
 var clinic_index: int = -1  # -1 = active clinic
-var region: Rect2i = Rect2i(0, 0, 400, 224)
+var region: Rect2i = Rect2i(0, 0, 600, 336)
 var scale_override: int = 0
 var _bg: Texture2D
 var _overlays: Array = []
@@ -19,7 +19,7 @@ func _ready() -> void:
 
 
 func _s() -> float:
-	return float(scale_override if scale_override > 0 else GameConfig.PIXEL_SCALE)
+	return float(scale_override if scale_override > 0 else GameConfig.ART_SCALE)
 
 
 func _load() -> void:
