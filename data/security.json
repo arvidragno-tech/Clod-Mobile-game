@@ -1,0 +1,44 @@
+{
+ "_doc": "Threats (SecurityManager). Heat levels with what each brings (never combat). Theft happens at night: chance from heat, district danger, criminal reputation, insiders, waiting customers' traits, unhappy staff, hostile factions; security upgrades lower it. Each theft opens a case you can investigate (cameras, questioning staff, asking around) and resolve by confronting a suspect. The clinic itself is never damaged.",
+ "levels": [
+  {"id": "low", "label": "LOW", "min": 0, "text": "Nobody's looking. Yet."},
+  {"id": "medium", "label": "MEDIUM", "min": 25, "text": "Drones linger. Inspectors know your street."},
+  {"id": "high", "label": "HIGH", "min": 50, "text": "Security is asking questions about you by name."},
+  {"id": "critical", "label": "CRITICAL", "min": 75, "text": "They're building a case. They'll come for what you have."}
+ ],
+ "theft": {"base": 0.06, "per_heat": 0.0015, "per_danger": 0.03, "criminal_dim": 0.002, "security_cut": 0.035, "max": 0.45},
+ "loot": {"money": 3, "cyberware": 3, "supplies": 2, "parts": 2, "data": 1, "equipment": 1, "belongings": 1},
+ "loot_text": {
+  "money": "%d credits from the cash box",
+  "cyberware": "a boxed %s from the shelf",
+  "supplies": "%d sterile packs from the cabinet",
+  "parts": "%d salvaged parts from the bench",
+  "data": "a drive of patient records",
+  "equipment": "your %s",
+  "belongings": "the photo frame and lighter from your desk"
+ },
+ "culprits": {
+  "employee": {"label": "One of your staff", "weight": 2},
+  "customer": {"label": "A patient who was here today", "weight": 2},
+  "external": {"label": "Street thieves", "weight": 3},
+  "faction": {"label": "A faction sending a message", "weight": 1},
+  "corruption": {"label": "A corrupt inspector", "weight": 1},
+  "insider": {"label": "Someone reporting to outsiders", "weight": 1}
+ },
+ "pressure": {
+  "medium": {"chance": 0.25, "subject": "Somebody is watching the clinic", "body": "A drone has parked on the roof across the alley three nights running. Patients are noticing."},
+  "high": {"chance": 0.3, "subject": "Security wants a word", "body": "Two corporate security officers sit you down in a car outside. They want names: who sells you chrome, who you patch up.",
+   "actions": [
+    {"label": "COOPERATE", "security": {"heat": -12, "dims": {"criminal": -4, "corporate": 3}, "suppliers_suspicion": 15, "betray": true}},
+    {"label": "SAY NOTHING", "security": {"heat": 5, "dims": {"criminal": 2}}},
+    {"label": "BRIBE THEM (300)", "security": {"money": -300, "heat": -15, "dims": {"criminal": 1}}}
+   ]},
+  "critical": {"chance": 0.45, "subject": "Confiscation order", "body": "Security has a warrant for 'unregistered medical devices'. They'll be here in an hour. Your black-market stock and anything you're storing is on the list.",
+   "actions": [
+    {"label": "HAND IT OVER", "security": {"confiscate": "all", "heat": -25, "dims": {"criminal": -3}}},
+    {"label": "HIDE IT", "security": {"hide": true}},
+    {"label": "BRIBE THE SERGEANT (600)", "security": {"money": -600, "heat": -20}},
+    {"label": "BECOME THEIR INFORMANT", "security": {"informant": true, "heat": -40, "dims": {"criminal": -10, "corporate": 6}, "suppliers_suspicion": 30, "betray": true}}
+   ]}
+ }
+}

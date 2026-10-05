@@ -37,6 +37,8 @@ const SAVEABLE_SYSTEMS: Array[String] = [
 	"TimeManager",
 	"ClinicLifeManager",
 	"WorldEventManager",
+	"SupplierManager",
+	"SecurityManager",
 	"TutorialManager",
 ]
 

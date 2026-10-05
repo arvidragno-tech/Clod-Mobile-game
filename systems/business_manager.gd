@@ -73,6 +73,7 @@ func is_day_full() -> bool:
 
 func record_job() -> void:
 	jobs_today += 1
+	SupplierManager.on_job_done()
 
 
 ## Tonight's bills before paying them: [{category, amount, note}].

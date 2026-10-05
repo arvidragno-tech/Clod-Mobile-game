@@ -29,6 +29,8 @@ var _panels: Array[Control] = []
 var _loc: Label
 var _close_button: Button
 var _agenda: Label
+var _security_button: Button
+var _close_row: HBoxContainer
 
 
 func on_enter(_params: Dictionary) -> void:
@@ -169,7 +171,13 @@ func _build() -> void:
 	_status_box.add_child(_stock_label)
 	_close_button = UIKit.button("CLOSE FOR THE NIGHT", &"GhostButton", _close_day, "CloseDayButton", 40)
 	_close_button.tooltip_text = "End the business day: pay rent, running costs and salaries, see the ledger."
-	_status_box.add_child(_close_button)
+	UIKit.expand(_close_button)
+	_close_row = UIKit.hbox(8)
+	_status_box.add_child(_close_row)
+	_close_row.add_child(_close_button)
+	_security_button = UIKit.button("SECURITY", &"GhostButton", _open_security, "SecurityButton", 40)
+	_security_button.tooltip_text = "Heat level, break-ins and investigations."
+	_close_row.add_child(_security_button)
 	var rumors := UIKit.section(cards, "STREET RUMOURS", &"CardPanel", "[%s] journal" % Controls.key_name("journal"))
 	(rumors.get_parent() as Control).size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	(rumors.get_parent() as Control).size_flags_stretch_ratio = 1.4
@@ -292,7 +300,7 @@ func _refresh_status() -> void:
 		return
 	_stock_label.text = "CHROME IN STOCK: %d" % InventoryManager.get_instances().size()
 	for c in _status_box.get_children():
-		if c != _stock_label and c != _close_button and c.get_index() > 2:
+		if c != _stock_label and c != _close_row and c.get_index() > 2:
 			c.queue_free()
 	var full := BusinessManager.is_day_full()
 	_close_button.disabled = CustomerManager.has_customer() or SurgeryManager.is_active
@@ -302,7 +310,10 @@ func _refresh_status() -> void:
 	if _loc:
 		_loc.text = "%s · %s · %s" % [ClinicManager.get_tier_name().to_upper(), WorldManager.district_name().to_upper(), TimeManager.stamp()]
 	_status_box.add_child(UIKit.label("Supplies %d / %d · Parts %d · Tokens %d" % [InventoryManager.supplies, ClinicManager.get_supplies_capacity(), InventoryManager.parts, InventoryManager.tokens], &"DimLabel", true))
-	_status_box.add_child(UIKit.label("Heat %d%s" % [roundi(FactionManager.heat), "  · inspections likely" if FactionManager.heat >= 35.0 else ""], &"DimLabel", true, Palette.DANGER if FactionManager.heat >= 35.0 else null))
+	_status_box.add_child(UIKit.label("Heat %d · %s%s" % [roundi(FactionManager.heat), SecurityManager.level_label(), "  · inspections likely" if FactionManager.heat >= 35.0 else ""], &"DimLabel", true, Palette.DANGER if FactionManager.heat >= 35.0 else null))
+	var open := SecurityManager.open_cases().size()
+	_security_button.text = "SECURITY" if open == 0 else "%d OPEN CASE%s" % [open, "S" if open > 1 else ""]
+	_security_button.theme_type_variation = &"DangerButton" if open > 0 else &"GhostButton"
 	# Today's agenda: what's due and when the door locks.
 	var agenda: Array[String] = []
 	for a in TimeManager.upcoming():
@@ -342,3 +353,10 @@ func _refresh_objective() -> void:
 	var o := GameManager.get_next_objective()
 	_objective.text = "NEXT > " + str(o["text"]).to_upper()
 	_objective.add_theme_color_override(&"font_color", Palette.WARN if o["kind"] == &"warn" else Palette.ACCENT)
+
+
+func _open_security() -> void:
+	var panel := SecurityPanel.new()
+	panel.name = "SecurityPanel"
+	UIManager.show_modal(panel)
+	panel.closed.connect(_refresh_status)

@@ -3,7 +3,7 @@ extends BaseScreen
 ## properties. Distinct identity: darker, magenta light, corrupted text,
 ## tape-patched panels and a signal-tear shader.
 
-const TABS := ["/OFFERS", "/STASH", "/CASES"]
+const TABS := ["/OFFERS", "/STASH", "/CASES", "/CONTACTS"]
 const DEN := "res://assets/sprites/blackmarket/den.png"
 ## Part of the den art shown as the header strip (art pixels).
 const DEN_CROP := Rect2(0, 44, 600, 74)
@@ -35,6 +35,9 @@ func on_enter(_params: Dictionary) -> void:
 		return
 	if BlackMarketManager.stock.is_empty():
 		BlackMarketManager.refresh_stock()
+	# Your first contact comes with the access.
+	if SupplierManager.discovered().is_empty():
+		SupplierManager.discover("juno", "quest")
 	var bg := ColorRect.new()
 	bg.color = Color("08050a")
 	add_child(UIKit.full_rect(bg))
@@ -59,7 +62,7 @@ func on_enter(_params: Dictionary) -> void:
 	UIKit.expand(main, true, true)
 	row.add_child(main)
 	var tabs := UIKit.tabs(TABS, _on_tab, "BMTab")
-	tabs.custom_minimum_size.x = 640
+	tabs.custom_minimum_size.x = 860
 	tabs.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	main.add_child(tabs)
 	var sc := UIKit.scroll()
@@ -110,6 +113,7 @@ func on_enter(_params: Dictionary) -> void:
 	EventBus.inventory_changed.connect(_rebuild)
 	EventBus.resources_changed.connect(_rebuild)
 	EventBus.black_market_changed.connect(_rebuild)
+	SupplierManager.changed.connect(_rebuild)
 	AudioManager.play_sfx(&"glitch", 0.15)
 	_rebuild()
 
@@ -187,11 +191,25 @@ func _rebuild() -> void:
 				_list.add_child(_stash_card(i, stash[i]))
 		2:
 			_list.add_child(_cases_card())
-	_list.columns = 1 if _tab == 2 else 2
+		3:
+			_contacts()
+	_list.columns = 1 if _tab >= 2 else 2
 
 
 func _item_header(row: HBoxContainer, inst: ImplantInstance) -> VBoxContainer:
 	var data := inst.get_data()
+	if not inst.identified:
+		# Partial information only: the slot it fits and the seller's word.
+		row.add_child(UIKit.icon("res://assets/sprites/ui/icons/warning.png", 16))
+		var uinfo := UIKit.vbox(2)
+		UIKit.expand(uinfo)
+		row.add_child(uinfo)
+		var g0 := GlitchLabel.new()
+		g0.set_base_text("UNIDENTIFIED DEVICE")
+		uinfo.add_child(g0)
+		uinfo.add_child(UIKit.label("FITS: %s SLOT · GRADE UNKNOWN" % data.category.to_upper(), &"SubHeaderLabel", true, Color("a8327a")))
+		uinfo.add_child(UIKit.label("Model, condition and properties unknown. ANALYSE it, install it blind, sell it, keep it, or give it to the Curator.", &"DimLabel", true, null, 13))
+		return uinfo
 	row.add_child(CyberwareIcon.make(data))
 	var info := UIKit.vbox(2)
 	UIKit.expand(info)
@@ -208,6 +226,8 @@ func _item_header(row: HBoxContainer, inst: ImplantInstance) -> VBoxContainer:
 	info.add_child(UIKit.label("T%d %s · %s" % [data.tier, data.get_tier_name(), data.category.to_upper()], &"SubHeaderLabel", true, data.get_rarity_color()))
 	if data.origin != "":
 		info.add_child(UIKit.label("ORIGIN: " + data.origin.to_upper(), &"SubHeaderLabel", true, Color("a8327a")))
+	if inst.grade != &"":
+		info.add_child(UIKit.label("GRADE: %s%s" % [str(SupplierManager.grade_def(inst.grade).get("label", inst.grade)), ("  · FROM " + str(SupplierManager.supplier(inst.supplier).get("name", "")).to_upper()) if inst.supplier != "" else ""], &"SubHeaderLabel", true, Palette.WARN))
 	var cond := UIKit.hbox(6)
 	cond.add_child(UIKit.label("COND %d%%" % roundi(inst.condition), &"MonoLabel", false, Palette.WARN if inst.condition < 70 else Palette.OK, 17))
 	var bar := UIKit.meter(inst.condition / 100.0, Palette.WARN if inst.condition < 70 else Palette.OK, 4)
@@ -261,7 +281,26 @@ func _stash_card(i: int, inst: ImplantInstance) -> Control:
 	modify.disabled = InventoryManager.parts < BlackMarketManager.modify_cost_parts()
 	var sell := UIKit.button("SELL %s" % EconomyManager.format_money(BlackMarketManager.sell_value(inst)), &"GhostButton", func() -> void: _sell(inst.uid), "Sell_%d" % i, 44)
 	var scrap := UIKit.button("SCRAP", &"GhostButton", func() -> void: _scrap(inst.uid), "Scrap_%d" % i, 44)
-	for b: Button in [study, modify, sell, scrap]:
+	var row_btns: Array[Button] = [study, modify, sell, scrap]
+	if not inst.identified:
+		var an := UIKit.button("ANALYSE", &"BMButton", func() -> void:
+			if SupplierManager.identify(inst.uid):
+				UIManager.show_toast("Identified: %s" % inst.display_name(), &"success")
+				SaveManager.save_game()
+			else:
+				UIManager.show_toast("Needs 2 parts or 150 cr.", &"warn"), "Analyse_%d" % i, 44)
+		an.tooltip_text = "2 parts or 150 cr: reveals model and condition"
+		study.disabled = true
+		modify.disabled = true
+		var cur := UIKit.button("TO THE CURATOR", &"GhostButton", func() -> void:
+			var pay := SupplierManager.give_to_specialist(inst.uid)
+			if pay > 0:
+				UIManager.show_toast("The Curator pays %d and owes you one." % pay, &"success")
+				SaveManager.save_game(), "Curator_%d" % i, 44)
+		cur.disabled = not bool(SupplierManager.st("curator").get("discovered", false))
+		cur.tooltip_text = "Give it to a specialist who collects mysteries: 70% of its value and their trust." if not cur.disabled else "You don't know a specialist yet."
+		row_btns = [an, cur, sell, scrap]
+	for b: Button in row_btns:
 		b.add_theme_font_size_override(&"font_size", 18)
 		UIKit.expand(b)
 		actions.add_child(b)
@@ -331,3 +370,111 @@ func _open_case() -> void:
 		UIManager.show_toast("Inside: %s" % inst.get_data().display_name, &"success")
 		AudioManager.play_sfx(&"implant")
 		SaveManager.save_game()
+
+
+# --- Contacts (SupplierManager) ---------------------------------------------------------
+
+func _contacts() -> void:
+	var known := SupplierManager.discovered()
+	var hidden := SupplierManager.ids().size() - known.size()
+	_list.add_child(UIKit.label("%d contact%s known · %s" % [known.size(), "" if known.size() == 1 else "s",
+		("%d more out there. Customers, staff, fixers and factions know names." % hidden) if hidden > 0 else "you know everyone worth knowing."], &"DimLabel", true, Color("ffb0cc")))
+	for id in known:
+		_list.add_child(_contact_card(id))
+
+
+func _contact_card(id: String) -> Control:
+	var sd := SupplierManager.supplier(id)
+	var s := SupplierManager.st(id)
+	var card := UIKit.panel(&"BMCardPanel")
+	card.name = "Contact_%s" % id
+	UIKit.expand(card)
+	var v := UIKit.vbox(6)
+	card.add_child(v)
+	var head := UIKit.hbox(12)
+	v.add_child(head)
+	var name := UIKit.label("%s · %s" % [str(sd["name"]).to_upper(), str(sd.get("archetype", "")).to_upper()], &"BMLabel")
+	UIKit.expand(name)
+	head.add_child(name)
+	var standing := SupplierManager.standing(id)
+	head.add_child(UIKit.label(standing, &"SubHeaderLabel", false, Palette.DANGER if standing in ["CUT YOU OFF", "SUSPICIOUS"] else Palette.OK))
+	v.add_child(UIKit.label(str(sd.get("desc", "")), &"DimLabel", true, null, 13))
+	var stats := UIKit.hbox(14)
+	v.add_child(stats)
+	stats.add_child(UIKit.label("TRUST %d" % int(s["trust"]), &"MonoLabel", false, Palette.OK, 16))
+	var tb := UIKit.meter(int(s["trust"]) / 100.0, Palette.OK, 6)
+	tb.custom_minimum_size.x = 160
+	tb.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	stats.add_child(tb)
+	stats.add_child(UIKit.label("SUSPICION %d" % int(s["suspicion"]), &"MonoLabel", false, Palette.DANGER if int(s["suspicion"]) >= 50 else Palette.TEXT_DIM, 16))
+	stats.add_child(UIKit.label("RELIABILITY %d%%" % roundi(float(sd.get("reliability", 0.8)) * 100.0), &"MonoLabel", false, Palette.TEXT_DIM, 16))
+	var nx := SupplierManager.next_unlock(id)
+	var unl: Array[String] = []
+	for u: Dictionary in SupplierManager.data.get("unlocks", []):
+		if SupplierManager.has_unlock(id, str(u["id"])):
+			unl.append(str(u["label"]))
+	v.add_child(UIKit.label("Unlocked: %s%s" % [", ".join(unl) if not unl.is_empty() else "nothing yet", ("  ·  next at trust %d: %s" % [int(nx["trust"]), str(nx["label"])]) if not nx.is_empty() else ""], &"DimLabel", true, Palette.ACCENT, 13))
+	if int(s["debt"]) > 0:
+		var dr := UIKit.hbox(8)
+		v.add_child(dr)
+		dr.add_child(UIKit.label("YOU OWE %d · due after %d more job%s" % [int(s["debt"]), int(s["debt_jobs"]), "" if int(s["debt_jobs"]) == 1 else "s"], &"SubHeaderLabel", false, Palette.WARN))
+		var pb := UIKit.button("PAY NOW", &"BMButton", func() -> void:
+			if SupplierManager.pay_debt(id):
+				SaveManager.save_game(), "PaySupplier_%s" % id, 34)
+		pb.disabled = not EconomyManager.can_afford(int(s["debt"]))
+		dr.add_child(pb)
+	if SupplierManager.is_cut_off(id):
+		v.add_child(UIKit.label("They aren't answering. Give it time, or settle what you owe.", &"DimLabel", true, Palette.DANGER))
+		return card
+	var stock: Array = s.get("stock", [])
+	if stock.is_empty():
+		v.add_child(UIKit.label("Nothing today. Check back tomorrow (stock is bigger at night).", &"DimLabel", true))
+	for i in stock.size():
+		v.add_child(_supplier_offer(id, i, stock[i]))
+	return card
+
+
+func _supplier_offer(id: String, i: int, o: Dictionary) -> Control:
+	var row := UIKit.hbox(10)
+	row.name = "SupplierOffer_%s_%d" % [id, i]
+	var info := UIKit.vbox(2)
+	UIKit.expand(info)
+	row.add_child(info)
+	var what := ""
+	match str(o["kind"]):
+		"tool":
+			var t := InventoryManager.get_tool(StringName(str(o["tool"])))
+			what = "%s (T%d %s)" % [t.display_name, t.tier, String(t.category).to_upper()] if t else str(o["tool"])
+		"supplies":
+			what = "%d sterile packs and stims" % int(o["amount"])
+		_:
+			var inst := ImplantInstance.from_dict(o["instance"])
+			var d := inst.get_data()
+			what = (inst.display_name() + ("  · T%d %s · COND %d%%" % [d.tier, d.category.to_upper(), roundi(inst.condition)])) if inst.identified and d else "Unidentified device  · fits %s" % (d.category.to_upper() if d else "?")
+	var cat := SupplierManager.category_def(str(o["category"]))
+	info.add_child(UIKit.label("%s%s · %s" % ["SECRET · " if bool(o.get("secret", false)) else "", str(cat.get("label", "")), str(SupplierManager.grade_def(StringName(str(o["grade"]))).get("label", "")) if str(o["kind"]) == "implant" else "EQUIPMENT"], &"SubHeaderLabel", true, Color("ff7ab0")))
+	info.add_child(UIKit.label(what, &"", true, Palette.TEXT, 15))
+	info.add_child(UIKit.label("RISK: " + SupplierManager.offer_risk(o), &"DimLabel", true, Palette.WARN, 12))
+	var btns := UIKit.vbox(4)
+	row.add_child(btns)
+	for mode: String in ["cash", "credit", "rush"]:
+		var why := SupplierManager.buy_block_reason(id, i, mode)
+		if mode != "cash" and why == "Needs more trust":
+			continue
+		var label: String = str({"cash": "BUY %s", "credit": "ON CREDIT %s", "rush": "RUSH NOW %s"}[mode]) % EconomyManager.format_money(SupplierManager.price_for(id, i, mode))
+		var b := UIKit.button(label, &"BMButton" if mode == "cash" else &"GhostButton", _buy_supplier.bind(id, i, mode), "SupplierBuy_%s_%d_%s" % [id, i, mode], 34)
+		b.disabled = why != ""
+		b.tooltip_text = why if why != "" else {"cash": "Pay now.", "credit": "Pay after your next %d jobs. Miss it and they get suspicious." % int(SupplierManager.data.get("credit_jobs", 3)), "rush": "Delivered right now, any hour: +50%."}[mode]
+		b.custom_minimum_size.x = 210
+		btns.add_child(b)
+	return row
+
+
+func _buy_supplier(id: String, i: int, mode: String) -> void:
+	var got := SupplierManager.buy(id, i, mode)
+	if got == "":
+		AudioManager.play_sfx(&"denied", 0.0)
+		return
+	UIManager.celebrate(&"bm_purchase")
+	UIManager.show_toast("Got it: %s" % got, &"success")
+	SaveManager.save_game()

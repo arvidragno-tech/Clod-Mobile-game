@@ -185,6 +185,11 @@ func scrap(uid: String) -> int:
 	return n
 
 
+## A favour repaid with a name: one more supplier you can call ("" = none left).
+func reveal_random_supplier_lead() -> String:
+	return SupplierManager.reveal_random_lead("favour")
+
+
 func on_operation_completed() -> void:
 	ops_since_refresh += 1
 	if is_unlocked() and (stock.is_empty() or ops_since_refresh >= int(config.get("refresh_every_ops", 2))):

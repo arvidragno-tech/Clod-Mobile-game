@@ -11,6 +11,12 @@ var traits: Array[StringName] = []
 var revealed: Array[StringName] = []
 var source: StringName = &"supply"
 var modified: int = 0
+## Black-market quality grade (data/suppliers.json grades; "" = standard).
+var grade: StringName = &""
+## Unidentified devices hide model, condition and traits until analysed.
+var identified: bool = true
+## Who sold it ("" = supply terminal / Undermarket stall).
+var supplier: String = ""
 
 
 static func create(item_id: StringName, p_condition: float = 100.0, p_source: StringName = &"supply") -> ImplantInstance:
@@ -46,7 +52,18 @@ func get_neural_load() -> float:
 
 ## Multiplier on implant performance from wear and traits.
 func get_quality() -> float:
-	return clampf((0.55 + 0.45 * condition / 100.0) * (1.0 + trait_effect("performance")), 0.1, 1.4)
+	var g := 1.0
+	if grade != &"":
+		g = float(SupplierManager.grade_def(grade).get("perf", 1.0))
+	return clampf((0.55 + 0.45 * condition / 100.0) * (1.0 + trait_effect("performance")) * g, 0.1, 1.5)
+
+
+## What the player can see it as.
+func display_name() -> String:
+	if not identified:
+		return "Unidentified device"
+	var d := get_data()
+	return d.display_name if d else String(cyberware_id)
 
 
 func get_extra_risk() -> float:
@@ -64,7 +81,7 @@ func to_dict() -> Dictionary:
 	for x in revealed:
 		r.append(String(x))
 	return {"uid": uid, "id": String(cyberware_id), "condition": condition, "traits": t, "revealed": r,
-			"source": String(source), "modified": modified}
+			"source": String(source), "modified": modified, "grade": String(grade), "identified": identified, "supplier": supplier}
 
 
 static func from_dict(d: Dictionary) -> ImplantInstance:
@@ -78,4 +95,7 @@ static func from_dict(d: Dictionary) -> ImplantInstance:
 		inst.revealed.append(StringName(str(x)))
 	inst.source = StringName(str(d.get("source", "supply")))
 	inst.modified = int(d.get("modified", 0))
+	inst.grade = StringName(str(d.get("grade", "")))
+	inst.identified = bool(d.get("identified", true))
+	inst.supplier = str(d.get("supplier", ""))
 	return inst

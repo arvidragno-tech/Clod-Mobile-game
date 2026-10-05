@@ -8,6 +8,7 @@ var t: Node
 func run(runner: Node) -> void:
 	t = runner
 	WorldEventManager.auto_roll = false
+	SecurityManager.auto_roll = false
 	_psychology_and_finances()
 	_memory()
 	_payment_terms()
@@ -19,8 +20,11 @@ func run(runner: Node) -> void:
 	_clinic_life()
 	_world_events()
 	_high_stakes()
+	_suppliers()
+	_threats()
 	SaveManager.reset_all()
 	WorldEventManager.auto_roll = true
+	SecurityManager.auto_roll = true
 
 
 func check(c: bool, msg: String) -> void:
@@ -168,7 +172,7 @@ func _debts() -> void:
 	m0 = EconomyManager.money
 	var back := PeopleManager.make_customer(c.id)
 	check(back != null and back.changes.any(func(x: String) -> bool: return x.contains("Favour repaid")), "the favour is repaid on arrival")
-	check(InventoryManager.supplies > s0 or InventoryManager.parts > p0 or EconomyManager.money > m0, "and it's worth something")
+	check(InventoryManager.supplies > s0 or s0 >= ClinicManager.get_supplies_capacity() or InventoryManager.parts > p0 or EconomyManager.money > m0 or not SupplierManager.discovered().is_empty(), "and it's worth something (supplies, parts, cash or a supplier lead)")
 
 
 func _returning_customers() -> void:
@@ -674,3 +678,217 @@ func _high_stakes() -> void:
 	var dep := GameManager.dependency_stabilize()
 	check(not dep.is_empty() and int(PeopleManager.get_person(d.id)["dependency"]) == 2 and MemoryManager.has(d.id, &"PLAYER_STABILIZED_ME"), "STABILISE eases the dependency")
 	check(int(PeopleManager.get_person(d.id)["dependency"]) < 4, "dependency can be walked back")
+
+
+func _suppliers() -> void:
+	_fresh()
+	StoryManager.set_flag(&"bm_access")
+	check(SupplierManager.ids().size() == 6 and SupplierManager.discovered().is_empty(), "six contacts, none known at first")
+	check(SupplierManager.data["categories"].size() == 10 and SupplierManager.data["grades"].size() == 7, "ten categories, seven grades")
+	# Discovery through a customer of the right kind.
+	var found := false
+	for i in 80:
+		var c := CustomerManager.generator.generate({"archetype": "scavenger", "full_difficulty": true})
+		SupplierManager._on_customer_left(c)
+		if bool(SupplierManager.st("magpie")["discovered"]):
+			found = true
+			break
+	check(found and str(SupplierManager.st("magpie")["lead_from"]).begins_with("customer"), "a scavenger tells you about Magpie")
+	check(not (SupplierManager.st("magpie")["stock"] as Array).is_empty(), "a new contact has stock")
+	# Quest flag and faction standing open doors.
+	SupplierManager._check_discovery()
+	check(bool(SupplierManager.st("juno")["discovered"]), "black-market access brings the fixer")
+	FactionManager.change(&"independent_mercs", 30)
+	for i in 3:
+		SupplierManager._check_discovery()
+	check(bool(SupplierManager.st("okafor")["discovered"]), "merc standing gets you the quartermaster")
+	check(SupplierManager.reveal_random_supplier_lead_text() != "" or SupplierManager.discovered().size() == 6, "favours can be repaid with a lead")
+	# Buying: heat, trust, stock shrinks.
+	var id := "magpie"
+	SupplierManager._refresh(id)
+	EconomyManager.add_money(20000)
+	var n := (SupplierManager.st(id)["stock"] as Array).size()
+	var t0 := int(SupplierManager.st(id)["trust"])
+	var h0 := FactionManager.heat
+	check(SupplierManager.buy(id, 0) != "", "buy from a supplier")
+	check((SupplierManager.st(id)["stock"] as Array).size() == n - 1 and int(SupplierManager.st(id)["trust"]) > t0, "stock shrinks, trust grows")
+	check(FactionManager.heat >= h0, "black-market buys carry heat")
+	# Unlocks by trust: credit and rush.
+	check(SupplierManager.buy_block_reason(id, 0, "credit") == "Needs more trust" or (SupplierManager.st(id)["stock"] as Array).is_empty(), "no credit for strangers")
+	SupplierManager.change_trust(id, 60)
+	SupplierManager._refresh(id)
+	check(SupplierManager.has_unlock(id, "credit") and SupplierManager.has_unlock(id, "rush") and SupplierManager.has_unlock(id, "discount"), "trust unlocks credit, rush delivery and discounts")
+	var price := SupplierManager.price_for(id, 0, "credit")
+	var m0 := EconomyManager.money
+	check(SupplierManager.buy(id, 0, "credit") != "" and EconomyManager.money == m0 and int(SupplierManager.st(id)["debt"]) == price, "buy on credit: nothing paid now")
+	for i in 3:
+		BusinessManager.record_job()
+	check(int(SupplierManager.st(id)["debt"]) == 0 and EconomyManager.money == m0 - price, "credit is paid after three jobs")
+	# Can't pay: suspicion, then cut off.
+	SupplierManager._refresh(id)
+	if not (SupplierManager.st(id)["stock"] as Array).is_empty():
+		SupplierManager.buy(id, 0, "credit")
+		EconomyManager.spend(EconomyManager.money)
+		for i in 12:
+			BusinessManager.record_job()
+		check(SupplierManager.is_cut_off(id) or int(SupplierManager.st(id)["suspicion"]) >= 25, "unpaid credit makes them suspicious, then they cut you off")
+	SupplierManager.cut_off(id, 3)
+	check(SupplierManager.buy_block_reason(id, 0) != "" and (SupplierManager.st(id)["stock"] as Array).is_empty(), "cut off: no stock, no sales")
+	# Grades and tools.
+	var inst := ImplantInstance.create(&"kevlace_mesh", 90.0, &"black_market")
+	inst.grade = &"military"
+	var plain := ImplantInstance.create(&"kevlace_mesh", 90.0, &"black_market")
+	check(inst.get_quality() > plain.get_quality(), "military grade performs better")
+	var okafor := "okafor"
+	EconomyManager.add_money(20000)
+	var got_tool := false
+	for i in 20:
+		SupplierManager._refresh(okafor)
+		var st: Array = SupplierManager.st(okafor)["stock"]
+		for j in st.size():
+			if str(st[j]["kind"]) == "tool":
+				var tid := StringName(str(st[j]["tool"]))
+				SupplierManager.buy(okafor, j)
+				got_tool = InventoryManager.owns_tool(tid)
+				break
+		if got_tool:
+			break
+	check(got_tool, "restricted tools can be bought off the books")
+	# Unknown tech: partial info, analyse, give to the specialist.
+	var u := ImplantInstance.create(&"ghostlink_eye", 60.0, &"black_market")
+	u.identified = false
+	InventoryManager.add_instance(u)
+	check(u.display_name() == "Unidentified device", "unidentified devices hide what they are")
+	InventoryManager.parts = 5
+	check(SupplierManager.identify(u.uid) and u.identified and InventoryManager.parts == 3, "ANALYSE identifies it")
+	var u2 := ImplantInstance.create(&"ghostlink_eye", 60.0, &"black_market")
+	u2.identified = false
+	InventoryManager.add_instance(u2)
+	SupplierManager.st("curator")["discovered"] = false
+	check(SupplierManager.give_to_specialist(u2.uid) == 0, "no specialist until you know the Curator")
+	SupplierManager.discover("curator", "test")
+	var ct := int(SupplierManager.st("curator")["trust"])
+	check(SupplierManager.give_to_specialist(u2.uid) > 0 and int(SupplierManager.st("curator")["trust"]) > ct, "the Curator pays and trusts you more")
+	# Favours through COMMS.
+	var uid := SupplierManager.ask_favor("juno", "store")
+	var tj := int(SupplierManager.st("juno")["trust"])
+	check(uid >= 0 and CommsManager.act(uid, 0), "a favour request can be accepted from COMMS")
+	check(int(SupplierManager.st("juno")["trust"]) > tj and SupplierManager.contraband.size() == 1, "storing their crate builds trust (and keeps contraband in your stash)")
+	for i in 5:
+		BusinessManager.end_day()
+	check(SupplierManager.contraband.is_empty(), "they collect it after a few days")
+	uid = SupplierManager.ask_favor("juno", "secret")
+	var sj := int(SupplierManager.st("juno")["suspicion"])
+	CommsManager.act(uid, 1)
+	check(int(SupplierManager.st("juno")["suspicion"]) > sj, "refusing some favours makes them suspicious")
+	# Dynamic: prices drift, night and heat change stock.
+	var d0 := float(SupplierManager.st("juno")["price_drift"])
+	BusinessManager.end_day()
+	check(float(SupplierManager.st("juno")["price_drift"]) != d0, "prices drift day to day")
+	# Save/load.
+	check(SaveManager.save_game(), "suppliers save")
+	var trust_j := int(SupplierManager.st("juno")["trust"])
+	SaveManager.reset_all()
+	check(SaveManager.load_game() and int(SupplierManager.st("juno")["trust"]) == trust_j and bool(SupplierManager.st("curator")["discovered"]), "supplier relationships survive save/load")
+	var back := InventoryManager.get_instance(u.uid)
+	check(back != null and back.identified, "implant identity survives save/load")
+	SaveManager.delete_save()
+
+
+func _threats() -> void:
+	_fresh()
+	# Heat levels.
+	check(SecurityManager.level(0.0)["label"] == "LOW", "heat 0 is LOW")
+	check(SecurityManager.level(30.0)["label"] == "MEDIUM" and SecurityManager.level(60.0)["label"] == "HIGH" and SecurityManager.level(80.0)["label"] == "CRITICAL", "MEDIUM, HIGH, CRITICAL")
+	# Theft takes something real and opens a case.
+	EconomyManager.add_money(2000)
+	var m0 := EconomyManager.money
+	var units := InventoryManager.get_instances().size()
+	var sup := InventoryManager.supplies
+	var parts := InventoryManager.parts
+	var c := SecurityManager.roll_theft(true)
+	check(not c.is_empty() and str(c["status"]) == "open", "a break-in opens a case")
+	var lost := EconomyManager.money < m0 or InventoryManager.get_instances().size() < units or InventoryManager.supplies < sup or InventoryManager.parts < parts or str(c["loot"]["kind"]) in ["data", "belongings", "equipment"]
+	check(lost, "something is actually gone (%s)" % c["loot_text"])
+	check(CommsManager.inbox.any(func(m: Dictionary) -> bool: return str(m["template"]) == "theft"), "you're told")
+	# Security makes it rarer.
+	var risk0 := SecurityManager.theft_chance()
+	ClinicManager.upgrades[ClinicManager.clinic_id()] = {"security": 2}
+	check(SecurityManager.theft_chance() < risk0, "security upgrades lower the risk")
+	# Investigation tools.
+	var id := int(c["id"])
+	check(SecurityManager.can_use(id, "cameras") == "", "cameras need security (installed)")
+	var clue := SecurityManager.investigate(id, "cameras")
+	check(clue.begins_with("Footage"), "cameras give a clue")
+	check(SecurityManager.investigate(id, "cameras") == "", "once per case")
+	EconomyManager.add_money(500)
+	check(SecurityManager.investigate(id, "ask") != "", "asking around gives a clue (for a price)")
+	var sus := SecurityManager.suspects(id)
+	check(sus.size() >= 2, "there are suspects to confront")
+	var right := SecurityManager._culprit_key(c)
+	check(sus.any(func(s: Dictionary) -> bool: return str(s["key"]) == right), "the real culprit is among them")
+	var r := SecurityManager.confront(id, right)
+	check(bool(r["right"]) and str(SecurityManager.get_case(id)["status"]) == "solved", "confronting the right one solves it")
+	# Accusing an innocent employee costs loyalty.
+	var e := StaffManager.generate_candidate()
+	e["clinic"] = ClinicManager.tier
+	e["loyalty"] = 60.0
+	StaffManager.employees.append(e)
+	var c2 := SecurityManager.roll_theft(true)
+	if not c2.is_empty() and SecurityManager._culprit_key(c2) != "staff:%s" % e["id"]:
+		SecurityManager.confront(int(c2["id"]), "staff:%s" % e["id"])
+		check(float(e["loyalty"]) <= 45.0 and MemoryManager.has(StringName(str(e["id"])), &"PLAYER_LIED"), "a false accusation hurts an innocent employee")
+	# A desperate employee is a likely thief.
+	StaffManager.employees.clear()
+	var d := StaffManager.generate_candidate()
+	d["clinic"] = ClinicManager.tier
+	StaffLifeManager.ensure_life(d)
+	d["life"]["desperate"] = true
+	StaffManager.employees.append(d)
+	var by_staff := 0
+	for i in 30:
+		EconomyManager.add_money(500)
+		var cc := SecurityManager.roll_theft(true)
+		if not cc.is_empty() and str(cc["culprit"]["kind"]) == "employee":
+			by_staff += 1
+	check(by_staff >= 4, "desperate staff steal (%d/30)" % by_staff)
+	StaffManager.employees.clear()
+	# Pressure at HIGH: cooperating names names.
+	var person := CustomerManager.generator.generate({"full_difficulty": true, "faction": "street_gangs"})
+	person.faction_id = &"street_gangs"
+	PeopleManager.after_visit(person, "success", 100)
+	SupplierManager.discover("magpie", "test")
+	var susp0 := int(SupplierManager.st("magpie")["suspicion"])
+	SecurityManager.roll_pressure("high")
+	var msg: Dictionary = CommsManager.inbox[CommsManager.inbox.size() - 1]
+	check(str(msg["template"]) == "heat_high" and (msg["actions"] as Array).size() == 3, "HIGH heat: an interrogation with three answers")
+	FactionManager.heat = 55.0
+	CommsManager.act(int(msg["uid"]), 0)
+	check(FactionManager.heat < 55.0 and int(SupplierManager.st("magpie")["suspicion"]) > susp0, "cooperating cools heat; suppliers hear about it")
+	check(MemoryManager.has(person.id, &"PLAYER_BETRAYED_FACTION"), "the crews you named remember")
+	# CRITICAL: confiscation.
+	var bm := ImplantInstance.create(&"ghostlink_eye", 70.0, &"black_market")
+	InventoryManager.add_instance(bm)
+	SupplierManager.contraband.append({"supplier": "magpie", "days_left": 3})
+	SecurityManager.roll_pressure("critical")
+	msg = CommsManager.inbox[CommsManager.inbox.size() - 1]
+	CommsManager.act(int(msg["uid"]), 0)
+	check(InventoryManager.get_instance(bm.uid) == null and SupplierManager.contraband.is_empty(), "handing it over: black-market stock and contraband are seized")
+	# Nightly notes reach the day report.
+	var report := {"notes": []}
+	EconomyManager.add_money(500)
+	var forced := false
+	SecurityManager.auto_roll = true
+	for i in 40:
+		SecurityManager._on_day_ended(BusinessManager.day, report)
+		if (report["notes"] as Array).any(func(n: String) -> bool: return n.begins_with("Break-in")):
+			forced = true
+			break
+	SecurityManager.auto_roll = false
+	check(forced, "break-ins show up in the night's report")
+	# Save/load.
+	var n_cases := SecurityManager.cases.size()
+	check(SaveManager.save_game(), "security saves")
+	SaveManager.reset_all()
+	check(SaveManager.load_game() and SecurityManager.cases.size() == n_cases, "cases survive save/load")
+	SaveManager.delete_save()

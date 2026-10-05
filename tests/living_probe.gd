@@ -42,6 +42,8 @@ func _ready() -> void:
 		await _clinic_life(res)
 		await _world(res)
 		await _high_stakes(res)
+		await _suppliers(res)
+		await _security(res)
 	SaveManager.delete_save()
 	DirAccess.remove_absolute(Settings.path)
 	print("")
@@ -280,6 +282,71 @@ func _high_stakes(label: String) -> void:
 	UIManager.close_modal()
 	CustomerManager.dismiss_current()
 	UIManager.go_to(UIManager.SCREEN_CLINIC)
+	await _settle()
+
+
+func _suppliers(label: String) -> void:
+	var root := get_tree().root
+	StoryManager.set_flag(&"bm_access")
+	SupplierManager.discover("glass", "probe")
+	SupplierManager.discover("curator", "probe")
+	SupplierManager.change_trust("glass", 55)
+	SupplierManager._refresh("glass")
+	EconomyManager.add_money(30000)
+	var u := ImplantInstance.create(&"ghostlink_eye", 60.0, &"black_market")
+	u.identified = false
+	InventoryManager.add_instance(u)
+	UIManager.go_to(UIManager.SCREEN_BLACK_MARKET)
+	await _settle()
+	var tab := _find_visible_button("BMTab_3")
+	_check(tab != null, "%s: CONTACTS tab" % label)
+	if tab:
+		tab.pressed.emit()
+		await _frames(10)
+	_check(root.find_child("Contact_glass", true, false) != null and root.find_child("Contact_curator", true, false) != null, "%s: known contacts listed" % label)
+	await _shot(label, "bm_contacts")
+	var buy := _find_visible_button("SupplierBuy_glass_0_cash")
+	if buy:
+		var n := (SupplierManager.st("glass")["stock"] as Array).size()
+		buy.pressed.emit()
+		await _frames(10)
+		_check((SupplierManager.st("glass")["stock"] as Array).size() == n - 1, "%s: bought from a contact via the UI" % label)
+	var stash := _find_visible_button("BMTab_1")
+	if stash:
+		stash.pressed.emit()
+		await _frames(10)
+	_check(_find_visible_button("Curator_%d" % InventoryManager.get_instances().find(u)) != null or root.find_children("Analyse_*", "Button", true, false).size() > 0, "%s: unidentified device actions in the stash" % label)
+	await _shot(label, "bm_stash_unknown")
+	InventoryManager.remove_instance(u.uid)
+	UIManager.go_to(UIManager.SCREEN_CLINIC)
+	await _settle()
+
+
+func _security(label: String) -> void:
+	var root := get_tree().root
+	ClinicManager.upgrades[ClinicManager.clinic_id()] = {"security": 1}
+	EconomyManager.add_money(2000)
+	FactionManager.add_heat(55.0 - FactionManager.heat)
+	var c := SecurityManager.roll_theft(true)
+	_check(not c.is_empty(), "%s: a break-in" % label)
+	UIManager.go_to(UIManager.SCREEN_CLINIC)
+	await _settle()
+	UIManager.close_modal()
+	await _frames(5)
+	var b := _find_visible_button("SecurityButton")
+	_check(b != null and b.text.contains("OPEN CASE"), "%s: the SECURITY button shows open cases" % label)
+	if b:
+		b.pressed.emit()
+		await _frames(10)
+	_check(root.find_child("SecurityPanel", true, false) != null, "%s: security panel opens" % label)
+	var cam := _find_visible_button("Investigate_%d_cameras" % int(c["id"]))
+	if cam:
+		cam.pressed.emit()
+		await _frames(5)
+	_check((SecurityManager.get_case(int(c["id"]))["clues"] as Array).size() >= 1, "%s: cameras give a clue from the UI" % label)
+	await _shot(label, "security_panel")
+	UIManager.close_modal()
+	FactionManager.add_heat(-FactionManager.heat)
 	await _settle()
 
 
