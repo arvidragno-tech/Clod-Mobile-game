@@ -53,7 +53,7 @@ const SAVE_PATH := "user://savegame.json"
 ## Save slots live in user://saves/ (%APPDATA%/UndercityRipper/saves on Windows).
 const SAVE_DIR := "user://saves"
 const SAVE_SLOTS := 3
-const SAVE_VERSION := 4
+const SAVE_VERSION := 5
 
 # --- New game ----------------------------------------------------------------
 const STARTING_MONEY := 300

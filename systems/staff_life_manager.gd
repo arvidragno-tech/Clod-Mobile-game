@@ -256,6 +256,10 @@ func _single_ok(a: Dictionary, cond: Dictionary) -> bool:
 		return false
 	if cond.has("counter") and StoryManager.counter(StringName(str(cond["counter"]))) <= 0:
 		return false
+	var dm: Dictionary = cond.get("dim", {})
+	for k: Variant in dm:
+		if ReputationManager.dim(StringName(str(k))) < int(dm[k]):
+			return false
 	return true
 
 

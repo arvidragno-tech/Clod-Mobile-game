@@ -1048,7 +1048,7 @@ func _save_v4() -> void:
 	check(StoryManager.has_flag(&"bm_access") and StoryManager.pending.size() == 1 and StoryManager.path_score(&"kingpin") >= 2 and StoryManager.counter(&"bm_sell") == 2, "flags, pending consequences, paths and counters persist")
 	check(QuestManager.is_active(&"q_undermarket_trade") and CommsManager.inbox.size() >= 1 and DialogueManager.choices.size() >= 1, "quests, comms and dialogue choices persist")
 	var raw := FileAccess.get_file_as_string(SaveManager.save_path)
-	check(raw.contains("\"version\": %d" % GameConfig.SAVE_VERSION) and GameConfig.SAVE_VERSION == 4, "save is versioned (v4)")
+	check(raw.contains("\"version\": %d" % GameConfig.SAVE_VERSION) and GameConfig.SAVE_VERSION == 5, "save is versioned (v5)")
 	GameManager.is_running = was
 	SaveManager.delete_save()
 	SaveManager.reset_all()

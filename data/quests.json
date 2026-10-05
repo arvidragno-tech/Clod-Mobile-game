@@ -405,6 +405,25 @@
    "consequence": "The end of one story.",
    "giver": "",
    "act": 5
+  },
+  {
+   "id": "q_inside_job",
+   "type": "staff",
+   "title": "Inside Job",
+   "description": "Chrome walked out of your clinic with a key. Somebody on your payroll took it. Find out who before it happens again.",
+   "objective": {
+    "type": "flag",
+    "flag": "inside_job_solved",
+    "text": "Investigate the break-in (SECURITY) and confront the right person"
+   },
+   "reward": {
+    "rep": 3,
+    "xp": 60
+   },
+   "consequence": "Your staff know you check the cameras now.",
+   "giver": "",
+   "act": 1,
+   "deadline_days": 7
   }
  ]
 }

@@ -7,8 +7,13 @@ almost nothing, take customers, install cyberware at a surgical workstation,
 hire staff, buy clinics across the city, and decide what you become while a
 corporate conspiracy spreads through your patients' nerves.
 
-**Status: 3.0.0, "The Underground"**: characters, clinics, staff, business,
-districts and a five-act story on top of the 2.0 PC game. The game has:
+**Status: 3.1.0, "The world reacts"**: patients who remember you and come
+back changed, staff with lives, a clock from 09:00 to 04:00, a waiting room
+and a Clinic Wall, a city with its own situations and news, surgical
+dilemmas, emergency triage, a black-market supplier network, break-ins and
+investigations, on top of 3.0 "The Underground" (characters, clinics,
+staff, business, districts and a five-act story). The game has:
+- a living world: people, memories, payment terms and debts, staff lives and bonds, day and night, waiting room, the Wall, city situations and news, surgical dilemmas, triage, six black-market contacts, heat levels, thefts and investigations
 - a dark, grimy look: seven lit clinic interiors with grime, waste and failing light; very little neon
 - detailed characters: layered portraits and bodies built from parts, occupation and faction looks, a ten-person story cast whose looks change with the story, idle animation everywhere
 - seven purchasable clinics in seven districts, six upgrade categories that visibly change the room, business days with rent, salaries, a ledger and debt

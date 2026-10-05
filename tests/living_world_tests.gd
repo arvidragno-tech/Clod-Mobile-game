@@ -22,6 +22,8 @@ func run(runner: Node) -> void:
 	_high_stakes()
 	_suppliers()
 	_threats()
+	_narrative()
+	_save_v5_migration()
 	SaveManager.reset_all()
 	WorldEventManager.auto_roll = true
 	SecurityManager.auto_roll = true
@@ -891,4 +893,131 @@ func _threats() -> void:
 	check(SaveManager.save_game(), "security saves")
 	SaveManager.reset_all()
 	check(SaveManager.load_game() and SecurityManager.cases.size() == n_cases, "cases survive save/load")
+	SaveManager.delete_save()
+
+
+func _narrative() -> void:
+	_fresh()
+	# Identity from behaviour, not a class pick.
+	check(ReputationManager.identity()["id"] == "nobody", "nobody yet at the start")
+	ReputationManager.change_dim(&"criminal", 25)
+	check(ReputationManager.identity()["id"] == "gang_doc", "crew work makes you the gang doc")
+	check(ReputationManager.archetype_weight("gang_member") > 1.0 and ReputationManager.archetype_weight("corporate") < 1.0, "gangs come, suits stay away")
+	check(ReputationManager.heat_gain_mult() > 1.0, "and you draw more heat")
+	var h0 := FactionManager.heat
+	FactionManager.add_heat(10.0)
+	check(FactionManager.heat - h0 > 10.0, "heat gain is scaled by your reputation")
+	var report := {"notes": []}
+	WorldEventManager._on_day_ended(BusinessManager.day, report)
+	check((report["notes"] as Array).any(func(n: String) -> bool: return n.contains("GANG DOC")), "the street's new name for you is in the night report")
+	check(WorldEventManager.news.any(func(n: Dictionary) -> bool: return bool(n["about_you"]) and str(n["headline"]).contains("gang doc")), "and in the news")
+	ReputationManager.change_dim(&"criminal", -25)
+	ReputationManager.change_dim(&"civilian", 25)
+	ReputationManager.change_dim(&"medical", 12)
+	check(ReputationManager.identity()["id"] == "saint", "charity and care make you the saint of the Sump")
+	# The emergent chain: grateful patient -> gang-linked referral.
+	var c := CustomerManager.generator.generate({"full_difficulty": true, "faction": "independent_mercs"})
+	c.faction_id = &"independent_mercs"
+	PeopleManager.register(c)
+	PeopleManager.change_rel(c.id, 50)
+	var gang := 0
+	for i in 30:
+		if PeopleManager.referral(c).faction_id == &"street_gangs":
+			gang += 1
+	check(gang >= 3, "grateful patients sometimes send friends who run with a crew (%d/30)" % gang)
+	# Staff react to a gang clientele.
+	ReputationManager.change_dim(&"criminal", 20)
+	var e := StaffManager.generate_candidate()
+	e["clinic"] = ClinicManager.tier
+	e["ethics"] = ["no_harvest"]
+	StaffManager.employees.append(e)
+	StaffLifeManager.ensure_life(e)
+	var ev := StaffLifeManager.get_event(&"gang_clients")
+	check(StaffLifeManager._single_ok(e, ev["cond"]), "staff with principles notice the crew colours")
+	var uid := StaffLifeManager.fire(&"gang_clients", e)
+	CommsManager.act(uid, 2)
+	check(ReputationManager.dim(&"criminal") < 20 + 0 or ReputationManager.dim(&"criminal") <= 15, "turning the crews away costs criminal standing")
+	# Investigation becomes likelier when you're gang-linked.
+	ReputationManager.change_dim(&"criminal", 40)
+	FactionManager.heat = 40.0
+	var inv := 0
+	for i in 60:
+		WorldEventManager.active.clear()
+		if WorldEventManager.roll() == "investigation":
+			inv += 1
+	check(inv >= 10, "a gang-linked clinic draws MedBoard inquiries (%d/60)" % inv)
+	WorldEventManager.active.clear()
+	# Military chrome stolen by staff -> a quest, solved by confronting them.
+	StaffManager.employees.clear()
+	var thief := StaffManager.generate_candidate()
+	thief["clinic"] = ClinicManager.tier
+	thief["loyalty"] = 10.0
+	StaffManager.employees.append(thief)
+	for x in InventoryManager.get_instances():
+		InventoryManager.remove_instance(x.uid)
+	InventoryManager.add_instance(ImplantInstance.create(&"unknown_military_core", 80.0, &"black_market"))
+	EconomyManager.spend(maxi(0, EconomyManager.money - 30))
+	InventoryManager.supplies = 0
+	InventoryManager.parts = 0
+	var cs := {}
+	for i in 40:
+		cs = SecurityManager.roll_theft(true)
+		if not cs.is_empty() and str(cs["culprit"]["kind"]) == "employee" and str(cs["loot"]["kind"]) == "cyberware":
+			break
+		if not cs.is_empty() and str(cs["loot"]["kind"]) == "cyberware":
+			SecurityManager._recover(cs)
+		cs = {}
+	if not cs.is_empty():
+		check(QuestManager.is_active(&"q_inside_job"), "chrome walking out with staff starts INSIDE JOB")
+		SecurityManager.confront(int(cs["id"]), SecurityManager._culprit_key(cs))
+		check(QuestManager.state_of(&"q_inside_job") == "completed", "confronting the thief completes it")
+		check(InventoryManager.get_instances().any(func(x: ImplantInstance) -> bool: return x.cyberware_id == &"unknown_military_core"), "and the chrome comes back")
+	else:
+		check(false, "could not stage an inside theft")
+	# Reactive audio: calm late night is muffled; danger opens it up.
+	FactionManager.heat = 0.0
+	SecurityManager.cases.clear()
+	CustomerManager.dismiss_current()
+	TimeManager.minute = 1560
+	AudioManager.update_tension()
+	var calm := AudioManager.music_cutoff()
+	check(calm < 5000.0, "the small hours are muffled (%d Hz)" % roundi(calm))
+	FactionManager.heat = 80.0
+	CustomerManager.spawn_emergency()
+	AudioManager.update_tension()
+	check(AudioManager.tension > 0.5 and AudioManager.music_cutoff() > calm, "danger raises tension and opens the music")
+	check(float(AudioManager._mix_mods[&"tension"]["pump"]) > 1.3, "the machinery pushes forward")
+	FactionManager.heat = 0.0
+	CustomerManager.dismiss_current()
+
+
+## A v4 save (before the living world) loads: new systems start fresh and
+## the old clinic log becomes people you've met.
+func _save_v5_migration() -> void:
+	_fresh()
+	var r := SurgeryResult.new()
+	r.success = true
+	r.grade = "B"
+	var c := CustomerManager.generator.generate({"full_difficulty": true})
+	CustomerManager.record_outcome(c, r)
+	EconomyManager.add_money(777)
+	var money := EconomyManager.money
+	check(SaveManager.save_game(), "save for migration")
+	var data: Dictionary = SaveManager._read_save(SaveManager.save_path)
+	check(not data.is_empty(), "save readable")
+	data["version"] = 4
+	for k: String in ["MemoryManager", "PeopleManager", "StaffLifeManager", "TimeManager", "ClinicLifeManager", "WorldEventManager", "SupplierManager", "SecurityManager"]:
+		(data["systems"] as Dictionary).erase(k)
+	var migrated := SaveManager._migrate(data)
+	check(int(migrated["version"]) == 5, "v4 migrates to v5")
+	check((migrated["systems"] as Dictionary).has("PeopleManager") and (migrated["systems"]["PeopleManager"]["people"] as Dictionary).has(String(c.id)), "old patients become people you've met")
+	SaveManager.reset_all()
+	for name in SaveManager.SAVEABLE_SYSTEMS:
+		var node := SaveManager._get_system(name)
+		node.call("load_save_data", (migrated["systems"] as Dictionary).get(name, {}))
+	check(EconomyManager.money == money and TimeManager.minute == TimeManager.open_minute(), "old progress kept; the clock starts at opening")
+	check(PeopleManager.has_person(c.id), "the old patient is known")
+	PeopleManager.get_person(c.id)["next_day"] = BusinessManager.day
+	var back := PeopleManager.make_customer(c.id)
+	check(back != null and not back.appearance.is_empty(), "and can walk back in with a face")
 	SaveManager.delete_save()

@@ -179,7 +179,7 @@ off `EventManager.operations` and controls:
 
 ## Save format
 
-Version 3 (`GameConfig.SAVE_VERSION`):
+Version 5 (`GameConfig.SAVE_VERSION`, see 3.1 below for v4 → v5):
 - Every file ends with `#md5:<hash of the JSON text>`. A mismatch rejects the file, and the loader then tries `.bak`, then `.tmp` (to recover from a kill between write and swap).
 - v2 → v3: settings move out of the save, and the tutorial is marked done for existing players.
 - `SaveManager._migrate()` upgrades v1 saves:
@@ -284,3 +284,64 @@ clinic screen: pending event > queued talk (DialoguePanel) > customer
 ### Controls
 
 `Controls.ACTIONS` lists every action with a category; categories map to contexts (global, surgery, dialogue) and only actions sharing a context can clash. A binding code is a keycode (> 0) or a negated mouse button (< 0); each action has two slots. Movement bindings are mirrored onto `ui_up` / `ui_down` / `ui_left` / `ui_right` so menus follow the layout.
+
+## 3.1: the world reacts (living world)
+
+Nothing from 3.0 was removed. Eleven systems were added as autoloads (all
+saved, all `reset_state` / `get_save_data` / `load_save_data`), and the
+existing managers call into them at a handful of points.
+
+| Autoload / class | Owns | Data |
+|---|---|---|
+| `MemoryManager` | What people remember about you: tags such as `PLAYER_SAVED_ME`, `PLAYER_OVERCHARGED_ME`, `PLAYER_KILLED_FRIEND`, `PLAYER_BETRAYED_FACTION`. A memory moves the relationship once (cast → `CharacterManager`, patients → `PeopleManager`, staff → loyalty) and the reputation dimensions, and gives them something to say (`recall_line`, ~60% of visits) | `data/memories.json` |
+| `PeopleManager` | Everyone who walked in, as people: identity, traits, finances, relationship (stranger … loyal / hostile), visits, money paid, chrome, links (friend, family, crew), history. After a visit they may come back days later, changed (`_evolve`: wealth, scars, chrome from elsewhere, a new crew or job; appearance events persist). Referrals, payment terms (`settle`), patient debts (demand, plan, write off, fixer, favour), cyberware dependency (0–4) | `data/patients.json` |
+| `StaffLifeManager` | Employee lives (family, money, fear, dream), bonds between colleagues (friendly, professional, suspicious, competitive, resentful, loyal, fearful, respectful, involved), life events as COMMS choices, reactions (defend after a death, resent a forced job, envy a raise); `team_modifier` feeds `EmployeeAI.success_chance` | `data/staff_life.json` |
+| `TimeManager` | The clinic clock (09:00–04:00), moved by arrivals (`arrival_gap` spreads the day's jobs), operations (20 min … 2 h by difficulty), triage and talk. Five periods weight archetypes, incidents, prices (`get_modifiers`), black-market prices, staff (`staff_modifier`), room tint and ambience; daily appointments become incidents at their time | `data/time.json` |
+| `ClinicLifeManager` | Waiting room (seats walk-ins while you work; patience runs out; rival factions make a scene), hourly vignettes with small effects, the Clinic Wall (pins for milestones, losses, regulars, wanted notices, faction marks, clippings) | `data/clinic_life.json` |
+| `WorldEventManager` | City situations lasting days (gang war, recall, inquiry, takeover, missing fixer, port strike, mass casualty, neural program, blackout, someone you know in trouble) as weights and modifiers; the news wire (situations, reactions to the clinic, filler, your street identity) | `data/world_events.json` |
+| `SurgicalDilemmas` (class) + `SurgeryManager` hooks | Decision complications that freeze the table (`dilemma_started`, `resolve_dilemma`), with odds from patient, chrome, tools, skill, staff | `data/dilemmas.json` |
+| `SupplierManager` | Six black-market contacts: discovery, trust / suspicion / debt / favours, unlocks (discount, credit, rush, rare, secret), daily inventory shaped by hour / district / heat / world / reputation, grades, unidentified devices, cut-offs, contraband | `data/suppliers.json` |
+| `SecurityManager` | Heat levels (LOW … CRITICAL) and their COMMS pressure (surveillance, interrogation, confiscation, informant), night thefts with real losses, cases with cameras / questioning / asking around / confronting | `data/security.json` |
+
+`ReputationManager` gained five dimensions (civilian, criminal, medical,
+corporate, black market), `identity()` (what the street calls you, inferred
+from behaviour), `archetype_weight()` and `heat_gain_mult()` (trade-offs).
+`AudioManager` gained a reactive mix (`set_mix_mod(source, layers)`, used by
+the clock and by `update_tension()`) and a low-pass on the Music bus that
+closes in on quiet nights and opens with danger.
+
+### Where the world bends the loop
+
+```
+walk-in archetype weight = archetype × district × hour × situations × your reputations
+customer: traits, finances, budget (share of the expected fee), memories, changes since last visit
+intake: payment terms · emergency triage (countdown) · dependency care
+operation: maybe a surgical dilemma → choice → odds → vitals / performance / pay / finds
+payment: PeopleManager.settle → paid now + debt → MemoryManager (discount, overcharge, free)
+after: PeopleManager.after_visit → memory, relationship, maybe return later, referrals
+clock: TimeManager.advance → period change (tint, mix, modifiers) → appointments
+       → ClinicLifeManager (walk-ins, patience, vignettes)
+night: BusinessManager.end_day → day_ended: SecurityManager (theft, pressure) and
+       WorldEventManager (reactive news, identity) add to the report
+dawn:  day_started → situations tick / start, supplier stock, staff life events, debts
+```
+
+COMMS actions carry their own effect blocks: `effects` (StoryManager),
+`staff` (StaffLifeManager), `person` (WorldEventManager), `supplier_favor`
+(SupplierManager), `security` (SecurityManager).
+
+### Save v5
+
+v4 → v5: the new systems start from defaults, and patients from the old
+clinic log become people you've met (`SaveManager._migrate`).
+
+### Tests
+
+- `tests/living_world_tests.gd` (part of the unit run): every system above,
+  save / load and the v4 → v5 migration.
+- `tests/living_probe.tscn`: the rendered game at 1920×1080, 1600×900,
+  1366×768 and 1280×720 with screenshots of every new screen state and
+  on-screen checks.
+- The E2E harness resolves timed incidents and surgical dilemmas; scripted
+  runs switch random dilemmas off, unit runs switch random world / security
+  rolls off for determinism.

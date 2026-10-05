@@ -368,6 +368,23 @@ func _person_card(id: StringName) -> Control:
 
 func _story() -> void:
 	_list.columns = 2
+	# What the street calls you, from what you've actually done.
+	var idn := ReputationManager.identity()
+	var ic := UIKit.panel(&"DangerPanel")
+	ic.name = "IdentityCard"
+	UIKit.expand(ic)
+	_list.add_child(ic)
+	var iv := UIKit.vbox(4)
+	ic.add_child(iv)
+	iv.add_child(UIKit.label("THE STREET CALLS YOU", &"SubHeaderLabel"))
+	iv.add_child(UIKit.label(str(idn["title"]), &"HeaderLabel", true, Palette.WARN))
+	iv.add_child(UIKit.label(str(idn["text"]), &"DimLabel", true))
+	var dl: Array[String] = []
+	for d in ReputationManager.DIMENSIONS:
+		dl.append("%s %+d" % [str(ReputationManager.DIMENSION_LABELS[d]), ReputationManager.dim(d)])
+	iv.add_child(UIKit.label("  ·  ".join(dl), &"MonoLabel", true, Palette.TEXT_DIM, 14))
+	var spacer := Control.new()
+	_list.add_child(spacer)
 	var acts := UIKit.panel(&"AccentPanel")
 	UIKit.expand(acts)
 	_list.add_child(acts)

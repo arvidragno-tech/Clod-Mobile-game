@@ -31,7 +31,7 @@ func _ready() -> void:
 	await _settle()
 	UIManager.close_modal()
 	EventManager.operations = 10
-	for res in ["1920x1080", "1280x720"]:
+	for res in ["1920x1080", "1600x900", "1366x768", "1280x720"]:
 		Settings.window_mode = "windowed"
 		Settings.resolution = res
 		Settings.apply_display()

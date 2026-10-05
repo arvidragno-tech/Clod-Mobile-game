@@ -124,6 +124,8 @@ func roll_theft(force: bool = false) -> Dictionary:
 	if str(culprit["kind"]) in ["employee", "insider"] and str(loot["kind"]) == "cyberware":
 		# A rare piece of chrome walking out with your staff is a story.
 		StoryManager.set_flag(&"inside_theft")
+		c["quest"] = true
+		QuestManager.start(&"q_inside_job")
 	cases_changed.emit()
 	return c
 
@@ -398,6 +400,12 @@ func confront(case_id: int, key: String) -> Dictionary:
 			_:
 				text = "Wrong door. Whoever did it is long gone."
 	c["outcome"] = text
+	if bool(c.get("quest", false)):
+		if right:
+			StoryManager.set_flag(&"inside_job_solved")
+			QuestManager.check(&"q_inside_job")
+		elif QuestManager.is_active(&"q_inside_job"):
+			QuestManager.fail(&"q_inside_job")
 	cases_changed.emit()
 	return {"right": right, "text": text}
 

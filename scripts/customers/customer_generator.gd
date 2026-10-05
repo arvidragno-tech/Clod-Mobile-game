@@ -109,7 +109,7 @@ func _pick_archetype(context: Dictionary) -> Dictionary:
 		for f: Variant in a["factions"]:
 			w += float(a["factions"][f]) * FactionManager.customer_weight(StringName(str(f)))
 		# The district decides who walks past the door.
-		weights[i] = w * WorldManager.customer_weight(str(a["id"])) * TimeManager.archetype_weight(str(a["id"])) * WorldEventManager.archetype_weight(str(a["id"]))
+		weights[i] = w * WorldManager.customer_weight(str(a["id"])) * TimeManager.archetype_weight(str(a["id"])) * WorldEventManager.archetype_weight(str(a["id"])) * ReputationManager.archetype_weight(str(a["id"]))
 	return list[int(pick_weighted(weights))]
 
 

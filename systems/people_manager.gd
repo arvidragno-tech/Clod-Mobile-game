@@ -260,7 +260,12 @@ func _schedule_return(p: Dictionary, outcome: String) -> void:
 
 ## Someone they know comes because of them (good care) or stays away (bad).
 func referral(from: CustomerData) -> CustomerData:
-	var friend := CustomerManager.generator.generate({"faction": String(from.faction_id), "referred_by": from.display_name})
+	var fac := String(from.faction_id)
+	# Good people know bad people: a grateful patient's friend may run with a crew.
+	if rel_state(from.id) in ["grateful", "loyal"] and _rng.randf() < 0.3:
+		fac = "street_gangs"
+	var friend := CustomerManager.generator.generate({"faction": fac, "referred_by": from.display_name})
+	friend.faction_id = StringName(fac)
 	register(friend)
 	link(from.id, friend.id, ["friend", "family", "crew"][_rng.randi() % 3])
 	MemoryManager.remember(from.id, &"PLAYER_REFERRED", String(friend.id))
@@ -375,6 +380,8 @@ func make_customer(id: StringName) -> CustomerData:
 	if c.dependency > 0:
 		_dependency_request(c)
 	CustomerManager.generator.roll_budget(c)
+	if (p["appearance"] as Dictionary).is_empty():
+		p["appearance"] = CharacterAppearanceManager.normalize(c.appearance).duplicate(true)  # migrated from an old save
 	c.appearance = (p["appearance"] as Dictionary).duplicate(true)
 	if owed_by(id) > 0:
 		c.changes.append("Still owes you %d cr." % owed_by(id))

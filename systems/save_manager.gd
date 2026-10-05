@@ -272,6 +272,24 @@ func _migrate(data: Dictionary) -> Dictionary:
 		# from their defaults.
 		systems["ClinicManager"] = ClinicManager.migrate_legacy(systems.get("ClinicManager", {}))
 		data["systems"] = systems
+	if version < 5:
+		# v4 -> v5: the living world (people, memories, staff lives, the
+		# clock, the waiting room and wall, world events, suppliers, security)
+		# is new and starts from its defaults; patients from the old clinic
+		# log are remembered as people you've met.
+		var people := {}
+		for h: Variant in systems.get("CustomerManager", {}).get("history", []):
+			if h is Dictionary and str(h.get("character", "")) == "":
+				var uid := str(h.get("uid", ""))
+				if uid != "" and not people.has(uid):
+					people[uid] = {"id": uid, "name": str(h.get("name", "")).get_slice(" \"", 0), "rel": 5, "visits": int(h.get("visits", 1)),
+						"faction": str(h.get("faction", "")), "status": "alive" if str(h.get("outcome", "")) != "flatline" else "dead",
+						"history": ["Treated before the clinic kept proper files."], "links": {}, "cyber": [], "traits": [], "appearance": {},
+						"paid_total": 0, "last_price": 0, "loyal": false, "first_day": 1, "last_day": 1, "dependency": 0, "favor": false,
+						"next_day": -1, "refused": 0, "finance": "working", "wealth": 1, "archetype": "civilian", "occupation": "", "age": 30, "alias": "", "personality": "calm"}
+		if not people.is_empty() and not systems.has("PeopleManager"):
+			systems["PeopleManager"] = {"people": people, "debts": [], "next_debt": 1}
+		data["systems"] = systems
 	data["version"] = GameConfig.SAVE_VERSION
 	return data
 

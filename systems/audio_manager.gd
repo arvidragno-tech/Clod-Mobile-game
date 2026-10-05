@@ -108,6 +108,10 @@ var _music_id: StringName = &""
 var _layers: Dictionary = {}  # id -> AudioStreamPlayer
 ## Reactive mix: source (time of day, tension...) -> {layer: multiplier}.
 var _mix_mods: Dictionary = {}
+## 0 calm .. 1 everything is on fire: heat, emergencies, open cases, a gang
+## war, the small hours. Drives the ambience mix and how open the music is.
+var tension: float = 0.0
+const MUSIC_CUTOFF := {&"morning": 9000.0, &"day": 20000.0, &"evening": 12000.0, &"night": 5000.0, &"late_night": 2600.0}
 var _oneshot_player: AudioStreamPlayer
 var _oneshot_timer: float = 12.0
 var _last_played: Dictionary = {}
@@ -139,6 +143,9 @@ func _ready() -> void:
 	_voice.volume_db = SFX_VOLUME_DB
 	Settings.changed.connect(apply_volumes)
 	apply_volumes()
+	for sig: Signal in [EventBus.heat_changed, EventBus.customer_arrived, EventBus.customer_left, EventBus.world_event_started, EventBus.period_changed]:
+		sig.connect(func(_a: Variant = null, _b: Variant = null) -> void: update_tension.call_deferred())
+	SecurityManager.cases_changed.connect(update_tension)
 
 
 func _make_player(bus: StringName) -> AudioStreamPlayer:
@@ -155,6 +162,11 @@ func _ensure_buses() -> void:
 			var idx := AudioServer.bus_count - 1
 			AudioServer.set_bus_name(idx, bus)
 			AudioServer.set_bus_send(idx, &"Master")
+	var mi := AudioServer.get_bus_index(BUS_MUSIC)
+	if mi >= 0 and AudioServer.get_bus_effect_count(mi) == 0:
+		var lp := AudioEffectLowPassFilter.new()
+		lp.cutoff_hz = 20000.0
+		AudioServer.add_bus_effect(mi, lp)
 
 
 ## Applies Settings volumes to the buses (linear 0..1 -> dB, 0 = mute).
@@ -351,3 +363,40 @@ func get_debug_state() -> Dictionary:
 	for id: StringName in _layers:
 		layers[id] = (_layers[id] as AudioStreamPlayer).playing
 	return {"profile": profile, "music": _music_id, "layers": layers}
+
+
+
+## Reactive audio: recomputes tension from the state of the game. Quiet
+## nights stay quiet (the music closes in, muffled); danger opens it up and
+## pushes the machinery forward. Nothing dramatic unless something is.
+func update_tension() -> void:
+	var t := 0.0
+	match SecurityManager.level_id():
+		&"high":
+			t += 0.3
+		&"critical":
+			t += 0.5
+	if CustomerManager.current_customer and CustomerManager.current_customer.is_emergency:
+		t += 0.4
+	if not SecurityManager.open_cases().is_empty():
+		t += 0.15
+	if WorldEventManager.is_active(&"gang_war"):
+		t += 0.2
+	if TimeManager.period() == &"late_night":
+		t += 0.1
+	tension = clampf(t, 0.0, 1.0)
+	set_mix_mod(&"tension", {"pump": 1.0 + 0.8 * tension, "hum": 1.0 + 0.3 * tension, "city": 1.0 + 0.4 * tension, "crt": 1.0 + 0.3 * tension})
+	var mi := AudioServer.get_bus_index(BUS_MUSIC)
+	if mi >= 0 and AudioServer.get_bus_effect_count(mi) > 0:
+		var lp := AudioServer.get_bus_effect(mi, 0) as AudioEffectLowPassFilter
+		if lp:
+			var base := float(MUSIC_CUTOFF.get(TimeManager.period(), 20000.0))
+			lp.cutoff_hz = lerpf(base, 20000.0, tension)
+
+
+func music_cutoff() -> float:
+	var mi := AudioServer.get_bus_index(BUS_MUSIC)
+	if mi < 0 or AudioServer.get_bus_effect_count(mi) == 0:
+		return 20000.0
+	var lp := AudioServer.get_bus_effect(mi, 0) as AudioEffectLowPassFilter
+	return lp.cutoff_hz if lp else 20000.0

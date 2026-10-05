@@ -26,6 +26,8 @@ var news: Array[Dictionary] = []  # {day, minute, headline, body, about_you}
 ## reactive id -> day last posted
 var _reactive_last: Dictionary = {}
 var deaths_today: int = 0
+## Last identity the street gave you (news when it changes).
+var identity_id: String = "nobody"
 var _rng := RandomNumberGenerator.new()
 
 
@@ -45,6 +47,7 @@ func reset_state() -> void:
 	news.clear()
 	_reactive_last.clear()
 	deaths_today = 0
+	identity_id = "nobody"
 
 
 # --- Queries ------------------------------------------------------------------------------
@@ -129,7 +132,11 @@ func roll() -> String:
 		var s: Dictionary = list[i]
 		if is_active(StringName(str(s["id"]))) or not _cond_ok(s.get("cond", {})):
 			continue
-		weights[i] = float(s.get("weight", 1))
+		var w := float(s.get("weight", 1))
+		# A gang-linked clinic gets investigated; corporate friends attract recalls' attention less.
+		if str(s["id"]) == "investigation":
+			w *= 1.0 + maxi(0, ReputationManager.dim(&"criminal")) / 25.0
+		weights[i] = w
 	if weights.is_empty():
 		return ""
 	var s: Dictionary = list[int(CustomerGenerator.new(_rng).pick_weighted(weights))]
@@ -275,7 +282,12 @@ func _on_visit(_id: StringName, outcome: String) -> void:
 
 
 ## At night the wire reacts to what the clinic did.
-func _on_day_ended(_day: int, _report: Dictionary) -> void:
+func _on_day_ended(_day: int, report: Dictionary) -> void:
+	var idn := ReputationManager.identity()
+	if str(idn["id"]) != identity_id and str(idn["id"]) != "nobody":
+		identity_id = str(idn["id"])
+		post("The lower city has a name for the doc in %s: %s" % [WorldManager.district_name(), str(idn["title"]).to_lower()], str(idn["text"]), true)
+		(report.get("notes", []) as Array).append("The street calls you %s now." % idn["title"])
 	for r: Dictionary in data.get("reactive", []):
 		var id := str(r["id"])
 		if BusinessManager.day - int(_reactive_last.get(id, -1000)) < int(r.get("cooldown", 5)):
@@ -317,7 +329,7 @@ func _fill(s: String, vars: Dictionary) -> String:
 # --- Save ---------------------------------------------------------------------------------
 
 func get_save_data() -> Dictionary:
-	return {"active": active.duplicate(true), "news": news.duplicate(true), "reactive": _reactive_last.duplicate(), "deaths_today": deaths_today}
+	return {"active": active.duplicate(true), "news": news.duplicate(true), "reactive": _reactive_last.duplicate(), "deaths_today": deaths_today, "identity": identity_id}
 
 
 func load_save_data(d: Dictionary) -> void:
@@ -332,4 +344,5 @@ func load_save_data(d: Dictionary) -> void:
 	for k: Variant in r:
 		_reactive_last[str(k)] = int(r[k])
 	deaths_today = int(d.get("deaths_today", 0))
+	identity_id = str(d.get("identity", "nobody"))
 	EventBus.modifiers_changed.emit()

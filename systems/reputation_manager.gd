@@ -49,6 +49,59 @@ func change_dims(deltas: Dictionary) -> void:
 		change_dim(StringName(str(k)), int(deltas[k]))
 
 
+## Who the street thinks you are, inferred from what you've done (no class
+## picked up front). First match wins; thresholds in order of drama.
+const IDENTITIES := [
+	{"id": "butcher", "title": "THE BUTCHER", "text": "People die on your table and everybody knows it.", "deaths": 5},
+	{"id": "saint", "title": "THE SAINT OF THE SUMP", "text": "You treat the broke and the desperate. They'd hide you if it came to it.", "dims": {"civilian": 20, "medical": 10}},
+	{"id": "gang_doc", "title": "THE GANG DOC", "text": "The crews bring you their wounded and their money. Corporate security has a file.", "dims": {"criminal": 20}},
+	{"id": "fence", "title": "THE CHROME FENCE", "text": "If it's unregistered, it went through your hands.", "dims": {"black_market": 20}},
+	{"id": "contractor", "title": "THE CORPORATE CONTRACTOR", "text": "Suits come down here for discretion, and you give it to them.", "dims": {"corporate": 20}},
+	{"id": "shark", "title": "THE CHROME SHARK", "text": "You charge what the desperate can't afford. They pay anyway, and hate you for it.", "overcharged": 4},
+	{"id": "surgeon", "title": "THE CLEAN SURGEON", "text": "Licensed or not, your hands are the best in the lower city.", "dims": {"medical": 20}},
+]
+## How each reputation pulls customers in (archetype weight per point).
+const DIM_ARCHETYPES := {
+	&"criminal": {"gang_member": 0.02, "criminal": 0.02, "smuggler": 0.015, "corporate": -0.01},
+	&"corporate": {"corporate": 0.02, "security_officer": 0.015, "gang_member": -0.01},
+	&"civilian": {"civilian": 0.015, "elder": 0.015, "dock_worker": 0.01},
+	&"black_market": {"bm_tech": 0.02, "netrunner": 0.015, "smuggler": 0.01},
+	&"medical": {"veteran": 0.01, "civilian": 0.01},
+}
+
+
+func identity() -> Dictionary:
+	var deaths := 0
+	for p: Dictionary in PeopleManager.people.values():
+		if str(p.get("status", "")) == "dead":
+			deaths += 1
+	for i: Dictionary in IDENTITIES:
+		if i.has("deaths") and deaths >= int(i["deaths"]):
+			return i
+		if i.has("overcharged") and MemoryManager.who_remembers(&"PLAYER_OVERCHARGED_ME").size() >= int(i["overcharged"]):
+			return i
+		if i.has("dims"):
+			var ok := true
+			for d: Variant in i["dims"]:
+				ok = ok and dim(StringName(str(d))) >= int(i["dims"][d])
+			if ok:
+				return i
+	return {"id": "nobody", "title": "NOBODY YET", "text": "The street hasn't decided what you are."}
+
+
+## Your reputations decide who walks in (with trade-offs: gangs scare off suits).
+func archetype_weight(id: String) -> float:
+	var m := 1.0
+	for d: StringName in DIM_ARCHETYPES:
+		m += float(DIM_ARCHETYPES[d].get(id, 0.0)) * dim(d)
+	return clampf(m, 0.3, 3.0)
+
+
+## Criminal work draws attention; corporate friends keep it off you.
+func heat_gain_mult() -> float:
+	return clampf(1.0 + maxi(0, dim(&"criminal")) / 150.0 - maxi(0, dim(&"corporate")) / 250.0, 0.7, 1.6)
+
+
 ## Highest dimension = what the street thinks you are.
 func dominant_dim() -> StringName:
 	var best: StringName = &"civilian"

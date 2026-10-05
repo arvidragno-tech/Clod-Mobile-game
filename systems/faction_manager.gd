@@ -75,7 +75,7 @@ func customer_weight(id: StringName) -> float:
 
 
 func add_heat(amount: float) -> void:
-	var scaled := amount * (ModifierManager.mult(&"heat.gain") if amount > 0.0 else 1.0)
+	var scaled := amount * (ModifierManager.mult(&"heat.gain") * ReputationManager.heat_gain_mult() if amount > 0.0 else 1.0)
 	var old := heat
 	heat = clampf(heat + scaled, 0.0, GameConfig.MAX_HEAT)
 	if not is_equal_approx(old, heat):

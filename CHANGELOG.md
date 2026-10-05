@@ -4,6 +4,58 @@ All notable changes to *UNDERCITY: RIPPER*. Versions follow
 `application/config/version` in `project.godot` and the Windows file version
 in `export_presets.cfg`.
 
+## 3.1.0 — The world reacts
+
+The clinic is no longer CUSTOMER → SURGERY → MONEY → NEXT. People remember
+you, staff have lives, the clock moves, the city changes, and the black
+market and the law push back. Nothing was rebuilt; every 3.0 system is
+still there and now feeds into the rest.
+
+### Living customers
+- Everyone who walks in is kept as a person: traits (nervous, desperate, arrogant, paranoid, cyberware-dependent, greedy, loyal, distrustful, compassionate, aggressive, ashamed, proud), finances (desperate … wealthy, criminal or corporate money), relationship, visits, what they paid and owe, their chrome and who they know.
+- They come back on their own schedule, changed: richer or poorer, a new scar, chrome from someone else, a new crew or job, the implant you put in. The customer file shows SINCE LAST TIME and THEY REMEMBER.
+- Memory tags (saved me, refused me, overcharged me, gave me a discount, killed my friend, betrayed my crew, kept my secret, failed the operation...) shift relationships and five reputation dimensions, and come up in conversation.
+- Payment terms: full price, discount, free, overcharge, pay later, backer pays. What they can't cover becomes a patient debt: demand, payment plan, write off, send a fixer, or trade for a favour (repaid with supplies, parts, cash or a supplier lead).
+- Referrals link people; friends remember deaths; hostile patients warn others away; loyal ones bring friends (sometimes with crew colours).
+
+### Staff lives
+- Families, money troubles, fears and dreams; bonds between colleagues (friendly, professional, suspicious, competitive, resentful, loyal, fearful, respectful, involved).
+- Life events in COMMS with choices: a sick father, a loan shark at the door, an ethical objection to unregistered chrome, a prototype they want in their own head, burnout, an argument, a rivalry, a romance and its end, a partner in corporate security, crew colours in the waiting room.
+- Friends steady each other's hands, grudges cost focus; partners defend each other after a death; rivals resent raises.
+
+### Time and day / night
+- A clock from 09:00 to 04:00 moved by what happens (arrivals, 20-minute routine jobs to two-hour neural work, triage). Morning, day, evening, night and late night change who walks in, which incidents happen, supply and black-market prices, staff (night owls), the room's light and the ambience.
+- Timed appointments: the supplier's van, an inspection when heat is up, a midnight deal, a 02:00 emergency. TODAY agenda and clock in the room; procedure durations on the customer file.
+
+### The clinic, alive
+- Waiting room: walk-ins sit down while you work, talk, complain, fall asleep, give up and leave (and remember); rival crews make a scene.
+- Clinic life vignettes as the hours pass, some with small effects.
+- The Clinic Wall: notes, photos of regulars, names of the dead, clippings, wanted notices, faction marks, pinned in the room and in the journal (WALL).
+
+### The city
+- Situations that last days: gang war, manufacturer recall (your patients come back), MedBoard inquiry, district takeover, a missing fixer, a port strike, a tram crash, a corporate program, blackouts, someone you know in trouble.
+- A news ticker in the room and a NEWS tab; the wire reacts to the clinic (bodies piling up, clean hands, gang-linked clinic, sweeps, charity, price gouging) and to what the street calls you.
+
+### High stakes
+- Surgical dilemmas that stop the table: neural rejection, unknown firmware, internal bleeding, cyberware instability, unexpected nerve damage, foreign device. Push through, stop, change procedure, another tool, call a ripperdoc in, go experimental, or risk the patient, with odds and risk shown.
+- Emergency triage with a countdown: stabilise, operate, call a specialist, experimental rig, premium chrome, refuse. Wait too long and they crash, then die.
+- Cyberware dependency: feed it, profit from it, a safer unit, or stabilise without chrome; feeding it to the limit ends in a crisis.
+
+### The black market, deeper
+- Six contacts you find through customers, staff, fixers, factions, quests and favours: a scavenger, a military quartermaster, a corporate leak, a street dealer, an experimental broker, a fixer.
+- Ten categories (stolen, military surplus, experimental, restricted equipment, illegal pharmaceuticals, counterfeit, salvaged, prototype, rare tools, unknown tech) and seven grades, risks stated on every offer.
+- Trust unlocks discounts, credit (pay after three jobs), emergency delivery at any hour, rare items and secret stock; suspicion and unpaid credit get you cut off. Favours: treat someone, hide a patient, deliver, store contraband, repair, keep a secret.
+- Unidentified devices: install blind, analyse, sell, keep, or give to the Curator. Prices drift daily and bend with the hour, heat and the city.
+
+### Threats
+- Heat levels LOW / MEDIUM / HIGH / CRITICAL: surveillance, interrogation (cooperate, stay silent, bribe), confiscation orders (hand over, hide, bribe, become an informant). No combat.
+- Night break-ins take real things (cash, chrome, supplies, parts, records, instruments). Cases: check the cameras, question staff, ask around, confront a suspect; the right one returns most of it, the wrong one remembers being accused. Staff thefts of chrome start the INSIDE JOB quest.
+
+### Identity, audio, saves
+- What the street calls you is inferred from what you do (the saint of the Sump, the gang doc, the chrome fence, the corporate contractor, the chrome shark, the clean surgeon, the butcher), and your reputations decide who comes and how much heat you draw.
+- Reactive audio: the ambience shifts with the hour and with tension; the music closes in on quiet nights and opens up when things go wrong.
+- Save format v5 (v4 saves load; old patients become people you've met).
+
 ## 3.0.0 — The Underground: characters, clinics, staff, story
 
 A large continuation of the PC game. Nothing was rebuilt from scratch; the
