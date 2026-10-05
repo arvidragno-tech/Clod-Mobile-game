@@ -454,6 +454,14 @@ These numbers come from the perf probe (`tests/perf_probe.tscn`) at
 **1920×1080 on a software rasterizer** (Mesa llvmpipe, CPU only, no GPU).
 Any Windows GPU renders far faster, so treat them as upper bounds.
 
+3.1 (living world) re-measured on the same software rasterizer: the clinic
+room now also draws the hour's tint, the news ticker, people in the waiting
+room and the Clinic Wall, which puts the clinic at 41–46 ms average (was
+32–35) with 148–154 draw calls and 240 nodes; the Undermarket with its new
+CONTACTS tab builds in ~480 ms and averages 63–68 ms; other screens are
+within a few ms of the table below. Static memory stays flat across a
+20-shift soak (stability test: nodes 226 → 226, orphans 0).
+
 | Screen | Build ms | Avg frame ms (HIGH) | Avg frame ms (LOW) | Draw calls | Nodes | Texture MB |
 |---|---|---|---|---|---|---|
 | Main menu (full-screen key art) | 200–240 | 34–37 | 30 | 58 | 78 | 35.8 |
