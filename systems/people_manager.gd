@@ -104,6 +104,12 @@ func register(c: CustomerData) -> Dictionary:
 	p["appearance"] = CharacterAppearanceManager.normalize(c.appearance).duplicate(true)
 	p["personality"] = String(c.personality)
 	p["dependency"] = maxi(int(p.get("dependency", 0)), c.dependency)
+	# Older records (migrated saves, hand-built test people) may lack lists.
+	for k in ["cyber", "history"]:
+		if not p.has(k) or not (p[k] is Array):
+			p[k] = []
+	if not p.has("links") or not (p["links"] is Dictionary):
+		p["links"] = {}
 	if (p["cyber"] as Array).is_empty():
 		for e in c.existing_cyberware:
 			(p["cyber"] as Array).append(String(e))
@@ -231,6 +237,8 @@ func _add_installed(p: Dictionary, c: CustomerData) -> void:
 	var item := CyberwareManager.get_cyberware(c.requested_cyberware_id)
 	if item == null:
 		return
+	if not p.has("cyber") or not (p["cyber"] is Array):
+		p["cyber"] = []
 	(p["cyber"] as Array).append(String(item.id))
 	var ev := ""
 	match String(item.category):
@@ -396,7 +404,7 @@ func make_customer(id: StringName) -> CustomerData:
 	c.backer = StringName(str(fd.get("backer", "")))
 	c.pay_multiplier = 0.8 + 0.15 * c.wealth
 	c.existing_cyberware.clear()
-	for e: Variant in p["cyber"]:
+	for e: Variant in p.get("cyber", []):
 		if CyberwareManager.get_cyberware(StringName(str(e))):
 			c.existing_cyberware.append(StringName(str(e)))
 	c.dependency = int(p["dependency"])
