@@ -27,7 +27,7 @@ func _ready() -> void:
 	var t := UIKit.label("SECURITY", &"HeaderLabel")
 	UIKit.expand(t)
 	head.add_child(t)
-	head.add_child(UIKit.button("CLOSE  [ESC]", &"GhostButton", _close, "SecurityClose", 40))
+	head.add_child(UIKit.button("CLOSE  %s" % Controls.hint("pause"), &"GhostButton", _close, "SecurityClose", 40))
 	var sc := UIKit.scroll()
 	UIKit.expand(sc, true, true)
 	outer.add_child(sc)

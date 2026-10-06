@@ -187,7 +187,7 @@ func _build_options() -> void:
 	var opts := DialogueManager.options()
 	if opts.is_empty():
 		var last := DialogueManager.is_end_node()
-		var b := UIKit.button("END CONVERSATION" if last else "CONTINUE  [SPACE]", &"AccentButton", _continue, "DialogueEnd" if last else "DialogueNext", 52)
+		var b := UIKit.button("END CONVERSATION" if last else "CONTINUE  %s" % Controls.hint("context"), &"AccentButton", _continue, "DialogueEnd" if last else "DialogueNext", 52)
 		_options.add_child(b)
 		b.grab_focus.call_deferred()
 		if Settings.get("auto_advance") == true and not last:

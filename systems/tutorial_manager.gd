@@ -10,7 +10,7 @@ signal step_changed(step: Dictionary)
 ## node name to highlight (optional) and the text.
 const STEPS: Array[Dictionary] = [
 	{"id": "arrive", "context": "clinic", "target": "SeeButton", "title": "YOUR FIRST PATIENT",
-		"text": "Someone is at the door. Click SEE CUSTOMER (or press C)."},
+		"text": "Someone is at the door. Click SEE CUSTOMER (or press {customer_info})."},
 	{"id": "intake", "context": "customer", "target": "AcceptButton", "title": "THE FILE",
 		"text": "Who they are, what chrome they want, what they pay. Click ACCEPT JOB (or press ENTER)."},
 	{"id": "diagnose", "context": "diagnosis", "target": "ScanView", "title": "1 / DIAGNOSIS",
@@ -18,20 +18,25 @@ const STEPS: Array[Dictionary] = [
 	{"id": "plan", "context": "plan", "target": "BeginButton", "title": "2 / PROCEDURE",
 		"text": "The plan: implant, tools, supplies, risk. All checks show +. Click BEGIN OPERATION."},
 	{"id": "tools", "context": "stage:anesthesia", "target": "ControlsHost", "title": "3 / TOOLS",
-		"text": "Each step needs one instrument from the rack on the right (keys 1-9); the right one glows. First, HOLD the button or SPACE to sedate and release in the green."},
+		"text": "Each step needs one instrument from the rack on the right (keys {tool_1}-{tool_9}); the right one glows. First, HOLD the button or {context} to sedate and release in the green."},
 	{"id": "cut", "context": "stage:incision", "target": "TrayScroll", "title": "4 / SURGERY",
 		"text": "Pick the SCALPEL (click it or press its number), then drag along the dotted guide. Go slow: straying causes bleeding. Right-click puts a tool down."},
 	{"id": "install", "context": "stage:install_implant", "target": "FieldArea", "title": "5 / INSTALL",
-		"text": "Drag the implant into the socket, turn it with the mouse wheel or , and . until it lines up, then SEAT (SPACE)."},
+		"text": "Drag the implant into the socket, turn it with the mouse wheel or {rotate_left} and {rotate_right} until it lines up, then SEAT ({context})."},
 	{"id": "close", "context": "stage:close_incision", "target": "FieldArea", "title": "6 / FINISH",
 		"text": "Click the stitch points in number order to close up."},
 	{"id": "payment", "context": "results", "target": "ContinueButton", "title": "7 / PAYMENT",
 		"text": "Credits, XP and street rep. Clean, fast work pays more."},
 	{"id": "upgrade", "context": "clinic_after", "target": "Nav_skills", "title": "8 / UPGRADE",
-		"text": "You earned a skill point. Spend it in SKILLS on the left. SUPPLY sells tools and implants. ESC opens the menu. Good luck, ripper."},
+		"text": "You earned a skill point. Spend it in SKILLS on the left. SUPPLY sells tools and implants. {pause} opens the menu. Good luck, ripper."},
 ]
 
-const HELP_TEXT := "1. See the customer (click them or press C) and accept the job (ENTER).\n2. Scan 2+ body regions, then pick the diagnosis.\n3. Check the plan and BEGIN.\n4. Each stage: pick the glowing instrument (click, 1-9 or Q/R), follow the instruction bar. Right-click puts the tool down; the wheel zooms the field.\n5. Complications: hit the flashing emergency action (Z COAG / X SEDATE / V STABIL).\n6. Get paid, spend skill points, upgrade your clinic.\n7. The clinic room is clickable; wheel or double-click to zoom. I inventory, B database, J journal, M city map, F1 field guide (click any stat to explain it), F5 quick save, ESC menu.\nColours: cyan = tech/OK, amber = careful, red = danger, magenta = black market."
+const HELP_TEXT := "1. See the customer (click them or press {customer_info}) and accept the job (ENTER).\n2. Scan 2+ body regions, then pick the diagnosis.\n3. Check the plan and BEGIN.\n4. Each stage: pick the glowing instrument (click, {tool_1}-{tool_9} or {tool_prev}/{tool_next}), follow the instruction bar. Right-click puts the tool down; the wheel zooms the field.\n5. Complications: hit the flashing emergency action ({quick_coag} COAG / {quick_sedate} SEDATE / {quick_stabilize} STABIL).\n6. Get paid, spend skill points, upgrade your clinic.\n7. The clinic room is clickable; wheel or double-click to zoom. {inventory} inventory, {database} database, {journal} journal, {map} city map, {changes} recent changes, {help} field guide (click any stat to explain it), {quicksave} quick save, {pause} menu.\nColours: cyan = tech/OK, amber = careful, red = danger, magenta = black market. Every colour also carries a symbol or a word.\nAll keys can be changed in SETTINGS > CONTROLS."
+
+
+## The help text with the player's current keys.
+static func help_text() -> String:
+	return Controls.fill(HELP_TEXT)
 
 var active: bool = false
 var step_index: int = -1

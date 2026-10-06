@@ -133,7 +133,7 @@ func _build() -> void:
 	_verdict_box = UIKit.vbox(4)
 	_verdict_box.name = "DoorVerdict"
 	_info_box.add_child(_verdict_box)
-	_waiting = UIKit.label("Nobody at the door yet.\n\nWhile you wait: restock in SUPPLY, spend skill points, check the JOURNAL, or go out into the city (CITY MAP, M).", &"DimLabel", true)
+	_waiting = UIKit.label("Nobody at the door yet.\n\nWhile you wait: restock in SUPPLY, spend skill points, check the JOURNAL, or go out into the city (CITY MAP, %s)." % Controls.key_name("map"), &"DimLabel", true)
 	_waiting.name = "WaitingLabel"
 	_waiting.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_waiting.custom_minimum_size.y = 120

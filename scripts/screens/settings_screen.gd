@@ -54,6 +54,10 @@ func _back() -> void:
 	UIManager.go_to(_return_to)
 
 
+func is_rebinding() -> bool:
+	return _listening != ""
+
+
 ## ESC cancels a pending rebind first.
 func on_escape() -> bool:
 	if _listening != "":
@@ -133,50 +137,128 @@ func _build_audio() -> void:
 
 func _build_controls() -> void:
 	var left := _column()
+	left.custom_minimum_size.x = 520
+	left.size_flags_horizontal = Control.SIZE_FILL
 	var right := _column()
+	right.size_flags_stretch_ratio = 2.0
+	# Presets.
+	var pre := UIKit.section(left, "PRESET", &"CardPanel", "", "")
+	var cur := Controls.current_preset()
+	var names: Array[String] = []
+	var ids: Array[String] = []
+	for p: String in Controls.PRESETS:
+		ids.append(p)
+		names.append(str(Controls.PRESET_LABELS[p]))
+	_choice_row(pre, "LAYOUT", names, ids.find(cur), "preset", func(i: int) -> void:
+		Controls.apply_preset(ids[i])
+		_feedback("✓ Controls set to %s" % Controls.PRESET_LABELS[ids[i]], &"success"))
+	pre.add_child(UIKit.label("Now: %s. DEFAULT: WASD + arrows. WASD: movement on WASD only. LEFT-HANDED: arrows + number pad, mouse in the left hand. Changing any key makes it CUSTOM." % Controls.PRESET_LABELS[cur], &"DimLabel", true))
 	var mouse := UIKit.section(left, "MOUSE")
 	_slider(mouse, "SENSITIVITY", "mouse_sensitivity", 0.25, 3.0, 0.05, true)
 	mouse.add_child(UIKit.label("Affects implant rotation drags, wheel tuning and key nudges in surgery.", &"DimLabel", true))
 	var help := UIKit.section(left, "FIXED MOUSE ACTIONS")
-	for line in ["LEFT CLICK · select, use the active tool", "LEFT DRAG · cut, move implants, connect wires", "RIGHT CLICK · put the tool down / cancel / compare", "WHEEL · scroll lists, zoom the operating field", "Bind middle, side buttons, right click and the wheel to any action on the right."]:
+	for line in ["LEFT CLICK · select, use the active tool", "LEFT DRAG · cut, move implants, connect wires", "RIGHT CLICK · put the tool down / cancel / compare", "WHEEL · scroll lists, zoom the operating field", "Middle, side buttons, right click and the wheel can be bound to any action."]:
 		help.add_child(UIKit.label(line, &"DimLabel", true))
 	var clashes := Controls.all_conflicts()
 	if not clashes.is_empty():
-		var warn := UIKit.section(left, "CONFLICTS", &"DangerPanel")
+		var warn := UIKit.section(left, "⚠ CONFLICTS", &"DangerPanel")
 		for id: String in clashes:
-			var names: Array[String] = []
+			var others: Array[String] = []
 			for o: String in clashes[id]:
-				names.append(str(Controls.ACTIONS[o]["label"]))
-			warn.add_child(UIKit.label("%s shares a binding with %s" % [Controls.ACTIONS[id]["label"], ", ".join(names)], &"DimLabel", true, Palette.WARN))
-	left.add_child(UIKit.button("RESET ALL BINDINGS", &"GhostButton", func() -> void:
-		Controls.reset_bindings()
-		_build(), "ResetBindings"))
-	var keys := UIKit.section(right, "BINDINGS", &"CardPanel", "click a slot, then press a key or mouse button · DEL clears")
+				others.append(str(Controls.ACTIONS[o]["label"]))
+			warn.add_child(UIKit.label("%s shares a key with %s" % [Controls.ACTIONS[id]["label"], ", ".join(others)], &"DimLabel", true, Palette.WARN))
+	left.add_child(UIKit.button("RESET ALL CONTROLS", &"GhostButton", func() -> void:
+		UIManager.confirm("RESET ALL CONTROLS?", "Every key and mouse binding goes back to the default layout.", "RESET", func() -> void:
+			Controls.reset_bindings()
+			_feedback("✓ All controls reset to defaults", &"success")), "ResetBindings"))
+	# Bindings table with search.
+	var keys := UIKit.section(right, "KEYBINDS", &"CardPanel", "click a key, then press the new key (with CTRL / SHIFT / ALT if you like) · ESC cancels · DEL unassigns")
+	var top := UIKit.hbox(10)
+	keys.add_child(top)
+	var search := LineEdit.new()
+	search.name = "ControlSearch"
+	search.placeholder_text = "Search controls (map, tool, save, F5...)"
+	search.custom_minimum_size = Vector2(420, GameConfig.MIN_CONTROL)
+	search.clear_button_enabled = true
+	search.text = _search
+	UIKit.expand(search)
+	top.add_child(search)
+	_bind_status = UIKit.label(_status_text, &"MonoLabel", false, Palette.OK)
+	_bind_status.name = "BindStatus"
+	top.add_child(_bind_status)
+	_table = UIKit.vbox(6)
+	_table.name = "BindTable"
+	keys.add_child(_table)
+	search.text_changed.connect(func(t: String) -> void:
+		_search = t
+		_fill_bindings())
+	_fill_bindings()
+
+
+var _search: String = ""
+var _table: VBoxContainer
+var _bind_status: Label
+var _status_text: String = ""
+
+
+func _fill_bindings() -> void:
+	if _table == null or not is_instance_valid(_table):
+		return
+	UIKit.clear(_table)
+	var clashes := Controls.all_conflicts()
+	var shown := Controls.search(_search)
+	if shown.is_empty():
+		_table.add_child(UIKit.label("No control matches \"%s\"." % _search, &"DimLabel"))
+		return
 	for cat: String in Controls.CATEGORIES:
-		keys.add_child(UIKit.label("%s  (%s)" % [cat.to_upper(), Controls.CATEGORIES[cat]], &"SubHeaderLabel", false, Palette.ACCENT))
+		var ids := Controls.actions_in(cat).filter(func(i: String) -> bool: return shown.has(i))
+		if ids.is_empty():
+			continue
+		var head := UIKit.hbox(10)
+		var t := UIKit.label(str(Controls.CATEGORY_LABELS.get(cat, cat.to_upper())), &"SubHeaderLabel", false, Palette.ACCENT)
+		UIKit.expand(t)
+		head.add_child(t)
+		var rc := UIKit.button("RESET CATEGORY", &"GhostButton", func() -> void:
+			Controls.reset_category(cat)
+			_feedback("✓ %s reset to defaults" % Controls.CATEGORY_LABELS.get(cat, cat), &"success"), "ResetCat_%s" % cat, 36)
+		rc.disabled = ids.all(func(i: String) -> bool: return Controls.is_default(i))
+		head.add_child(rc)
+		_table.add_child(head)
 		var grid := GridContainer.new()
 		grid.columns = 4
 		grid.add_theme_constant_override(&"h_separation", 10)
 		grid.add_theme_constant_override(&"v_separation", 4)
-		keys.add_child(grid)
-		for id: String in Controls.ACTIONS:
-			if str(Controls.ACTIONS[id]["group"]) != cat:
-				continue
-			var l := UIKit.label(("⚠ " if clashes.has(id) else "") + str(Controls.ACTIONS[id]["label"]), &"", false, Palette.WARN if clashes.has(id) else null)
+		_table.add_child(grid)
+		for h in ["ACTION", "PRIMARY", "SECONDARY", ""]:
+			grid.add_child(UIKit.label(h, &"SubHeaderLabel"))
+		for id: String in ids:
+			var mark := "⚠ " if clashes.has(id) else ("○ " if Controls.is_unassigned(id) else "")
+			var l := UIKit.label(mark + str(Controls.ACTIONS[id]["label"]) + (" *" if Controls.is_critical(id) else ""), &"", false, Palette.WARN if mark != "" else null)
+			l.tooltip_text = "Always keeps at least one key." if Controls.is_critical(id) else ""
+			l.mouse_filter = Control.MOUSE_FILTER_PASS
 			UIKit.expand(l)
 			grid.add_child(l)
 			var slots := Controls.get_slots(id)
 			for slot in Controls.SLOTS:
-				var b := UIKit.button(Controls.code_name(slots[slot]), &"Button", Callable(), "Bind_%s_%d" % [id, slot], 40)
-				b.custom_minimum_size.x = 150
+				var txt := Controls.code_name(slots[slot]) if slots[slot] != 0 else "UNASSIGNED"
+				var b := UIKit.button(txt, &"Button" if slots[slot] != 0 else &"GhostButton", Callable(), "Bind_%s_%d" % [id, slot], 40)
+				b.custom_minimum_size.x = 170
 				b.pressed.connect(_start_listening.bind(id, slot, b))
 				grid.add_child(b)
 			var r := UIKit.button("↺", &"GhostButton", func() -> void:
+				var before := Controls.key_name(id)
 				Controls.reset_action(id)
-				_build(), "ResetBind_%s" % id, 40)
+				_feedback("✓ %s reset (%s → %s)" % [Controls.ACTIONS[id]["label"], before, Controls.key_name(id)], &"success"), "ResetBind_%s" % id, 40)
 			r.tooltip_text = "Reset this action to its default"
 			r.disabled = Controls.is_default(id)
 			grid.add_child(r)
+
+
+## One line of feedback for a controls change: the status label and a toast.
+func _feedback(text: String, kind: StringName) -> void:
+	_status_text = text
+	UIManager.show_toast(text, kind)
+	_build.call_deferred()
 
 
 func _build_gameplay() -> void:
@@ -316,11 +398,12 @@ func _start_listening(id: String, slot: int, b: Button) -> void:
 	_listening = id
 	_listen_slot = slot
 	_listen_button = b
-	b.text = "PRESS..."
+	b.text = "PRESS ANY KEY..."
 	b.theme_type_variation = &"AccentButton"
 
 
 func _stop_listening() -> void:
+	_pending_mod = 0
 	if _listen_button and is_instance_valid(_listen_button) and _listening != "":
 		_listen_button.text = Controls.code_name(Controls.get_slots(_listening)[_listen_slot])
 		_listen_button.theme_type_variation = &"Button"
@@ -328,54 +411,87 @@ func _stop_listening() -> void:
 	_listen_button = null
 
 
+var _pending_mod: int = 0
+
+
 func _input(event: InputEvent) -> void:
 	if _listening == "":
-		return
-	if not event.is_pressed() or event.is_echo():
 		return
 	var k := event as InputEventKey
 	var m := event as InputEventMouseButton
 	if k == null and m == null:
 		return
+	# A modifier alone binds on release (so CTRL then S makes CTRL+S).
+	if k and not k.pressed:
+		if _pending_mod != 0 and Controls.code_for(k) == _pending_mod:
+			get_viewport().set_input_as_handled()
+			var code := _pending_mod
+			_pending_mod = 0
+			_apply_bind(code)
+		return
+	if not event.is_pressed() or event.is_echo():
+		return
 	# The click that started listening is a left click; ignore left clicks.
 	if m and m.button_index == MOUSE_BUTTON_LEFT:
 		return
 	get_viewport().set_input_as_handled()
-	if k and k.physical_keycode == KEY_ESCAPE and _listening != "pause":
+	if k and k.physical_keycode == KEY_ESCAPE and not k.ctrl_pressed and not k.shift_pressed and not k.alt_pressed and _listening != "pause":
 		_stop_listening()
+		_feedback("Rebinding cancelled", &"info")
 		return
-	var id := _listening
-	var slot := _listen_slot
-	if k and k.physical_keycode in [KEY_DELETE, KEY_BACKSPACE]:
+	if k and k.physical_keycode == KEY_DELETE:
+		var id := _listening
+		var slot := _listen_slot
 		_listening = ""
-		Controls.clear_slot(id, slot)
-		_build.call_deferred()
+		if Controls.clear_slot(id, slot):
+			_feedback("○ %s: slot %d unassigned" % [Controls.ACTIONS[id]["label"], slot + 1], &"info")
+		else:
+			_feedback("⚠ %s needs at least one key" % Controls.ACTIONS[id]["label"], &"warn")
 		return
 	var code := Controls.code_for(event)
 	if code == 0:
 		return
+	if k and (k.physical_keycode in Controls.MODIFIER_KEYS):
+		_pending_mod = code
+		if _listen_button and is_instance_valid(_listen_button):
+			_listen_button.text = Controls.code_name(code) + "+..."
+		return
+	_pending_mod = 0
+	_apply_bind(code)
+
+
+func _apply_bind(code: int) -> void:
+	var id := _listening
+	var slot := _listen_slot
 	_listening = ""
 	_listen_button = null
+	var label := str(Controls.ACTIONS[id]["label"])
+	var before := Controls.code_name(Controls.get_slots(id)[slot]) if Controls.get_slots(id)[slot] != 0 else "unassigned"
 	var clash := Controls.conflicts_for(id, code)
 	if clash.is_empty():
 		Controls.rebind(id, code, slot)
 		AudioManager.play_sfx(&"confirm", 0.0)
-		_build.call_deferred()
+		_feedback("✓ %s: %s → %s" % [label, before, Controls.code_name(code)], &"success")
 		return
 	var names: Array[String] = []
 	for o: String in clash:
 		names.append(str(Controls.ACTIONS[o]["label"]))
-	var buttons: Array[Dictionary] = [
-		{"label": "SWAP", "style": &"AccentButton", "name": "BindSwap", "callback": func() -> void:
-			Controls.rebind(id, code, slot, "swap")
-			_build()},
-		{"label": "KEEP BOTH", "style": &"", "name": "BindKeep", "callback": func() -> void:
-			Controls.rebind(id, code, slot, "keep")
-			_build()},
-		{"label": "CANCEL", "style": &"GhostButton", "name": "BindCancel", "callback": func() -> void: _build()},
-	]
+	var blockers := Controls.replace_blockers(id, code)
+	var buttons: Array[Dictionary] = []
+	if blockers.is_empty():
+		buttons.append({"label": "REPLACE", "style": &"AccentButton", "name": "BindReplace", "callback": func() -> void:
+			Controls.rebind(id, code, slot, "replace")
+			_feedback("✓ %s: %s → %s · %s is now unassigned there" % [label, before, Controls.code_name(code), ", ".join(names)], &"success")})
+	buttons.append({"label": "SWAP", "style": &"" if blockers.is_empty() else &"AccentButton", "name": "BindSwap", "callback": func() -> void:
+		Controls.rebind(id, code, slot, "swap")
+		_feedback("✓ %s: %s → %s · %s gets %s" % [label, before, Controls.code_name(code), ", ".join(names), before], &"success")})
+	buttons.append({"label": "CANCEL", "style": &"GhostButton", "name": "BindCancel", "callback": func() -> void:
+		_feedback("Nothing changed", &"info")})
 	AudioManager.play_sfx(&"denied", 0.0)
-	UIManager.show_dialog("BINDING CONFLICT", "%s is already used by %s. Swap them, or keep both (they'll fire together)?" % [Controls.code_name(code), ", ".join(names)], buttons)
+	var body := "%s is already assigned to:\n%s\n\nREPLACE: they lose %s.  SWAP: they get %s instead." % [Controls.code_name(code), ", ".join(names), Controls.code_name(code), before]
+	if not blockers.is_empty():
+		body = "%s is already assigned to:\n%s\n\n%s must keep a key, so you can only SWAP (it gets %s)." % [Controls.code_name(code), ", ".join(names), ", ".join(names), before]
+	UIManager.show_dialog("KEY CONFLICT", body, buttons)
 
 
 func _confirm_reset() -> void:

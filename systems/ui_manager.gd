@@ -320,6 +320,12 @@ func close_modal() -> void:
 	_modal_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 
+func top_modal() -> Node:
+	if _modal_host == null or _modal_host.get_child_count() == 0:
+		return null
+	return _modal_host.get_child(_modal_host.get_child_count() - 1)
+
+
 func has_modal() -> bool:
 	return _modal_host != null and _modal_host.get_child_count() > 0
 
@@ -373,37 +379,59 @@ func _input(event: InputEvent) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_echo() or not event.is_pressed() or _transitioning or current_screen == null:
 		return
-	if event.is_action("pause"):
+	# Every global shortcut is an action, and InputContext decides whether
+	# the current moment accepts it (exact match: CTRL+S is not S).
+	var ctx := InputContext.current()
+	if _act(event, "pause"):
 		get_viewport().set_input_as_handled()
 		_on_escape()
 		return
-	if event.is_action("help"):
+	if _act(event, "help") and InputContext.allows("help", ctx):
 		get_viewport().set_input_as_handled()
 		Glossary.open_guide()
 		return
-	if has_modal():
-		return
-	var hub := HUB_SCREENS.has(current_screen_id)
-	var routes := {"inventory": SCREEN_INVENTORY, "journal": SCREEN_DOSSIER, "database": SCREEN_DATABASE, "map": SCREEN_MAP, "facility": SCREEN_UPGRADES, "business": SCREEN_BUSINESS, "staff": SCREEN_STAFF}
-	for action: String in routes:
-		if event.is_action(action) and hub:
+	for action: String in InputContext.ROUTES:
+		if _act(event, action) and InputContext.allows(action, ctx):
 			get_viewport().set_input_as_handled()
-			if current_screen_id != routes[action]:
-				go_to(routes[action])
+			_route(action)
 			return
-	if event.is_action("customer_info") and hub and CustomerManager.has_customer():
+	if _act(event, "customer_info") and InputContext.allows("customer_info", ctx) and CustomerManager.has_customer():
 		get_viewport().set_input_as_handled()
 		GameManager.open_customer()
-	elif event.is_action("quicksave") and hub:
+	elif _act(event, "changes") and InputContext.allows("changes", ctx):
+		get_viewport().set_input_as_handled()
+		ChangesPanel.toggle()
+	elif _act(event, "quicksave") and InputContext.allows("quicksave", ctx):
 		get_viewport().set_input_as_handled()
 		GameManager.quick_save()
-	elif event.is_action("quickload") and (hub or current_screen_id == SCREEN_MAIN_MENU):
+	elif _act(event, "quickload") and InputContext.allows("quickload", ctx):
 		get_viewport().set_input_as_handled()
 		GameManager.quick_load()
 
 
+static func _act(event: InputEvent, action: String) -> bool:
+	return InputMap.has_action(action) and event.is_action(action, true)
+
+
+func _route(action: String) -> void:
+	var target: StringName = InputContext.ROUTES[action]
+	if action == "clinic":
+		if current_screen_id != SCREEN_CLINIC:
+			GameManager.go_to_clinic()
+		return
+	if action == "comms":
+		go_to(SCREEN_DOSSIER, {"tab_name": "COMMS"})
+		return
+	if current_screen_id != target:
+		go_to(target)
+
+
 ## ESC: close the help, else the dialog, else go back, else pause.
 func _on_escape() -> void:
+	var focus := get_viewport().gui_get_focus_owner()
+	if (focus is LineEdit or focus is TextEdit) and not has_modal():
+		focus.release_focus()
+		return
 	if Glossary.is_open():
 		Glossary.close()
 		return

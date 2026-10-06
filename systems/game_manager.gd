@@ -131,13 +131,13 @@ func open_pause_menu() -> void:
 			UIManager.go_to(UIManager.SCREEN_LOAD, {"return_to": UIManager.current_screen_id})},
 		{"label": "SETTINGS", "style": &"", "name": "PauseSettings", "callback": func() -> void:
 			UIManager.go_to(UIManager.SCREEN_SETTINGS, {"return_to": UIManager.current_screen_id})},
-		{"label": "FIELD GUIDE (F1)", "style": &"", "name": "PauseHelp", "callback": func() -> void:
+		{"label": "FIELD GUIDE %s" % Controls.hint("help"), "style": &"", "name": "PauseHelp", "callback": func() -> void:
 			UIManager.close_modal()
 			Glossary.open_guide()},
 		{"label": "SAVE & MAIN MENU", "style": &"GhostButton", "name": "PauseQuit", "callback": quit_to_menu},
 		{"label": "SAVE & QUIT TO DESKTOP", "style": &"DangerButton", "name": "PauseExit", "callback": quit_to_desktop},
 	]
-	UIManager.show_dialog("CLINIC PAUSED", "Autosaves after every job, purchase and upgrade.  F5 quick save · F9 quick load.", buttons)
+	UIManager.show_dialog("CLINIC PAUSED", "Autosaves after every job, purchase and upgrade.  %s quick save · %s quick load." % [Controls.hint("quicksave"), Controls.hint("quickload")], buttons)
 
 
 ## Tests turn this off so random input can't close the game under them.

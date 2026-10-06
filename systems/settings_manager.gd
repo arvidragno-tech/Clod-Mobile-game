@@ -67,6 +67,8 @@ const DEFAULTS := {
 	"auto_advance": false,
 	"confirm_dangerous": true,
 	"tutorial_hints": true,
+	"controls_setup_done": false,
+	"seen_hints": [],
 	"tooltips": true,
 	"pause_dialogue": true,
 	"pause_focus_loss": true,
@@ -116,6 +118,11 @@ var ui_volume: float = 0.7
 var auto_advance: bool = false
 var confirm_dangerous: bool = true
 var tutorial_hints: bool = true
+## First launch: the main menu offers DEFAULT / CUSTOMIZE controls once.
+var controls_setup_done: bool = false
+## Learn-as-you-go hints already shown (ids); player knowledge, so it
+## lives with the settings, not the save.
+var seen_hints: Array = []
 var tooltips: bool = true
 var pause_dialogue: bool = true
 var pause_focus_loss: bool = true

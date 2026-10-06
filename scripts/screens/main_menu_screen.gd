@@ -52,6 +52,8 @@ func on_enter(_params: Dictionary) -> void:
 	_item("CONTROLS", &"GhostButton", func() -> void: UIManager.go_to(UIManager.SCREEN_SETTINGS, {"return_to": UIManager.SCREEN_MAIN_MENU, "tab": 2}), "ControlsButton")
 	_item("CREDITS", &"GhostButton", func() -> void: UIManager.go_to(UIManager.SCREEN_CREDITS), "CreditsButton")
 	_item("QUIT", &"DangerButton", _on_quit, "QuitButton")
+	if not Settings.controls_setup_done:
+		col.add_child(_control_setup())
 	col.add_child(UIKit.expand(Control.new(), false, true))
 	col.add_child(UIKit.label("v%s · WINDOWS PC · 1920×1080 · MOUSE + KEYBOARD" % ProjectSettings.get_setting("application/config/version", "0"), &"SubHeaderLabel"))
 	var keys_panel := UIKit.panel(&"HudPanel")
@@ -61,8 +63,31 @@ func on_enter(_params: Dictionary) -> void:
 	keys_panel.offset_right = -40
 	keys_panel.offset_bottom = -30
 	keys_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	keys_panel.add_child(UIKit.label("[↑ ↓ / W S] select   [ENTER] confirm   [F9] quick load   [ESC] quit", &"SubHeaderLabel"))
+	keys_panel.add_child(UIKit.label("[↑ ↓ / %s %s] select   [ENTER] confirm   %s quick load   %s quit" % [Controls.key_name("move_up"), Controls.key_name("move_down"), Controls.hint("quickload"), Controls.hint("pause")], &"SubHeaderLabel"))
 	add_child(keys_panel)
+
+
+## First launch only: a small, skippable control setup. Defaults need no
+## click at all (NEW GAME starts with them).
+func _control_setup() -> Control:
+	var card := UIKit.panel(&"AccentPanel")
+	card.name = "ControlSetup"
+	var v := UIKit.vbox(8)
+	card.add_child(v)
+	v.add_child(UIKit.label("CONTROL SETUP", &"SubHeaderLabel", false, Palette.ACCENT))
+	v.add_child(UIKit.label("Mouse + keyboard, WASD or arrows. Every key can be changed later in SETTINGS > CONTROLS.", &"DimLabel", true))
+	var row := UIKit.hbox(8)
+	v.add_child(row)
+	var d := UIKit.button("USE DEFAULT CONTROLS", &"Button", func() -> void:
+		Settings.set_value("controls_setup_done", true)
+		card.queue_free(), "SetupDefaults", 44)
+	UIKit.expand(d)
+	row.add_child(d)
+	var c := UIKit.button("CUSTOMIZE", &"GhostButton", func() -> void:
+		Settings.set_value("controls_setup_done", true)
+		UIManager.go_to(UIManager.SCREEN_SETTINGS, {"return_to": UIManager.SCREEN_MAIN_MENU, "tab": 2}), "SetupCustomize", 44)
+	row.add_child(c)
+	return card
 
 
 func _item(text: String, style: StringName, cb: Callable, node_name: String) -> Button:
@@ -86,6 +111,8 @@ func _process(delta: float) -> void:
 
 
 func _on_new_game() -> void:
+	if not Settings.controls_setup_done:
+		Settings.set_value("controls_setup_done", true)
 	if SaveManager.has_any_save():
 		UIManager.go_to(UIManager.SCREEN_LOAD, {"mode": "new", "return_to": UIManager.SCREEN_MAIN_MENU})
 	else:

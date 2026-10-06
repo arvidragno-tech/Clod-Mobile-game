@@ -150,7 +150,7 @@ static func show(term: String) -> void:
 	var row := UIKit.hbox(8)
 	v.add_child(row)
 	# Deferred: the pressed button is removed by what it does.
-	row.add_child(UIKit.button("FIELD GUIDE (F1)", &"GhostButton", func() -> void:
+	row.add_child(UIKit.button("FIELD GUIDE %s" % Controls.hint("help"), &"GhostButton", func() -> void:
 		(func() -> void: open_guide(str(entry(term).get("topic", "basics")), term)).call_deferred(), "GlossaryGuide", 36))
 	var ok := UIKit.button("GOT IT", &"AccentButton", func() -> void: (func() -> void: close()).call_deferred(), "GlossaryClose", 36)
 	row.add_child(ok)
@@ -191,7 +191,7 @@ static func open_guide(topic: String = "basics", focus_term: String = "") -> voi
 	find.placeholder_text = "search: heat, neural load, travel..."
 	find.custom_minimum_size.x = 420
 	head.add_child(find)
-	head.add_child(UIKit.button("CLOSE (ESC)", &"GhostButton", func() -> void: (func() -> void: close()).call_deferred(), "GuideClose", 40))
+	head.add_child(UIKit.button("CLOSE %s" % Controls.hint("pause"), &"GhostButton", func() -> void: (func() -> void: close()).call_deferred(), "GuideClose", 40))
 	var row := UIKit.hbox(16)
 	UIKit.expand(row, true, true)
 	col.add_child(row)
@@ -226,7 +226,7 @@ static func open_guide(topic: String = "basics", focus_term: String = "") -> voi
 	nav.add_child(UIKit.button("CONTROLS", &"TabButton", func() -> void:
 		UIKit.clear(body)
 		body.add_child(UIKit.label("CONTROLS", &"SectionLabel"))
-		body.add_child(UIKit.label(TutorialManager.HELP_TEXT, &"", true)), "GuideTopic_controls", 44))
+		body.add_child(UIKit.label(TutorialManager.help_text(), &"", true)), "GuideTopic_controls", 44))
 	find.text_changed.connect(func(q: String) -> void: fill.call(search(q), "SEARCH: %s" % q.to_upper()))
 	var label := topic
 	for tp: Dictionary in topics:
@@ -235,3 +235,13 @@ static func open_guide(topic: String = "basics", focus_term: String = "") -> voi
 	fill.call(terms_in(topic), label)
 	find.grab_focus.call_deferred()
 	AudioManager.play_sfx(&"click", 0.0)
+
+
+## The shared help layer for other overlays (recent changes, hints): they
+## close with ESC and count as the GUIDE input context like the guide.
+static func host() -> Control:
+	return _host()
+
+
+static func catcher(h: Control, dim: float) -> void:
+	_catcher(h, dim)

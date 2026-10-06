@@ -51,7 +51,7 @@ func setup(p_step: Dictionary, number: int, total: int) -> void:
 	head.add_child(UIKit.label("%d/%d" % [number, total], &"MonoLabel", false, Palette.TEXT_DIM, 18))
 	v.add_child(head)
 	var body := TypewriterLabel.new()
-	body.text = str(step.get("text", ""))
+	body.text = Controls.fill(str(step.get("text", "")))
 	body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	body.add_theme_font_size_override(&"font_size", UIKit.fs(15))
 	v.add_child(body)

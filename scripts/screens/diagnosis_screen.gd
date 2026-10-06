@@ -299,7 +299,7 @@ func _build_plan_contents() -> void:
 	_begin.disabled = not bool(r["ok"])
 	# Say why BEGIN is blocked (or that you're good to go).
 	var adv := JobVerdict.advice(customer)
-	_ready_note.text = adv["text"] if _begin.disabled or adv["level"] != &"good" else "Everything's ready. Keep COAG [Z], SEDATE [X] and STABIL [V] in reach."
+	_ready_note.text = adv["text"] if _begin.disabled or adv["level"] != &"good" else Controls.fill("Everything's ready. Keep COAG [{quick_coag}], SEDATE [{quick_sedate}] and STABIL [{quick_stabilize}] in reach.")
 	_ready_note.add_theme_color_override(&"font_color", JobVerdict.color(adv["level"]) if _begin.disabled or adv["level"] != &"good" else Palette.OK)
 
 

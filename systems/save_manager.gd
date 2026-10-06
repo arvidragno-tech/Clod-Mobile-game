@@ -42,6 +42,7 @@ const SAVEABLE_SYSTEMS: Array[String] = [
 	"LocationManager",
 	"WorldSimulationManager",
 	"TutorialManager",
+	"ChangeLog",
 ]
 
 ## Whether gameplay has started (so app-backgrounding should autosave).
