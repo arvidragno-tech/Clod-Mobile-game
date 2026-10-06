@@ -45,6 +45,10 @@ staff, business, districts and a five-act story). The game has:
 
 [CHANGELOG.md](CHANGELOG.md) lists the changes. Design and code are documented in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and [docs/ART_BIBLE.md](docs/ART_BIBLE.md).
 
+![3.4: the neon-alley title, the HD clinic, a street view and the customer file](docs/screenshots/overview_34.png)
+
+![3.4: HD portraits and in-room bodies](docs/screenshots/characters_cast_hd.png)
+
 ![3.3: clinic with AT A GLANCE, customer file, body scan, field guide](docs/screenshots/overview_33.png)
 
 ![3.0: conversation, clinic, delegation, facility, staff, city map, business, people, story](docs/screenshots/overview_3.png)
