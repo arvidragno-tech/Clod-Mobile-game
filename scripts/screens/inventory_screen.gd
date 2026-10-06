@@ -8,7 +8,7 @@ extends BaseScreen
 
 const TABS := ["CYBERWARE", "TOOLS", "MEDICAL SUPPLIES", "COMPONENTS", "BLACK MARKET"]
 const SORTS := ["MANUAL", "NAME", "TIER", "VALUE", "CONDITION", "NEURAL LOAD"]
-const COLUMNS := 8
+const COLUMNS := 7
 const ICONS := {
 	&"supplies": "res://assets/sprites/ui/icons/supplies.png",
 	&"parts": "res://assets/sprites/ui/icons/parts.png",
@@ -35,6 +35,8 @@ func on_enter(params: Dictionary) -> void:
 	col.add_child(head)
 	_count = UIKit.label("", &"MonoLabel", false, Palette.TEXT_DIM)
 	_count.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_count.clip_text = true  # long counts shorten instead of widening the screen
+	_count.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	UIKit.expand(_count)
 	head.add_child(_count)
 	var tabs := UIKit.tabs(TABS, _on_tab, "InvTab")
@@ -63,8 +65,14 @@ func on_enter(params: Dictionary) -> void:
 		_filter = t.strip_edges().to_lower()
 		_rebuild())
 	bar.add_child(filter)
-	bar.add_child(UIKit.expand(Control.new()))
-	bar.add_child(UIKit.label("[LMB] select  [2x LMB / F] inspect  [RMB] compare  [DRAG] move", &"SubHeaderLabel"))
+	var hint := UIKit.label("[LMB] select  [2x LMB / F] inspect  [RMB] compare  [DRAG] move", &"SubHeaderLabel")
+	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	hint.clip_text = true
+	hint.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	hint.tooltip_text = hint.text
+	hint.mouse_filter = Control.MOUSE_FILTER_PASS
+	UIKit.expand(hint)
+	bar.add_child(hint)
 	# Body
 	var row := UIKit.hbox(18)
 	UIKit.expand(row, true, true)
