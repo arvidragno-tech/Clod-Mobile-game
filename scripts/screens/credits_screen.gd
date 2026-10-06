@@ -6,7 +6,7 @@ const CREDITS := [
 	["An original cyberpunk cyber-surgery game", ""],
 	["DESIGN, CODE, PIXEL ART, AUDIO", "Generated and hand-tuned with reproducible tools in this repository"],
 	["ENGINE", "Godot Engine 4.3 (MIT licence)"],
-	["FONTS", "VT323, Silkscreen, Pixelify Sans: SIL Open Font License 1.1"],
+	["FONTS", "Chakra Petch, Share Tech Mono: SIL Open Font License 1.1 · DejaVu Sans (fallback)"],
 	["SPECIAL THANKS", "Every ripper who kept the lights on below sublevel 3"],
 ]
 

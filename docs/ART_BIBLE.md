@@ -14,7 +14,7 @@ any existing franchise's logos, typography, characters or architecture.
 
 ## Pixel density
 
-**One global density: 1 art pixel = 3 canvas units** (`GameConfig.PIXEL_SCALE`).
+**Two densities.** UI sprites, icons and the surgical field: 1 art pixel = 3 canvas units (`GameConfig.PIXEL_SCALE`). World art (clinic rooms 600x336, portraits 144x168, bodies 60x120, street scenes, the title): drawn at 1.5x the resolution, 1 art pixel = 2 canvas units (`GameConfig.ART_SCALE`). Never mix the two inside one picture.
 The design canvas is 1920×1080, so the screen is 640×360 art pixels. The
 canvas is scaled uniformly to the window (`canvas_items`, aspect `keep`):
 integer-perfect at 1920×1080 (3 screen px per art px) and 1280×720 (2 px);
@@ -44,7 +44,7 @@ only deliberate exception is the operating field, an integer zoom camera
 How the density is enforced in the engine:
 - **The surgical field** renders in a `SubViewport` whose container uses `stretch_shrink` = the field zoom, so field drawing happens at native art resolution and is then integer-scaled.
 - **Icons and backgrounds** go through `PixelArt.scaled(path)`, which does a nearest-neighbour ×3 upscale (cached), shown with `TEXTURE_FILTER_NEAREST`; the root viewport's default canvas filter is nearest (Settings can switch to linear).
-- **Fonts:** Silkscreen at 8 px for text inside the field, and VT323 / Pixelify Sans for the UI.
+- **Fonts:** straight, readable cyberpunk faces: Chakra Petch for body, buttons, headers and titles, Share Tech Mono for numbers, terminals and logs (DejaVu Sans fallback). Signs painted inside the art use the generators' own 3x5 / 5x7 pixel letters.
 
 ## Semantic colour
 

@@ -4,6 +4,23 @@ All notable changes to *UNDERCITY: RIPPER*. Versions follow
 `application/config/version` in `project.godot` and the Windows file version
 in `export_presets.cfg`.
 
+## 3.4.0 — New art style: more pixels, more detail, readable type
+
+### Readable type
+- Every text in the game uses two straight, readable cyberpunk faces: **Chakra Petch** (body, buttons, headers, titles) and **Share Tech Mono** (numbers, terminals, logs), with DejaVu Sans as the glyph fallback. The old pixel fonts are gone. The title face is rendered as a signed-distance font so it stays crisp at any size.
+
+### Twice the detail
+- **World art density:** rooms, characters and street scenes are drawn at 1.5x the resolution and shown at 2 screen pixels per art pixel (was 3), so the same screen area holds more than twice the pixels.
+- **Clinic rooms (600x336):** rebuilt with a new lit-scene renderer in the style of a dense cyberpunk workshop: pipes, conduit, breaker boxes, AC units and cable bundles on the walls; barred windows onto a neon street; catwalks; consoles with lit keys and live screens; a surgical lamp that lights the table; wet floors that mirror the room; floor cables, a drain and foreground silhouettes. All 126 upgrade props are redrawn too.
+- **Characters:** portraits are 144x168 and in-room bodies 60x120. Faces have lidded almond eyes with a limbal ring and two catch-lights, lips with a cupid's bow, nostrils, ear folds and finer brows; hair is drawn in fine strands; outfits get stitching, zips, buttons, buckles and screws; stubble and shaved sides use an ordered stipple instead of noise. In-room bodies get real faces, laces, cuffs and finger shading.
+- **Street views:** every city location has its own HD street scene, night and day: layered hazy skylines with lit floors and holo ads, the place's own front (tenement balconies and laundry, the bar's lit interior, lantern-lit market stalls, the flood-tunnel bazaar, furnace bays, the transit arch, plaza towers, the checkpoint), lamps, cables and reflections. People, police lights, rain and the hour's light move on top.
+- **Title screen:** a new neon-alley key art (960x540) with the clinic door under its cross sign. The black-market banner is redrawn at HD.
+
+### Under the hood
+- `GameConfig.ART_SCALE` (2) for world art; `GameConfig.BODY_ART_W` lets bodies of any resolution keep their size in the room.
+- New generators: `tools/art/hd.py` (numpy lit-scene kit), `rooms_hd.py`, `streets_hd.py`, `characters_hd.py` with `hdc_*.py`; `python3 tools/generate_art.py rooms streets chars` (needs Pillow and numpy). The v2 character and clinic generators are removed.
+- Clinic layout data (wall pins, waiting spots, hotspots, animation anchors) is in HD art pixels; `PixelPortrait` keeps its layout framings and scales them to the atlas.
+
 ## 3.3.0 — Clearer, better-looking UI
 
 ### Easier to understand

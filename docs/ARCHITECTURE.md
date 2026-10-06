@@ -480,9 +480,37 @@ Event outcome keys on top of the incident vocabulary: `effects`
   `assets/shaders/room_light.gdshader`, `lift` = `Settings.brightness`)
   on `ClinicView` and `LocationView`. In Godot 4 a canvas shader's
   `COLOR` already includes the texture.
-- **Character art** (`tools/art/characters2.py`): `draw_eyes` (almond,
+- **Character art** (v2 then; HD since 3.4, `tools/art/hdc_face.py`): `draw_eyes` (almond,
   iris rim, pupil, catch-light, crease), `_hair_px` (strands),
   `draw_body_base` face details, body accessories `mask` and `eyewear`;
   `CharacterArt.PORTRAIT_TO_BODY` mirrors face/head accessories onto the
   body sprite. Regenerate with `python3 tools/generate_art.py chars`,
   then reimport.
+
+## 3.4: the HD art style
+
+- **Two densities.** `GameConfig.PIXEL_SCALE` (3) stays for UI sprites,
+  icons and the surgical field; `GameConfig.ART_SCALE` (2) is for the world
+  art, which is drawn at 1.5x the resolution. ClinicView, ClinicPreview,
+  PixelPortrait, LocationView and CityBackdrop draw at ART_SCALE.
+- **Clinic rooms** are 600x336 (`tools/art/rooms_hd.py` on the numpy kit
+  `tools/art/hd.py`: albedo + emissive + gloss buffers, banded lights, haze,
+  bloom, floor reflections, ordered-dither posterise). Every coordinate
+  around them (hotspots, customer foot, waiting spots and wall pins in
+  `data/clinics.json`, fx anchors in `data/clinic_fx.json`, overlay offsets)
+  is in HD art px.
+- **Characters** are 144x168 portraits and 60x120 bodies. The generator keeps
+  the v2 design grid as logical coordinates (`hdc_core.HDCanvas`: shaded
+  primitives and `grid()` area loops are evaluated per HD pixel) and draws
+  the fine features on the HD grid (`P/HL/VL/LN`). `ClinicView.body_scale()`
+  sizes a body by `GameConfig.BODY_ART_W`, so a body atlas of any resolution
+  keeps its place in the room. `PixelPortrait` framings stay in the 96x112
+  layout units and are scaled to the atlas.
+- **Streets**: one 520x150 scene per location and hour (night/day) in
+  `assets/sprites/streets/`; LocationView draws it and adds walkers, police
+  lights, rain and the hour's tint (the old procedural street is the
+  fallback). The title key art (960x540) and the black-market banner
+  (900x111) come from the same module.
+- **Type**: Chakra Petch (medium/semibold/bold) and Share Tech Mono with a
+  DejaVu Sans fallback, wrapped in FontVariations by `tools/build_theme.gd`;
+  the title face is imported as MSDF.
