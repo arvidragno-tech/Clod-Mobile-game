@@ -347,7 +347,9 @@ func _settings() -> void:
 	check(Engine.max_fps == 60, "frame rate limit applies (60)")
 	Settings.set_value("pixel_scaling", "integer")
 	Settings.apply_runtime()
-	check((Engine.get_main_loop() as SceneTree).root.content_scale_stretch == Window.CONTENT_SCALE_STRETCH_INTEGER, "integer pixel scaling applies")
+	var win := (Engine.get_main_loop() as SceneTree).root.size
+	var whole := win.x >= 1920 and win.y >= 1080
+	check((Engine.get_main_loop() as SceneTree).root.content_scale_stretch == (Window.CONTENT_SCALE_STRETCH_INTEGER if whole else Window.CONTENT_SCALE_STRETCH_FRACTIONAL), "integer pixel scaling applies (falls back to FIT on a window smaller than the canvas)")
 	Settings.set_value("pixel_scaling", "fit")
 	# 3.6: one scale authority. The old UI SCALE (a content scale factor that
 	# shrank the canvas under the layouts) is folded into TEXT SCALE.

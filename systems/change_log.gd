@@ -244,8 +244,8 @@ func _on_faction(id: StringName, value: int, delta: int) -> void:
 	var now := _standing(value)
 	if was != now:
 		add("faction_standing", FactionManager.get_name_of(id), "Now %s (was %s)" % [now, was], IMPORTANT,
-			{"screen": &"dossier", "params": {"tab_name": "FACTIONS"}})
-	add("faction", FactionManager.get_name_of(id), "", lv, {"screen": &"dossier", "params": {"tab_name": "FACTIONS"}},
+			{"screen": &"dossier", "params": {"tab_name": "STANDING"}})
+	add("faction", FactionManager.get_name_of(id), "", lv, {"screen": &"dossier", "params": {"tab_name": "STANDING"}},
 		float(delta), "faction:%s" % id, "Standing %+.0f · now " + str(value))
 
 
@@ -261,10 +261,10 @@ func _on_heat(value: float, delta: float) -> void:
 		return
 	if delta > 0.0:
 		(func() -> void: Hints.first("heat")).call_deferred()
-	var lv := IMPORTANT if value >= 60.0 and delta > 0.0 else INFO
-	if value >= 85.0 and delta > 0.0:
+	var lv := IMPORTANT if value >= 50.0 and delta > 0.0 else INFO
+	if value >= 75.0 and delta > 0.0:
 		lv = CRITICAL
-	add("heat", "Authority heat", "", lv, {"screen": &"dossier", "params": {"tab_name": "FACTIONS"}},
+	add("heat", "Authority heat", "", lv, {"screen": &"dossier", "params": {"tab_name": "STANDING"}},
 		delta, "heat", "%+.0f · now " + str(roundi(value)))
 
 

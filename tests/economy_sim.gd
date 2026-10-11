@@ -335,6 +335,18 @@ func _print_targets(summary: Dictionary, days: int) -> void:
 		_target(bankrupt == 0, "%s: no run spends 3+ nights deep in debt (%d)" % [strat, bankrupt])
 		_target(upgraded * 10 >= n * 8, "%s: affords a first upgrade or clinic in at least 80%% of runs (%d/%d)" % [strat, upgraded, n])
 		_target(recovered * 10 >= n * 6, "%s: recovers from a 400 cr loss in at least 60%% of runs (%d/%d)" % [strat, recovered, n])
+		# Calibration bounds (3.6): viable, not trivial, long-term goals kept.
+		var finals: Array[int] = []
+		var tiers: Array[int] = []
+		for r: Dictionary in runs:
+			finals.append(int(r["final"]))
+			tiers.append(int(r["tier"]))
+		finals.sort()
+		tiers.sort()
+		var med := finals[n / 2]
+		_target(med >= 1000, "%s: median money after %d days is at least 1000 cr (%d)" % [strat, days, med])
+		_target(med <= 40000, "%s: median money stays under 40000 cr: money keeps its meaning (%d)" % [strat, med])
+		_target(tiers[n / 2] < ClinicManager.tiers.size() - 1, "%s: the best clinic is still a goal after %d days (median tier %d)" % [strat, days, tiers[n / 2]])
 	if _failures.is_empty():
 		print("ECONOMY OK")
 	else:

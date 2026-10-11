@@ -245,6 +245,56 @@ func category_over(category: StringName, n: int = 7) -> int:
 	return total
 
 
+const DIRECT := [&"cyberware", &"supplies", &"tools"]
+const RECURRING := [&"rent", &"operating", &"upkeep", &"salaries", &"security", &"interest"]
+
+
+## The business at a glance over the last `days` days (from the real
+## ledger): {revenue, direct, recurring, other, profit, upcoming, verdict,
+## level, cause, advice}. If the clinic is losing money, `cause` names the
+## biggest drain and `advice` what usually helps.
+func outlook(days: int = 3) -> Dictionary:
+	var revenue := 0
+	for k: StringName in INCOME:
+		revenue += maxi(0, category_over(k, days - 1))
+	var direct := 0
+	for k: StringName in DIRECT:
+		direct -= mini(0, category_over(k, days - 1))
+	var recurring := 0
+	for k: StringName in RECURRING:
+		recurring -= mini(0, category_over(k, days - 1))
+	var profit := revenue - direct - recurring
+	var upcoming := projected_total()
+	var out := {"revenue": revenue, "direct": direct, "recurring": recurring, "profit": profit, "upcoming": upcoming,
+		"verdict": "Healthy", "level": &"good", "cause": "", "advice": ""}
+	if profit < 0:
+		out["verdict"] = "Losing money"
+		out["level"] = &"bad"
+	elif profit < upcoming:
+		out["verdict"] = "Tight"
+		out["level"] = &"warn"
+	if profit < upcoming:
+		if revenue == 0:
+			out["cause"] = "No jobs done lately"
+			out["advice"] = "Take jobs (or let staff take them): nothing comes in otherwise."
+		elif direct >= recurring:
+			out["cause"] = "Implants and supplies cost %d of %d earned" % [direct, revenue]
+			out["advice"] = "Pick jobs whose THE MONEY line is positive, use stock you already own, and buy chrome cheaper (black market, suppliers)."
+		else:
+			var worst: StringName = &"rent"
+			var worst_v := 0
+			for k: StringName in RECURRING:
+				var v := -mini(0, category_over(k, days - 1))
+				if v > worst_v:
+					worst_v = v
+					worst = k
+			out["cause"] = "%s: %d over %d days" % [LABELS.get(worst, String(worst)), worst_v, days]
+			out["advice"] = {&"rent": "Move to a cheaper address or sell a clinic you don't use.", &"operating": "Move to a cheaper address or sell a clinic you don't use.",
+				&"salaries": "Give staff more jobs, or let go of one who doesn't earn their wage.", &"upkeep": "Some upgrades cost more to run than they bring in.",
+				&"interest": "Pay the debt down first: interest grows every night.", &"security": "Security upkeep is high for the threat you face."}.get(worst, "")
+	return out
+
+
 func income_and_costs(ledger: Dictionary) -> Dictionary:
 	var inc := 0
 	var cost := 0

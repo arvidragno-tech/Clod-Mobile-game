@@ -26,12 +26,14 @@ static func rows() -> Array[Dictionary]:
 	out.append({"key": "money", "label": "FINANCIAL", "state": fin, "level": fin_lv,
 		"detail": "%s on hand · tonight's bill %s%s" % [EconomyManager.format_money(money), EconomyManager.format_money(bill),
 			(" · debt %s" % EconomyManager.format_money(BusinessManager.debt)) if BusinessManager.debt > 0 else ""],
-		"advice": "Money is short for tonight's bill. Take paying jobs, sell spare chrome or cut costs in BUSINESS.",
+		"advice": _money_advice(),
 		"term": "credits", "link": {"screen": &"business"}})
 	var rep := ReputationManager.reputation
-	out.append({"key": "rep", "label": "REPUTATION", "state": str(rep), "level": GOOD if rep >= 10 else (WARN if rep >= 0 else BAD),
-		"detail": "street reputation %d" % rep, "advice": "Your name is mud. Clean, careful work brings people back.",
-		"term": "rep", "link": {"screen": &"dossier", "params": {"tab_name": "FACTIONS"}}})
+	var rt := ChangeLog.standing_trend("rep", 3)
+	out.append({"key": "rep", "label": "REPUTATION", "state": "%s %d%s" % [ReputationManager.get_tier_name(), rep, (" ▲" if rt > 0.5 else (" ▼" if rt < -0.5 else ""))],
+		"level": GOOD if rep >= 10 else (WARN if rep >= 0 else BAD),
+		"detail": "street reputation %d · %s" % [rep, Standing.next_rep_threshold()], "advice": "Your name is mud. Clean, careful work brings people back.",
+		"term": "rep", "link": {"screen": &"dossier", "params": {"tab_name": "STANDING"}}})
 	var staff: Array = StaffManager.employees
 	var st_lv := GOOD
 	var st := "None hired" if staff.is_empty() else "Steady"
@@ -57,15 +59,16 @@ static func rows() -> Array[Dictionary]:
 		"advice": "You're out of medical supplies: no operation can start. Restock in SUPPLY.",
 		"term": "supplies", "link": {"screen": &"shop"}})
 	var heat := FactionManager.heat
-	out.append({"key": "heat", "label": "AUTHORITY HEAT", "state": "High" if heat >= 60.0 else ("Watched" if heat >= 35.0 else "Low"),
-		"level": BAD if heat >= 60.0 else (WARN if heat >= 35.0 else GOOD), "detail": "%d / 100 · %s" % [roundi(heat), SecurityManager.level_label()],
+	# The real heat levels (data/security.json): MEDIUM 25, HIGH 50, CRITICAL 75.
+	out.append({"key": "heat", "label": "AUTHORITY HEAT", "state": SecurityManager.level_label().capitalize(),
+		"level": BAD if heat >= 50.0 else (WARN if heat >= 25.0 else GOOD), "detail": "%d / 100 · %s" % [roundi(heat), SecurityManager.level_label()],
 		"advice": "Authority attention is rising. Cut black-market work, do clean jobs, or improve SECURITY.",
 		"term": "heat", "link": {"term": "heat"}})
 	var bm := FactionManager.get_rep(&"black_market")
 	out.append({"key": "black_market", "label": "BLACK MARKET", "state": FactionManager.get_standing(&"black_market").capitalize(),
 		"level": GOOD if bm >= 10 else (WARN if bm >= -10 else BAD), "detail": "standing %+d" % bm,
 		"advice": "The market doesn't trust you. Pay your debts and keep deals quiet.",
-		"term": "black_market", "link": {"screen": &"dossier", "params": {"tab_name": "FACTIONS"}}})
+		"term": "black_market", "link": {"screen": &"dossier", "params": {"tab_name": "STANDING"}}})
 	return out
 
 
@@ -78,6 +81,14 @@ static func most_important() -> Dictionary:
 				return {"text": str(r["advice"]) if lv == BAD else "%s: %s. %s" % [str(r["label"]).capitalize(), str(r["state"]).to_lower(), _warn_tip(str(r["key"]))],
 					"level": lv, "link": r["link"]}
 	return {"text": "Everything is stable. A good night to take risks or expand.", "level": GOOD, "link": {}}
+
+
+## The business outlook's main cause when there is one, else the usual tip.
+static func _money_advice() -> String:
+	var o := BusinessManager.outlook(3)
+	if str(o["cause"]) != "":
+		return "%s: %s. %s" % [o["verdict"], o["cause"], o["advice"]]
+	return "Money is short for tonight's bill. Take paying jobs, sell spare chrome or cut costs in BUSINESS."
 
 
 static func _warn_tip(key: String) -> String:

@@ -3,6 +3,7 @@ extends Node
 
 const TIERS := [
 	[-100, "Butcher"],
+	[-19, "Distrusted"],
 	[0, "Unknown"],
 	[10, "Back-alley"],
 	[25, "Known Cutter"],

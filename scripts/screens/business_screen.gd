@@ -60,6 +60,18 @@ func _rebuild() -> void:
 	_kpi(kpis, "TONIGHT'S BILL", "-%d" % BusinessManager.projected_total(), Palette.WARN)
 	_kpi(kpis, "DEBT", "%d" % BusinessManager.debt, Palette.DANGER if BusinessManager.debt > 0 else Palette.TEXT_DIM)
 	_kpi(kpis, "OWED TO YOU", "%d" % PeopleManager.total_owed_to_you(), Palette.WARN if PeopleManager.total_owed_to_you() > 0 else Palette.TEXT_DIM)
+	# OUTLOOK: the last three days in one line, and why if it's going wrong.
+	var o := BusinessManager.outlook(3)
+	var oc := UIKit.panel(&"DangerPanel" if o["level"] == &"bad" else &"CardPanel")
+	oc.name = "Outlook"
+	_root.add_child(oc)
+	var ov := UIKit.vbox(2)
+	oc.add_child(ov)
+	var col: Color = Palette.OK if o["level"] == &"good" else (Palette.WARN if o["level"] == &"warn" else Palette.DANGER)
+	ov.add_child(UIKit.label("OUTLOOK: %s  ·  last 3 days: earned %d, implants & supplies -%d, rent & wages -%d = operating %+d  ·  tonight's bill %d" % [
+		str(o["verdict"]).to_upper(), int(o["revenue"]), int(o["direct"]), int(o["recurring"]), int(o["profit"]), int(o["upcoming"])], &"MonoLabel", true, col, 16))
+	if str(o["cause"]) != "":
+		ov.add_child(UIKit.label("Main cause: %s. %s" % [o["cause"], o["advice"]], &"", true, Palette.TEXT, 15))
 	var row := UIKit.hbox(14)
 	UIKit.expand(row, true, true)
 	_root.add_child(row)

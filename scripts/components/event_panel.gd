@@ -57,10 +57,13 @@ func _build() -> void:
 		var choice: Dictionary = choices[i]
 		var reason := EventManager.get_choice_block_reason(choice)
 		var b := UIKit.button(str(choice.get("label", "OK")), &"Button" if i > 0 else &"AccentButton", _on_choice.bind(i), "Choice_%d" % i)
+		var fx := Standing.preview(choice.get("outcomes", {}))
 		b.disabled = reason != ""
 		_box.add_child(b)
 		if reason != "":
 			_box.add_child(UIKit.label("  " + reason, &"DimLabel", false, Palette.WARN, 13))
+		elif fx != "":
+			_box.add_child(UIKit.label("  Standing: " + fx, &"DimLabel", true, Palette.TEXT_DIM, 13))
 
 
 func _on_choice(i: int) -> void:

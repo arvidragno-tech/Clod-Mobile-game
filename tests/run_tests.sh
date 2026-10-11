@@ -33,6 +33,8 @@ for args in "--seed=1" "--seed=2" "--seed=3" "--seed=4 --skill=-0.3"; do
   # shellcheck disable=SC2086
   run_step "balance simulation $args" "BALANCE|FAIL" res://tests/balance_sim.tscn -- --ops=40 $args
 done
+run_step "economy simulation (5 strategies x 3 seeds x 20 days, real systems)" "ECONOMY|MISS|== [A-Z]" \
+  res://tests/economy_sim.tscn -- --days=20 --seeds=3 --check
 run_step "stability (soak, monkey, save fuzz, leaks)" "STABILITY|FAIL|completed|visited" \
   res://tests/stability_test.tscn -- --shifts=20 --monkey=1500
 # The E2E bot needs real font metrics (headless Godot measures text taller

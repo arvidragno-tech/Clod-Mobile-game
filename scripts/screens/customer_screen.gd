@@ -116,6 +116,17 @@ func on_enter(params: Dictionary) -> void:
 	rl.tooltip_text = "An estimate from the same rules the game uses. You decide."
 	rl.mouse_filter = Control.MOUSE_FILTER_PASS
 	decide.add_child(rl)
+	# The money, before you commit (revenue is not profit).
+	var est := JobEstimate.for_customer(c, GameManager.get_surgery_readiness())
+	var keep := int(est["net"])
+	var ml := UIKit.label("THE MONEY ≈ they pay %s · implant %s · supplies %s → you keep %s%s" % [EconomyManager.format_money(int(est["can_pay"])),
+		EconomyManager.format_money(int(est["implant_cost"])), EconomyManager.format_money(int(est["supplies_cost"])), "%+d cr" % keep,
+		("  (they'll owe %s more, paid in instalments)" % EconomyManager.format_money(int(est["owed"]))) if int(est["owed"]) > 0 else ""],
+		&"DimLabel", true, Palette.OK if keep > 0 else Palette.DANGER, 15)
+	ml.name = "MoneyEstimate"
+	ml.tooltip_text = "An estimate: the fee depends on how the operation goes. A unit from stock counts at what it would cost to replace."
+	ml.mouse_filter = Control.MOUSE_FILTER_PASS
+	decide.add_child(ml)
 	var accept := UIKit.button("PERFORM SURGERY YOURSELF  [ENTER]", &"AccentButton", GameManager.accept_customer, "AcceptButton", 60)
 	accept.set_meta(&"default", true)
 	decide.add_child(accept)

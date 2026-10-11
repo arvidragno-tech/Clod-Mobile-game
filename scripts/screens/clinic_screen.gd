@@ -395,7 +395,7 @@ func _refresh_status() -> void:
 		EconomyManager.format_money(BusinessManager.projected_total()), (" · DEBT %d" % BusinessManager.debt) if BusinessManager.debt > 0 else ""], "jobs")
 	var scap := maxi(1, ClinicManager.get_supplies_capacity())
 	_meter_row("SUPPLIES", float(InventoryManager.supplies) / scap, Palette.WARN if InventoryManager.supplies < 2 else Palette.OK, "%d / %d · %d implants" % [InventoryManager.supplies, scap, InventoryManager.get_instances().size()], "supplies")
-	_meter_row("HEAT", FactionManager.heat / 100.0, Palette.DANGER if FactionManager.heat >= 35.0 else Palette.TEXT_DIM, "%d · %s" % [roundi(FactionManager.heat), SecurityManager.level_label()], "heat")
+	_meter_row("HEAT", FactionManager.heat / 100.0, Palette.DANGER if FactionManager.heat >= 50.0 else (Palette.WARN if FactionManager.heat >= 25.0 else Palette.TEXT_DIM), "%d · %s" % [roundi(FactionManager.heat), SecurityManager.level_label()], "heat")
 	var open := SecurityManager.open_cases().size()
 	_security_button.text = "SECURITY" if open == 0 else "%d OPEN CASE%s" % [open, "S" if open > 1 else ""]
 	_security_button.theme_type_variation = &"DangerButton" if open > 0 else &"GhostButton"

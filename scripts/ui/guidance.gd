@@ -30,7 +30,7 @@ static func items(n: int = MAX_ITEMS) -> Array[Dictionary]:
 		add.call("incident", CRITICAL, "!", "Someone is waiting: deal with the incident", {"screen": &"clinic"})
 	if InventoryManager.supplies <= 0:
 		add.call("supplies_out", CRITICAL, "✚", "No medical supplies: you can't operate. Restock in SUPPLY", {"screen": &"shop"})
-	if FactionManager.heat >= 85.0:
+	if FactionManager.heat >= 75.0:
 		add.call("heat", CRITICAL, "!", "Authority heat %d: a raid is close. Lie low, do clean work" % roundi(FactionManager.heat), {"term": "heat"})
 	if BusinessManager.debt >= BusinessManager.DEBT_WARNING:
 		add.call("debt", CRITICAL if BusinessManager.days_in_debt > 1 else IMPORTANT, "¤",
@@ -82,7 +82,7 @@ static func items(n: int = MAX_ITEMS) -> Array[Dictionary]:
 		add.call("security", IMPORTANT, "!", "%d open security case%s: something went missing" % [cases, "" if cases == 1 else "s"], {"screen": &"clinic"})
 	if InventoryManager.supplies > 0 and InventoryManager.supplies < 2:
 		add.call("supplies_low", IMPORTANT, "✚", "Supplies low (%d): restock in SUPPLY" % InventoryManager.supplies, {"screen": &"shop"})
-	if FactionManager.heat >= 60.0 and FactionManager.heat < 85.0:
+	if FactionManager.heat >= 50.0 and FactionManager.heat < 75.0:
 		add.call("heat_high", IMPORTANT, "!", "Authority heat %d and rising: careful with black-market work" % roundi(FactionManager.heat), {"term": "heat"})
 	# --- Info ----------------------------------------------------------------------------
 	if SkillManager.points > 0:

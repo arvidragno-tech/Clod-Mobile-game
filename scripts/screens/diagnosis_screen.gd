@@ -349,7 +349,17 @@ func _fill_preview(c: CustomerData, item: CyberwareData, surgery: SurgeryData, r
 	var cost := surgery.supplies
 	var buy := str(r.get("implant_source", "")) == "buy"
 	row.call("COST", "%d suppl%s%s" % [cost, "y" if cost == 1 else "ies", (" + implant %s" % EconomyManager.format_money(InventoryManager.implant_price(item))) if buy and item else ""])
-	row.call("PAYMENT", "≈ %s" % EconomyManager.format_money(CustomerGenerator.estimate_fee(c)), Palette.WARN)
+	# Revenue is not profit: the money estimate, from the real data.
+	var est := JobEstimate.for_customer(c, r)
+	var pay_txt := "≈ %s" % EconomyManager.format_money(int(est["fee"]))
+	if int(est["owed"]) > 0:
+		pay_txt += " · can pay %s now, owes the rest" % EconomyManager.format_money(int(est["can_pay"]))
+	row.call("PAYMENT", pay_txt, Palette.WARN)
+	var src := str(est["implant_source"])
+	row.call("USES UP", "implant %s (%s) + supplies %s" % [EconomyManager.format_money(int(est["implant_cost"])),
+		{"buy": "bought now", "salvaged": "salvaged", "stock": "from stock"}.get(src, "from stock"), EconomyManager.format_money(int(est["supplies_cost"]))])
+	var keep := int(est["net"])
+	row.call("YOU KEEP", "≈ %s (estimate; depends on how it goes)" % ("%+d cr" % keep), Palette.OK if keep > 0 else Palette.DANGER)
 	var extra := float(me["extra"])
 	var comp_text := "%d expected" % int(me["guaranteed"]) if int(me["guaranteed"]) > 0 else "none expected"
 	if extra > 0.0:

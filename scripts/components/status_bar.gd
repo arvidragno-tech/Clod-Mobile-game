@@ -167,7 +167,7 @@ func _refresh() -> void:
 	_rep.text = "REP %d" % ReputationManager.reputation
 	_tier.text = ReputationManager.get_tier_name().to_upper()
 	_values[&"heat"].text = "%d" % roundi(FactionManager.heat)
-	_values[&"heat"].add_theme_color_override(&"font_color", Palette.DANGER if FactionManager.heat >= 35.0 else Palette.TEXT)
+	_values[&"heat"].add_theme_color_override(&"font_color", Palette.DANGER if FactionManager.heat >= 50.0 else (Palette.WARN if FactionManager.heat >= 25.0 else Palette.TEXT))
 	_values[&"supplies"].text = "%d/%d" % [InventoryManager.supplies, ClinicManager.get_supplies_capacity()]
 	_values[&"supplies"].add_theme_color_override(&"font_color", Palette.WARN if InventoryManager.supplies < 2 else Palette.TEXT)
 	_values[&"parts"].text = str(InventoryManager.parts)

@@ -17,6 +17,7 @@ const LivingWorldTests := preload("res://tests/living_world_tests.gd")
 const LivingCityTests := preload("res://tests/living_city_tests.gd")
 const UiOverhaulTests := preload("res://tests/ui_overhaul_tests.gd")
 const UxTests := preload("res://tests/ux_tests.gd")
+const QualityTests := preload("res://tests/quality_tests.gd")
 
 var _failures: Array[String] = []
 var _dilemmas_seen: bool = false
@@ -59,6 +60,7 @@ func _run_all() -> void:
 	LivingCityTests.new().run(self)
 	UiOverhaulTests.new().run(self)
 	UxTests.new().run(self)
+	QualityTests.new().run(self)
 	if OS.get_cmdline_user_args().has("--unit-only"):
 		_finish()
 		return
