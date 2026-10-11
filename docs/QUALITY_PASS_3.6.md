@@ -267,14 +267,22 @@ Investment passes by the smallest margin (median 1,052 cr).
 | Compile check | 209 files, 0 failed |
 | Balance simulation (4 profiles) | BALANCE OK |
 | Economy simulation | ECONOMY OK |
-| Stability (soak, monkey, save fuzz, leaks) | OK (562 checks) |
-| Unit + end-to-end, mouse and keyboard (includes `quality_tests.gd`) | 1,500 checks passed; E2E surgeries graded S (clean) and B (sloppy) |
+| Stability (soak, monkey, save fuzz, leaks) | OK (530 checks) |
+| Unit + end-to-end, mouse and keyboard (includes `quality_tests.gd`) | 1,501 checks passed (an earlier run on the same features also graded the E2E surgeries S clean and B sloppy) |
 | Display probe | 96 passed |
 | Living-world probe | 274 passed |
 | Living-city probe | 203 passed |
 | UI probe | 132 passed |
 | UI stability probe | 86 passed (baseline: 22 of 74 failed) |
 | UX probe | 129 passed |
+
+Check counts vary a little between runs because the soak and the generated
+patients are random. The final run (commit `2f94c8c`) passed every suite with
+no `SCRIPT ERROR`.
+
+**Clean launch:** the main scene was run for 300 frames under Xvfb and exited
+with code 0. Its output has no script errors, only the container's lack of a
+sound card and of VSync support.
 
 Failures found and fixed during Phase G:
 - The UI stability probe failed at TEXT 1.4 with LARGE TEXT: the grouped side
