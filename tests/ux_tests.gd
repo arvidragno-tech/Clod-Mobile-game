@@ -246,7 +246,7 @@ func _consequence() -> void:
 	ReputationManager.change(2)
 	Consequence.show("A test decision.", shown_before)
 	var card: Control = null
-	for n in get_tree().root.find_children("ConsequenceCard", "", true, false):
+	for n in (Engine.get_main_loop() as SceneTree).root.find_children("ConsequenceCard", "", true, false):
 		card = n as Control
 	var blocks := card == null or card.mouse_filter != Control.MOUSE_FILTER_IGNORE
 	if card:
