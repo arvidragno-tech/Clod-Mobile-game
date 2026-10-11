@@ -189,6 +189,18 @@ func _build_right() -> void:
 		b.disabled = not can
 		b.tooltip_text = "" if can else "You've talked today"
 		r.add_child(b)
+		# FOLLOW: the game keeps track of where they go next.
+		var fkind := "cast" if kind == "cast" else ("person" if kind == "patient" else "")
+		if fkind != "":
+			var pid := str(p["id"])
+			var pname := str(p["name"])
+			var on := Follows.is_following(Follows.key(fkind, pid))
+			var f := UIKit.button("★" if on else "☆", &"AccentButton" if on else &"GhostButton", func() -> void:
+				var now := Follows.toggle(fkind, pid, pname)
+				UIManager.show_toast(("★ Following %s: the journal shows where they are" if now else "Stopped following %s") % pname, &"success" if now else &"info")
+				_refresh_deferred(), "FollowPerson_%d" % i, 40)
+			f.tooltip_text = "Follow: keep track of where %s is (journal MAIN, clinic priorities, ★ on the map)." % pname
+			r.add_child(f)
 	# Services.
 	var sv := UIKit.section(_right, "WHAT YOU CAN DO HERE")
 	var services := LocationServices.list(_id)

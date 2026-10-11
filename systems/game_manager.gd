@@ -101,7 +101,7 @@ func navigate(id: StringName) -> void:
 		&"dossier":
 			UIManager.go_to(UIManager.SCREEN_DOSSIER)
 		&"wall":
-			UIManager.go_to(UIManager.SCREEN_DOSSIER, {"tab": 7})
+			UIManager.go_to(UIManager.SCREEN_DOSSIER, {"tab_name": "DISCOVERIES", "view": "WALL"})
 		&"staff":
 			UIManager.go_to(UIManager.SCREEN_STAFF)
 		&"business":

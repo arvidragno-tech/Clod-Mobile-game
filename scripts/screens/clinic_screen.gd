@@ -24,6 +24,8 @@ var _rumor: Label
 var _stock_label: Label
 var _status_box: VBoxContainer
 var _factions_box: VBoxContainer
+var _matters_box: VBoxContainer
+var _changes_button: Button
 var _nav: SideNav
 var _waiting_dots: float = 0.0
 var _panels: Array[Control] = []
@@ -80,9 +82,19 @@ func _build() -> void:
 	_objective = UIKit.label("", &"MonoLabel", false, Palette.ACCENT)
 	_objective.name = "Objective"
 	_objective.clip_text = true
+	_objective.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	_objective.mouse_filter = Control.MOUSE_FILTER_STOP
+	_objective.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	_objective.gui_input.connect(func(e: InputEvent) -> void:
+		var mb := e as InputEventMouseButton
+		if mb and mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT:
+			Nav.open(Guidance.top().get("link", {})))
 	UIKit.expand(_objective)
 	strip.add_child(_objective)
-	strip.add_child(UIKit.label("[%s] customer  [%s] inventory  [%s] journal  [%s] quick save" % [Controls.key_name("customer_info"), Controls.key_name("inventory"), Controls.key_name("journal"), Controls.key_name("quicksave")], &"SubHeaderLabel"))
+	_changes_button = UIKit.button("", &"GhostButton", ChangesPanel.open, "ChangesButton", 36)
+	_changes_button.tooltip_text = "What changed while you were busy (money, standing, heat, supplies, staff, people, places)."
+	strip.add_child(_changes_button)
+	strip.add_child(UIKit.label("[%s] customer  [%s] inventory  [%s] journal  [%s] map" % [Controls.key_name("customer_info"), Controls.key_name("inventory"), Controls.key_name("journal"), Controls.key_name("map")], &"SubHeaderLabel"))
 	_refresh_objective()
 	var row := UIKit.hbox(16)
 	UIKit.expand(row, true, true)
@@ -153,7 +165,7 @@ func _build() -> void:
 	centre.add_child(frame)
 	_view = ClinicView.new()
 	_view.name = "ClinicView"
-	_view.custom_minimum_size = Vector2(1100, 640)
+	_view.custom_minimum_size = Vector2(1100, 580)
 	_view.tooltip_text = "Click the customer or a lit prop · wheel / double-click to zoom · drag to look around"
 	_view._base_tooltip = _view.tooltip_text
 	_view.hotspot_clicked.connect(GameManager.navigate)
@@ -178,7 +190,8 @@ func _build() -> void:
 	_agenda.add_theme_constant_override(&"outline_size", 4)
 	overlay.add_child(_agenda)
 	var cards := UIKit.hbox(14)
-	UIKit.expand(cards, true, true)
+	UIKit.expand(cards, true, false)
+	cards.size_flags_vertical = Control.SIZE_SHRINK_END
 	centre.add_child(cards)
 	_status_box = UIKit.section(cards, "TODAY", &"CardPanel", "", "time")
 	(_status_box.get_parent() as Control).size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -195,12 +208,14 @@ func _build() -> void:
 	_security_button = UIKit.button("SECURITY", &"GhostButton", _open_security, "SecurityButton", 40)
 	_security_button.tooltip_text = "Heat level, break-ins and investigations."
 	_close_row.add_child(_security_button)
-	var rumors := UIKit.section(cards, "STREET RUMOURS", &"CardPanel", "[%s] journal" % Controls.key_name("journal"))
-	(rumors.get_parent() as Control).size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	(rumors.get_parent() as Control).size_flags_stretch_ratio = 1.4
-	_rumor = UIKit.label("", &"DimLabel", true, Palette.ACCENT)
-	rumors.add_child(_rumor)
-	_factions_box = UIKit.section(cards, "FACTIONS", &"CardPanel", "", "factions")
+	_matters_box = UIKit.section(cards, "WHAT MATTERS NOW", &"CardPanel", "click to go there")
+	_matters_box.add_theme_constant_override(&"separation", 4)
+	_matters_box.name = "WhatMatters"
+	(_matters_box.get_parent() as Control).size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	(_matters_box.get_parent() as Control).size_flags_stretch_ratio = 1.4
+	_panels.append(_matters_box.get_parent())
+	_factions_box = UIKit.section(cards, "CLINIC STATUS", &"CardPanel", "", "")
+	_factions_box.name = "ClinicStatus"
 	(_factions_box.get_parent() as Control).size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_panels.append(_factions_box.get_parent())
 
@@ -352,22 +367,76 @@ func _refresh_status() -> void:
 	agenda.append("%s  doors lock (%s left)" % [TimeManager.clock_text(TimeManager.close_minute()), TimeManager.duration_text(TimeManager.minutes_left())])
 	if _agenda:
 		_agenda.text = "\n".join(agenda)
+	_refresh_status_card()
+	_refresh_matters(true)
+
+
+## CLINIC STATUS: six one-word summaries (✓ ! ✕) and the one thing to do.
+func _refresh_status_card() -> void:
 	UIKit.clear_after(_factions_box, 1)
 	var grid := GridContainer.new()
-	grid.columns = 2
-	grid.add_theme_constant_override(&"h_separation", 18)
+	grid.columns = 1
+	grid.add_theme_constant_override(&"v_separation", 0)
 	_factions_box.add_child(grid)
-	for id: StringName in FactionManager.order:
+	for r: Dictionary in ClinicStatus.rows():
 		var line := UIKit.hbox(6)
+		line.name = "Status_%s" % r["key"]
 		UIKit.expand(line)
-		var n := UIKit.label(str(FactionManager.factions[id].get("short", id)), &"DimLabel")
-		n.tooltip_text = FactionManager.get_name_of(id)
-		n.mouse_filter = Control.MOUSE_FILTER_PASS
-		UIKit.expand(n)
-		line.add_child(n)
-		var rep := FactionManager.get_rep(id)
-		line.add_child(UIKit.label("%+d" % rep, &"MonoLabel", false, Palette.OK if rep > 5 else (Palette.DANGER if rep < -5 else Palette.TEXT_DIM)))
+		line.add_child(UIKit.label(ClinicStatus.mark(r["level"]), &"MonoLabel", false, ClinicStatus.color(r["level"]), 17))
+		var cap := UIKit.caption(str(r["label"]))
+		cap.add_theme_font_size_override(&"font_size", 15)
+		cap.custom_minimum_size.x = 160
+		line.add_child(cap)
+		var v := UIKit.label(str(r["state"]), &"", false, ClinicStatus.color(r["level"]), 15)
+		v.tooltip_text = "%s: %s\n%s" % [r["label"], r["state"], r["detail"]]
+		v.mouse_filter = Control.MOUSE_FILTER_PASS
+		v.clip_text = true
+		v.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		UIKit.expand(v)
+		line.add_child(v)
 		grid.add_child(line)
+	var top := ClinicStatus.most_important()
+	var tip := UIKit.label(("▲ " if top["level"] != ClinicStatus.GOOD else "✓ ") + str(top["text"]), &"DimLabel", true, ClinicStatus.color(top["level"]) if top["level"] != ClinicStatus.GOOD else Palette.TEXT_DIM, 14)
+	tip.name = "StatusAdvice"
+	tip.max_lines_visible = 2
+	_factions_box.add_child(tip)
+
+
+var _matters_sig: String = ""
+
+
+## WHAT MATTERS NOW: the prioritised, clickable list (Guidance).
+func _refresh_matters(force: bool = false) -> void:
+	if _matters_box == null:
+		return
+	var its := Guidance.items(4)
+	var sig := ""
+	for it in its:
+		sig += str(it["text"]) + "|"
+	if _changes_button:
+		var n := ChangeLog.unread_count()
+		_changes_button.text = ("◷ CHANGES %d  [%s]" % [n, Controls.key_name("changes")]) if n > 0 else ("◷ CHANGES  [%s]" % Controls.key_name("changes"))
+		_changes_button.theme_type_variation = &"Button" if n > 0 else &"GhostButton"
+	if sig == _matters_sig and not force:
+		return
+	_matters_sig = sig
+	UIKit.clear_after(_matters_box, 1)
+	if its.is_empty():
+		_matters_box.add_child(UIKit.label("Nothing urgent.", &"DimLabel"))
+		return
+	for i in its.size():
+		var it: Dictionary = its[i]
+		var lv: StringName = it["level"]
+		var txt := "%s %s  %s" % [Guidance.MARKS[lv], str(it["icon"]), str(it["text"])]
+		var link: Dictionary = it["link"]
+		var b := UIKit.button(txt, &"GhostButton", func() -> void: Nav.open(link), "Matter_%d" % i, 32)
+		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		b.clip_text = true
+		b.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		b.tooltip_text = str(it["text"])
+		b.add_theme_color_override(&"font_color", Guidance.color(lv))
+		b.disabled = not Nav.can_open(link)
+		_matters_box.add_child(b)
 
 
 ## One labelled meter in the TODAY card (hover/click the caption to learn more).
@@ -397,8 +466,7 @@ func _meter_row(caption: String, ratio: float, color: Color, text: String, term:
 
 
 func _refresh_rumor() -> void:
-	var r := StoryManager.get_latest_rumor()
-	_rumor.text = r if r != "" else "Quiet night. Nothing on the wire."
+	pass  # rumours live in the journal (DISCOVERIES) and on the wire ticker
 
 
 func _refresh_objective() -> void:
@@ -407,6 +475,7 @@ func _refresh_objective() -> void:
 	var o := GameManager.get_next_objective()
 	_objective.text = "NEXT > " + str(o["text"]).to_upper()
 	_objective.add_theme_color_override(&"font_color", Palette.WARN if o["kind"] == &"warn" else Palette.ACCENT)
+	_refresh_matters()
 
 
 func _open_security() -> void:

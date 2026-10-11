@@ -148,8 +148,18 @@ func _draw() -> void:
 
 ## Known places: a small square in the type's colour, a ring in the state's
 ## colour, a dashed line to where you are, and YOU pulsing on your spot.
+var _followed: Dictionary = {}
+var _followed_at: float = -10.0
+
+
 func _draw_locations(font: Font) -> void:
 	var s := _s()
+	if _time - _followed_at > 1.0:
+		_followed_at = _time
+		_followed.clear()
+		for f: Dictionary in Follows.live():
+			if str(f["where"]) != "":
+				_followed[StringName(str(f["where"]))] = true
 	var here := LocationManager.player_location
 	var hp := loc_pos(here) * s
 	for id in LocationManager.known_locations():
@@ -165,6 +175,9 @@ func _draw_locations(font: Font) -> void:
 		draw_rect(r, col)
 		if (WorldSimulationManager.has_flag(id, &"event") or WorldSimulationManager.has_flag(id, &"lead")) and fmod(_time, 1.0) < 0.6:
 			draw_rect(r.grow(s * 1.5), Palette.WARN, false, s * 0.67)
+		# Followed places (and places where someone you follow is now): a star.
+		if _followed.has(id):
+			draw_string(font, p + Vector2(3 * s, -2 * s), "★", HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Palette.ACCENT)
 		if id == selected_location or id == _hover_loc:
 			draw_rect(r.grow(s * 2.5), Palette.TEXT if id == _hover_loc else Palette.WARN, false, s * 0.67)
 			var label := LocationManager.location_name(id).to_upper()

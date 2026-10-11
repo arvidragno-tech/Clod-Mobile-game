@@ -19,7 +19,11 @@ var _crash_bar: ProgressBar
 var _crash_label: Label
 
 
-func on_enter(_params: Dictionary) -> void:
+var _params: Dictionary = {}
+
+
+func on_enter(params: Dictionary) -> void:
+	_params = params
 	var c := GameManager.get_current_customer()
 	if c == null:
 		UIManager.go_to.call_deferred(UIManager.SCREEN_CLINIC)
@@ -100,6 +104,13 @@ func on_enter(_params: Dictionary) -> void:
 	glance.get_parent().name = "AtAGlance"
 	JobVerdict.build(glance, c)
 	var decide := UIKit.section(right, "DECISION", &"AccentPanel", "", "loop")
+	# Recommendation: who should operate, and why (the player decides).
+	var rec := Recommend.surgeon(c)
+	var rl := UIKit.label("RECOMMENDED: %s · %d%%  (%s)" % [str(rec["name"]).to_upper(), roundi(float(rec["chance"]) * 100.0), rec["reason"]], &"DimLabel", true, Palette.ACCENT, 15)
+	rl.name = "Recommendation"
+	rl.tooltip_text = "An estimate from the same rules the game uses. You decide."
+	rl.mouse_filter = Control.MOUSE_FILTER_PASS
+	decide.add_child(rl)
 	var accept := UIKit.button("PERFORM SURGERY YOURSELF  [ENTER]", &"AccentButton", GameManager.accept_customer, "AcceptButton", 60)
 	accept.set_meta(&"default", true)
 	decide.add_child(accept)
@@ -116,6 +127,13 @@ func on_enter(_params: Dictionary) -> void:
 	decide.add_child(defer)
 	var decline := UIKit.button("REFUSE  (-%d REP)" % absi(GameConfig.DECLINE_REPUTATION_PENALTY), &"GhostButton", _on_decline, "DeclineButton", 44)
 	decide.add_child(decline)
+	if PeopleManager.has_person(c.id):
+		var hist := UIKit.button("REVIEW HISTORY", &"GhostButton", func() -> void:
+			UIManager.go_to(UIManager.SCREEN_DOSSIER, {"tab_name": "PATIENTS", "focus": String(c.id)}), "HistoryButton", 40)
+		hist.tooltip_text = "Their visits, what they owe, what they remember (journal)."
+		decide.add_child(hist)
+	if bool(_params.get("assign", false)) and staff_n > 0:
+		_toggle_staff.call_deferred()
 	_panels.append(decide.get_parent())
 	accept.grab_focus.call_deferred()
 
@@ -415,7 +433,9 @@ func _toggle_staff() -> void:
 		return
 	UIKit.clear(_staff_box)
 	var c := GameManager.get_current_customer()
-	for o: Dictionary in StaffManager.options_for(c):
+	var ranked := Recommend.staff_ranked(c)
+	for i in ranked.size():
+		var o: Dictionary = ranked[i]
 		var e: Dictionary = o["employee"]
 		var id := StringName(str(e["id"]))
 		var row := UIKit.hbox(8)
@@ -426,7 +446,9 @@ func _toggle_staff() -> void:
 		var v := UIKit.vbox(2)
 		UIKit.expand(v)
 		row.add_child(v)
-		v.add_child(UIKit.label(str(e["name"]), &"", true, Palette.TEXT, 15))
+		var best := i == 0 and str(o.get("refusal", "")) == ""
+		v.add_child(UIKit.label(str(e["name"]) + ("   ★ RECOMMENDED" if best else ""), &"", true, Palette.ACCENT if best else Palette.TEXT, 15))
+		v.add_child(UIKit.label(str(o["reason"]), &"DimLabel", true, null, 13))
 		var chance := roundi(float(o["chance"]) * 100.0)
 		var lvl: StringName = &"good" if chance >= 70 else (&"warn" if chance >= 45 else &"bad")
 		v.add_child(UIKit.label("%s%s · %d%% · stress %d" % [Accessibility.tag(lvl), StaffManager.spec_label(e), chance, roundi(float(e["stress"]))], &"DimLabel", true, Palette.OK if chance >= 70 else (Palette.WARN if chance >= 45 else Palette.DANGER), 13))

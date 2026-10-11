@@ -23,6 +23,8 @@ var _selected: StringName = &""
 var _option_buttons: Dictionary = {}
 var _region_buttons: Dictionary = {}
 var _ready_note: Label
+var _preview: VBoxContainer
+var _hand_off: Button
 var _region_text: Dictionary = {}
 
 
@@ -161,8 +163,10 @@ func _build_plan(col: VBoxContainer) -> void:
 	_panels.append(side)
 	var buttons := UIKit.vbox(12)
 	side.add_child(buttons)
-	buttons.add_child(UIKit.section_head("READY?", "", "vitals"))
-	buttons.add_child(UIKit.label("Operating starts the clock. Vitals drift while you work: keep COAG, SEDATE and STABIL in reach.", &"DimLabel", true))
+	buttons.add_child(UIKit.section_head("SURGERY PREVIEW", "", "odds"))
+	_preview = UIKit.vbox(4)
+	_preview.name = "SurgeryPreview"
+	buttons.add_child(_preview)
 	_ready_note = UIKit.label("", &"", true)
 	_ready_note.name = "ReadyNote"
 	buttons.add_child(_ready_note)
@@ -170,8 +174,14 @@ func _build_plan(col: VBoxContainer) -> void:
 	_begin = UIKit.button("BEGIN OPERATION   [ENTER]", &"BrandButton", GameManager.begin_surgery, "BeginButton", 72)
 	_begin.set_meta(&"default", true)
 	buttons.add_child(_begin)
-	var back := UIKit.button("RE-DIAGNOSE", &"GhostButton", _show_diagnose, "PlanBackButton", 52)
+	_hand_off = UIKit.button("", &"GhostButton", func() -> void:
+		UIManager.go_to(UIManager.SCREEN_CUSTOMER, {"assign": true}), "ChangeSurgeon", 44)
+	_hand_off.tooltip_text = "Hand the job to one of your ripperdocs instead (their odds, their stress)."
+	buttons.add_child(_hand_off)
+	var back := UIKit.button("RE-DIAGNOSE", &"GhostButton", _show_diagnose, "PlanBackButton", 44)
 	buttons.add_child(back)
+	var cancel := UIKit.button("CANCEL · BACK TO THE FILE", &"GhostButton", func() -> void: UIManager.go_to(UIManager.SCREEN_CUSTOMER), "PlanCancel", 44)
+	buttons.add_child(cancel)
 
 
 func _on_back() -> void:
@@ -297,10 +307,56 @@ func _build_plan_contents() -> void:
 		var tool := "  [%s]" % String(st.tool_category).to_upper() if st.tool_category != &"" else ""
 		_plan_info.add_child(UIKit.label("%02d  %s%s" % [k + 1, st.title, tool], &"DimLabel"))
 	_begin.disabled = not bool(r["ok"])
+	_fill_preview(customer, item, surgery, r)
 	# Say why BEGIN is blocked (or that you're good to go).
 	var adv := JobVerdict.advice(customer)
 	_ready_note.text = adv["text"] if _begin.disabled or adv["level"] != &"good" else Controls.fill("Everything's ready. Keep COAG [{quick_coag}], SEDATE [{quick_sedate}] and STABIL [{quick_stabilize}] in reach.")
 	_ready_note.add_theme_color_override(&"font_color", JobVerdict.color(adv["level"]) if _begin.disabled or adv["level"] != &"good" else Palette.OK)
+
+
+## SURGERY PREVIEW: the decision on one card before you commit.
+func _fill_preview(c: CustomerData, item: CyberwareData, surgery: SurgeryData, r: Dictionary) -> void:
+	UIKit.clear(_preview)
+	var me := Recommend.self_estimate(c)
+	var d := int(item.install_difficulty) if item else 2
+	var row := func(cap: String, val: String, col: Variant = null, term: String = "") -> void:
+		var h := UIKit.hbox(6)
+		var k := UIKit.caption(cap) if term == "" else UIKit.caption(cap)
+		k.custom_minimum_size.x = 130
+		h.add_child(k)
+		var v := UIKit.label(val, &"", true, col, 15)
+		UIKit.expand(v)
+		h.add_child(v)
+		_preview.add_child(h)
+	row.call("PATIENT", c.display_name)
+	row.call("PROCEDURE", surgery.display_name)
+	row.call("DIFFICULTY", "%s  %d / 5" % [UIKit.pips(d, 5), d])
+	var risk := c.get_risk_level()
+	row.call("PATIENT RISK", ["", "✓ Low", "! Medium", "✕ High"][clampi(risk, 1, 3)], [Palette.OK, Palette.OK, Palette.WARN, Palette.DANGER][clampi(risk, 1, 3)])
+	row.call("TIME", "≈ %s of the night" % TimeManager.duration_text(TimeManager.procedure_minutes(d, c.is_emergency)))
+	var cost := surgery.supplies
+	var buy := str(r.get("implant_source", "")) == "buy"
+	row.call("COST", "%d suppl%s%s" % [cost, "y" if cost == 1 else "ies", (" + implant %s" % EconomyManager.format_money(InventoryManager.implant_price(item))) if buy and item else ""])
+	row.call("PAYMENT", "≈ %s" % EconomyManager.format_money(CustomerGenerator.estimate_fee(c)), Palette.WARN)
+	var extra := float(me["extra"])
+	var comp_text := "%d expected" % int(me["guaranteed"]) if int(me["guaranteed"]) > 0 else "none expected"
+	if extra > 0.0:
+		comp_text += " · %d%% chance of another" % roundi(extra * 100.0)
+	row.call("COMPLICATIONS", comp_text, Palette.WARN if extra >= 0.4 else null)
+	var names := Recommend.possible_complications(c)
+	if not names.is_empty():
+		row.call("COULD BE", ", ".join(names))
+	var chance := roundi(float(me["chance"]) * 100.0)
+	row.call("YOUR ODDS", "≈ %d%%  (%s%s)" % [chance, me["record"], (", " + ", ".join(me["factors"])) if not (me["factors"] as Array).is_empty() else ""],
+		Palette.OK if chance >= 75 else (Palette.WARN if chance >= 50 else Palette.DANGER))
+	var rec := Recommend.surgeon(c)
+	var best := Recommend.best_staff(c)
+	row.call("RECOMMENDED", "%s · %d%%  (%s)" % [rec["name"], roundi(float(rec["chance"]) * 100.0), rec["reason"]], Palette.ACCENT)
+	_hand_off.visible = not best.is_empty()
+	if not best.is_empty():
+		var e: Dictionary = best["employee"]
+		_hand_off.text = "CHANGE SURGEON · %s %d%%" % [str(e["name"]).get_slice(" ", 0).to_upper(), roundi(float(best["chance"]) * 100.0)]
+	_preview.add_child(UIKit.label("Estimates from the same rules the operation uses (assuming your diagnosis is right). CHANGE IMPLANT: pick a unit on the left.", &"DimLabel", true, null, 13))
 
 
 func _implant_option(i: int, inst: ImplantInstance, selected: bool, requested: CyberwareData) -> Control:

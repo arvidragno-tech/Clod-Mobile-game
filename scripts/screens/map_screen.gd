@@ -112,10 +112,15 @@ func select_location(id: StringName) -> void:
 	var people := WorldSimulationManager.people_at(id)
 	if not people.is_empty():
 		var names: Array[String] = []
+		var known := 0
 		for p: Dictionary in people:
-			names.append(str(p["name"]))
-		_info.add_child(UIKit.label("PEOPLE HERE NOW", &"SubHeaderLabel"))
-		_info.add_child(UIKit.label(", ".join(names), &"DimLabel", true))
+			var role: String = {"cast": "", "staff": "your staff", "patient": "your patient", "supplier": "supplier"}.get(str(p.get("kind", "")), "")
+			var note := str(p.get("note", ""))
+			if str(p.get("kind", "")) == "cast" or role != "":
+				known += 1
+			names.append("%s%s" % [str(p["name"]), (" — " + (note if note != "" else role)) if (note != "" or role != "") else ""])
+		_info.add_child(UIKit.label("PEOPLE HERE NOW  (%d you know)" % known, &"SubHeaderLabel"))
+		_info.add_child(UIKit.label("\n".join(names.slice(0, 6)) + ("\n+%d more" % (names.size() - 6) if names.size() > 6 else ""), &"DimLabel", true))
 	var ev := WorldSimulationManager.event_at(id)
 	if not ev.is_empty():
 		_info.add_child(UIKit.label("HAPPENING NOW: %s" % str(ev.get("title", "")), &"SubHeaderLabel", true, Palette.WARN))
@@ -126,6 +131,14 @@ func select_location(id: StringName) -> void:
 	if not sl.is_empty():
 		_info.add_child(UIKit.label("YOU CAN", &"SubHeaderLabel"))
 		_info.add_child(UIKit.label(", ".join(sl), &"DimLabel", true))
+	if id != LocationManager.CLINIC:
+		var on := Follows.is_following(Follows.key("place", String(id)))
+		var fb := UIKit.button("★ FOLLOWING" if on else "☆ FOLLOW THIS PLACE", &"AccentButton" if on else &"GhostButton", func() -> void:
+			var now := Follows.toggle("place", String(id), LocationManager.location_name(id))
+			UIManager.show_toast(("★ Following %s" if now else "Stopped following %s") % LocationManager.location_name(id), &"success" if now else &"info")
+			select_location(id), "FollowPlace", 36)
+		fb.tooltip_text = "Keep it on your journal's MAIN page and the clinic's priorities when something happens there."
+		_info.add_child(fb)
 	# Getting there.
 	var card := UIKit.panel(&"CardPanel")
 	_info.add_child(card)

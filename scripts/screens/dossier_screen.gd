@@ -1,29 +1,55 @@
 extends BaseScreen
-## The journal: quests, the comms inbox, the people in your story (with
-## relationship status and what you know of them), factions, rumours, the
-## operation record and the story so far (acts and endgame paths).
+## The unified journal. MAIN: what you follow, open objectives and the
+## latest messages (one place for "what am I doing?"). MESSAGES: the comms
+## inbox. PEOPLE: the cast and contacts. PATIENTS: everyone you treated
+## (where they are now, what they owe, what they remember). FACTIONS.
+## BUSINESS: your record and the books. DISCOVERIES: the story so far, the
+## news and rumours, the places you know, the clinic wall.
+## FOLLOW (on quests, people, patients and places) puts a thing on MAIN and
+## the clinic's priorities, so the player never has to remember it.
 
-const TABS := ["QUESTS", "COMMS", "PEOPLE", "FACTIONS", "NEWS", "PROGRESSION", "STORY", "WALL"]
-enum Tab { QUESTS, COMMS, PEOPLE, FACTIONS, RUMORS, RECORDS, STORY, WALL }
+const TABS := ["MAIN", "MESSAGES", "PEOPLE", "PATIENTS", "FACTIONS", "BUSINESS", "DISCOVERIES"]
+enum Tab { MAIN, MESSAGES, PEOPLE, PATIENTS, FACTIONS, BUSINESS, DISCOVERIES }
+const DISCOVERY_VIEWS := ["STORY", "NEWS", "PLACES", "WALL"]
+## Old tab numbers (saves, links, tests) -> [tab, discoveries view].
+const LEGACY := {0: [Tab.MAIN, ""], 1: [Tab.MESSAGES, ""], 2: [Tab.PATIENTS, ""], 3: [Tab.FACTIONS, ""],
+	4: [Tab.DISCOVERIES, "NEWS"], 5: [Tab.BUSINESS, ""], 6: [Tab.DISCOVERIES, "STORY"], 7: [Tab.DISCOVERIES, "WALL"]}
 
 var _list: GridContainer
 var _tab: int = 0
+var _view: String = "STORY"
+var _focus: String = ""
+var _scroll: ScrollContainer
 
 
 var _selected_msg: int = -1
 
 
 func on_enter(params: Dictionary) -> void:
-	_tab = int(params.get("tab", Tab.QUESTS))
+	_tab = Tab.MAIN
+	if params.has("tab_name"):
+		var n := str(params["tab_name"]).to_upper()
+		if n == "COMMS":
+			n = "MESSAGES"
+		if TABS.has(n):
+			_tab = TABS.find(n)
+	elif params.has("tab"):
+		var l: Array = LEGACY.get(int(params["tab"]), [Tab.MAIN, ""])
+		_tab = int(l[0])
+		if str(l[1]) != "":
+			_view = str(l[1])
+	if params.has("view"):
+		_view = str(params["view"]).to_upper()
+	_focus = str(params.get("focus", ""))
 	var col := UIKit.workstation(self, &"dossier")
 	col.add_child(UIKit.header("CLINIC · INTEL", "JOURNAL", GameManager.go_to_clinic))
 	var tabs := UIKit.tabs(TABS, _on_tab, "DossierTab")
 	tabs.custom_minimum_size.x = 1480
-	if _tab > 0 and _tab < tabs.get_child_count():
-		(tabs.get_child(_tab) as Button).button_pressed = true
+	(tabs.get_child(_tab) as Button).button_pressed = true
 	tabs.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	col.add_child(tabs)
 	var sc := UIKit.scroll()
+	_scroll = sc
 	col.add_child(sc)
 	_list = GridContainer.new()
 	_list.add_theme_constant_override(&"h_separation", 14)
@@ -35,23 +61,22 @@ func on_enter(params: Dictionary) -> void:
 
 func _on_tab(i: int) -> void:
 	_tab = i
+	_focus = ""
 	_rebuild()
 
 
 func _rebuild() -> void:
 	UIKit.clear(_list)
-	_list.columns = 1 if _tab == Tab.RECORDS else 2
+	_list.columns = 2
 	match _tab:
-		Tab.QUESTS:
-			_quests()
-		Tab.COMMS:
+		Tab.MAIN:
+			_main()
+		Tab.MESSAGES:
 			_comms()
 		Tab.PEOPLE:
 			_people()
-		Tab.STORY:
-			_story()
-		Tab.WALL:
-			_wall()
+		Tab.PATIENTS:
+			_patients()
 		Tab.FACTIONS:
 			_list.columns = 3
 			var heat := UIKit.panel(&"DangerPanel" if FactionManager.heat >= 35 else &"HudPanel")
@@ -60,26 +85,101 @@ func _rebuild() -> void:
 			_list.add_child(heat)
 			for id in FactionManager.order:
 				_list.add_child(_faction_card(id))
-		-1:
-			var any := false
-			for id in StoryManager.met_characters:
-				var c := CustomerManager.get_customer(id)
-				if c:
-					_list.add_child(_contact_card(c, str(CustomerManager.characters[id].get("role", "")).to_upper()))
-					any = true
-			if not any:
-				_list.add_child(UIKit.label("No contacts yet. Keep the clinic open and people will find you.", &"DimLabel", true))
-		Tab.RUMORS:
-			_news()
-			if StoryManager.unlocked_rumors.is_empty():
-				_list.add_child(UIKit.label("Nothing on the street yet.", &"DimLabel"))
-			for id in StoryManager.unlocked_rumors:
-				var card := UIKit.panel(&"CardPanel")
-				UIKit.expand(card)
-				card.add_child(UIKit.label(StoryManager.get_rumor_text(id), &"MonoLabel", true, Palette.ACCENT, 18))
-				_list.add_child(card)
-		Tab.RECORDS:
+		Tab.BUSINESS:
 			_records()
+			_list.add_child(UIKit.button("OPEN THE LEDGER  [%s]" % Controls.key_name("business"), &"AccentButton", func() -> void: UIManager.go_to(UIManager.SCREEN_BUSINESS), "OpenLedger", 48))
+		Tab.DISCOVERIES:
+			_discoveries()
+	if _focus != "":
+		_focus_card.call_deferred()
+
+
+## Scrolls to (and lights up) the card the caller asked for.
+func _focus_card() -> void:
+	var n := _list.find_child("Patient_%s" % _focus, true, false) as Control
+	if n == null:
+		n = _list.find_child("Person_%s" % _focus, true, false) as Control
+	if n and _scroll:
+		_scroll.ensure_control_visible(n)
+		if n is PanelContainer:
+			(n as PanelContainer).theme_type_variation = &"AccentPanel"
+
+
+## A FOLLOW / FOLLOWING toggle for anything with a when or a where.
+func _follow_button(kind: String, ref: String, title: String) -> Button:
+	var on := Follows.is_following(Follows.key(kind, ref))
+	var b := UIKit.button("★ FOLLOWING" if on else "☆ FOLLOW", &"AccentButton" if on else &"GhostButton", Callable(), "Follow_%s_%s" % [kind, ref], 34)
+	b.tooltip_text = "Keep this on your MAIN page and the clinic's priorities (where, when, what's left)."
+	b.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	b.pressed.connect(func() -> void:
+		var now := Follows.toggle(kind, ref, title)
+		UIManager.show_toast(("★ Following %s" if now else "Stopped following %s") % title, &"success" if now else &"info")
+		_rebuild.call_deferred())
+	return b
+
+
+# --- MAIN ----------------------------------------------------------------------------
+
+func _main() -> void:
+	_list.columns = 2
+	# Following: live where/when for everything you asked the game to remember.
+	var fol := UIKit.panel(&"AccentPanel")
+	fol.name = "Following"
+	UIKit.expand(fol)
+	_list.add_child(fol)
+	var fv := UIKit.vbox(6)
+	fol.add_child(fv)
+	fv.add_child(UIKit.section_head("FOLLOWING", "where and when, kept up to date"))
+	var live := Follows.live()
+	if live.is_empty():
+		fv.add_child(UIKit.label("Nothing followed. Use ☆ FOLLOW on a quest, a person, a patient or a place, and it shows up here with where to find it.", &"DimLabel", true))
+	for f: Dictionary in live:
+		var row := UIKit.hbox(8)
+		fv.add_child(row)
+		var link: Dictionary = f["link"]
+		var txt := "%s %s  ·  %s%s" % ["◆" if bool(f["soon"]) else "◇", str(f["title"]), str(f["detail"]) if str(f["detail"]) != "" else "", (" · " + str(f["when"])) if str(f["when"]) != "" else ""]
+		var b := UIKit.button(txt, &"GhostButton", func() -> void: Nav.open(link), "Followed_%s" % str(f["id"]).replace(":", "_"), 36)
+		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		b.clip_text = true
+		b.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		b.tooltip_text = txt + ("\nClick to go there." if Nav.can_open(link) else "")
+		b.disabled = not Nav.can_open(link)
+		UIKit.expand(b)
+		row.add_child(b)
+		var fid := str(f["id"])
+		row.add_child(UIKit.button("✕", &"GhostButton", func() -> void:
+			Follows.unfollow(fid)
+			_rebuild.call_deferred(), "Unfollow_%s" % fid.replace(":", "_"), 36))
+	# Messages that still need an answer.
+	var msg := UIKit.panel(&"CardPanel")
+	UIKit.expand(msg)
+	_list.add_child(msg)
+	var mv := UIKit.vbox(6)
+	msg.add_child(mv)
+	mv.add_child(UIKit.section_head("MESSAGES", "%d unread" % CommsManager.unread_count()))
+	var shown := 0
+	var inbox := CommsManager.inbox.duplicate()
+	inbox.reverse()
+	for m: Dictionary in inbox:
+		var needs := not bool(m["read"]) or ((m.get("actions", []) as Array).size() > 0 and int(m["resolved"]) < 0)
+		if not needs:
+			continue
+		var uid := int(m["uid"])
+		var b := UIKit.button("%s %s · %s" % ["●" if not bool(m["read"]) else "○", CommsManager.sender_name(m), str(m["subject"])], &"GhostButton", func() -> void:
+			_selected_msg = uid
+			_tab = Tab.MESSAGES
+			_rebuild(), "MainMsg_%d" % uid, 36)
+		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		b.clip_text = true
+		b.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		mv.add_child(b)
+		shown += 1
+		if shown >= 6:
+			break
+	if shown == 0:
+		mv.add_child(UIKit.label("Nothing waiting for an answer.", &"DimLabel"))
+	# Objectives: active quests first, the rest after.
+	_quests()
 
 
 func _faction_card(id: StringName) -> Control:
@@ -178,12 +278,24 @@ func _records() -> void:
 # --- Quests ------------------------------------------------------------------------
 
 func _quests() -> void:
-	_list.columns = 2
 	var any := false
-	for state: String in ["active", "completed", "failed"]:
+	for id in QuestManager.by_state("active"):
+		_list.add_child(_quest_card(id, "active"))
+		any = true
+	var done: Array[String] = []
+	for state: String in ["completed", "failed"]:
 		for id in QuestManager.by_state(state):
-			_list.add_child(_quest_card(id, state))
-			any = true
+			done.append("%s %s" % ["✓" if state == "completed" else "✕", str(QuestManager.get_quest(id)["title"])])
+	if not done.is_empty():
+		var card := UIKit.panel(&"CardPanel")
+		UIKit.expand(card)
+		var v := UIKit.vbox(3)
+		card.add_child(v)
+		v.add_child(UIKit.section_head("FINISHED", "%d" % done.size()))
+		for d in done:
+			v.add_child(UIKit.label(d, &"DimLabel", true, null, 14))
+		_list.add_child(card)
+		any = true
 	if not any:
 		_list.add_child(UIKit.label("No work on the board yet.", &"DimLabel"))
 
@@ -213,6 +325,8 @@ func _quest_card(id: StringName, state: String) -> Control:
 	var giver := StringName(str(q.get("giver", "")))
 	if CharacterManager.has_character(giver):
 		v.add_child(UIKit.label("From %s" % CharacterManager.get_character(giver).display_name, &"DimLabel", false, null, 13))
+	if state == "active":
+		v.add_child(_follow_button("quest", String(id), str(q["title"])))
 	return card
 
 
@@ -297,15 +411,50 @@ func _people() -> void:
 		if c:
 			_list.add_child(_contact_card(c, str(CustomerManager.characters[id].get("role", "")).to_upper()))
 			any = true
-	# Patients: everyone who keeps coming back, or holds a grudge.
-	var pats: Array = PeopleManager.people.values().filter(func(p: Dictionary) -> bool:
-		return int(p.get("visits", 0)) >= 1 or absi(int(p.get("rel", 0))) >= 15 or PeopleManager.owed_by(StringName(str(p["id"]))) > 0)
-	pats.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return absi(int(a["rel"])) + int(a["visits"]) * 8 > absi(int(b["rel"])) + int(b["visits"]) * 8)
-	for p: Dictionary in pats.slice(0, 24):
-		_list.add_child(_patient_card(p))
-		any = true
 	if not any:
-		_list.add_child(UIKit.label("Nobody important knows your name yet.", &"DimLabel", true))
+		_list.add_child(UIKit.label("Nobody important knows your name yet. Your patients are under PATIENTS.", &"DimLabel", true))
+
+
+const PATIENT_FILTERS := ["ALL", "OWES YOU", "DUE BACK", "LOYAL", "HOSTILE", "FOLLOWED"]
+var _pfilter: int = 0
+
+
+## Everyone you treated, with quick filters (smart filters for patients).
+func _patients() -> void:
+	_list.columns = 2
+	var chips := UIKit.hbox(6)
+	chips.name = "PatientFilters"
+	_list.add_child(chips)
+	_list.add_child(Control.new())
+	for i in PATIENT_FILTERS.size():
+		var b := UIKit.button(PATIENT_FILTERS[i], &"TabButton", func() -> void:
+			_pfilter = i
+			_rebuild(), "PFilter_%d" % i, 36)
+		b.toggle_mode = true
+		b.button_pressed = i == _pfilter
+		chips.add_child(b)
+	var pats: Array = PeopleManager.people.values().filter(func(p: Dictionary) -> bool:
+		var id := StringName(str(p["id"]))
+		var base := int(p.get("visits", 0)) >= 1 or absi(int(p.get("rel", 0))) >= 15 or PeopleManager.owed_by(id) > 0
+		if not base:
+			return false
+		match _pfilter:
+			1:
+				return PeopleManager.owed_by(id) > 0
+			2:
+				return int(p.get("next_day", -1)) >= 0 and int(p["next_day"]) <= BusinessManager.day + 1
+			3:
+				return PeopleManager.rel_state(id) in ["loyal", "grateful", "friendly"]
+			4:
+				return PeopleManager.rel_state(id) in ["hostile", "wary"]
+			5:
+				return Follows.is_following(Follows.key("person", String(id)))
+		return true)
+	pats.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return absi(int(a["rel"])) + int(a["visits"]) * 8 > absi(int(b["rel"])) + int(b["visits"]) * 8)
+	for p: Dictionary in pats.slice(0, 30):
+		_list.add_child(_patient_card(p))
+	if pats.is_empty():
+		_list.add_child(UIKit.label("Nobody here yet." if _pfilter == 0 else "Nobody matches %s." % PATIENT_FILTERS[_pfilter], &"DimLabel", true))
 
 
 func _patient_card(p: Dictionary) -> Control:
@@ -343,6 +492,7 @@ func _patient_card(p: Dictionary) -> Control:
 		v.add_child(UIKit.label("Owes you %d cr" % PeopleManager.owed_by(id), &"DimLabel", true, Palette.WARN, 13))
 	if status == "alive":
 		v.add_child(UIKit.label(_whereabouts(p), &"DimLabel", true, Palette.TEXT_DIM, 12))
+		v.add_child(_follow_button("person", str(p["id"]), str(p["name"])))
 	elif status == "missing":
 		v.add_child(UIKit.label("Missing. Their family asked you for help: start at their home.", &"DimLabel", true, Palette.WARN, 12))
 	return card
@@ -362,6 +512,7 @@ func _whereabouts(p: Dictionary) -> String:
 func _person_card(id: StringName) -> Control:
 	var c := CharacterManager.get_character(id)
 	var card := UIKit.panel(&"CardPanel")
+	card.name = "Person_%s" % String(id)
 	UIKit.expand(card)
 	var row := UIKit.hbox(12)
 	card.add_child(row)
@@ -382,7 +533,66 @@ func _person_card(id: StringName) -> Control:
 	var ev := CharacterManager.appearance_events(id)
 	if not ev.is_empty():
 		v.add_child(UIKit.label("Changed: %s" % ", ".join(ev.map(func(x: Variant) -> String: return str(x).replace("_", " "))), &"DimLabel", true, Palette.WARN, 12))
+	var at := WorldSimulationManager.where_is_cast(id)
+	v.add_child(UIKit.label("Now: %s" % (LocationManager.location_name(at) if at != &"" else "not out right now (people keep hours)"), &"DimLabel", true, Palette.TEXT_DIM, 12))
+	v.add_child(_follow_button("cast", String(id), c.display_name))
 	return card
+
+
+# --- Discoveries ---------------------------------------------------------------------
+
+func _discoveries() -> void:
+	var chips := UIKit.hbox(6)
+	chips.name = "DiscoveryViews"
+	_list.add_child(chips)
+	_list.add_child(Control.new())
+	for v in DISCOVERY_VIEWS:
+		var b := UIKit.button(v, &"TabButton", func() -> void:
+			_view = v
+			_rebuild(), "View_%s" % v, 36)
+		b.toggle_mode = true
+		b.button_pressed = v == _view
+		chips.add_child(b)
+	match _view:
+		"NEWS":
+			_news()
+			if StoryManager.unlocked_rumors.is_empty():
+				_list.add_child(UIKit.label("Nothing on the street yet.", &"DimLabel"))
+			for id in StoryManager.unlocked_rumors:
+				var card := UIKit.panel(&"CardPanel")
+				UIKit.expand(card)
+				card.add_child(UIKit.label(StoryManager.get_rumor_text(id), &"MonoLabel", true, Palette.ACCENT, 18))
+				_list.add_child(card)
+		"PLACES":
+			_places()
+		"WALL":
+			var holder := _list
+			_wall()
+			holder.columns = maxi(2, holder.columns)
+		_:
+			_story()
+
+
+## The places you know: what they are, what's going on, FOLLOW.
+func _places() -> void:
+	for id in LocationManager.known_locations():
+		var card := UIKit.panel(&"CardPanel")
+		card.name = "Place_%s" % String(id)
+		UIKit.expand(card)
+		var v := UIKit.vbox(3)
+		card.add_child(v)
+		v.add_child(UIKit.label(LocationManager.location_name(id).to_upper(), &"SubHeaderLabel", true, Palette.ACCENT))
+		v.add_child(UIKit.label("%s · %s · %s" % [LocationManager.type_label(id), LocationManager.hours_text(id), WorldSimulationManager.state_label(id)], &"DimLabel", true, null, 13))
+		var ev := WorldSimulationManager.event_at(id)
+		if not ev.is_empty():
+			v.add_child(UIKit.label("HAPPENING NOW: %s" % str(ev.get("title", "")), &"DimLabel", true, Palette.WARN, 13))
+		var row := UIKit.hbox(8)
+		v.add_child(row)
+		var loc := id
+		row.add_child(UIKit.button("SHOW ON MAP", &"GhostButton", func() -> void: Nav.open({"location": loc}), "PlaceMap_%s" % String(id), 34))
+		if String(id) != "clinic":
+			row.add_child(_follow_button("place", String(id), LocationManager.location_name(id)))
+		_list.add_child(card)
 
 
 # --- Story ---------------------------------------------------------------------------
