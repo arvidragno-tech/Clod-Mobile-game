@@ -1,0 +1,111 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/screens/main.gd" id="1_main"]
+[ext_resource type="Shader" path="res://assets/shaders/crt_overlay.gdshader" id="2_crt"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_crt"]
+shader = ExtResource("2_crt")
+shader_parameter/scanline_strength = 0.07
+shader_parameter/vignette_strength = 0.35
+shader_parameter/noise_strength = 0.025
+
+[node name="Main" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_main")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.027, 0.031, 0.047, 1)
+
+[node name="Frame" type="MarginContainer" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="ScreenHost" type="Control" parent="Frame"]
+unique_name_in_owner = true
+clip_contents = true
+layout_mode = 2
+mouse_filter = 2
+
+[node name="OverlayLayer" type="CanvasLayer" parent="."]
+layer = 10
+
+[node name="Flash" type="ColorRect" parent="OverlayLayer"]
+unique_name_in_owner = true
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(1, 0.3, 0.3, 0)
+
+[node name="Overlay" type="MarginContainer" parent="OverlayLayer"]
+unique_name_in_owner = true
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="ModalHost" type="Control" parent="OverlayLayer/Overlay"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+
+[node name="ToastMargin" type="MarginContainer" parent="OverlayLayer/Overlay"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 600
+theme_override_constants/margin_top = 150
+theme_override_constants/margin_right = 600
+
+[node name="ToastBox" type="VBoxContainer" parent="OverlayLayer/Overlay/ToastMargin"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 0
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="TransitionLayer" type="CanvasLayer" parent="."]
+layer = 50
+
+[node name="Fade" type="ColorRect" parent="TransitionLayer"]
+unique_name_in_owner = true
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.027, 0.031, 0.047, 1)
+
+[node name="CrtLayer" type="CanvasLayer" parent="."]
+layer = 100
+
+[node name="CrtOverlay" type="ColorRect" parent="CrtLayer"]
+material = SubResource("ShaderMaterial_crt")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2

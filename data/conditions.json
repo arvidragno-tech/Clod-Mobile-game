@@ -1,0 +1,93 @@
+{
+ "conditions": [
+  {
+   "id": "clotting_disorder",
+   "name": "Clotting disorder",
+   "scan_region": "chest",
+   "reveal_difficulty": 0.4,
+   "hint": "Abnormal platelet count in circulating blood.",
+   "description": "Bleeds heavily.",
+   "modifiers": {
+    "bleed": 0.4
+   }
+  },
+  {
+   "id": "nerve_degeneration",
+   "name": "Nerve degeneration",
+   "scan_region": "neck",
+   "reveal_difficulty": 0.5,
+   "hint": "Myelin thinning along the spinal relay.",
+   "description": "Neural link destabilises faster.",
+   "modifiers": {
+    "neural_sensitivity": 0.3
+   }
+  },
+  {
+   "id": "sedative_resistance",
+   "name": "Sedative resistance",
+   "scan_region": "head",
+   "reveal_difficulty": 0.45,
+   "hint": "Receptor desensitisation from long-term downer use.",
+   "description": "Needs a bigger sedation dose.",
+   "modifiers": {
+    "pain_tolerance": -0.3
+   }
+  },
+  {
+   "id": "cardiac_weakness",
+   "name": "Cardiac weakness",
+   "scan_region": "chest",
+   "reveal_difficulty": 0.35,
+   "hint": "Irregular heart rhythm under load.",
+   "description": "Health drops faster when bleeding.",
+   "modifiers": {
+    "health_drain": 0.4
+   }
+  },
+  {
+   "id": "counterfeit_implant",
+   "name": "Counterfeit implant",
+   "scan_region": "arms",
+   "reveal_difficulty": 0.6,
+   "hint": "Existing chrome carries a forged serial and a cheap controller.",
+   "description": "Hidden neural load from fake chrome.",
+   "modifiers": {
+    "neural_load": 12
+   }
+  },
+  {
+   "id": "rejection_prone",
+   "name": "Rejection-prone immune system",
+   "scan_region": "chest",
+   "reveal_difficulty": 0.55,
+   "hint": "Elevated antibodies against synthetic polymers.",
+   "description": "Implants may trigger rejection spasms.",
+   "modifiers": {
+    "complication_risk": 0.3
+   }
+  },
+  {
+   "id": "stim_addiction",
+   "name": "Stim addiction",
+   "scan_region": "head",
+   "reveal_difficulty": 0.3,
+   "hint": "Stimulant residue and adrenal exhaustion.",
+   "description": "Tolerates pain, but the neural link starts weaker.",
+   "modifiers": {
+    "pain_tolerance": 0.3,
+    "start_neural": -12
+   }
+  },
+  {
+   "id": "old_infection",
+   "name": "Old infection",
+   "scan_region": "legs",
+   "reveal_difficulty": 0.35,
+   "hint": "Low-grade infection around an old wound.",
+   "description": "Higher chance of post-op complications.",
+   "modifiers": {
+    "post_op": 0.15
+   }
+  }
+ ]
+}

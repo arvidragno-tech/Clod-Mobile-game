@@ -1,0 +1,35 @@
+{
+ "_doc": "Clinic life (ClinicLifeManager): small things that happen while the clock moves, shown as a caption in the room. needs: staff (an employee at this clinic, {staff}), waiting (someone in the waiting room, {patient}), periods, min_heat. effects: supplies, parts, money, dims, heat, stress (all staff here), patience (waiting room, minutes). Weights, not rules. Also the waiting room rules and the Clinic Wall.",
+ "chance_per_hour": 0.55,
+ "waiting": {"base_capacity": 1, "per_customer_upgrade": 1, "walk_in_per_hour": 0.35, "base_wait": 40, "wait_per_patience": 1.6},
+ "rivals": [["street_gangs", "corporate_security"], ["street_gangs", "medical_authorities"], ["black_market", "corporate_security"], ["independent_mercs", "street_gangs"], ["lyra_biocomp", "street_gangs"]],
+ "vignettes": [
+  {"id": "lunch", "weight": 3, "periods": ["day"], "needs": "staff", "text": "{staff} eats cold noodles over the sink between patients."},
+  {"id": "coffee", "weight": 2, "periods": ["morning"], "needs": "staff", "text": "{staff} brews something that smells like coolant and calls it coffee.", "effects": {"stress": -3}},
+  {"id": "nap", "weight": 2, "periods": ["late_night"], "needs": "staff", "text": "{staff} dozes upright against the autoclave.", "effects": {"stress": -4}},
+  {"id": "sleeping_patient", "weight": 3, "periods": ["night", "late_night"], "needs": "waiting", "text": "{patient} has fallen asleep on the bench, mouth open, chrome ticking."},
+  {"id": "waiting_talk", "weight": 3, "needs": "waiting", "text": "{patient} tells nobody in particular about the first time they got chromed."},
+  {"id": "complaint", "weight": 2, "needs": "waiting", "text": "{patient} complains loudly about the wait and the smell.", "effects": {"dims": {"civilian": -1}, "patience": -10}},
+  {"id": "fixer_smoke", "weight": 2, "periods": ["evening", "night"], "text": "A fixer smokes in the alley outside, watching who comes and goes."},
+  {"id": "delivery", "weight": 2, "periods": ["morning", "day"], "text": "A courier drops a crate of sterile packs on the step and doesn't wait for a signature.", "effects": {"supplies": 1}},
+  {"id": "scrap_drop", "weight": 1, "periods": ["night", "late_night"], "text": "Someone leaves a bag of salvaged servos by the door. No note.", "effects": {"parts": 1}},
+  {"id": "repair", "weight": 2, "needs": "staff", "text": "{staff} re-solders the flickering lamp with the patient tray as a ladder."},
+  {"id": "argument_outside", "weight": 2, "periods": ["night", "late_night"], "text": "Shouting outside. A bottle breaks. Then nothing."},
+  {"id": "drip", "weight": 2, "text": "The pipe over the table drips again. Somebody puts a cup under it."},
+  {"id": "patrol", "weight": 2, "periods": ["day", "evening"], "min_heat": 25, "text": "A patrol drone hovers at the window a little too long.", "effects": {"heat": 1}},
+  {"id": "kid_outside", "weight": 1, "periods": ["day", "evening"], "text": "A kid presses their face to the glass, staring at the chrome on the shelf."},
+  {"id": "power_dip", "weight": 1, "text": "The power dips. The monitors reboot one by one, complaining."},
+  {"id": "staff_laugh", "weight": 2, "needs": "staff", "text": "{staff} laughs at something on their deck. First time today.", "effects": {"stress": -2}}
+ ],
+ "wall": {
+  "max": 24,
+  "kinds": {
+   "milestone": {"color": [0.85, 0.8, 0.62], "label": "Note"},
+   "patient": {"color": [0.75, 0.75, 0.8], "label": "Photo"},
+   "clipping": {"color": [0.7, 0.68, 0.6], "label": "Clipping"},
+   "wanted": {"color": [0.85, 0.25, 0.25], "label": "Wanted notice"},
+   "faction": {"color": [0.3, 0.8, 0.75], "label": "Symbol"},
+   "loss": {"color": [0.25, 0.25, 0.3], "label": "Name scratched in"}
+  }
+ }
+}

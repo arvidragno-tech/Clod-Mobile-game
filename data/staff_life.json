@@ -1,0 +1,672 @@
+{
+ "_doc": "Staff personal lives (StaffLifeManager). Each employee gets a family, money situation, fear and dream. Events fire at the start of a day (at most one), delivered as COMMS with choices. kind single = one employee {name}; pair = two at the same clinic {name} and {other}. cond keys: family, money, ethics_any, trait_any, spec_any, min_stress, min_rel, max_rel, bond, counter (story counter > 0), min_jobs. staff effects: a / b: loyalty, stress, rest, appearance, memory, life (set life fields), ethic (add); bond: state for the pair; rel: change between the pair. effects: StoryManager effects (money, rep, heat, dims, supplies).",
+ "families": {
+  "none": {
+   "label": "Nobody. Says that's how they like it.",
+   "weight": 3
+  },
+  "sister": {
+   "label": "A kid sister in the Sump they put through school",
+   "weight": 2,
+   "who": "sister"
+  },
+  "father": {
+   "label": "An old father with a failing lung",
+   "weight": 2,
+   "who": "father"
+  },
+  "kid": {
+   "label": "A kid, and an ex who wants more money",
+   "weight": 2,
+   "who": "kid"
+  },
+  "partner": {
+   "label": "A partner who works corporate security",
+   "weight": 1,
+   "who": "partner"
+  },
+  "crew": {
+   "label": "An old gang crew they still drink with",
+   "weight": 1,
+   "who": "old crew"
+  }
+ },
+ "money": {
+  "comfortable": {
+   "label": "Comfortable",
+   "weight": 2
+  },
+  "saving": {
+   "label": "Saving every credit to leave the city",
+   "weight": 3
+  },
+  "sending": {
+   "label": "Sends most of their pay home",
+   "weight": 3
+  },
+  "debt": {
+   "label": "Owes a loan shark",
+   "weight": 2
+  }
+ },
+ "fears": [
+  "Corporate security finding their old file",
+  "Dying on someone else's table",
+  "Losing their hands",
+  "The gangs that run their block",
+  "Turning into the chrome they install",
+  "Being found out"
+ ],
+ "dreams": [
+  "Their own clinic, uptown",
+  "A licence, a real one",
+  "Enough money to vanish",
+  "Building something that doesn't kill people",
+  "Being the best cutter in the city",
+  "Getting their family out of the Sump"
+ ],
+ "bond_states": {
+  "loyal": {
+   "label": "Loyal",
+   "color": "ok"
+  },
+  "friendly": {
+   "label": "Friendly",
+   "color": "ok"
+  },
+  "involved": {
+   "label": "Involved",
+   "color": "brand"
+  },
+  "respectful": {
+   "label": "Respectful",
+   "color": "ok"
+  },
+  "professional": {
+   "label": "Professional",
+   "color": "dim"
+  },
+  "competitive": {
+   "label": "Competitive",
+   "color": "warn"
+  },
+  "suspicious": {
+   "label": "Suspicious",
+   "color": "warn"
+  },
+  "fearful": {
+   "label": "Fearful",
+   "color": "warn"
+  },
+  "resentful": {
+   "label": "Resentful",
+   "color": "danger"
+  }
+ },
+ "events": [
+  {
+   "id": "family_emergency",
+   "kind": "single",
+   "weight": 3,
+   "cond": {
+    "family": [
+     "sister",
+     "father",
+     "kid"
+    ]
+   },
+   "subject": "{name} needs tomorrow",
+   "body": "{name} catches you by the sink. \"My {who} is in the ward on Kessler. They won't treat without a deposit. I need tomorrow, doc.\"",
+   "actions": [
+    {
+     "label": "TAKE THE DAY",
+     "staff": {
+      "a": {
+       "rest": true,
+       "loyalty": 8
+      }
+     }
+    },
+    {
+     "label": "PAY THE DEPOSIT (200)",
+     "effects": {
+      "money": -200
+     },
+     "staff": {
+      "a": {
+       "loyalty": 18,
+       "stress": -15,
+       "memory": "PLAYER_SAVED_EMPLOYEE"
+      }
+     }
+    },
+    {
+     "label": "I NEED YOU HERE",
+     "staff": {
+      "a": {
+       "loyalty": -12,
+       "stress": 15
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "loan_shark",
+   "kind": "single",
+   "weight": 3,
+   "cond": {
+    "money": [
+     "debt"
+    ]
+   },
+   "subject": "Men outside, asking for {name}",
+   "body": "Two men in long coats lean on your door. \"{name} owes us three hundred. We can wait. Not long.\" {name} won't look at you.",
+   "actions": [
+    {
+     "label": "PAY THEM (300)",
+     "effects": {
+      "money": -300
+     },
+     "staff": {
+      "a": {
+       "loyalty": 22,
+       "stress": -20,
+       "memory": "PLAYER_SAVED_EMPLOYEE",
+       "life": {
+        "money": "sending"
+       }
+      }
+     }
+    },
+    {
+     "label": "TELL THEM TO LEAVE",
+     "effects": {
+      "heat": 2,
+      "dims": {
+       "criminal": -1
+      }
+     },
+     "staff": {
+      "a": {
+       "loyalty": 6,
+       "stress": 10,
+       "appearance": "injury"
+      }
+     }
+    },
+    {
+     "label": "NOT MY PROBLEM",
+     "staff": {
+      "a": {
+       "loyalty": -15,
+       "stress": 20,
+       "life": {
+        "desperate": true
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "illegal_discomfort",
+   "kind": "single",
+   "weight": 4,
+   "cond": {
+    "ethics_any": [
+     "no_harvest",
+     "no_minors"
+    ],
+    "counter": "bm_install"
+   },
+   "subject": "{name} closes the door",
+   "body": "\"The chrome we put in today had no serial. Somebody died for it, probably. I didn't sign up to be a fence with a scalpel.\"",
+   "actions": [
+    {
+     "label": "BONUS TO KEEP QUIET (80)",
+     "effects": {
+      "money": -80
+     },
+     "staff": {
+      "a": {
+       "loyalty": 4,
+       "stress": 5
+      }
+     }
+    },
+    {
+     "label": "IT PAYS YOUR WAGES",
+     "staff": {
+      "a": {
+       "loyalty": -10,
+       "stress": 10
+      }
+     }
+    },
+    {
+     "label": "SIT THOSE JOBS OUT",
+     "staff": {
+      "a": {
+       "loyalty": 10,
+       "stress": -10,
+       "ethic": "no_harvest",
+       "memory": "PLAYER_KEPT_PROMISE"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "gang_clients",
+   "kind": "single",
+   "weight": 4,
+   "cond": {
+    "dim": {
+     "criminal": 15
+    },
+    "ethics_any": [
+     "no_harvest",
+     "no_minors",
+     "no_corps"
+    ]
+   },
+   "subject": "{name} counts the crew colours",
+   "body": "\"Half the people on that bench wear crew colours now. Corporate security parked outside twice this week. I've got family, doc.\"",
+   "actions": [
+    {
+     "label": "WE TREAT WHOEVER COMES",
+     "staff": {
+      "a": {
+       "loyalty": -6,
+       "stress": 10
+      }
+     }
+    },
+    {
+     "label": "PAY FOR THEIR NERVES (100)",
+     "effects": {
+      "money": -100
+     },
+     "staff": {
+      "a": {
+       "loyalty": 5,
+       "stress": -5
+      }
+     }
+    },
+    {
+     "label": "TURN THE CREWS AWAY FOR A WHILE",
+     "effects": {
+      "dims": {
+       "criminal": -5,
+       "civilian": 2
+      },
+      "faction": {
+       "street_gangs": -3
+      }
+     },
+     "staff": {
+      "a": {
+       "loyalty": 10,
+       "memory": "PLAYER_KEPT_PROMISE"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "chrome_obsession",
+   "kind": "single",
+   "weight": 2,
+   "cond": {
+    "spec_any": [
+     "experimental",
+     "neural",
+     "military"
+    ]
+   },
+   "subject": "{name} wants a prototype",
+   "body": "{name} turns a prototype optic over in their fingers. \"Unregistered, faster than anything uptown. I'd be a better surgeon with it. Let me put it in. Tonight.\"",
+   "actions": [
+    {
+     "label": "DO IT",
+     "staff": {
+      "a": {
+       "appearance": "cyber:twin_optics",
+       "precision": 1,
+       "stress": 15,
+       "loyalty": 5
+      }
+     }
+    },
+    {
+     "label": "I'LL DO IT MYSELF (2 SUPPLIES)",
+     "effects": {
+      "supplies": -2
+     },
+     "staff": {
+      "a": {
+       "appearance": "cyber:twin_optics",
+       "precision": 1,
+       "loyalty": 12,
+       "memory": "PLAYER_INSTALLED_CYBERWARE"
+      }
+     }
+    },
+    {
+     "label": "NOT IN YOUR HEAD",
+     "staff": {
+      "a": {
+       "loyalty": -6
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "burnout",
+   "kind": "single",
+   "weight": 3,
+   "cond": {
+    "min_stress": 65
+   },
+   "subject": "{name} is shaking",
+   "body": "{name}'s hands won't stay still over the tray. They haven't slept in two days and they're pretending it's the coffee.",
+   "actions": [
+    {
+     "label": "SEND THEM HOME",
+     "staff": {
+      "a": {
+       "rest": true,
+       "stress": -10,
+       "loyalty": 6
+      }
+     }
+    },
+    {
+     "label": "STIMS. BACK TO WORK",
+     "staff": {
+      "a": {
+       "stress": -25,
+       "loyalty": -6,
+       "appearance": "expr:fear",
+       "life": {
+        "stims": true
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "good_news",
+   "kind": "single",
+   "weight": 2,
+   "cond": {
+    "family": [
+     "sister",
+     "kid"
+    ]
+   },
+   "subject": "Synth-cake in the prep room",
+   "body": "{name}'s {who} passed the academy exam. There's synth-cake on the instrument tray and nobody is complaining.",
+   "actions": [
+    {
+     "label": "CONGRATULATIONS",
+     "staff": {
+      "a": {
+       "loyalty": 3,
+       "stress": -15
+      },
+      "all": {
+       "stress": -6
+      }
+     }
+    },
+    {
+     "label": "GET THAT OFF MY TRAY",
+     "staff": {
+      "a": {
+       "loyalty": -4
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "partner_corp",
+   "kind": "single",
+   "weight": 1,
+   "cond": {
+    "family": [
+     "partner"
+    ],
+    "counter": "bm_install"
+   },
+   "subject": "{name}'s partner asks questions",
+   "body": "{name}'s partner works corporate security. Last night they asked where all the unregistered chrome is coming from. {name} looks scared.",
+   "actions": [
+    {
+     "label": "TELL THEM TO LIE",
+     "staff": {
+      "a": {
+       "stress": 15,
+       "loyalty": 4,
+       "memory": "PLAYER_KEPT_SECRET"
+      }
+     }
+    },
+    {
+     "label": "LET THEM TALK",
+     "effects": {
+      "heat": 6,
+      "dims": {
+       "corporate": 2
+      }
+     },
+     "staff": {
+      "a": {
+       "loyalty": -4
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "argument",
+   "kind": "pair",
+   "weight": 4,
+   "cond": {
+    "max_rel": -5
+   },
+   "subject": "Shouting in the prep room",
+   "body": "{name} and {other} are shouting about who botched the last suture. Everyone in the waiting room can hear it.",
+   "actions": [
+    {
+     "label": "SIDE WITH {NAME}",
+     "staff": {
+      "a": {
+       "loyalty": 5
+      },
+      "b": {
+       "loyalty": -8,
+       "stress": 8
+      },
+      "bond": "resentful",
+      "rel": -10
+     }
+    },
+    {
+     "label": "SIDE WITH {OTHER}",
+     "staff": {
+      "a": {
+       "loyalty": -8,
+       "stress": 8
+      },
+      "b": {
+       "loyalty": 5
+      },
+      "bond": "resentful",
+      "rel": -10
+     }
+    },
+    {
+     "label": "BOTH OF YOU. OUTSIDE.",
+     "staff": {
+      "a": {
+       "stress": 5
+      },
+      "b": {
+       "stress": 5
+      },
+      "bond": "professional",
+      "rel": 12
+     }
+    }
+   ]
+  },
+  {
+   "id": "rivalry",
+   "kind": "pair",
+   "weight": 2,
+   "cond": {
+    "trait_any": [
+     "ambitious",
+     "perfectionist"
+    ],
+    "min_rel": -30,
+    "max_rel": 30
+   },
+   "subject": "Two surgeons, one chair",
+   "body": "{name} timed {other}'s last install and pinned the number on the wall. {other} has started coming in an hour early.",
+   "actions": [
+    {
+     "label": "LET THEM COMPETE",
+     "staff": {
+      "a": {
+       "stress": 5
+      },
+      "b": {
+       "stress": 5
+      },
+      "bond": "competitive",
+      "xp": 30
+     }
+    },
+    {
+     "label": "TAKE THE NUMBER DOWN",
+     "staff": {
+      "bond": "professional",
+      "rel": 5
+     }
+    }
+   ]
+  },
+  {
+   "id": "romance",
+   "kind": "pair",
+   "weight": 3,
+   "cond": {
+    "min_rel": 35
+   },
+   "subject": "{name} and {other}",
+   "body": "{name} and {other} have been leaving together. They think nobody noticed. Everybody noticed.",
+   "actions": [
+    {
+     "label": "NONE OF MY BUSINESS",
+     "staff": {
+      "a": {
+       "stress": -10,
+       "loyalty": 3
+      },
+      "b": {
+       "stress": -10,
+       "loyalty": 3
+      },
+      "bond": "involved",
+      "rel": 15
+     }
+    },
+    {
+     "label": "NOT IN MY CLINIC",
+     "staff": {
+      "a": {
+       "loyalty": -6
+      },
+      "b": {
+       "loyalty": -6
+      },
+      "bond": "resentful"
+     }
+    }
+   ]
+  },
+  {
+   "id": "breakup",
+   "kind": "pair",
+   "weight": 3,
+   "cond": {
+    "bond": "involved"
+   },
+   "subject": "{name} and {other} aren't speaking",
+   "body": "Whatever {name} and {other} had is over. They pass instruments without looking at each other and the patients can feel it.",
+   "actions": [
+    {
+     "label": "SPLIT THEIR SHIFTS",
+     "staff": {
+      "a": {
+       "stress": -5
+      },
+      "b": {
+       "stress": -5
+      },
+      "bond": "professional",
+      "rel": -20
+     }
+    },
+    {
+     "label": "THEY'LL GET OVER IT",
+     "staff": {
+      "a": {
+       "stress": 12
+      },
+      "b": {
+       "stress": 12
+      },
+      "bond": "resentful",
+      "rel": -30
+     }
+    }
+   ]
+  },
+  {
+   "id": "suspicion",
+   "kind": "pair",
+   "weight": 2,
+   "cond": {
+    "b_secret": true
+   },
+   "subject": "{name} has a theory",
+   "body": "{name} says {other} makes calls from the alley after every black-market job. \"Somebody's listening to us, doc.\"",
+   "actions": [
+    {
+     "label": "LOOK INTO IT",
+     "staff": {
+      "bond": "suspicious",
+      "reveal_b": true
+     }
+    },
+    {
+     "label": "DROP IT",
+     "staff": {
+      "a": {
+       "loyalty": -5
+      },
+      "bond": "suspicious"
+     }
+    }
+   ]
+  }
+ ]
+}

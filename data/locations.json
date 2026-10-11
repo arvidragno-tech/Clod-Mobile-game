@@ -1,0 +1,364 @@
+{
+ "_doc": "Living city (LocationManager + WorldSimulationManager). DISTRICT -> LOCATION -> PEOPLE -> FUNCTION -> EVENTS. Few locations, each with a job: who is there (cast haunts, patients' routines, staff breaks, suppliers), what you can do (services), what happens (ambient events). Times are minutes on the 06:00..30:00 dial (after midnight = +1440). 'map' is the marker position on the city map (fractions of the 320x180 art). 'discover': conditions that reveal the place on their own (start, level, rep, flag, any_flag, dim, bm); 'hidden' places are only revealed by people (patients, staff, fixers, rumours, story). 'access' gates entry (restricted). Activity per period: 0 dead, 1 quiet, 2 normal, 3 busy. Event outcomes use the incident vocabulary (EventManager.apply_outcomes) plus 'effects' (StoryManager.apply_effects) and 'patient' (a walk-in sent to your clinic).",
+ "types": {
+  "clinic": {"label": "YOUR CLINIC", "icon": "clinic"},
+  "night_market": {"label": "NIGHT MARKET", "icon": "market"},
+  "black_market": {"label": "BLACK MARKET", "icon": "bm"},
+  "bar": {"label": "BAR · SOCIAL HUB", "icon": "bar"},
+  "industrial": {"label": "INDUSTRIAL", "icon": "industry"},
+  "corporate": {"label": "CORPORATE", "icon": "corp"},
+  "residential": {"label": "RESIDENTIAL", "icon": "home"},
+  "transit": {"label": "TRANSIT HUB", "icon": "transit"},
+  "restricted": {"label": "RESTRICTED", "icon": "restricted"}
+ },
+ "travel": {
+  "_doc": "Trip time = base + per_unit x map distance (fractions). Walking is free but slow and risky after dark in dangerous districts; the metro is cheap and runs 06:00-01:00 (not during a blackout, never into the Exclusion Zone); a cab is fast, costs more at night and won't go into the Zone. Same-district hops are always a short walk.",
+  "local_minutes": 12,
+  "modes": [
+   {"id": "walk", "label": "WALK", "base": 8, "per_unit": 120, "cost": 0, "cost_per_unit": 0, "risk": 1.0},
+   {"id": "metro", "label": "METRO", "base": 14, "per_unit": 40, "cost": 6, "cost_per_unit": 0, "risk": 0.45, "hours": [360, 1500], "no_restricted": true},
+   {"id": "taxi", "label": "CAB", "base": 5, "per_unit": 30, "cost": 14, "cost_per_unit": 40, "risk": 0.15, "night_mult": 1.5, "no_restricted": true}
+  ],
+  "encounters": [
+   {"id": "mugging", "text": "Three kids with a shock baton in an underpass. They want your wallet.", "min_danger": 2, "night": true, "weight": 3,
+    "choices": [
+     {"label": "HAND IT OVER", "outcomes": {"money": -60, "text": "They take sixty and run. Your hands shake for a block."}},
+     {"label": "TALK THEM DOWN (you're the doc)", "outcomes": {"risk": {"chance": 0.6, "success": {"reputation": 1, "text": "One of them recognises you. 'Leave the doc.' They melt back into the dark.", "effects": {"dims": {"civilian": 1}}}, "fail": {"money": -90, "text": "They don't care who you are. Ninety gone and a bruise for free."}}}},
+     {"label": "RUN", "outcomes": {"risk": {"chance": 0.55, "success": {"text": "You lose them in the pipe maze."}, "fail": {"money": -40, "effects": {"appearance_player": "injury"}, "text": "You trip on a grate. They take forty and a piece of your knee."}}}}
+    ]},
+   {"id": "checkpoint", "text": "Transit police are scanning IDs at the gates. You have a bag full of medical tools.", "min_heat": 35, "mode": "metro", "weight": 3,
+    "choices": [
+     {"label": "SHOW YOUR LICENSE", "outcomes": {"heat": 3, "text": "They log your name and wave you through. Logged is not nothing."}},
+     {"label": "SLIP THEM 50", "requires": {"money": 50}, "outcomes": {"money": -50, "text": "Fifty disappears into a glove. 'Have a safe night, doctor.'"}}
+    ]},
+   {"id": "wounded_stranger", "text": "Someone is slumped against a stairwell, chrome sparking at the shoulder. People step around them.", "weight": 2,
+    "choices": [
+     {"label": "PATCH THEM UP (1 supply)", "requires": {"supplies": 1}, "outcomes": {"supplies": -1, "reputation": 2, "effects": {"dims": {"civilian": 2}}, "patient": {"archetype": "civilian", "emergency": false, "line": "You patched me on the stairs. I came to pay you back properly."}, "text": "You clamp the line and tape the joint. They'll come by the clinic."}},
+     {"label": "SEND THEM TO YOUR CLINIC", "outcomes": {"patient": {"archetype": "scavenger", "emergency": true, "line": "Stairwell... you told me to come here..."}, "text": "You give them the address. Someone helps them up."}},
+     {"label": "KEEP WALKING", "outcomes": {"effects": {"dims": {"civilian": -1}}, "text": "Not your shift."}}
+    ]},
+   {"id": "courier_offer", "text": "A kid in a reflective jacket falls into step beside you. 'Going your way, doc? Carry this, fifty when it lands.'", "weight": 2, "night": true,
+    "choices": [
+     {"label": "CARRY IT", "outcomes": {"risk": {"chance": 0.75, "success": {"money": 50, "effects": {"dims": {"criminal": 1}}, "text": "Someone takes the box at the other end without a word. Fifty in your pocket."}, "fail": {"heat": 6, "text": "The box starts beeping. You drop it in a canal. Somebody saw."}}}},
+     {"label": "NO", "outcomes": {"text": "The kid shrugs and peels off."}}
+    ]},
+   {"id": "street_preacher", "text": "A preacher with a cracked optic is shouting about 'the chrome that eats the soul'. A crowd listens.", "weight": 2, "cosmetic": true}
+  ]
+ },
+ "locations": [
+  {"id": "clinic", "name": "Your Clinic", "type": "clinic", "district": "", "description": "Whatever else changes, this is the one room in the city that's yours. Close the door and it's quiet. Leave it and things can walk out.",
+   "discover": {"start": true}, "hours": [0, 1800], "danger": 0, "authority": 0, "factions": {},
+   "activity": {"morning": 2, "day": 2, "evening": 2, "night": 2, "late_night": 2},
+   "services": []},
+
+  {"id": "sump_tenements", "name": "Pipeworks Tenements", "type": "residential", "district": "undercity", "map": [0.2, 0.86],
+   "description": "Sixty storeys of stacked shipping units bolted to a dead aqueduct. Laundry, cook smoke, a hundred radios. Half your patients sleep here.",
+   "architecture": "Container stacks, rope bridges, hand-painted unit numbers.", "atmosphere": "Damp, loud, crowded, never quite dark.",
+   "discover": {"start": true}, "hours": [0, 1800], "danger": 2, "authority": 0,
+   "factions": {"street_gangs": 2}, "population": ["civilian", "addict", "scavenger", "gang_member", "elder"],
+   "activity": {"morning": 2, "day": 1, "evening": 3, "night": 2, "late_night": 1},
+   "services": ["visit", "canvass"], "events": ["tenement_argument", "tenement_raid", "tenement_kid", "tenement_power"]},
+
+  {"id": "rusty_valve", "name": "The Rusty Valve", "type": "bar", "district": "undercity", "map": [0.36, 0.72],
+   "description": "A bar built into a decommissioned pump room. The Saints drink at the back, everyone else drinks carefully. If something is happening in the Sump, someone at the Valve knows.",
+   "architecture": "Riveted tanks for booths, a bar made from a valve wheel.", "atmosphere": "Warm, smoky, watchful.",
+   "discover": {"start": true}, "hours": [960, 1740], "danger": 2, "authority": 0,
+   "factions": {"street_gangs": 3, "independent_mercs": 1}, "population": ["gang_member", "street_merc", "criminal", "dock_worker", "fixer"],
+   "activity": {"morning": 0, "day": 1, "evening": 2, "night": 3, "late_night": 2},
+   "services": ["rumors", "recruit", "tout", "socialize"], "events": ["bar_fight", "bar_fixer_meeting", "bar_staff_drink", "bar_recruit", "bar_toast"],
+   "controlled_by": "street_gangs"},
+
+  {"id": "flood_tunnels", "name": "The Flood Tunnels", "type": "black_market", "district": "undercity", "map": [0.26, 0.93],
+   "description": "Storm drains under the Sump, dry nine months a year. Stalls on pallets, lamps on wires, and the Undermarket proper behind a curtain of chain. The people who sell you chrome by courier sell it here in person.",
+   "architecture": "Concrete culverts, chain curtains, a stairway that floods.", "atmosphere": "Whispers, drip, ozone.",
+   "discover": {"bm": true}, "hours": [1200, 1740], "danger": 3, "authority": 0,
+   "factions": {"black_market": 3, "street_gangs": 1}, "population": ["smuggler", "bm_tech", "criminal", "netrunner"],
+   "mods": {"bm.price": -0.1},
+   "activity": {"morning": 0, "day": 0, "evening": 1, "night": 3, "late_night": 3},
+   "services": ["undermarket", "walk_stalls", "forged_pass"], "events": ["bm_sting", "bm_rare_supplier", "bm_deal_wrong", "bm_shipment"]},
+
+  {"id": "furnace_works", "name": "Furnace Line Works", "type": "industrial", "district": "industrial", "map": [0.13, 0.42],
+   "description": "Smelters, presses and a salvage yard that runs three shifts. Arms get caught in machines here every week. The yard sells what the machines spit out: scrap, parts, sometimes chrome still warm.",
+   "architecture": "Gantries, slag heaps, a canteen in a shipping container.", "atmosphere": "Orange glare, shift sirens, metal on metal.",
+   "discover": {"level": 2}, "hours": [360, 1320], "danger": 2, "authority": 1,
+   "factions": {"independent_mercs": 2, "corporate_security": 1, "street_gangs": 1}, "population": ["dock_worker", "veteran", "scavenger", "security_officer"],
+   "activity": {"morning": 3, "day": 3, "evening": 2, "night": 1, "late_night": 0},
+   "services": ["salvage", "workshop", "tout"], "events": ["works_accident", "works_machine", "works_strike", "works_scrap"]},
+
+  {"id": "glow_night_market", "name": "Glow Strip Night Market", "type": "night_market", "district": "market", "map": [0.5, 0.68],
+   "description": "Two kilometres of stalls under a canopy of dead advertising screens. Supplies, tools, food, fakes, and people who know people. It wakes up when the sun goes down.",
+   "architecture": "Stalls under screens, rickshaw lanes, noodle steam.", "atmosphere": "Neon, haggling, a thousand smells.",
+   "discover": {"start": true}, "hours": [600, 1740], "danger": 2, "authority": 1,
+   "factions": {"black_market": 2, "street_gangs": 1, "independent_mercs": 1}, "population": ["smuggler", "bm_tech", "club_performer", "civilian", "fixer", "addict"],
+   "activity": {"morning": 1, "day": 1, "evening": 3, "night": 3, "late_night": 2},
+   "mods": {"price.buy": -0.1}, "night_mods": {"price.buy": -0.15},
+   "services": ["market_supplies", "sell_scrap", "rumors", "tout"], "events": ["market_rare", "market_inspection", "market_stolen", "market_shortage", "market_approach"]},
+
+  {"id": "velvet_lounge", "name": "The Orchid Room", "type": "bar", "district": "entertainment", "map": [0.76, 0.5],
+   "description": "A members' lounge three floors above the Velvet Tier clubs. Fixers take meetings in the booths; performers come up between sets; someone from Meridian is always slumming. The drinks cost what a stitch costs downstairs.",
+   "architecture": "Black glass, orchids under UV, a booth for every secret.", "atmosphere": "Low music, soft voices, everyone watching the door.",
+   "discover": {"level": 4}, "hours": [1080, 1740], "danger": 1, "authority": 1,
+   "factions": {"black_market": 2, "corporate_security": 1, "street_gangs": 1}, "population": ["club_performer", "executive", "fixer", "criminal"],
+   "activity": {"morning": 0, "day": 0, "evening": 2, "night": 3, "late_night": 3},
+   "services": ["rumors", "recruit", "negotiate", "socialize"], "events": ["lounge_deal", "lounge_performer", "lounge_corp", "bar_fixer_meeting", "bar_staff_drink"]},
+
+  {"id": "caldera_stacks", "name": "Caldera Stacks", "type": "residential", "district": "oldcity", "map": [0.4, 0.3],
+   "description": "Pre-collapse apartment blocks with working lifts and nosy neighbours. Retired surgeons, old soldiers, families who pay their bills. The old city remembers everyone.",
+   "architecture": "Concrete balconies, rooftop gardens, faded murals.", "atmosphere": "Quiet, careful, curtains moving.",
+   "discover": {"level": 3}, "hours": [0, 1800], "danger": 1, "authority": 1,
+   "factions": {"medical_authorities": 1, "independent_mercs": 1}, "population": ["civilian", "elder", "veteran", "netrunner"],
+   "activity": {"morning": 2, "day": 1, "evening": 2, "night": 1, "late_night": 0},
+   "services": ["visit", "canvass"], "events": ["tenement_argument", "stacks_police", "stacks_missing", "stacks_neighbour"]},
+
+  {"id": "spindle_interchange", "name": "Spindle Interchange", "type": "transit", "district": "oldcity", "map": [0.5, 0.45],
+   "description": "Five metro lines and the freight lift meet under a rusted glass dome. Everyone in Caldera passes through here sooner or later: commuters, couriers, people who don't want to be followed.",
+   "architecture": "Glass dome, tiled tunnels, freight cages.", "atmosphere": "Announcements, crowds, wind from the tunnels.",
+   "discover": {"start": true}, "hours": [360, 1500], "danger": 1, "authority": 2,
+   "factions": {"corporate_security": 1, "independent_mercs": 1, "street_gangs": 1}, "population": ["civilian", "dock_worker", "corporate", "smuggler", "security_officer"],
+   "activity": {"morning": 3, "day": 2, "evening": 3, "night": 1, "late_night": 0},
+   "services": ["courier", "metro_pass", "tout"], "events": ["transit_arrest", "transit_smuggle", "transit_encounter", "transit_delay"]},
+
+  {"id": "meridian_plaza", "name": "Meridian Medical Plaza", "type": "corporate", "district": "corporate", "map": [0.64, 0.12],
+   "description": "Clean white floors, licensed clinics, a Lyra Biocomp atrium with a fountain nobody drinks from. Everything is monitored. They pay well for discreet, licensed work, and some of them pay better for the other kind.",
+   "architecture": "White stone, glass bridges, drone lanes.", "atmosphere": "Sterile, quiet, cameras everywhere.",
+   "discover": {"level": 5}, "hours": [480, 1200], "danger": 0, "authority": 3,
+   "factions": {"corporate_security": 3, "lyra_biocomp": 2, "medical_authorities": 1}, "population": ["corporate", "executive", "security_officer", "netrunner"],
+   "activity": {"morning": 3, "day": 3, "evening": 1, "night": 0, "late_night": 0},
+   "monitored": true,
+   "services": ["contract", "licensed_supplies", "zone_pass", "tout"], "events": ["corp_inspection", "corp_coverup", "corp_extraction", "corp_recruit", "corp_dilemma"]},
+
+  {"id": "lyra_checkpoint", "name": "Exclusion Checkpoint 9", "type": "restricted", "district": "restricted", "map": [0.84, 0.32],
+   "description": "Concrete, floodlights and a turnstile. Beyond it, the Lyra Exclusion Zone: closed labs, the old research annex, things the company says never happened.",
+   "architecture": "Barriers, scanner arches, a guard hut with a heater.", "atmosphere": "Floodlights, dogs, silence.",
+   "discover": {"any_flag": ["static_seen", "thread_contract", "thread_trial_known", "voss_offer_seen", "joined_lyra", "cure_plan", "expose_plan"], "level": 6}, "hours": [0, 1800], "danger": 3, "authority": 3,
+   "factions": {"lyra_biocomp": 3, "corporate_security": 2}, "population": ["security_officer", "bounty_hunter"],
+   "activity": {"morning": 1, "day": 2, "evening": 1, "night": 1, "late_night": 1},
+   "monitored": true,
+   "services": ["checkpoint"], "events": ["checkpoint_patrol", "checkpoint_smuggler"]},
+
+  {"id": "lyra_annex", "name": "Lyra Research Annex", "type": "restricted", "district": "restricted", "map": [0.9, 0.18],
+   "description": "The annex where the neural line was built. Half the floors are sealed; the other half are full of cold storage, discarded prototypes and logs nobody wiped. Every visit is borrowed time.",
+   "architecture": "Clean rooms gone grey, sealed doors, emergency lighting.", "atmosphere": "Hum of freezers, your own footsteps.",
+   "discover": {"hidden": true}, "access": "zone", "hours": [0, 1800], "danger": 3, "authority": 2,
+   "factions": {"lyra_biocomp": 3}, "population": [],
+   "activity": {"morning": 1, "day": 1, "evening": 1, "night": 1, "late_night": 1},
+   "monitored": true,
+   "services": ["lab_salvage", "lab_records"], "events": ["annex_guard", "annex_patient"]}
+ ],
+ "routines": {
+  "_doc": "Where people are by period: home / work / social / transit. Archetypes not listed use 'default'. 'night_shift' archetypes work at night.",
+  "default": {"morning": "home", "day": "work", "evening": "transit", "night": "social", "late_night": "home"},
+  "night_shift": {"morning": "home", "day": "home", "evening": "social", "night": "work", "late_night": "work"},
+  "night_shift_archetypes": ["club_performer", "criminal", "gang_member", "smuggler", "bm_tech", "addict", "bounty_hunter"],
+  "work": {
+   "dock_worker": "furnace_works", "scavenger": "furnace_works", "veteran": "furnace_works", "street_merc": "rusty_valve",
+   "corporate": "meridian_plaza", "executive": "meridian_plaza", "security_officer": "meridian_plaza", "netrunner": "spindle_interchange",
+   "smuggler": "flood_tunnels", "bm_tech": "glow_night_market", "club_performer": "velvet_lounge", "fixer": "velvet_lounge",
+   "gang_member": "rusty_valve", "criminal": "glow_night_market", "addict": "glow_night_market", "bounty_hunter": "spindle_interchange",
+   "civilian": "glow_night_market", "elder": "home"
+  },
+  "social": {"street_gangs": "rusty_valve", "black_market": "glow_night_market", "independent_mercs": "rusty_valve", "corporate_security": "velvet_lounge", "lyra_biocomp": "velvet_lounge", "medical_authorities": "caldera_stacks", "": "rusty_valve"},
+  "rich_home": "caldera_stacks",
+  "poor_home": "sump_tenements"
+ },
+ "haunts": {
+  "_doc": "Where the cast can be found outside their scenes: [{loc, periods, chance}]. Presence is rolled once per day and period, so it doesn't flicker. 'unless' flags remove them.",
+  "ilse_hartmann": [{"loc": "caldera_stacks", "periods": ["morning", "day", "late_night"], "chance": 0.8}, {"loc": "rusty_valve", "periods": ["night"], "chance": 0.4}],
+  "vesna_kalo": [{"loc": "velvet_lounge", "periods": ["evening", "night"], "chance": 0.7}, {"loc": "flood_tunnels", "periods": ["late_night"], "chance": 0.7}, {"loc": "glow_night_market", "periods": ["day"], "chance": 0.3}],
+  "cassian_voss": [{"loc": "meridian_plaza", "periods": ["morning", "day"], "chance": 0.7}, {"loc": "velvet_lounge", "periods": ["night"], "chance": 0.4}],
+  "rika_kessel": [{"loc": "sump_tenements", "periods": ["morning", "day"], "chance": 0.6}, {"loc": "rusty_valve", "periods": ["evening", "night", "late_night"], "chance": 0.75}],
+  "rook_varga": [{"loc": "rusty_valve", "periods": ["evening", "night"], "chance": 0.8}, {"loc": "furnace_works", "periods": ["day"], "chance": 0.4}],
+  "adaeze_moor": [{"loc": "meridian_plaza", "periods": ["morning", "day"], "chance": 0.6}, {"loc": "spindle_interchange", "periods": ["evening"], "chance": 0.5}, {"loc": "caldera_stacks", "periods": ["night"], "chance": 0.3}],
+  "silas_dune": [{"loc": "furnace_works", "periods": ["morning", "day"], "chance": 0.6}, {"loc": "glow_night_market", "periods": ["evening", "night"], "chance": 0.6}],
+  "noor_sayeh": [{"loc": "caldera_stacks", "periods": ["evening", "night"], "chance": 0.5, "unless": "noor_hidden"}, {"loc": "spindle_interchange", "periods": ["day"], "chance": 0.3, "unless": "noor_hidden"}],
+  "teo_marr": [{"loc": "glow_night_market", "periods": ["evening", "night", "late_night"], "chance": 0.6, "unless": "teo_gone"}, {"loc": "rusty_valve", "periods": ["night"], "chance": 0.3, "unless": "teo_gone"}],
+  "pell_ormond": [{"loc": "sump_tenements", "periods": ["morning", "day", "evening"], "chance": 0.7}]
+ },
+ "supplier_haunts": {"magpie": "furnace_works", "okafor": "rusty_valve", "glass": "meridian_plaza", "sallow": "velvet_lounge", "curator": "flood_tunnels", "juno": "glow_night_market"},
+ "events": [
+  {"id": "tenement_argument", "title": "SHOUTING ON THE BRIDGE", "kind": "social", "text": "Two neighbours are screaming at each other across a rope bridge about a stolen battery. One has a bandaged arm that's bleeding through.", "weight": 3,
+   "choices": [
+    {"label": "LOOK AT THE ARM", "minutes": 15, "requires": {"supplies": 1}, "outcomes": {"supplies": -1, "reputation": 1, "effects": {"dims": {"civilian": 2}}, "text": "You rewrap it on the spot. The shouting stops. Both of them know your name now."}},
+    {"label": "STAY OUT OF IT", "outcomes": {"text": "The battery goes over the edge. Problem solved, sort of."}}
+   ]},
+  {"id": "tenement_raid", "title": "RAID", "kind": "narrative", "text": "Corporate security is going unit to unit looking for 'unlicensed implant recipients'. Doors are being kicked.", "weight": 2, "min_heat": 30,
+   "choices": [
+    {"label": "WARN YOUR PATIENTS", "minutes": 20, "outcomes": {"heat": 4, "effects": {"dims": {"civilian": 3}}, "faction": {"street_gangs": 3}, "text": "Doors close before the boots get there. Someone saw you running ahead of the raid."}},
+    {"label": "KEEP YOUR HEAD DOWN", "outcomes": {"effects": {"dims": {"civilian": -1}}, "text": "You watch them drag a man out by his chrome arm. He looks at you."}}
+   ]},
+  {"id": "tenement_kid", "title": "A KID WITH A TOY ARM", "kind": "cosmetic", "text": "A kid is showing off a plastic 'cyber arm' with blinking lights to a crowd of smaller kids. 'When I grow up the doc's gonna give me a real one.'", "weight": 2},
+  {"id": "tenement_power", "title": "STACK BLACKOUT", "kind": "financial", "text": "A whole stack goes dark. Somebody's dialysis rig is on a battery with twenty minutes left.", "weight": 2,
+   "choices": [
+    {"label": "RIG POWER FROM YOUR KIT (2 parts)", "minutes": 25, "requires": {"parts": 2}, "outcomes": {"parts": -2, "reputation": 2, "effects": {"dims": {"civilian": 3, "medical": 1}}, "text": "You jury-rig the rig. The family won't stop thanking you."}},
+    {"label": "TELL THEM TO COME TO THE CLINIC", "outcomes": {"patient": {"archetype": "elder", "emergency": true, "line": "The power went... you said come..."}, "text": "They carry him down sixty storeys. He'll be at your door."}}
+   ]},
+  {"id": "stacks_police", "title": "POLICE IN THE STAIRWELL", "kind": "narrative", "text": "Two officers are asking residents about 'a doctor who works under the Sump'. A neighbour is pointing at your photo.", "weight": 2, "min_heat": 25,
+   "choices": [
+    {"label": "WALK PAST CALMLY", "outcomes": {"risk": {"chance": 0.7, "success": {"text": "They don't look up."}, "fail": {"heat": 6, "text": "'Doctor? A word.' It takes an hour and a lot of patience."}}}},
+    {"label": "LEAVE BY THE ROOF", "minutes": 20, "outcomes": {"text": "Four flights up, two roofs over. Nobody follows."}}
+   ]},
+  {"id": "stacks_missing", "title": "POSTERS", "kind": "social", "text": "Hand-printed posters on every lift door: MISSING. Have you seen this person? The face is someone with fresh chrome.", "weight": 2, "cosmetic": true},
+  {"id": "stacks_neighbour", "title": "A NEIGHBOUR'S FAVOUR", "kind": "social", "text": "An old woman on a balcony waves you up. Her husband's hand implant has been twitching for a week and she doesn't trust the plaza clinic.", "weight": 2,
+   "choices": [
+    {"label": "TAKE A LOOK", "minutes": 20, "outcomes": {"money": 40, "effects": {"dims": {"civilian": 2, "medical": 1}}, "text": "A loose connector. Forty credits and a jar of plum preserve."}},
+    {"label": "SEND HIM TO YOUR CLINIC", "outcomes": {"patient": {"archetype": "elder", "line": "My wife says you're the good kind of doctor."}, "text": "He'll come by tomorrow, she says. Today, probably."}}
+   ]},
+  {"id": "bar_fight", "title": "BOTTLES", "kind": "social", "text": "A merc and a Saints runner go over a table. Glass, blood, and a chrome fist through the jukebox.", "weight": 3,
+   "choices": [
+    {"label": "STITCH THE LOSER AT THE BAR", "minutes": 15, "requires": {"supplies": 1}, "outcomes": {"supplies": -1, "money": 35, "faction": {"street_gangs": 2}, "effects": {"dims": {"criminal": 1}}, "text": "You close a scalp wound on the bar top. The bartender pours you one on the house."}},
+    {"label": "BREAK IT UP", "outcomes": {"risk": {"chance": 0.5, "success": {"reputation": 2, "faction": {"street_gangs": 1, "independent_mercs": 1}, "text": "Both of them back down when the doc says so. People notice."}, "fail": {"effects": {"appearance_player": "injury"}, "text": "You catch an elbow. Your hands will be off for a bit."}}}},
+    {"label": "WATCH", "outcomes": {"text": "The Saints win. They usually do here."}}
+   ]},
+  {"id": "bar_fixer_meeting", "title": "A BOOTH IN THE BACK", "kind": "quest", "text": "A fixer you don't know slides into your booth. 'I hear you're careful. I have a client who needs careful.'", "weight": 2,
+   "choices": [
+    {"label": "LISTEN", "minutes": 20, "outcomes": {"patient": {"archetype": "fixer", "pay": 1.6, "line": "My client sent me. Careful, they said."}, "faction": {"black_market": 2}, "text": "A client will come to the clinic. They pay well and they don't want questions."}},
+    {"label": "ASK WHO ELSE IS SELLING", "minutes": 10, "outcomes": {"lead": "supplier", "text": "The fixer gives you a name and a place."}},
+    {"label": "NOT TONIGHT", "outcomes": {"text": "'Your loss, doc.'"}}
+   ]},
+  {"id": "bar_staff_drink", "title": "ONE OF YOURS", "kind": "social", "text": "", "weight": 0, "staff": true},
+  {"id": "bar_recruit", "title": "LOOKING FOR WORK", "kind": "social", "text": "A woman with medic's calluses and a dishonourable discharge tattoo asks if you're the doc who's hiring.", "weight": 2,
+   "choices": [
+    {"label": "TELL HER TO COME BY", "outcomes": {"candidate": true, "text": "She'll be on your candidate list tomorrow morning."}},
+    {"label": "NOT HIRING", "outcomes": {"text": "She nods and goes back to her drink."}}
+   ]},
+  {"id": "bar_toast", "title": "A TOAST", "kind": "cosmetic", "text": "Someone at the bar raises a glass to 'the doc who put my brother's legs back on'. Half the room drinks.", "weight": 1, "min_rep": 20},
+  {"id": "bm_sting", "title": "STING", "kind": "narrative", "text": "The chain curtain goes up too fast. Lights. 'Nobody move.' It's a sting, and they're scanning faces.", "weight": 2, "min_heat": 20,
+   "choices": [
+    {"label": "DROP INTO THE DRAIN", "outcomes": {"risk": {"chance": 0.65, "success": {"text": "Cold water to the chest, but you're out."}, "fail": {"heat": 10, "money": -150, "text": "Caught at the outflow. A fine, a file, and a long look."}}}},
+    {"label": "BRIBE THE SERGEANT (200)", "requires": {"money": 200}, "outcomes": {"money": -200, "heat": -3, "text": "Two hundred buys you a blind spot and a phone number."}}
+   ]},
+  {"id": "bm_rare_supplier", "title": "A NEW TABLE", "kind": "financial", "text": "A table that wasn't here last week. Unmarked cases, a seller with no face you can remember.", "weight": 2,
+   "choices": [
+    {"label": "BUY A SEALED CASE (220)", "requires": {"money": 220}, "outcomes": {"money": -220, "item": {"black_market": true, "condition": [55, 95]}, "text": "You open it at home. Something in there hums."}},
+    {"label": "ASK ABOUT THE SUPPLIER", "minutes": 15, "outcomes": {"lead": "supplier", "text": "The seller doesn't talk. The woman at the next table does."}},
+    {"label": "PASS", "outcomes": {"text": "Smart, maybe."}}
+   ]},
+  {"id": "bm_deal_wrong", "title": "DEAL GONE WRONG", "kind": "narrative", "text": "Two sellers draw on each other over a crate. Somebody fires. A bystander goes down with a hole in their thigh.", "weight": 2,
+   "choices": [
+    {"label": "TOURNIQUET, NOW", "minutes": 15, "requires": {"supplies": 1}, "outcomes": {"supplies": -1, "faction": {"black_market": 3}, "effects": {"dims": {"black_market": 2, "civilian": 1}}, "patient": {"archetype": "smuggler", "emergency": true, "line": "You held my leg together in the tunnels."}, "text": "You get the bleeding stopped. They'll need surgery: your door."}},
+    {"label": "GET OUT", "outcomes": {"text": "You're two culverts away before the second shot."}}
+   ]},
+  {"id": "bm_shipment", "title": "SHIPMENT", "kind": "financial", "text": "A shipment came in from the docks: surplus clinical stock, still in corporate shrink-wrap.", "weight": 2,
+   "choices": [
+    {"label": "BUY 4 SUPPLIES (90)", "requires": {"money": 90}, "outcomes": {"money": -90, "supplies": 4, "text": "Four packs at a market price you'll never see in the Plaza."}},
+    {"label": "BUY PARTS (70)", "requires": {"money": 70}, "outcomes": {"money": -70, "parts": 3, "text": "Three good parts."}}
+   ]},
+  {"id": "works_accident", "title": "SIREN ON LINE 3", "kind": "quest", "text": "The press on Line 3 stops with a scream. A worker's arm is in it to the shoulder. The company medic is 'on his way'.", "weight": 3,
+   "choices": [
+    {"label": "GET IN THERE", "minutes": 25, "requires": {"supplies": 1}, "outcomes": {"supplies": -1, "reputation": 3, "faction": {"independent_mercs": 2}, "effects": {"dims": {"civilian": 3, "medical": 1}}, "patient": {"archetype": "dock_worker", "emergency": true, "category": "arms", "line": "You got me out of the press. I need an arm, doc."}, "text": "You get the arm out and the bleeding stopped. They'll need a new arm. They'll come to you."}},
+    {"label": "LEAVE IT TO THE COMPANY", "outcomes": {"effects": {"dims": {"civilian": -1}}, "text": "The company medic arrives forty minutes later."}}
+   ]},
+  {"id": "works_machine", "title": "SCRAP FROM THE SHREDDER", "kind": "financial", "text": "The salvage foreman has a crate of implants that came out of a scrapped security drone. 'Untested. Cheap.'", "weight": 2,
+   "choices": [
+    {"label": "BUY THE CRATE (120)", "requires": {"money": 120}, "outcomes": {"money": -120, "item": {"random_tier": 1, "condition": [35, 70]}, "parts": 1, "text": "Battered, but there's a working unit in there and a part to spare."}},
+    {"label": "PASS", "outcomes": {"text": "The foreman shrugs."}}
+   ]},
+  {"id": "works_strike", "title": "STRIKE", "kind": "narrative", "text": "The night shift has walked out over the press on Line 3. Company security is lining up at the gate.", "weight": 1,
+   "choices": [
+    {"label": "SET UP A FIRST-AID TABLE", "minutes": 30, "requires": {"supplies": 2}, "outcomes": {"supplies": -2, "heat": 3, "faction": {"corporate_security": -3, "independent_mercs": 3}, "effects": {"dims": {"civilian": 4, "corporate": -2}}, "text": "The batons come out at midnight. Your table is the only one there."}},
+    {"label": "STAY CLEAR", "outcomes": {"text": "Not your fight."}}
+   ]},
+  {"id": "works_scrap", "title": "SCRAP SPARKS", "kind": "cosmetic", "text": "A welder throws a shower of sparks into a puddle, and for a second the whole yard is gold.", "weight": 1},
+  {"id": "market_rare", "title": "RARE STOCK", "kind": "financial", "text": "A stall you've never seen has a single sealed implant under glass. 'Off a Lyra truck. Don't ask.'", "weight": 2,
+   "choices": [
+    {"label": "BUY IT (260)", "requires": {"money": 260}, "outcomes": {"money": -260, "heat": 2, "item": {"black_market": true, "condition": [70, 100]}, "text": "Lyra serials, filed off badly. It's real."}},
+    {"label": "PASS", "outcomes": {"text": "It's gone by the time you walk back past."}}
+   ]},
+  {"id": "market_inspection", "title": "INSPECTION SWEEP", "kind": "narrative", "text": "Inspectors in white coats are working the stalls with scanners. Vendors are throwing tarps over the good stuff.", "weight": 2,
+   "choices": [
+    {"label": "HELP A VENDOR HIDE THEIR STOCK", "outcomes": {"risk": {"chance": 0.7, "success": {"faction": {"black_market": 3}, "text": "The tarp holds. The vendor owes you one."}, "fail": {"heat": 5, "text": "An inspector photographs you with your hand on the tarp."}}}},
+    {"label": "STAND BACK", "outcomes": {"text": "Two stalls get cleared. Prices will be up tomorrow."}}
+   ]},
+  {"id": "market_stolen", "title": "WARM CHROME", "kind": "financial", "text": "A teenager is selling an implant out of a coat. It still has someone's blood on the connector.", "weight": 2,
+   "choices": [
+    {"label": "BUY IT (90)", "requires": {"money": 90}, "outcomes": {"money": -90, "item": {"random_tier": 1, "condition": [50, 85]}, "effects": {"dims": {"criminal": 2}}, "text": "Cheap. You try not to think about whose it was."}},
+    {"label": "ASK WHERE IT CAME FROM", "outcomes": {"effects": {"dims": {"civilian": 1}}, "text": "The kid runs."}}
+   ]},
+  {"id": "market_shortage", "title": "EMPTY STALLS", "kind": "financial", "text": "Half the medical stalls are empty. 'Trucks didn't come.' The ones that are open have tripled their prices.", "weight": 1, "cosmetic": true},
+  {"id": "market_approach", "title": "SOMEONE KNOWS YOU", "kind": "social", "text": "A stallholder leans over: 'You're the doc from the Sump. My cousin needs work done. I'll send him.'", "weight": 2,
+   "choices": [
+    {"label": "SURE", "outcomes": {"patient": {"archetype": "civilian", "line": "My cousin at the market sent me."}, "text": "One more for your waiting room."}},
+    {"label": "BUSY THIS WEEK", "outcomes": {"text": "'Next week then.'"}}
+   ]},
+  {"id": "lounge_deal", "title": "AN OFFER IN A BOOTH", "kind": "quest", "text": "A woman in a silver coat slides a card across: a name, an address in the Heights, a number with four zeroes. 'House call. Tonight. No records.'", "weight": 2,
+   "choices": [
+    {"label": "TAKE THE HOUSE CALL", "minutes": 120, "requires": {"supplies": 2}, "outcomes": {"supplies": -2, "risk": {"chance": 0.8, "success": {"money": 650, "faction": {"corporate_security": 2}, "effects": {"dims": {"corporate": 3, "criminal": 1}}, "text": "Two hours in a penthouse, one quiet procedure, six hundred and fifty credits."}, "fail": {"money": 200, "heat": 8, "text": "It was a setup. You get out with two hundred and the feeling of a camera on your back."}}}},
+    {"label": "DECLINE", "outcomes": {"text": "The card goes back in the coat."}}
+   ]},
+  {"id": "lounge_performer", "title": "BETWEEN SETS", "kind": "social", "text": "A dancer from downstairs sits at the bar rubbing a leg implant that's clearly running hot.", "weight": 2,
+   "choices": [
+    {"label": "OFFER TO LOOK AT IT", "outcomes": {"patient": {"archetype": "club_performer", "pay": 1.3, "line": "From the Orchid Room. You said you'd look at my leg."}, "faction": {"street_gangs": 1}, "text": "'Tomorrow, before my set?' Today, more likely."}},
+    {"label": "LET HER BE", "outcomes": {"text": "She orders another."}}
+   ]},
+  {"id": "lounge_corp", "title": "A CORPORATE FACE", "kind": "narrative", "text": "A Meridian manager is drunk and talking too loudly about 'the Lyra trials' and 'test populations in the Sump'.", "weight": 1,
+   "choices": [
+    {"label": "BUY HIM A DRINK AND LISTEN", "minutes": 30, "requires": {"money": 40}, "outcomes": {"money": -40, "effects": {"flag": "lyra_gossip", "counters": {"lyra_leads": 1}}, "rumor": "lyra_trials", "text": "By the third drink he's naming wards and dates. You write it down in the toilet."}},
+    {"label": "IGNORE IT", "outcomes": {"text": "Corporate security walks him out ten minutes later."}}
+   ]},
+  {"id": "corp_inspection", "title": "LICENCE CHECK", "kind": "narrative", "text": "A Medical Authority desk in the atrium is checking licences of 'visiting practitioners'.", "weight": 2,
+   "choices": [
+    {"label": "PRESENT YOURSELF", "outcomes": {"risk": {"chance": 0.6, "success": {"faction": {"medical_authorities": 3}, "text": "Your paperwork passes. Barely."}, "fail": {"heat": 6, "faction": {"medical_authorities": -2}, "text": "'This licence lists an address in the Sump.' A note goes on your file."}}}},
+    {"label": "AVOID THE ATRIUM", "minutes": 15, "outcomes": {"text": "You take the service lift."}}
+   ]},
+  {"id": "corp_coverup", "title": "A QUIET STRETCHER", "kind": "narrative", "text": "Security wheels a covered stretcher out of a Lyra suite into a freight lift. A hand slips out from under the sheet: chrome to the elbow, the same model you install.", "weight": 1,
+   "choices": [
+    {"label": "FOLLOW THE LIFT", "minutes": 20, "outcomes": {"risk": {"chance": 0.5, "success": {"effects": {"counters": {"lyra_leads": 1}}, "rumor": "lyra_trials", "text": "Sub-level 3. A van with no plates. You get the number."}, "fail": {"heat": 8, "faction": {"lyra_biocomp": -3}, "text": "A guard steps out of the lift. 'Lost, doctor?'"}}}},
+    {"label": "LOOK AWAY", "outcomes": {"text": "Nobody else saw anything either."}}
+   ]},
+  {"id": "corp_extraction", "title": "EXTRACTION", "kind": "narrative", "text": "A man in a cleaner's uniform grabs your arm. 'You're a doctor. They put something in me. Get me out of here.' Security is at the far end of the hall.", "weight": 1,
+   "choices": [
+    {"label": "WALK HIM OUT AS YOUR PATIENT", "outcomes": {"risk": {"chance": 0.6, "success": {"patient": {"archetype": "corporate", "emergency": false, "line": "You walked me out of the Plaza. They put something in me."}, "faction": {"lyra_biocomp": -3}, "effects": {"dims": {"civilian": 2, "corporate": -2}}, "text": "Out the front door, arm in arm. He'll be at your clinic."}, "fail": {"heat": 10, "faction": {"corporate_security": -4}, "text": "Security takes him at the doors. They take your name too."}}}},
+    {"label": "PULL AWAY", "outcomes": {"effects": {"dims": {"corporate": 1, "civilian": -1}}, "text": "Security reaches him a minute later."}}
+   ]},
+  {"id": "corp_recruit", "title": "A JOB OFFER", "kind": "social", "text": "A Lyra recruiter recognises your work. 'We need people with your hands. Salaried. Licensed. Clean.'", "weight": 1,
+   "choices": [
+    {"label": "TAKE THE CARD", "outcomes": {"faction": {"lyra_biocomp": 3}, "effects": {"dims": {"corporate": 2}}, "text": "You keep the card. It's heavy for a piece of plastic."}},
+    {"label": "SAY NO", "outcomes": {"faction": {"street_gangs": 1}, "text": "'The offer stands. For now.'"}}
+   ]},
+  {"id": "corp_dilemma", "title": "THE CLEAN CONTRACT", "kind": "narrative", "text": "A Meridian admin offers a contract: two hundred credits a head to 'assess' Sump residents for a trial. Your name on the consent forms.", "weight": 1,
+   "choices": [
+    {"label": "SIGN", "outcomes": {"money": 600, "faction": {"lyra_biocomp": 5}, "effects": {"dims": {"corporate": 4, "civilian": -4}, "path": {"corporate": 2}}, "text": "Six hundred in advance. Your name on forty forms."}},
+    {"label": "REFUSE", "outcomes": {"faction": {"lyra_biocomp": -2}, "effects": {"dims": {"civilian": 2}}, "text": "'Somebody else will sign it.' Somebody else will."}}
+   ]},
+  {"id": "transit_arrest", "title": "ARREST ON THE PLATFORM", "kind": "narrative", "text": "Transit police pin a courier to the tiles. His bag splits: implants, unpackaged, your clinic's tape on two of them.", "weight": 2, "min_heat": 20,
+   "choices": [
+    {"label": "WALK AWAY FAST", "outcomes": {"heat": 2, "text": "Nobody stops you. Nobody needs to."}},
+    {"label": "CLAIM THEM AS MEDICAL STOCK", "outcomes": {"risk": {"chance": 0.5, "success": {"faction": {"black_market": 3}, "text": "Your licence and a confident voice. They hand you the bag."}, "fail": {"heat": 8, "text": "They keep the bag and take your name."}}}}
+   ]},
+  {"id": "transit_smuggle", "title": "A FAVOUR IN THE FREIGHT CAGE", "kind": "financial", "text": "A freight handler offers to move anything you need through the cages, no scans. 'Medical, right? Nobody checks medical.'", "weight": 2,
+   "choices": [
+    {"label": "SEND A CRATE (40)", "requires": {"money": 40}, "outcomes": {"money": -40, "supplies": 3, "effects": {"dims": {"criminal": 1}}, "text": "Three supply packs land at your back door without a single form."}},
+    {"label": "NO THANKS", "outcomes": {"text": "'Offer's open.'"}}
+   ]},
+  {"id": "transit_encounter", "title": "A FAMILIAR FACE", "kind": "social", "text": "", "weight": 0, "patient_encounter": true},
+  {"id": "transit_delay", "title": "LINE DOWN", "kind": "cosmetic", "text": "A recorded voice apologises for 'a person on the tracks'. The crowd groans and starts walking.", "weight": 2},
+  {"id": "checkpoint_patrol", "title": "PATROL", "kind": "narrative", "text": "A patrol with dogs sweeps the fence line. Floodlights stop on you for a second too long.", "weight": 2, "cosmetic": true},
+  {"id": "checkpoint_smuggler", "title": "A WAY IN", "kind": "quest", "text": "A scavenger with a Lyra badge on a lanyard says there's a gap in the fence behind the old water tower. 'For a price. Or for a favour, doc.'", "weight": 2,
+   "choices": [
+    {"label": "PAY FOR THE ROUTE (250)", "requires": {"money": 250}, "outcomes": {"money": -250, "zone": "route", "text": "The scavenger draws it on your hand in marker. The annex is at the end of it."}},
+    {"label": "PATCH THE SCAVENGER'S HAND (1 supply)", "requires": {"supplies": 1}, "outcomes": {"supplies": -1, "zone": "route", "effects": {"dims": {"civilian": 1}}, "text": "A fair trade. A drawing on a scrap of foil: the gap, the annex, the guard rota."}},
+    {"label": "NOT NOW", "outcomes": {"text": "'I'll be around.'"}}
+   ]},
+  {"id": "annex_guard", "title": "FOOTSTEPS", "kind": "narrative", "text": "A guard is walking the corridor towards the cold room where you're standing.", "weight": 2,
+   "choices": [
+    {"label": "HIDE IN THE FREEZER", "outcomes": {"risk": {"chance": 0.7, "success": {"text": "Two minutes at minus twenty. He walks past."}, "fail": {"heat": 12, "faction": {"lyra_biocomp": -4}, "text": "The door alarm. You run. They'll have your face."}}}},
+    {"label": "PRETEND YOU WORK HERE", "outcomes": {"risk": {"chance": 0.45, "success": {"effects": {"dims": {"corporate": 1}}, "text": "'Night shift?' 'Always.' He nods."}, "fail": {"heat": 14, "text": "He asks for your badge. You don't have one."}}}}
+   ]},
+  {"id": "annex_patient", "title": "BED 14", "kind": "quest", "text": "In a sealed ward, one bed is still occupied: a trial subject, alive, wired into a rack that's running on battery. Their file has a Sump address.", "weight": 1, "once": true,
+   "choices": [
+    {"label": "UNHOOK THEM AND GET THEM OUT", "minutes": 60, "requires": {"supplies": 2}, "outcomes": {"supplies": -2, "heat": 10, "faction": {"lyra_biocomp": -6}, "effects": {"flag": "annex_rescue", "dims": {"civilian": 5}, "path": {"respected": 2}}, "patient": {"archetype": "civilian", "emergency": true, "category": "neural", "line": "Bed fourteen... you took me out..."}, "text": "You carry them out through the gap in the fence. They need surgery tonight."}},
+    {"label": "COPY THEIR FILE AND LEAVE", "outcomes": {"effects": {"flag": "annex_file", "counters": {"lyra_leads": 2}}, "rumor": "lyra_trials", "text": "Forty pages of dosing logs. Proof, if anyone will look at it."}}
+   ]}
+ ],
+ "missing": {
+  "_doc": "A patient who leaves your table with risky chrome can disappear (BAR -> FIXER -> BM SUPPLIER -> EXPERIMENTAL CYBERWARE -> PATIENT -> COMPLICATION -> PATIENT DISAPPEARS -> RESIDENTIAL -> INDUSTRIAL -> STORY EVENT). A relative asks for help; their home has a clue; the clue leads to where they are; what you do there decides.",
+  "daily_chance": 0.08,
+  "deadline_days": 4,
+  "clues": [
+   "{relative} says they stopped sleeping after the operation. They kept saying the arm 'talked'. Last anyone saw, they were heading to {place}.",
+   "Their unit is open. The bed is soaked in coolant. A note on the wall in shaky letters: '{place} - they can take it out'.",
+   "The neighbour heard them screaming at night, then nothing. A transit receipt on the floor: {place}."
+  ],
+  "found": "You find {name} at {place}, curled in a corner, chrome arm locked in spasm and skin around the port gone grey. They don't recognise you at first."
+ }
+}

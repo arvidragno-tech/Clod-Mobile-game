@@ -1,0 +1,105 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="UNDERCITY: RIPPER"
+config/description="Underground cyber-surgery sim for Windows PC (1920x1080, mouse + keyboard)."
+config/use_custom_user_dir=true
+config/custom_user_dir_name="UndercityRipper"
+config/windows_native_icon="res://assets/windows/app_icon.ico"
+config/version="3.5.0"
+run/main_scene="res://scenes/main/main.tscn"
+config/features=PackedStringArray("4.3", "GL Compatibility")
+boot_splash/bg_color=Color(0.027, 0.031, 0.047, 1)
+boot_splash/show_image=false
+config/icon="res://assets/sprites/ui/app_icon.png"
+
+[autoload]
+
+EventBus="*res://systems/event_bus.gd"
+Settings="*res://systems/settings_manager.gd"
+Controls="*res://systems/controls.gd"
+CyberwareManager="*res://systems/cyberware_manager.gd"
+InventoryManager="*res://systems/inventory_manager.gd"
+EconomyManager="*res://systems/economy_manager.gd"
+ReputationManager="*res://systems/reputation_manager.gd"
+ProgressionManager="*res://systems/progression_manager.gd"
+FactionManager="*res://systems/faction_manager.gd"
+SkillManager="*res://systems/skill_manager.gd"
+ClinicManager="*res://systems/clinic_manager.gd"
+WorldManager="*res://systems/world_manager.gd"
+BusinessManager="*res://systems/business_manager.gd"
+StoryManager="*res://systems/story_manager.gd"
+CharacterAppearanceManager="*res://systems/character_appearance_manager.gd"
+CharacterManager="*res://systems/character_manager.gd"
+CharacterAnimationManager="*res://systems/character_animation_manager.gd"
+CharacterPortraitManager="*res://systems/character_portrait_manager.gd"
+StaffManager="*res://systems/staff_manager.gd"
+MemoryManager="*res://systems/memory_manager.gd"
+PeopleManager="*res://systems/people_manager.gd"
+StaffLifeManager="*res://systems/staff_life_manager.gd"
+TimeManager="*res://systems/time_manager.gd"
+ClinicLifeManager="*res://systems/clinic_life_manager.gd"
+WorldEventManager="*res://systems/world_event_manager.gd"
+SupplierManager="*res://systems/supplier_manager.gd"
+SecurityManager="*res://systems/security_manager.gd"
+CommsManager="*res://systems/comms_manager.gd"
+QuestManager="*res://systems/quest_manager.gd"
+DialogueManager="*res://systems/dialogue_manager.gd"
+EventManager="*res://systems/event_manager.gd"
+BlackMarketManager="*res://systems/black_market_manager.gd"
+LocationManager="*res://systems/location_manager.gd"
+WorldSimulationManager="*res://systems/world_simulation_manager.gd"
+ChangeLog="*res://systems/change_log.gd"
+Follows="*res://systems/follow_manager.gd"
+ModifierManager="*res://systems/modifier_manager.gd"
+CustomerManager="*res://systems/customer_manager.gd"
+SurgeryManager="*res://systems/surgery_manager.gd"
+SaveManager="*res://systems/save_manager.gd"
+TutorialManager="*res://systems/tutorial_manager.gd"
+AudioManager="*res://systems/audio_manager.gd"
+UIManager="*res://systems/ui_manager.gd"
+GameManager="*res://systems/game_manager.gd"
+
+[display]
+
+window/size/viewport_width=1920
+window/size/viewport_height=1080
+window/size/mode=0
+window/size/resizable=true
+window/size/window_width_override=1600
+window/size/window_height_override=900
+window/stretch/mode="canvas_items"
+window/stretch/aspect="keep"
+window/vsync/vsync_mode=1
+window/energy_saving/keep_screen_on=false
+mouse_cursor/custom_image="res://assets/sprites/ui/cursors/arrow.png"
+
+[gui]
+
+theme/custom="res://ui/theme/main_theme.tres"
+common/drop_mouse_on_gui_input_disabled=true
+
+[input_devices]
+
+pointing/emulate_touch_from_mouse=false
+pointing/emulate_mouse_from_touch=false
+
+[physics]
+
+common/physics_ticks_per_second=30
+
+[rendering]
+
+textures/canvas_textures/default_texture_filter=0
+renderer/rendering_method="gl_compatibility"
+2d/snap/snap_2d_transforms_to_pixel=true
+environment/defaults/default_clear_color=Color(0.027, 0.031, 0.047, 1)

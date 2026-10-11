@@ -1,0 +1,50 @@
+{
+ "_doc": "Surgical dilemmas (SurgicalDilemmas): decision complications that stop the operation and ask what you do. At most one per operation, never while learning. Chance rises with risk: neural load, black-market or unknown chrome, existing chrome, hidden conditions, emergencies, poor tools; skill lowers it. weight_when: extra weight per condition. Each choice: odds (base success; + surgeon skill; + tool tier for 'tool'; staff uses the employee's chance), requires {tool: category, parts, supplies, staff}, risk (what you're told), success / fail outcomes: vitals (health, neural, blood, bleed_rate, pain), perf (implant performance x), pay (pay x), abort (stop safely), find (an implant you pull out), stress (employee), memory (patient remembers), text.",
+ "base_chance": 0.16,
+ "learning_ops": 5,
+ "dilemmas": [
+  {"id": "neural_rejection", "title": "NEURAL REJECTION DETECTED", "text": "The host nerve bundle is rejecting the interface. Signal is collapsing at the junction.",
+   "weight": 2, "weight_when": {"high_load": 3, "neural": 2},
+   "choices": [
+    {"id": "continue", "label": "PUSH THROUGH", "odds": 0.55, "risk": "Might hold. If not: neural damage.", "success": {"text": "The signal steadies. Barely.", "perf": 0.95}, "fail": {"text": "The junction burns. The patient seizes.", "vitals": {"neural": -30, "health": -10}, "perf": 0.75}},
+    {"id": "tool", "label": "NEURAL DAMPENER (INJECTOR)", "requires": {"tool": "injector"}, "odds": 0.7, "risk": "Needs an injector. Better odds with better tools.", "success": {"text": "The dampener smooths the spike out.", "perf": 1.0}, "fail": {"text": "The dampener wasn't enough.", "vitals": {"neural": -18}}},
+    {"id": "staff", "label": "CALL A RIPPERDOC IN", "requires": {"staff": true}, "odds": 0.0, "risk": "Uses your employee's skill. Adds stress to them.", "success": {"text": "Two pairs of hands keep the bundle alive.", "perf": 1.0, "stress": 10}, "fail": {"text": "Even together you lose part of the signal.", "vitals": {"neural": -15}, "stress": 18}},
+    {"id": "stop", "label": "STOP THE OPERATION", "odds": 1.0, "risk": "Patient lives. No chrome, no pay.", "success": {"text": "You back out and close up.", "abort": true}}
+   ]},
+  {"id": "unknown_firmware", "title": "UNKNOWN FIRMWARE", "text": "The implant is broadcasting a handshake nobody registered. Something in the firmware wants to talk to the network.",
+   "weight": 1, "weight_when": {"black_market": 4, "unknown_traits": 4},
+   "choices": [
+    {"id": "flash", "label": "FLASH IT CLEAN (2 PARTS)", "requires": {"parts": 2}, "odds": 0.75, "risk": "Costs parts. Fails badly sometimes: bricked chrome.", "success": {"text": "Wiped and rebuilt. It's quiet now.", "perf": 1.0}, "fail": {"text": "The flash bricked half the board.", "perf": 0.6}},
+    {"id": "continue", "label": "INSTALL IT AS IS", "odds": 0.6, "risk": "Faster, more pay. It might be phoning someone.", "success": {"text": "It goes in. The handshake stops. For now.", "pay": 1.15}, "fail": {"text": "It pings something. Somebody knows where you are now.", "pay": 1.15, "heat": 6}},
+    {"id": "swap", "label": "SWAP TO A SAFER PROCEDURE", "odds": 0.9, "risk": "Safe. The chrome will run at reduced capacity; pay drops.", "success": {"text": "You isolate it on a dumb bus. It works, slowly.", "perf": 0.8, "pay": 0.85}, "fail": {"text": "Even isolated, it glitches.", "perf": 0.7, "pay": 0.85}}
+   ]},
+  {"id": "internal_bleeding", "title": "INTERNAL BLEEDING", "text": "Pressure's dropping and it isn't from your incision. Something deeper opened up.",
+   "weight": 2, "weight_when": {"emergency": 4, "hidden_conditions": 2},
+   "choices": [
+    {"id": "clamp", "label": "OPEN UP AND CLAMP IT", "odds": 0.6, "risk": "Skill matters. Fail and they lose a lot of blood.", "success": {"text": "Found it, clamped it.", "vitals": {"bleed_rate": -0.6}}, "fail": {"text": "You found the wrong vessel first.", "vitals": {"blood": 18, "health": -12}}},
+    {"id": "supplies", "label": "PACK IT (3 SUPPLIES)", "requires": {"supplies": 3}, "odds": 0.85, "risk": "Uses sterile packs. Reliable.", "success": {"text": "Packed and holding.", "vitals": {"bleed_rate": -0.5}}, "fail": {"text": "The packing soaks through.", "vitals": {"blood": 10}}},
+    {"id": "risk", "label": "IGNORE IT AND FINISH FAST", "odds": 0.4, "risk": "Gamble with their life. Big trouble if it goes wrong.", "success": {"text": "You finish before it matters.", "pay": 1.1}, "fail": {"text": "They crash on the table.", "vitals": {"blood": 30, "health": -25}}}
+   ]},
+  {"id": "cyberware_instability", "title": "CYBERWARE INSTABILITY", "text": "Their existing chrome is fighting the new unit: two power buses, one body, sparks under the skin.",
+   "weight": 1, "weight_when": {"existing_chrome": 3, "high_load": 2},
+   "choices": [
+    {"id": "tool", "label": "REROUTE WITH THE SPLICER", "requires": {"tool": "splicer"}, "odds": 0.75, "risk": "Needs a splicer. Better odds with better tools.", "success": {"text": "Buses rerouted. The sparks stop.", "perf": 1.05}, "fail": {"text": "A relay fuses.", "vitals": {"health": -10, "neural": -10}}},
+    {"id": "experimental", "label": "EXPERIMENTAL BRIDGE (3 PARTS)", "requires": {"parts": 3}, "odds": 0.5, "risk": "Untested. Brilliant or terrible.", "success": {"text": "The bridge holds and the chrome runs hotter than spec.", "perf": 1.25, "pay": 1.2}, "fail": {"text": "The bridge cooks a nerve cluster.", "vitals": {"neural": -25, "health": -15}, "perf": 0.8}},
+    {"id": "stop", "label": "STOP AND CLOSE UP", "odds": 1.0, "risk": "Patient lives. No chrome, no pay.", "success": {"text": "Not today. You close up.", "abort": true}}
+   ]},
+  {"id": "nerve_damage", "title": "UNEXPECTED NERVE DAMAGE", "text": "An old injury nobody mentioned: the nerve you need is already half dead.",
+   "weight": 2, "weight_when": {"hidden_conditions": 3, "previous_ops": 2},
+   "choices": [
+    {"id": "graft", "label": "GRAFT AROUND IT", "odds": 0.6, "risk": "Slow, skilled work. Fail and there's lasting damage.", "success": {"text": "The graft takes.", "perf": 1.0}, "fail": {"text": "They'll have a tremor for life.", "perf": 0.8, "vitals": {"neural": -12}, "memory": "PLAYER_FAILED_OPERATION"}},
+    {"id": "staff", "label": "CALL A RIPPERDOC IN", "requires": {"staff": true}, "odds": 0.0, "risk": "Uses your employee's skill. Adds stress to them.", "success": {"text": "Your ripperdoc has steadier hands for this one.", "perf": 1.0, "stress": 8}, "fail": {"text": "Neither of you could save the nerve.", "perf": 0.8, "stress": 15}},
+    {"id": "swap", "label": "INSTALL A LOWER SETTING", "odds": 0.95, "risk": "Safe. Reduced performance and pay.", "success": {"text": "It'll work. Not like the brochure.", "perf": 0.8, "pay": 0.85}}
+   ]},
+  {"id": "foreign_device", "title": "FOREIGN DEVICE DETECTED", "text": "There's something already in there that isn't on any chart: a sealed module wired into the spine, no serial, still warm.",
+   "weight": 1, "weight_when": {"black_market": 2, "existing_chrome": 2, "criminal": 3},
+   "choices": [
+    {"id": "extract", "label": "EXTRACT IT", "odds": 0.55, "risk": "You keep what you pull out. Fail and it fights back.", "success": {"text": "It comes out in one piece. Heavy. Military?", "find": "unknown_military_core", "memory": "PLAYER_STOLE_FROM_ME"}, "fail": {"text": "It discharges as you cut. The patient convulses.", "vitals": {"neural": -20, "health": -15}}},
+    {"id": "around", "label": "WORK AROUND IT", "odds": 0.8, "risk": "Leave it alone. Slower, slightly worse fit.", "success": {"text": "You route around it. None of your business.", "perf": 0.9, "memory": "PLAYER_KEPT_SECRET"}, "fail": {"text": "You nick its housing. Something beeps.", "perf": 0.85, "heat": 4}},
+    {"id": "stop", "label": "STOP. THIS IS TROUBLE", "odds": 1.0, "risk": "Patient lives. No chrome, no pay.", "success": {"text": "You close up and tell them nothing.", "abort": true}}
+   ]}
+ ]
+}

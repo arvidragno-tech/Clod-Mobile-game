@@ -1,0 +1,78 @@
+{
+ "factions": [
+  {
+   "id": "street_gangs",
+   "name": "Rustline Crews",
+   "short": "GANGS",
+   "color": "ff6a3d",
+   "emblem": "res://assets/sprites/factions/street_gangs.png",
+   "description": "Loose crews running the lower levels: protection, chop shops, turf wars. Loyal if you're useful.",
+   "rivals": [
+    "corporate_security",
+    "medical_authorities"
+   ],
+   "starting_rep": 0
+  },
+  {
+   "id": "corporate_security",
+   "name": "Aegis Meridian Security",
+   "short": "CORP",
+   "color": "3a8cff",
+   "emblem": "res://assets/sprites/factions/corporate_security.png",
+   "description": "Private security contracted by the arcology corps. They pay well and remember everything.",
+   "rivals": [
+    "street_gangs",
+    "black_market"
+   ],
+   "starting_rep": -5
+  },
+  {
+   "id": "independent_mercs",
+   "name": "Free Contractors",
+   "short": "MERCS",
+   "color": "ffb43d",
+   "emblem": "res://assets/sprites/factions/independent_mercs.png",
+   "description": "Freelance guns, couriers and fixers' muscle. Respect competence, hate drama.",
+   "rivals": [],
+   "starting_rep": 0
+  },
+  {
+   "id": "black_market",
+   "name": "The Undermarket",
+   "short": "MARKET",
+   "color": "ff3d81",
+   "emblem": "res://assets/sprites/factions/black_market.png",
+   "description": "Smugglers, chop-dealers and ghost fabricators. Everything has a price, including you.",
+   "rivals": [
+    "medical_authorities",
+    "corporate_security"
+   ],
+   "starting_rep": 0
+  },
+  {
+   "id": "medical_authorities",
+   "name": "Civic Medical Board",
+   "short": "MEDBOARD",
+   "color": "6dff8a",
+   "emblem": "res://assets/sprites/factions/medical_authorities.png",
+   "description": "The licensing board. Officially hunting unlicensed rippers. Unofficially, inspectors have bills too.",
+   "rivals": [
+    "black_market"
+   ],
+   "starting_rep": 0
+  },
+  {
+   "id": "lyra_biocomp",
+   "name": "Lyra Biocomp",
+   "short": "LYRA",
+   "color": "9fc8e8",
+   "emblem": "res://assets/sprites/factions/lyra_biocomp.png",
+   "description": "Neural-lattice manufacturer that owns the Exclusion Zone and half the medical patents in Caldera. Courteous, patient, and always collecting data.",
+   "rivals": [
+    "street_gangs",
+    "black_market"
+   ],
+   "starting_rep": 0
+  }
+ ]
+}

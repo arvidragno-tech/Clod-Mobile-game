@@ -1,0 +1,510 @@
+{
+ "characters": [
+  {
+   "id": "mara_quill",
+   "name": "Mara Quill",
+   "alias": "Courier",
+   "age": 27,
+   "occupation": "Data courier",
+   "skin_color": "b07a5a",
+   "dialogue": "My old port's been throwing static for a week. I run packets through the drowned district. I can't afford a dead link mid-route. Put a bridge in. Clean.",
+   "true_diagnosis": "scar_tissue",
+   "scan_findings": {
+    "head": "Cortex activity normal. Mild stress pattern.",
+    "neck": "Fibrous mass wrapped around an old port seat.",
+    "spine": "Relay intact. Signal attenuated at C2."
+   },
+   "modifiers": {
+    "pay": 1.0,
+    "bleed": 1.0,
+    "pain_tolerance": 1.0,
+    "neural_sensitivity": 1.0,
+    "complication_risk": 0.9
+   },
+   "archetype": "smuggler",
+   "faction": "independent_mercs",
+   "personality": "calm",
+   "wealth": 1,
+   "requested_cyberware": "nx1_neural_bridge",
+   "existing_cyberware": [
+    "kestrel_sight"
+   ],
+   "appearance": {
+    "v": 2,
+    "presentation": "femme",
+    "build": "slim",
+    "posture": "upright",
+    "face": "long",
+    "nose": "small",
+    "brows": "thin",
+    "age_look": "adult",
+    "expr": "neutral",
+    "outfit": "civilian",
+    "hair": "tied",
+    "hair_color": "black",
+    "skin": 2,
+    "iris": "hazel",
+    "facial_hair": "",
+    "scars": [],
+    "tattoos": [
+     "neck_code"
+    ],
+    "makeup": [],
+    "piercings": [
+     "studs"
+    ],
+    "cyber": [
+     "optic",
+     "neck_ports"
+    ],
+    "accessories": [
+     "goggles"
+    ],
+    "body_cyber": [
+     "eye"
+    ],
+    "body_acc": [
+     "backpack"
+    ],
+    "cloth_a": "khaki",
+    "cloth_b": "tan",
+    "cloth_c": "black",
+    "metal": "chrome",
+    "glow": "cyan",
+    "rim": "8a6a3a"
+   },
+   "role": "regular",
+   "story": false
+  },
+  {
+   "id": "dez_okafor",
+   "name": "Dez Okafor",
+   "alias": "Static",
+   "age": 34,
+   "occupation": "Freelance signal jockey",
+   "skin_color": "6b4532",
+   "dialogue": "Pushed my rig too hard on a job. Smelled something burning, and it wasn't the coffee. I need a new bridge before my client notices I'm offline.",
+   "true_diagnosis": "burnt_socket",
+   "scan_findings": {
+    "head": "Residual feedback echo in motor cortex.",
+    "neck": "Charred contacts and carbon scoring in the cavity.",
+    "spine": "Relay intact. Heat stress on outer sheath."
+   },
+   "modifiers": {
+    "pay": 1.15,
+    "bleed": 1.0,
+    "pain_tolerance": 1.2,
+    "neural_sensitivity": 1.25,
+    "complication_risk": 1.1,
+    "extra_damaged_tissue": 2
+   },
+   "archetype": "bm_tech",
+   "faction": "black_market",
+   "personality": "chatty",
+   "wealth": 1,
+   "requested_cyberware": "nx1_neural_bridge",
+   "existing_cyberware": [
+    "synapse_router_s2",
+    "kestrel_sight"
+   ],
+   "appearance": {
+    "v": 2,
+    "presentation": "andro",
+    "build": "slim",
+    "posture": "slouch",
+    "face": "oval",
+    "nose": "straight",
+    "brows": "thin",
+    "age_look": "young",
+    "expr": "smirk",
+    "outfit": "netrunner",
+    "hair": "shaved",
+    "hair_color": "dye_cyan",
+    "skin": 5,
+    "iris": "dark",
+    "facial_hair": "",
+    "scars": [
+     "brow"
+    ],
+    "tattoos": [
+     "cheek_lines"
+    ],
+    "makeup": [
+     "liner"
+    ],
+    "piercings": [
+     "septum",
+     "brow_ring"
+    ],
+    "cyber": [
+     "temple_ports",
+     "neck_ports",
+     "cheek_leds"
+    ],
+    "accessories": [
+     "headset"
+    ],
+    "body_cyber": [],
+    "body_acc": [
+     "datapad"
+    ],
+    "cloth_a": "black",
+    "cloth_b": "charcoal",
+    "cloth_c": "bm_purple",
+    "metal": "blackened",
+    "glow": "magenta",
+    "rim": "7a2a6a"
+   },
+   "role": "regular",
+   "story": false
+  },
+  {
+   "id": "hollis_brandt",
+   "name": "Hollis Brandt",
+   "alias": "Old Hollis",
+   "age": 58,
+   "occupation": "Dock crane operator",
+   "skin_color": "d9a585",
+   "dialogue": "Union says I need a link to keep running the new cranes. Never had chrome in my life. Doc... go easy, yeah? I don't do well with needles.",
+   "true_diagnosis": "scar_tissue",
+   "scan_findings": {
+    "head": "Age-typical cortex. No prior implants.",
+    "neck": "Old work injury. Thick scar tissue at the port site.",
+    "spine": "Mild calcification. Relay reachable."
+   },
+   "modifiers": {
+    "pay": 0.9,
+    "bleed": 1.25,
+    "pain_tolerance": 0.75,
+    "neural_sensitivity": 0.9,
+    "complication_risk": 1.0
+   },
+   "archetype": "dock_worker",
+   "faction": "medical_authorities",
+   "personality": "tired",
+   "wealth": 0,
+   "requested_cyberware": "nx1_neural_bridge",
+   "existing_cyberware": [],
+   "appearance": {
+    "v": 2,
+    "presentation": "masc",
+    "build": "heavy",
+    "posture": "slouch",
+    "face": "heavy",
+    "nose": "broad",
+    "brows": "heavy",
+    "age_look": "old",
+    "expr": "sad",
+    "outfit": "worker",
+    "hair": "buzz",
+    "hair_color": "gray",
+    "skin": 1,
+    "iris": "blue",
+    "facial_hair": "full",
+    "scars": [
+     "burn"
+    ],
+    "tattoos": [],
+    "makeup": [],
+    "piercings": [],
+    "cyber": [
+     "serial_marks"
+    ],
+    "accessories": [
+     "beanie"
+    ],
+    "body_cyber": [
+     "arm_l"
+    ],
+    "body_acc": [
+     "toolbelt"
+    ],
+    "cloth_a": "work_blue",
+    "cloth_b": "safety",
+    "cloth_c": "work_brown",
+    "metal": "brass",
+    "glow": "amber",
+    "rim": "3b9da0"
+   },
+   "role": "regular",
+   "story": false
+  },
+  {
+   "id": "juno_reyes",
+   "name": "Juno Reyes",
+   "alias": "Bartender",
+   "age": 31,
+   "occupation": "Bartender, The Sump",
+   "skin_color": "c48a64",
+   "dialogue": "Got a bridge from a street clinic last year. Now my hands go numb and I hear dial tones. Rip it out and put in something that doesn't hate me.",
+   "true_diagnosis": "neural_rejection",
+   "scan_findings": {
+    "head": "Inflammation markers along synthetic nerve paths.",
+    "neck": "Swollen tissue around a cheap implant housing.",
+    "spine": "Immune activity at the relay junction."
+   },
+   "modifiers": {
+    "pay": 1.05,
+    "bleed": 1.1,
+    "pain_tolerance": 1.0,
+    "neural_sensitivity": 1.35,
+    "complication_risk": 1.2,
+    "extra_damaged_tissue": 1
+   },
+   "archetype": "civilian",
+   "faction": "street_gangs",
+   "personality": "chatty",
+   "wealth": 1,
+   "requested_cyberware": "nx1_neural_bridge",
+   "existing_cyberware": [
+    "nx1_neural_bridge"
+   ],
+   "appearance": {
+    "v": 2,
+    "presentation": "femme",
+    "build": "average",
+    "posture": "wide",
+    "face": "round",
+    "nose": "small",
+    "brows": "thin",
+    "age_look": "adult",
+    "expr": "smirk",
+    "outfit": "gang",
+    "hair": "bob",
+    "hair_color": "dye_red",
+    "skin": 3,
+    "iris": "brown",
+    "facial_hair": "",
+    "scars": [
+     "lip"
+    ],
+    "tattoos": [
+     "tear",
+     "jaw_ink"
+    ],
+    "makeup": [
+     "lipstick",
+     "liner"
+    ],
+    "piercings": [
+     "lip_ring",
+     "ear_gauges"
+    ],
+    "cyber": [
+     "cheek_leds"
+    ],
+    "accessories": [
+     "choker",
+     "cigarette"
+    ],
+    "body_cyber": [],
+    "body_acc": [
+     "cigarette"
+    ],
+    "cloth_a": "black",
+    "cloth_b": "charcoal",
+    "cloth_c": "dirty_orange",
+    "metal": "chrome",
+    "glow": "red",
+    "rim": "8a2a3a"
+   },
+   "role": "regular",
+   "story": false
+  },
+  {
+   "id": "vesna_kalo",
+   "name": "Vesna Kalo",
+   "alias": "Wire",
+   "age": 41,
+   "occupation": "Fixer, Undermarket broker",
+   "archetype": "fixer",
+   "faction": "black_market",
+   "role": "contact",
+   "story": true,
+   "personality": "smooth",
+   "wealth": 3,
+   "dialogue": "Rippers who keep their hands steady and their mouths shut are rare. I deal in rare.",
+   "appearance": {
+    "build": "average",
+    "face": "narrow",
+    "expr": "smirk",
+    "hair": "undercut",
+    "hair_back": "",
+    "outfit": "fixer",
+    "facial_hair": "",
+    "scar": "",
+    "tattoos": [],
+    "cyber": [
+     "circuit",
+     "skull_plate"
+    ],
+    "accessories": [
+     "shades",
+     "earring"
+    ],
+    "skin": 1,
+    "hair_color": "dye_magenta",
+    "iris": "green",
+    "cloth_a": "purple",
+    "cloth_b": "black",
+    "metal": "blackened",
+    "glow": "magenta",
+    "body_cyber": []
+   },
+   "requested_cyberware": "synapse_router_s2",
+   "existing_cyberware": [
+    "lumen_pro_optic",
+    "synapse_router_s2"
+   ],
+   "true_diagnosis": "old_hardware",
+   "modifiers": {
+    "pay": 1.6,
+    "complication_risk": 0.9
+   }
+  },
+  {
+   "id": "adaeze_moor",
+   "name": "Adaeze Moor",
+   "alias": "Inspector",
+   "age": 48,
+   "occupation": "Inspector, Civic Medical Board",
+   "archetype": "corporate",
+   "faction": "medical_authorities",
+   "role": "antagonist",
+   "story": true,
+   "personality": "hard",
+   "wealth": 2,
+   "dialogue": "Unlicensed surgery is a felony. Lucky for you, I'm off duty. Mostly.",
+   "appearance": {
+    "build": "average",
+    "face": "broad",
+    "expr": "hard",
+    "hair": "tied",
+    "hair_back": "",
+    "outfit": "medical",
+    "facial_hair": "",
+    "scar": "",
+    "tattoos": [],
+    "cyber": [],
+    "accessories": [
+     "headset"
+    ],
+    "skin": 5,
+    "hair_color": "black",
+    "iris": "dark",
+    "cloth_a": "green",
+    "cloth_b": "white",
+    "metal": "chrome",
+    "glow": "green",
+    "body_cyber": []
+   },
+   "requested_cyberware": "lumen_pro_optic",
+   "existing_cyberware": [
+    "kestrel_sight"
+   ],
+   "modifiers": {
+    "pay": 1.2
+   }
+  },
+  {
+   "id": "rook_varga",
+   "name": "Tomas Varga",
+   "alias": "Rook",
+   "age": 36,
+   "occupation": "Rustline lieutenant",
+   "archetype": "gang_member",
+   "faction": "street_gangs",
+   "role": "contact",
+   "story": true,
+   "personality": "aggressive",
+   "wealth": 2,
+   "dialogue": "My crew bleeds, you patch them. Simple arrangement. Don't make it complicated.",
+   "appearance": {
+    "build": "heavy",
+    "face": "broad",
+    "expr": "hard",
+    "hair": "slick",
+    "hair_back": "",
+    "outfit": "boss",
+    "facial_hair": "",
+    "scar": "cheek",
+    "tattoos": [
+     "neck_code"
+    ],
+    "cyber": [
+     "eye",
+     "jaw"
+    ],
+    "accessories": [
+     "earring"
+    ],
+    "skin": 3,
+    "hair_color": "black",
+    "iris": "dark",
+    "cloth_a": "black",
+    "cloth_b": "gray",
+    "metal": "gunmetal",
+    "glow": "red",
+    "body_cyber": [
+     "arm"
+    ]
+   },
+   "requested_cyberware": "breacher_limb",
+   "existing_cyberware": [
+    "gunsight_ocular",
+    "torsion_forearm",
+    "kevlace_mesh"
+   ],
+   "modifiers": {
+    "pay": 1.4,
+    "pain_tolerance": 1.4
+   }
+  },
+  {
+   "id": "ilse_hartmann",
+   "name": "Ilse Hartmann",
+   "alias": "Doc H",
+   "age": 55,
+   "occupation": "Ex-corporate surgeon",
+   "archetype": "corporate",
+   "faction": "corporate_security",
+   "role": "mentor",
+   "story": true,
+   "personality": "calm",
+   "wealth": 2,
+   "dialogue": "I used to do this in a clean room with a team of twelve. You do it alone, in a basement. I'm impressed.",
+   "appearance": {
+    "build": "average",
+    "face": "narrow",
+    "expr": "tired",
+    "hair": "slick",
+    "hair_back": "",
+    "outfit": "corporate",
+    "facial_hair": "",
+    "scar": "",
+    "tattoos": [],
+    "cyber": [
+     "temple_port"
+    ],
+    "accessories": [
+     "shades"
+    ],
+    "skin": 0,
+    "hair_color": "white",
+    "iris": "blue",
+    "cloth_a": "slate",
+    "cloth_b": "white",
+    "metal": "chrome",
+    "glow": "cyan",
+    "body_cyber": []
+   },
+   "requested_cyberware": "mnemos_core",
+   "existing_cyberware": [
+    "synapse_router_s2"
+   ],
+   "modifiers": {
+    "pay": 1.3
+   }
+  }
+ ]
+}

@@ -1,0 +1,8 @@
+[gd_resource type="FontVariation" load_steps=3 format=3]
+
+[ext_resource type="FontFile" path="res://assets/fonts/chakra_petch_semibold.woff2" id="1_22gx2"]
+[ext_resource type="FontFile" path="res://assets/fonts/dejavu_sans_fallback.ttf" id="2_vi3bc"]
+
+[resource]
+fallbacks = Array[Font]([ExtResource("2_vi3bc")])
+base_font = ExtResource("1_22gx2")

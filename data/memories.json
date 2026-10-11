@@ -1,0 +1,227 @@
+{
+ "_doc": "NPC memory tags (MemoryManager): relationship change, reputation dimensions, lines they may say later.",
+ "memories": {
+  "PLAYER_SAVED_ME": {
+   "label": "You saved their life",
+   "rel": 25,
+   "rep": {
+    "civilian": 2
+   },
+   "lines": [
+    "You pulled me back once. I haven't forgotten.",
+    "Last time I came in here I was dying. Look at me now."
+   ]
+  },
+  "PLAYER_REFUSED_TREATMENT": {
+   "label": "You turned them away",
+   "rel": -15,
+   "rep": {
+    "civilian": -1
+   },
+   "lines": [
+    "Last time you sent me back out into the rain.",
+    "Going to refuse me again, doc?"
+   ]
+  },
+  "PLAYER_OVERCHARGED_ME": {
+   "label": "You overcharged them",
+   "rel": -12,
+   "rep": {
+    "civilian": -1,
+    "black_market": 1
+   },
+   "lines": [
+    "I'm still paying off what you charged me last time.",
+    "Same price as last time? I remember your prices."
+   ]
+  },
+  "PLAYER_GAVE_DISCOUNT": {
+   "label": "You gave them a discount",
+   "rel": 12,
+   "rep": {
+    "civilian": 2
+   },
+   "lines": [
+    "You went easy on me with the money. I told people.",
+    "You cut me a break once. Not many do down here."
+   ]
+  },
+  "PLAYER_TREATED_FREE": {
+   "label": "You treated them for free",
+   "rel": 22,
+   "rep": {
+    "civilian": 3,
+    "medical": 1
+   },
+   "lines": [
+    "You fixed me for nothing. I owe you.",
+    "My whole block knows you didn't charge me."
+   ]
+  },
+  "PLAYER_FAILED_OPERATION": {
+   "label": "You botched their operation",
+   "rel": -18,
+   "rep": {
+    "civilian": -1,
+    "medical": -1
+   },
+   "lines": [
+    "My hand still doesn't close right. Your work.",
+    "Try not to wreck it this time."
+   ]
+  },
+  "PLAYER_INSTALLED_CYBERWARE": {
+   "label": "You installed their chrome",
+   "rel": 6,
+   "rep": {},
+   "lines": [
+    "The chrome you put in still runs smooth.",
+    "Came back to the same hands. Your work held."
+   ]
+  },
+  "PLAYER_KILLED_FRIEND": {
+   "label": "Someone they loved died on your table",
+   "rel": -40,
+   "rep": {
+    "civilian": -2
+   },
+   "lines": [
+    "You're the one who killed my friend.",
+    "I know your face. You had them on your table when they died."
+   ]
+  },
+  "PLAYER_BETRAYED_FACTION": {
+   "label": "You sold out their people",
+   "rel": -35,
+   "rep": {
+    "criminal": -2
+   },
+   "lines": [
+    "You sold my crew to Aegis. Don't pretend."
+   ]
+  },
+  "PLAYER_KEPT_SECRET": {
+   "label": "You kept their secret",
+   "rel": 15,
+   "rep": {
+    "criminal": 1
+   },
+   "lines": [
+    "You never told anyone what you saw. That matters."
+   ]
+  },
+  "PLAYER_SAVED_EMPLOYEE": {
+   "label": "You stood up for them",
+   "rel": 20,
+   "rep": {},
+   "lines": [
+    "You had my back. I won't forget it."
+   ]
+  },
+  "PLAYER_LET_DEBT_GO": {
+   "label": "You wrote off their debt",
+   "rel": 18,
+   "rep": {
+    "civilian": 2
+   },
+   "lines": [
+    "You let my debt go. I'm paying you back the only way I can: I keep coming here."
+   ]
+  },
+  "PLAYER_SENT_COLLECTOR": {
+   "label": "You sent a collector after them",
+   "rel": -25,
+   "rep": {
+    "criminal": 1,
+    "civilian": -2
+   },
+   "lines": [
+    "Your collector broke two of my fingers.",
+    "I paid. You didn't have to send them."
+   ]
+  },
+  "PLAYER_FED_DEPENDENCY": {
+   "label": "You fed their chrome hunger",
+   "rel": 8,
+   "rep": {
+    "black_market": 1,
+    "medical": -1
+   },
+   "lines": [
+    "You always give me what I ask for. More.",
+    "The last upgrade wasn't enough. It never is."
+   ]
+  },
+  "PLAYER_STABILIZED_ME": {
+   "label": "You talked them down from more chrome",
+   "rel": 10,
+   "rep": {
+    "medical": 2
+   },
+   "lines": [
+    "You told me no, last time. I hated you. You were right."
+   ]
+  },
+  "PLAYER_MADE_ME_WAIT": {
+   "label": "You made them wait for hours",
+   "rel": -5,
+   "rep": {},
+   "lines": [
+    "Last time I waited half the night in that chair."
+   ]
+  },
+  "PLAYER_REFERRED": {
+   "label": "They sent friends your way",
+   "rel": 4,
+   "rep": {
+    "civilian": 1
+   },
+   "lines": [
+    "My cousin came here because of me. You treat them right?"
+   ]
+  },
+  "PLAYER_HELD_FAVOR": {
+   "label": "They owe you a favour",
+   "rel": 6,
+   "rep": {},
+   "lines": [
+    "I still owe you that favour. When you call, I'll come."
+   ]
+  },
+  "PLAYER_STOLE_FROM_ME": {
+   "label": "They think you robbed them",
+   "rel": -30,
+   "rep": {
+    "civilian": -1
+   },
+   "lines": [
+    "Something was missing from my coat when I left here."
+   ]
+  },
+  "PLAYER_LIED": {
+   "label": "You lied to them",
+   "rel": -10,
+   "rep": {},
+   "lines": [
+    "You lied to me before. Why should I believe you now?"
+   ]
+  },
+  "PLAYER_KEPT_PROMISE": {
+   "label": "You kept your word",
+   "rel": 12,
+   "rep": {},
+   "lines": [
+    "You kept your promise. Rare, down here."
+   ]
+  },
+  "PLAYER_FORCED_MY_HAND": {
+   "label": "You made them cross their own line",
+   "rel": -14,
+   "rep": {},
+   "lines": [
+    "You made me do it. I still see that kid's face.",
+    "I said no. You didn't listen. I remember that."
+   ]
+  }
+ }
+}

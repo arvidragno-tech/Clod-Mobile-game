@@ -1,0 +1,217 @@
+{
+ "_doc": "Clinic upgrade categories (ClinicManager). Each level is installed per clinic, uses one upgrade slot and is drawn as an overlay (data/clinic_overlays.json).",
+ "categories": {
+  "surgery": {
+   "name": "Surgery",
+   "icon": "upgrade",
+   "levels": [
+    {
+     "name": "Instrument tray",
+     "cost": 250,
+     "upkeep": 4,
+     "modifiers": {
+      "surgery.precision": 0.03
+     },
+     "text": "A clean tray beside the table. +3% precision."
+    },
+    {
+     "name": "Anaesthesia cart",
+     "cost": 900,
+     "upkeep": 12,
+     "modifiers": {
+      "surgery.pain": -0.12,
+      "complication.chance": -0.03
+     },
+     "text": "Gas, not a bottle of vodka. Less pain, fewer complications."
+    },
+    {
+     "name": "Cautery arm",
+     "cost": 2600,
+     "upkeep": 30,
+     "modifiers": {
+      "surgery.bleed": -0.15,
+      "surgery.speed": 0.08
+     },
+     "text": "Ceiling-mounted cautery. Less bleeding, faster work."
+    }
+   ]
+  },
+  "diagnostics": {
+   "name": "Diagnostics",
+   "icon": "neural",
+   "levels": [
+    {
+     "name": "Handheld scanner",
+     "cost": 200,
+     "upkeep": 3,
+     "modifiers": {
+      "diagnosis.reveal": 0.08
+     },
+     "text": "Wall-hooked scanner and charts. Hidden conditions show up more often."
+    },
+    {
+     "name": "Wall vitals monitor",
+     "cost": 800,
+     "upkeep": 10,
+     "modifiers": {
+      "diagnosis.reveal": 0.08,
+      "post_op.risk": -0.03
+     },
+     "text": "Live vitals over the table. Better reveals, safer recoveries."
+    },
+    {
+     "name": "Imaging panel",
+     "cost": 2400,
+     "upkeep": 26,
+     "modifiers": {
+      "diagnosis.reveal": 0.12,
+      "neural.load": -0.05
+     },
+     "text": "Lattice-grade imaging. Neural load reads lower and truer."
+    }
+   ]
+  },
+  "security": {
+   "name": "Security",
+   "icon": "lock",
+   "levels": [
+    {
+     "name": "Door camera",
+     "cost": 180,
+     "upkeep": 5,
+     "security": 1,
+     "modifiers": {
+      "heat.gain": -0.05
+     },
+     "text": "You see who's coming. Raids hurt less."
+    },
+    {
+     "name": "Bars and maglock",
+     "cost": 700,
+     "upkeep": 12,
+     "security": 1,
+     "modifiers": {
+      "heat.gain": -0.08
+     },
+     "text": "The door holds long enough to hide things."
+    },
+    {
+     "name": "CCTV bank",
+     "cost": 2000,
+     "upkeep": 25,
+     "security": 2,
+     "modifiers": {
+      "heat.gain": -0.1
+     },
+     "text": "Four feeds of the corridor. Nobody surprises you."
+    }
+   ]
+  },
+  "black_market": {
+   "name": "Black Market",
+   "icon": "blackmarket",
+   "levels": [
+    {
+     "name": "Contraband crates",
+     "cost": 300,
+     "upkeep": 6,
+     "modifiers": {
+      "bm.stock": 1
+     },
+     "text": "Locked crates for things that fell off trucks. One more offer in the Undermarket."
+    },
+    {
+     "name": "Organ cooler",
+     "cost": 1100,
+     "upkeep": 18,
+     "modifiers": {
+      "bm.price": -0.08,
+      "bm.stock": 1
+     },
+     "text": "Cold storage for wet goods. Better prices, wider stock."
+    },
+    {
+     "name": "Encrypted relay",
+     "cost": 3000,
+     "upkeep": 34,
+     "modifiers": {
+      "bm.price": -0.1,
+      "bm.modify": 0.1,
+      "heat.gain": 0.05
+     },
+     "text": "A private line to the Undermarket's brokers. Riskier, richer."
+    }
+   ]
+  },
+  "staff": {
+   "name": "Staff",
+   "icon": "skills",
+   "levels": [
+    {
+     "name": "Coat hooks and kit",
+     "cost": 200,
+     "upkeep": 3,
+     "staff_capacity": 1,
+     "modifiers": {},
+     "text": "Somewhere for an employee to hang a coat. +1 staff."
+    },
+    {
+     "name": "Rota board",
+     "cost": 650,
+     "upkeep": 8,
+     "staff_capacity": 1,
+     "modifiers": {
+      "staff.stress": -0.15
+     },
+     "text": "Shifts on the wall. +1 staff, less burnout."
+    },
+    {
+     "name": "Second workstation",
+     "cost": 1800,
+     "upkeep": 18,
+     "staff_capacity": 1,
+     "surgery_capacity": 1,
+     "modifiers": {
+      "staff.skill": 0.1
+     },
+     "text": "A second stool and lamp. +1 staff, +1 job a day, staff work better."
+    }
+   ]
+  },
+  "customer": {
+   "name": "Customer facilities",
+   "icon": "rep",
+   "levels": [
+    {
+     "name": "Waiting chairs",
+     "cost": 150,
+     "upkeep": 2,
+     "modifiers": {
+      "pay": 0.03
+     },
+     "text": "Two plastic chairs. People wait longer and tip better."
+    },
+    {
+     "name": "Water and stim dispenser",
+     "cost": 550,
+     "upkeep": 8,
+     "modifiers": {
+      "pay": 0.04,
+      "reputation.daily": 1
+     },
+     "text": "Small kindness. +1 reputation a day."
+    },
+    {
+     "name": "Recovery cot",
+     "cost": 1500,
+     "upkeep": 16,
+     "modifiers": {
+      "post_op.risk": -0.06,
+      "reputation.daily": 1
+     },
+     "text": "Patients sleep it off here instead of in the alley."
+    }
+   ]
+  }
+ }
+}

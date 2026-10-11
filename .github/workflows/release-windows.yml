@@ -1,0 +1,114 @@
+# Builds the single-file Windows game (UndercityRipper.exe, everything
+# embedded), smoke-tests it on Windows and publishes it as a GitHub Release.
+#
+#   Push a tag like v3.5.0  -> builds, tests and publishes the release
+#   Actions > Run workflow  -> builds and tests only (download the artifact)
+name: Windows release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  GODOT_VERSION: "4.3"
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read the game version
+        id: ver
+        shell: bash
+        run: |
+          v="$(sed -n 's/^config\/version="\(.*\)"/\1/p' project.godot)"
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+          if [[ "${GITHUB_REF_TYPE}" == "tag" && "${GITHUB_REF_NAME}" != "v$v" ]]; then
+            echo "::error::Tag ${GITHUB_REF_NAME} does not match project version $v"
+            exit 1
+          fi
+
+      - name: Install Godot, export templates and rcedit
+        shell: pwsh
+        run: |
+          $base = "https://github.com/godotengine/godot/releases/download/$env:GODOT_VERSION-stable"
+          New-Item -ItemType Directory -Force -Path tools_ci | Out-Null
+          Invoke-WebRequest "$base/Godot_v$env:GODOT_VERSION-stable_win64.exe.zip" -OutFile tools_ci/godot.zip
+          Expand-Archive tools_ci/godot.zip -DestinationPath tools_ci/godot
+          Invoke-WebRequest "$base/Godot_v$env:GODOT_VERSION-stable_export_templates.tpz" -OutFile tools_ci/templates.zip
+          Expand-Archive tools_ci/templates.zip -DestinationPath tools_ci/tpz
+          $tpl = "$env:APPDATA/Godot/export_templates/$env:GODOT_VERSION.stable"
+          New-Item -ItemType Directory -Force -Path $tpl | Out-Null
+          Copy-Item tools_ci/tpz/templates/* $tpl -Recurse
+          Invoke-WebRequest "https://github.com/electron/rcedit/releases/download/v2.0.0/rcedit-x64.exe" -OutFile tools_ci/rcedit-x64.exe
+          # rcedit puts the game icon and version into the .exe.
+          $rc = (Resolve-Path tools_ci/rcedit-x64.exe).Path -replace '\\', '/'
+          $settings = "[gd_resource type=`"EditorSettings`" format=3]`n`n[resource]`nexport/windows/rcedit = `"$rc`"`n"
+          Set-Content -Path "$env:APPDATA/Godot/editor_settings-$env:GODOT_VERSION.tres" -Value $settings
+          $console = Get-ChildItem tools_ci/godot -Filter "*_console.exe" | Select-Object -First 1
+          "GODOT=$($console.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Import the project
+        shell: pwsh
+        run: |
+          & $env:GODOT --headless --path . --import
+          exit 0  # the first import reports missing caches; the export checks for real errors
+
+      - name: Export UndercityRipper.exe
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path build/windows | Out-Null
+          & $env:GODOT --headless --path . --export-release "Windows Desktop" build/windows/UndercityRipper.exe
+          if (-not (Test-Path build/windows/UndercityRipper.exe)) { throw "export failed" }
+          $size = (Get-Item build/windows/UndercityRipper.exe).Length / 1MB
+          Write-Host ("UndercityRipper.exe: {0:N1} MB" -f $size)
+          if ($size -lt 50) { throw "the .exe is too small: the game data was not embedded" }
+
+      - name: Smoke test the exported game
+        shell: pwsh
+        run: |
+          # New game, every main screen, a conversation, save and reload.
+          # No GPU on the runner: Godot falls back to ANGLE (Direct3D 11).
+          $p = Start-Process build/windows/UndercityRipper.exe -ArgumentList "--", "--smoke-test" -PassThru
+          if (-not $p.WaitForExit(600000)) { $p.Kill(); throw "smoke test timed out" }
+          $log = "$env:APPDATA/UndercityRipper/logs/godot.log"
+          if (Test-Path $log) { Get-Content $log | Select-String "SMOKE|ERROR" | Select-Object -First 60 }
+          if ($p.ExitCode -ne 0) { throw "smoke test failed (exit $($p.ExitCode))" }
+          if (-not (Test-Path $log) -or -not (Select-String -Path $log -Pattern "SMOKE OK" -Quiet)) { throw "no SMOKE OK in the log" }
+
+      - name: Package
+        shell: pwsh
+        run: |
+          $name = "UndercityRipper-${{ steps.ver.outputs.version }}-windows-x64"
+          New-Item -ItemType Directory -Force -Path "build/$name" | Out-Null
+          Copy-Item build/windows/UndercityRipper.exe "build/$name/"
+          Copy-Item LICENSES "build/$name/" -Recurse
+          Compress-Archive -Path "build/$name" -DestinationPath "build/$name.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: UndercityRipper-${{ steps.ver.outputs.version }}-windows-x64
+          path: build/windows/UndercityRipper.exe
+
+      - name: Publish the release
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Undercity: Ripper ${{ steps.ver.outputs.version }}
+          files: |
+            build/windows/UndercityRipper.exe
+            build/UndercityRipper-${{ steps.ver.outputs.version }}-windows-x64.zip
+          body: |
+            **Download `UndercityRipper.exe` and run it.** It is the whole game in one file (all content and expansions); no install needed.
+
+            - Windows 10/11 64-bit, OpenGL 3.3 or Direct3D 11 GPU
+            - Saves and settings: `%APPDATA%\UndercityRipper\`
+            - Windows SmartScreen may warn about an unknown publisher (the build is not code-signed): **More info → Run anyway**.
+
+            The zip has the same .exe plus the font licences. See CHANGELOG.md for what's new.

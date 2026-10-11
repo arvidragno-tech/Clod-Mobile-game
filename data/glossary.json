@@ -1,0 +1,335 @@
+{
+ "_doc": "Plain-language explanations of every number and word the game shows (Glossary, UIKit.info, the F1 FIELD GUIDE). short = tooltip (one line); text = the full explanation; topic = guide section.",
+ "topics": [
+  {
+   "id": "basics",
+   "label": "THE BASICS"
+  },
+  {
+   "id": "patients",
+   "label": "PATIENTS"
+  },
+  {
+   "id": "surgery",
+   "label": "SURGERY"
+  },
+  {
+   "id": "money",
+   "label": "MONEY & BUSINESS"
+  },
+  {
+   "id": "street",
+   "label": "STREET & FACTIONS"
+  },
+  {
+   "id": "city",
+   "label": "THE CITY"
+  },
+  {
+   "id": "staff",
+   "label": "STAFF"
+  }
+ ],
+ "terms": {
+  "loop": {
+   "topic": "basics",
+   "title": "A shift, step by step",
+   "short": "See the customer, scan them, plan, operate, get paid.",
+   "text": "1. Someone knocks: open their file (C).\n2. Decide: operate yourself, hand them to staff, defer, or refuse.\n3. Scan the body and pick a diagnosis (hidden problems make surgery harder).\n4. Check the operation plan: the implant, your tools, the odds.\n5. Operate: follow the steps with your instruments, watch the vitals.\n6. Get paid, earn XP and reputation. Repeat until the day's jobs are done, then CLOSE FOR THE NIGHT to settle rent and salaries."
+  },
+  "next": {
+   "topic": "basics",
+   "title": "The NEXT line",
+   "short": "The single most useful thing to do right now.",
+   "text": "The line at the top of the clinic always tells you the next useful step: a patient at the door, someone who wants to talk, a skill point to spend, a bill to pay, or that it's time to close for the night."
+  },
+  "credits": {
+   "topic": "money",
+   "title": "Credits (cr)",
+   "short": "Your money. Spent on implants, tools, rent and staff.",
+   "text": "Credits pay for implants, supplies, tools, upgrades, rent and salaries. You earn them from operations, deals and jobs around the city. If you can't pay the night's bills, the difference becomes debt with interest."
+  },
+  "level": {
+   "topic": "basics",
+   "title": "Level and XP",
+   "short": "XP from operations raises your level: better implants, places, skill points.",
+   "text": "Every operation earns experience (more for clean, difficult work). Each level gives a skill point, unlocks higher-tier implants and tools, and opens more of the city."
+  },
+  "rep": {
+   "topic": "street",
+   "title": "Reputation (REP)",
+   "short": "What the street thinks of your work. Higher brings better customers.",
+   "text": "Reputation goes up with good operations and fair treatment and down with failures, deaths and refusals. It unlocks the black market (at 25, or sooner through a fixer), better clinics and better-paying customers. Under it you'll see your street identity: what people call you based on what you've actually done."
+  },
+  "identity": {
+   "topic": "street",
+   "title": "Street identity",
+   "short": "What people call you, from how you've behaved.",
+   "text": "Nobody, the Saint, the Butcher, the Gang Doc, the Fence, the Contractor, the Shark, the Surgeon. It comes from your five reputations (civilian, criminal, medical, corporate, black market) and changes who walks in and how conversations go."
+  },
+  "heat": {
+   "topic": "street",
+   "title": "Heat",
+   "short": "How much attention the law is paying you. High heat brings trouble.",
+   "text": "Illegal chrome, black-market deals, deaths and scenes raise heat. Clean, quiet operations cool it a little each time. High heat means inspections, surveillance, police in the city, confiscations and worse. Bribes, certified stock and clean work bring it down."
+  },
+  "supplies": {
+   "topic": "money",
+   "title": "Medical supplies",
+   "short": "Used up by every operation. Buy more in SUPPLY.",
+   "text": "Each operation uses supplies (bandages, sealant, sedatives). Run out and you can't operate. Restock at the SUPPLY terminal, the night market, or from black-market contacts."
+  },
+  "parts": {
+   "topic": "money",
+   "title": "Parts",
+   "short": "Spare components for modding chrome and emergency fixes.",
+   "text": "Parts are used to modify black-market implants, repair things in a hurry and in some events. Salvage them at the Furnace Line Works or buy them from dealers."
+  },
+  "tokens": {
+   "topic": "money",
+   "title": "Tokens",
+   "short": "Rare favours and data chips: used for special deals.",
+   "text": "Tokens are rare. A few events and contacts ask for them instead of credits."
+  },
+  "jobs": {
+   "topic": "money",
+   "title": "Jobs today",
+   "short": "Operations done today out of what your clinic can handle.",
+   "text": "Your clinic can take a set number of jobs a day (upgrade the facility for more). When the day's jobs are done or it's four in the morning, close for the night."
+  },
+  "neural_load": {
+   "topic": "surgery",
+   "title": "Neural load",
+   "short": "How much chrome their nervous system is carrying. Over 100% = breakdown.",
+   "text": "Every implant adds load. The bar shows load now and after this operation. STABLE is safe; STRAINED raises complications; CRITICAL risks a neural break during surgery. Hidden conditions can add more: scan before you cut."
+  },
+  "risk": {
+   "topic": "patients",
+   "title": "Risk",
+   "short": "How likely this job goes wrong: difficulty, hidden conditions, the patient.",
+   "text": "LOW, MEDIUM, HIGH. Risk combines the operation's difficulty against your skill and tools, known conditions, the patient's body and neural load. High risk pays more but can kill."
+  },
+  "patience": {
+   "topic": "patients",
+   "title": "Patience",
+   "short": "How long they'll wait before giving up.",
+   "text": "People waiting at the door or on the bench lose patience over time. Loyal patients wait longer. When it runs out, they leave, and they remember."
+  },
+  "conditions": {
+   "topic": "patients",
+   "title": "Conditions",
+   "short": "Problems in the body. Some are hidden until you scan.",
+   "text": "Old hardware, scar tissue, infections, rejection. Known conditions are listed; hidden ones show up in the body scan. Each makes surgery harder or adds steps."
+  },
+  "diagnosis": {
+   "topic": "surgery",
+   "title": "Diagnosis",
+   "short": "Scan the body, then say what's wrong at the surgical site.",
+   "text": "Click body regions to scan them (you get a limited number of scans). The surgical site glows pink. Findings appear in the middle. Pick the diagnosis that matches what you found: getting it right makes surgery safer; getting it wrong adds complications."
+  },
+  "difficulty": {
+   "topic": "surgery",
+   "title": "Difficulty",
+   "short": "1 to 5. Harder procedures take longer, pay more and need better tools.",
+   "text": "Difficulty sets how many steps, how fast the vitals move, and how long the operation takes on the clock (20 minutes to two hours)."
+  },
+  "tier": {
+   "topic": "surgery",
+   "title": "Tier",
+   "short": "Implant class: T1 civilian up to T5 military. Higher needs a higher level.",
+   "text": "T1 civilian, T2 professional, T3 corporate, T4 military, T5 experimental. Your level and clinic decide which tiers you can buy and install."
+  },
+  "condition": {
+   "topic": "surgery",
+   "title": "Condition",
+   "short": "How worn an implant (or tool) is. Low condition = worse performance and more risk.",
+   "text": "Implants from the street come used; tools wear with every operation. Service tools in SUPPLY or at the works."
+  },
+  "performance": {
+   "topic": "surgery",
+   "title": "Performance",
+   "short": "How well the implant works compared to new.",
+   "text": "Performance affects pay and the patient's satisfaction. Black-market chrome can be better or worse than it says until you study it."
+  },
+  "failure_risk": {
+   "topic": "surgery",
+   "title": "Failure risk",
+   "short": "Chance this unit malfunctions after install.",
+   "text": "Worn and unknown implants can fail later. Patients come back angry (or don't come back)."
+  },
+  "vitals": {
+   "topic": "surgery",
+   "title": "Vitals",
+   "short": "Health, blood loss, pain, neural sync. Keep them in the green.",
+   "text": "HEALTH falls with mistakes and blood loss. BLOOD LOSS rises while incisions are open: clamp and coagulate. PAIN rises with rough work: sedate. NEURAL SYNC drops with neural strain: stabilise. Emergency actions (Z, X, V) cost supplies but save lives."
+  },
+  "emergency": {
+   "topic": "patients",
+   "title": "Emergency",
+   "short": "Bleeding out. Treat them before the countdown ends.",
+   "text": "Emergencies have a countdown at your door. Operate, stabilise, send them to a specialist or try something experimental. If it runs out, they crash; crash again and they die. The countdown can be relaxed or turned off in SETTINGS > GAMEPLAY."
+  },
+  "dependency": {
+   "topic": "patients",
+   "title": "Chrome dependency",
+   "short": "They crave more chrome. Feeding it pays now and costs later.",
+   "text": "Some patients come back for more and stronger. You can give them what they want (profit), offer a safer alternative, or stabilise without chrome. What you choose shapes them, and how they remember you."
+  },
+  "terms_payment": {
+   "topic": "money",
+   "title": "Payment terms",
+   "short": "Full price, discount, credit, free, or what they can pay now.",
+   "text": "Not everyone can pay. You can discount, take what they have and let them owe the rest (debts appear in BUSINESS), or treat them free. They remember."
+  },
+  "debt": {
+   "topic": "money",
+   "title": "Debt",
+   "short": "What you owe. Interest grows every night.",
+   "text": "Unpaid bills and loans become debt with nightly interest. Pay it down in BUSINESS. Patients' debts to you are listed there too: demand, set a plan, write off, send a collector or take a favour."
+  },
+  "rent": {
+   "topic": "money",
+   "title": "Tonight's bill",
+   "short": "Rent, running costs, upkeep and salaries, paid when you close.",
+   "text": "Every night you pay rent and running costs for every clinic you own, upgrade upkeep and staff salaries. The business screen shows it before you close."
+  },
+  "factions": {
+   "topic": "street",
+   "title": "Factions",
+   "short": "Gangs, corps, mercs, the market, the medical board, Lyra. Each likes you or doesn't.",
+   "text": "Treating a faction's people well raises your standing with them; failing them or helping their enemies lowers it. Standing changes prices, who walks in, what conversations offer and whether you're welcome in their places in the city."
+  },
+  "influence": {
+   "topic": "city",
+   "title": "Influence",
+   "short": "How much of your work happened in this district.",
+   "text": "Working in a district builds influence there: more of its people come to you."
+  },
+  "place_state": {
+   "topic": "city",
+   "title": "What a place is like now",
+   "short": "Activity, danger and police change with the hour, factions and the news.",
+   "text": "BUSY, QUIET, DANGEROUS, POLICE PRESENCE, MONITORED, someone's TURF, UNWELCOME (you're hostile to whoever runs it), BLACK MARKET ACTIVE, CLOSED, SOMETHING'S HAPPENING (an event to deal with), A LEAD (a missing patient's trail)."
+  },
+  "travel": {
+   "topic": "city",
+   "title": "Getting around",
+   "short": "Walk (free, risky after dark), metro (cheap, until 01:00) or cab (fast, pricey).",
+   "text": "Every trip moves the clock. Walking is free but slow and the lower city is dangerous at night. The metro runs 06:00-01:00 (not in a blackout, never into the Exclusion Zone). Cabs are fastest and cost more at night. While you're out nobody new walks into the clinic; whoever was waiting sits on the bench if there's room."
+  },
+  "danger": {
+   "topic": "city",
+   "title": "Danger",
+   "short": "How likely trouble finds you here (or on the way).",
+   "text": "Danger rises at night and with gang wars. It makes walking riskier and break-ins likelier."
+  },
+  "police": {
+   "topic": "city",
+   "title": "Police presence",
+   "short": "How many eyes are on the street. Rises with your heat.",
+   "text": "Police make illegal work riskier: checkpoints, stings and questions."
+  },
+  "services": {
+   "topic": "city",
+   "title": "Things to do at places",
+   "short": "Most can be done once a day per place.",
+   "text": "Hand out cards to bring patients in, recruit staff, listen for rumours, salvage parts, buy supplies cheaper, take courier jobs and licensed shifts, and visit patients at home. Each takes time on the clock."
+  },
+  "missing": {
+   "topic": "city",
+   "title": "Missing patients",
+   "short": "Their family asks for help: start at their home.",
+   "text": "Patients with risky chrome can disappear. Visit their home to find a clue, then go where it points. You have a few days."
+  },
+  "black_market": {
+   "topic": "money",
+   "title": "The black market",
+   "short": "Cheaper and rarer chrome, with unknown properties and risk.",
+   "text": "Unlocked by a fixer's card or reputation 25. Stock can carry hidden traits (study to reveal them), unidentified devices, and contacts who trust or suspect you. Six suppliers each have their own goods, credit and favours."
+  },
+  "loyalty": {
+   "topic": "staff",
+   "title": "Loyalty",
+   "short": "How much your staff stick with you. Low loyalty: thefts, quitting.",
+   "text": "Fair pay, good outcomes, raises and time together raise loyalty; forcing them against their ethics and deaths lower it."
+  },
+  "stress": {
+   "topic": "staff",
+   "title": "Stress",
+   "short": "High stress makes staff slower and more error-prone.",
+   "text": "Hard jobs and long nights stress your staff. Breaks, a drink at their bar and easier jobs bring it down."
+  },
+  "ethics": {
+   "topic": "staff",
+   "title": "Ethics",
+   "short": "What a ripperdoc refuses to do (unless you insist).",
+   "text": "Some staff refuse black-market chrome, corporate work or minors. You can insist; it costs loyalty."
+  },
+  "odds": {
+   "topic": "surgery",
+   "title": "Odds",
+   "short": "Chance of a clean result with what you have now.",
+   "text": "Odds combine your skill, tools, the implant's condition, known conditions, neural load and modifiers from skills, the clinic and the hour."
+  },
+  "wall": {
+   "topic": "basics",
+   "title": "The Clinic Wall",
+   "short": "Pins for your milestones, losses, regulars and warnings.",
+   "text": "Click the wall in the clinic (or JOURNAL > WALL) to read it."
+  },
+  "time": {
+   "topic": "basics",
+   "title": "The clock",
+   "short": "The day runs 09:00 to 04:00. Everything you do takes time.",
+   "text": "Operations take 20 minutes to two hours; talking, travel and services take time too. The hour changes who walks in, prices and what happens in the city. At 04:00 the doors lock: close for the night."
+  },
+  "work_stats": {
+   "topic": "staff",
+   "title": "Skill, speed, precision, reliability",
+   "short": "How good a ripperdoc (or a tool) is at the work.",
+   "text": "SKILL: how difficult a job they can take on. SPEED: how fast they work (less time on the clock). PRECISION: fewer mistakes, less bleeding. RELIABILITY: how consistent they are from job to job. On tools, PRECISION and SPEED are multipliers on your own hands; RISK is how much a tool adds to complications."
+  },
+  "salary": {
+   "topic": "staff",
+   "title": "Salary",
+   "short": "Paid every night, whether they worked or not.",
+   "text": "Salaries are part of tonight's bill. Raises improve loyalty."
+  },
+  "reading": {
+   "topic": "basics",
+   "title": "Reading is free",
+   "short": "Information screens and the field guide stop the emergency timer and pause an operation.",
+   "text": "Reading never costs you. While you're on the map, the journal, inventory, staff, the shop, the database, business, skills, facility or settings, or have the field guide or recent changes open, a bleeding patient's countdown stops and an operation in progress holds still. Game time itself only moves when you act: a job, a conversation, a trip, closing the day."
+  },
+  "priorities": {
+   "topic": "basics",
+   "title": "What matters now",
+   "short": "The clinic's short list of what needs you, most urgent first. Click a line to go there.",
+   "text": "WHAT MATTERS NOW on the clinic screen is built from the real state of the game every time you look: emergencies, the patient at the door, who wants to talk, followed people and places, unread messages, quests on their last day, patients due back, stressed staff, low supplies, rising heat. ■ is critical, ▲ important, · useful. Click a line and the game takes you there."
+  },
+  "follow": {
+   "topic": "basics",
+   "title": "Follow",
+   "short": "Keep a quest, person, patient or place on your MAIN page with where and when.",
+   "text": "Use ☆ FOLLOW on a quest, a cast member, a patient or a place. The journal's MAIN page then shows where they are right now (people keep their own hours), how many days are left, or what's happening there, and the clinic's priorities remind you when it's time. Followed places get a ★ on the city map. Finished things drop off by themselves."
+  },
+  "changes": {
+   "topic": "basics",
+   "title": "Recent changes",
+   "short": "What changed while you were busy: money, standing, heat, supplies, staff, people, places.",
+   "text": "RECENT CHANGES (the CHANGES button on the clinic, or its key) lists what moved and by how much, newest first, merged so it stays short. ■ critical, ▲ important, · info. Click a line to go to the thing. Only critical changes interrupt you with a pop-up."
+  },
+  "preview": {
+   "topic": "surgery",
+   "title": "Surgery preview",
+   "short": "The decision on one card before you cut: risk, time, cost, pay, complications, odds, surgeon.",
+   "text": "The operation plan shows a SURGERY PREVIEW: difficulty, patient risk, how much of the night it takes, what it costs and pays, how many complications to expect and the chance of another, what could go wrong, your estimated odds (from your record on this procedure and the job's difficulty) and the recommended surgeon with the reason. Estimates assume your diagnosis is right. CHANGE SURGEON hands the job to a ripperdoc; the choice is always yours."
+  },
+  "controls": {
+   "topic": "basics",
+   "title": "Controls",
+   "short": "Every key can be changed in SETTINGS > CONTROLS: presets, search, two keys per action.",
+   "text": "SETTINGS > CONTROLS lists every action with a primary and a secondary key. Click a key and press the new one (CTRL, SHIFT and ALT combinations work; DEL unassigns). If the key is taken you choose: REPLACE (the other action loses it), SWAP or CANCEL. Presets: DEFAULT, WASD, LEFT-HANDED. RESET puts one action, a category or everything back. Help texts always show your current keys."
+  }
+ }
+}

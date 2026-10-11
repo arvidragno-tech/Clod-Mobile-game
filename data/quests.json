@@ -1,0 +1,429 @@
+{
+ "_doc": "Quests (QuestManager). types: main, side, staff, customer, faction, black_market, clinic.",
+ "quests": [
+  {
+   "id": "q_survive",
+   "type": "main",
+   "title": "Keep The Lights On",
+   "description": "Pell Ormond owns the building and the debt. Survive your first week without owing him more than 500.",
+   "objective": {
+    "type": "day",
+    "n": 7,
+    "and": {
+     "type": "debt_max",
+     "n": 500
+    },
+    "text": "Reach day 7 with debt under 500"
+   },
+   "reward": {
+    "money": 150,
+    "rep": 3
+   },
+   "consequence": "The Landlord stops treating you like a temporary tenant.",
+   "giver": "pell_ormond",
+   "act": 1
+  },
+  {
+   "id": "q_mentor_lessons",
+   "type": "main",
+   "title": "Three Clean Jobs",
+   "description": "Ilse Hartmann wants proof your hands are worth teaching.",
+   "objective": {
+    "type": "ops",
+    "n": 3,
+    "text": "Complete 3 operations"
+   },
+   "reward": {
+    "xp": 120,
+    "rep": 2,
+    "rel": {
+     "ilse_hartmann": 10
+    }
+   },
+   "consequence": "Ilse shows you how to close a wound so it stays closed.",
+   "giver": "ilse_hartmann",
+   "act": 1
+  },
+  {
+   "id": "q_first_hire",
+   "type": "staff",
+   "title": "Another Pair Of Hands",
+   "description": "One person can't run a clinic. Make room and hire someone.",
+   "objective": {
+    "type": "staff",
+    "n": 1,
+    "text": "Hire one ripperdoc"
+   },
+   "reward": {
+    "rep": 2
+   },
+   "consequence": "Someone else can take the easy jobs while you sleep.",
+   "giver": "",
+   "act": 1
+  },
+  {
+   "id": "q_find_wire",
+   "type": "black_market",
+   "title": "The Card Under The Door",
+   "description": "The Undermarket finds you when you're worth finding. Build street rep until a fixer calls.",
+   "objective": {
+    "type": "flag",
+    "flag": "bm_access",
+    "text": "Gain black-market access"
+   },
+   "reward": {
+    "faction": {
+     "black_market": 5
+    }
+   },
+   "consequence": "The den behind the noodle stall opens for you.",
+   "giver": "",
+   "act": 1
+  },
+  {
+   "id": "q_reputation",
+   "type": "main",
+   "title": "A Name In The Sump",
+   "description": "Rep keeps the door busy and the inspectors curious.",
+   "objective": {
+    "type": "rep",
+    "n": 25,
+    "text": "Reach 25 reputation"
+   },
+   "reward": {
+    "money": 300
+   },
+   "consequence": "Better-paying customers start to ask for you by name.",
+   "giver": "",
+   "act": 2
+  },
+  {
+   "id": "q_new_address",
+   "type": "clinic",
+   "title": "A Second Address",
+   "description": "One room is a hideout. Two is a practice.",
+   "objective": {
+    "type": "clinics",
+    "n": 2,
+    "text": "Own two clinics"
+   },
+   "reward": {
+    "rep": 5
+   },
+   "consequence": "Your name now spans districts.",
+   "giver": "",
+   "act": 2
+  },
+  {
+   "id": "q_fit_out",
+   "type": "clinic",
+   "title": "Fit Out",
+   "description": "Make the room work: install upgrades that change how jobs go.",
+   "objective": {
+    "type": "upgrades",
+    "n": 4,
+    "text": "Install 4 upgrades in total"
+   },
+   "reward": {
+    "money": 200
+   },
+   "consequence": "The clinic stops looking temporary.",
+   "giver": "",
+   "act": 1
+  },
+  {
+   "id": "q_security",
+   "type": "clinic",
+   "title": "Locks And Lenses",
+   "description": "Raids, informants, thieves. See them coming.",
+   "objective": {
+    "type": "security",
+    "n": 4,
+    "text": "Reach security 4 at your active clinic"
+   },
+   "reward": {
+    "faction": {
+     "corporate_security": 3
+    }
+   },
+   "consequence": "Fewer surprises at the door.",
+   "giver": "",
+   "act": 2
+  },
+  {
+   "id": "q_wire_courier",
+   "type": "black_market",
+   "title": "The Courier's Eye",
+   "description": "Wire's courier needs untraceable chrome. Install a black-market implant.",
+   "objective": {
+    "type": "counter",
+    "id": "bm_install",
+    "n": 1,
+    "text": "Install one black-market implant"
+   },
+   "reward": {
+    "money": 450,
+    "faction": {
+     "black_market": 8
+    },
+    "rel": {
+     "vesna_kalo": 10
+    }
+   },
+   "consequence": "Wire starts sending you her better customers.",
+   "giver": "vesna_kalo",
+   "act": 2,
+   "deadline_days": 5
+  },
+  {
+   "id": "q_undermarket_trade",
+   "type": "black_market",
+   "title": "Liquid Chrome",
+   "description": "Turn salvage into credit through the Undermarket.",
+   "objective": {
+    "type": "counter",
+    "id": "bm_sell",
+    "n": 3,
+    "text": "Sell 3 items on the black market"
+   },
+   "reward": {
+    "money": 200,
+    "faction": {
+     "black_market": 4
+    }
+   },
+   "consequence": "The brokers learn your face.",
+   "giver": "",
+   "act": 1
+  },
+  {
+   "id": "q_crew_medic",
+   "type": "faction",
+   "title": "Blood Debts",
+   "description": "Mother's crews remember who stitched them up.",
+   "objective": {
+    "type": "faction",
+    "id": "street_gangs",
+    "n": 20,
+    "text": "Reach +20 with the Rustline Crews"
+   },
+   "reward": {
+    "money": 250,
+    "rel": {
+     "rika_kessel": 10
+    }
+   },
+   "consequence": "The Belt gets quieter around your door.",
+   "giver": "rika_kessel",
+   "act": 2
+  },
+  {
+   "id": "q_aegis_contract",
+   "type": "faction",
+   "title": "Clean Hands For Aegis",
+   "description": "Aegis Meridian pays well for discreet field work.",
+   "objective": {
+    "type": "faction",
+    "id": "corporate_security",
+    "n": 15,
+    "text": "Reach +15 with Aegis Meridian"
+   },
+   "reward": {
+    "money": 600
+   },
+   "consequence": "Aegis patrols start skipping your street.",
+   "giver": "",
+   "act": 2
+  },
+  {
+   "id": "q_teo_grow",
+   "type": "staff",
+   "title": "Teo's Coat",
+   "description": "Teo wants to be a real surgeon. Give him the work.",
+   "objective": {
+    "type": "staff_skill",
+    "id": "teo_marr",
+    "n": 3,
+    "text": "Teo reaches skill 3"
+   },
+   "reward": {
+    "rel": {
+     "teo_marr": 15
+    }
+   },
+   "consequence": "Teo earns a ripperdoc's coat.",
+   "giver": "teo_marr",
+   "act": 2
+  },
+  {
+   "id": "q_team",
+   "type": "staff",
+   "title": "A Real Team",
+   "description": "Three people who trust each other with a scalpel.",
+   "objective": {
+    "type": "staff",
+    "n": 3,
+    "text": "Employ 3 ripperdocs"
+   },
+   "reward": {
+    "rep": 4
+   },
+   "consequence": "Your clinics can run without you.",
+   "giver": "",
+   "act": 3
+  },
+  {
+   "id": "q_regulars",
+   "type": "customer",
+   "title": "Regulars",
+   "description": "Some faces come back. That's how a practice survives.",
+   "objective": {
+    "type": "regulars",
+    "n": 3,
+    "text": "Have 3 regular customers"
+   },
+   "reward": {
+    "money": 200,
+    "rep": 2
+   },
+   "consequence": "Regulars send their friends.",
+   "giver": "",
+   "act": 1
+  },
+  {
+   "id": "q_dune",
+   "type": "side",
+   "title": "The Butcher's Shadow",
+   "description": "Silas Dune wants your market. Settle it: partner with him or ruin him.",
+   "objective": {
+    "type": "flag_any",
+    "flags": [
+     "dune_partner",
+     "dune_ruined"
+    ],
+    "text": "Resolve the rivalry with Silas Dune"
+   },
+   "reward": {
+    "rep": 3
+   },
+   "consequence": "Furnace Line stops being a war zone.",
+   "giver": "silas_dune",
+   "act": 2
+  },
+  {
+   "id": "q_landlord_debt",
+   "type": "side",
+   "title": "Paper Chains",
+   "description": "You owe money now. Every credit you owe Pell is a leash. Cut it.",
+   "objective": {
+    "type": "debt_max",
+    "n": 0,
+    "text": "Pay your debt to zero"
+   },
+   "reward": {
+    "rel": {
+     "pell_ormond": 5
+    }
+   },
+   "consequence": "The Landlord has to find someone else to squeeze.",
+   "giver": "pell_ormond",
+   "act": 1
+  },
+  {
+   "id": "q_thread_installs",
+   "type": "main",
+   "title": "Stabilisers",
+   "description": "Voss's kits are in your cabinet. Install three neural implants for Lyra's 'programme'.",
+   "objective": {
+    "type": "counter",
+    "id": "neural_install",
+    "n": 3,
+    "text": "Install 3 neural implants"
+   },
+   "reward": {
+    "money": 1200,
+    "faction": {
+     "lyra_biocomp": 10
+    }
+   },
+   "consequence": "Lyra's numbers look good. Your patients' fevers do not.",
+   "giver": "cassian_voss",
+   "act": 3,
+   "deadline_days": 8
+  },
+  {
+   "id": "q_noor",
+   "type": "main",
+   "title": "Patient Zero",
+   "description": "Noor Sayeh carries a lattice nobody should have survived. Keep them safe until you know what THREAD is.",
+   "objective": {
+    "type": "flag",
+    "flag": "ilse_truth_known",
+    "text": "Learn what THREAD is"
+   },
+   "reward": {
+    "xp": 200
+   },
+   "consequence": "You know what Lyra built. Now you have to decide what to do with it.",
+   "giver": "noor_sayeh",
+   "act": 3
+  },
+  {
+   "id": "q_truth",
+   "type": "main",
+   "title": "Into The Light",
+   "description": "Ilse built THREAD. Moor can take it to a tribunal. Get her the evidence, or decide it's not worth the fire.",
+   "objective": {
+    "type": "flag_any",
+    "flags": [
+     "evidence_given",
+     "evidence_sold",
+     "joined_lyra",
+     "voss_backed_down",
+     "thread_partner"
+    ],
+    "text": "Decide what happens to the THREAD evidence"
+   },
+   "reward": {
+    "rep": 8
+   },
+   "consequence": "Caldera will be talking about this for years.",
+   "giver": "adaeze_moor",
+   "act": 4
+  },
+  {
+   "id": "q_final",
+   "type": "main",
+   "title": "Consequence",
+   "description": "Everything you did comes back. Face it.",
+   "objective": {
+    "type": "flag",
+    "flag": "ending_chosen",
+    "text": "Reach the end of your story"
+   },
+   "reward": {},
+   "consequence": "The end of one story.",
+   "giver": "",
+   "act": 5
+  },
+  {
+   "id": "q_inside_job",
+   "type": "staff",
+   "title": "Inside Job",
+   "description": "Chrome walked out of your clinic with a key. Somebody on your payroll took it. Find out who before it happens again.",
+   "objective": {
+    "type": "flag",
+    "flag": "inside_job_solved",
+    "text": "Investigate the break-in (SECURITY) and confront the right person"
+   },
+   "reward": {
+    "rep": 3,
+    "xp": 60
+   },
+   "consequence": "Your staff know you check the cameras now.",
+   "giver": "",
+   "act": 1,
+   "deadline_days": 7
+  }
+ ]
+}

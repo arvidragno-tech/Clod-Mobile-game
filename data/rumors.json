@@ -1,0 +1,86 @@
+{
+ "rumors": [
+  {
+   "id": "welcome",
+   "text": "Word on the street: a new ripper set up in a basement on Sublevel 3.",
+   "conditions": {}
+  },
+  {
+   "id": "static_fever_lore",
+   "text": "Doctors whisper about 'static fever': chrome-heavy patients losing time, then losing themselves.",
+   "conditions": {
+    "min_ops": 2
+   }
+  },
+  {
+   "id": "undermarket",
+   "text": "The Undermarket moves military chrome through the old flood tunnels. Ask for Wire.",
+   "conditions": {
+    "min_rep": 10
+   }
+  },
+  {
+   "id": "aegis_crackdown",
+   "text": "Aegis Meridian Security is paying informants who report unlicensed clinics.",
+   "conditions": {
+    "min_heat": 20
+   }
+  },
+  {
+   "id": "rustline_war",
+   "text": "Two Rustline crews are fighting over the drowned district. Expect more knife wounds.",
+   "conditions": {
+    "min_ops": 4
+   }
+  },
+  {
+   "id": "mnemos",
+   "text": "A Lyra Biocomp prototype memory core went missing from a lab convoy last week.",
+   "conditions": {
+    "min_ops": 6
+   }
+  },
+  {
+   "id": "medboard_bribes",
+   "text": "Inspector Moor never refuses a 'consulting fee'. Or so people say.",
+   "conditions": {
+    "min_heat": 30
+   }
+  },
+  {
+   "id": "hartmann_lore",
+   "text": "A disgraced corporate surgeon is drinking her pension away in the Sump.",
+   "conditions": {
+    "min_ops": 5
+   }
+  },
+  {
+   "id": "kill_switch",
+   "text": "Some rippers plant kill-switches for the gangs. Nobody admits to it.",
+   "conditions": {
+    "flag": "did_killswitch"
+   }
+  },
+  {
+   "id": "elite_clinics",
+   "text": "Up-level clinics run robot arms and neural scanners. Down here we use hands.",
+   "conditions": {
+    "min_level": 3
+   }
+  },
+  {
+   "id": "lyra_trials",
+   "text": "Lyra ran neural trials on Sump residents through 'free clinics'. The subjects were listed as volunteers. Some of them are still in the annex past Checkpoint 9.",
+   "conditions": {
+    "flag": "lyra_gossip"
+   }
+  },
+  {
+   "id": "city_routes",
+   "text": "The Spindle Interchange sees everyone sooner or later. If someone in Caldera is hiding, ask the freight handlers.",
+   "conditions": {
+    "min_rep": 5
+   }
+  }
+ ]
+}

@@ -1,0 +1,67 @@
+{
+ "_doc": "Black-market supplier network (SupplierManager). Categories describe what is sold and the risk you're told about; grades set condition range and performance; suppliers are original contacts you discover through customers, staff, fixers, factions, quests and rumours. Per supplier: trust (unlocks), suspicion (too much and they cut you off), debt (credit: pay after N jobs), favours (requests through COMMS). Inventory refreshes daily and bends with time of day, district, heat, world events, your reputation and what you bought.",
+ "categories": {
+  "stolen": {"label": "STOLEN", "risk": "May still be tracked by its owner. Heat +4 on purchase.", "heat": 4, "price": 0.75, "tracker": 0.3},
+  "military_surplus": {"label": "MILITARY SURPLUS", "risk": "Hard-wearing, unregistered, attracts corporate security. Heat +5.", "heat": 5, "price": 1.25, "traits": 0.6},
+  "experimental": {"label": "EXPERIMENTAL", "risk": "Untested. Powerful or unstable; hidden properties likely.", "heat": 2, "price": 1.3, "traits": 1.0},
+  "restricted_equipment": {"label": "RESTRICTED EQUIPMENT", "risk": "Licensed surgical tools you aren't licensed for. Heat +3.", "heat": 3, "price": 1.5},
+  "illegal_pharma": {"label": "ILLEGAL PHARMACEUTICALS", "risk": "Cheap sterile packs and stims, cut with who knows what. Heat +1.", "heat": 1, "price": 0.6},
+  "counterfeit": {"label": "COUNTERFEIT", "risk": "Brand-name shell, gutter internals. Often has a hidden flaw.", "heat": 1, "price": 0.55, "flaw": 0.5},
+  "salvaged": {"label": "SALVAGED", "risk": "Pulled from the dead. Worn, cheap, honest about it.", "heat": 0, "price": 0.45},
+  "prototype": {"label": "PROTOTYPE", "risk": "Pre-release corporate chrome. Somebody will want it back. Heat +6.", "heat": 6, "price": 1.6, "traits": 1.0, "tracker": 0.25},
+  "rare_tools": {"label": "RARE TOOLS", "risk": "Top-tier instruments off the books. Heat +2.", "heat": 2, "price": 1.35},
+  "unknown_tech": {"label": "UNKNOWN TECH", "risk": "Unidentified device. Model, condition and properties unknown until analysed.", "heat": 3, "price": 0.9, "unknown": true}
+ },
+ "grades": {
+  "salvaged": {"label": "SALVAGED", "cond": [25, 50], "perf": 0.85},
+  "used": {"label": "USED", "cond": [45, 70], "perf": 0.95},
+  "refurbished": {"label": "REFURBISHED", "cond": [65, 85], "perf": 1.0},
+  "professional": {"label": "PROFESSIONAL", "cond": [80, 96], "perf": 1.0},
+  "military": {"label": "MILITARY", "cond": [85, 100], "perf": 1.1},
+  "prototype": {"label": "PROTOTYPE", "cond": [70, 100], "perf": 1.2},
+  "unknown": {"label": "UNKNOWN", "cond": [20, 100], "perf": 1.0}
+ },
+ "unlocks": [
+  {"trust": 20, "id": "discount", "label": "Better prices (-10%)"},
+  {"trust": 35, "id": "credit", "label": "Credit: pay after your next 3 jobs"},
+  {"trust": 50, "id": "rush", "label": "Emergency delivery, any hour"},
+  {"trust": 60, "id": "rare", "label": "Rare items"},
+  {"trust": 75, "id": "secret", "label": "Secret inventory"}
+ ],
+ "credit_jobs": 3,
+ "cutoff_suspicion": 80,
+ "suppliers": [
+  {"id": "magpie", "name": "Magpie", "archetype": "Scavenger", "desc": "Picks through crash sites and morgues. Talks too much, sells cheap.",
+   "categories": {"salvaged": 4, "stolen": 2, "counterfeit": 2, "illegal_pharma": 1}, "grades": {"salvaged": 4, "used": 3, "refurbished": 1},
+   "reliability": 0.75, "stock": [3, 5], "night": 1.2, "trust": 10, "lead": "A scavenger called Magpie sells what she pulls off the dead, under the Kessler overpass.",
+   "discover": {"archetypes": ["scavenger", "addict", "dock_worker"]}},
+  {"id": "okafor", "name": "Sergeant Okafor", "archetype": "Military contact", "desc": "Quartermaster who never stopped requisitioning. Wants discretion, pays in loyalty.",
+   "categories": {"military_surplus": 4, "restricted_equipment": 2, "rare_tools": 2}, "grades": {"military": 4, "professional": 2},
+   "reliability": 0.9, "stock": [2, 4], "night": 1.0, "trust": 0, "lead": "A quartermaster called Okafor moves crates out of the old Aegis depot. Mercs know how to reach him.",
+   "discover": {"archetypes": ["street_merc", "veteran", "bounty_hunter"], "faction": "independent_mercs", "faction_rep": 15}},
+  {"id": "glass", "name": "Glass", "archetype": "Corporate leak", "desc": "Someone inside Lyra with a gambling problem. Never the same voice twice.",
+   "categories": {"prototype": 3, "experimental": 2, "restricted_equipment": 1}, "grades": {"prototype": 3, "professional": 2},
+   "reliability": 0.85, "stock": [1, 3], "night": 1.4, "trust": 0, "lead": "There's a leak inside Lyra Biocomp who goes by 'Glass'. Corporate clients sometimes know the drop.",
+   "discover": {"archetypes": ["corporate", "security_officer"], "dim": "corporate", "dim_min": 10}},
+  {"id": "sallow", "name": "Sallow", "archetype": "Street dealer", "desc": "Stims, sedatives, sterile packs of questionable origin. Always around, always cheap.",
+   "categories": {"illegal_pharma": 4, "counterfeit": 2, "stolen": 1}, "grades": {"used": 3, "refurbished": 2},
+   "reliability": 0.7, "stock": [3, 5], "night": 1.5, "trust": 15, "lead": "Sallow deals stims out of a noodle bar on Canal Street. Everybody knows Sallow.",
+   "discover": {"archetypes": ["club_performer", "criminal", "gang_member", "addict"]}},
+  {"id": "curator", "name": "The Curator", "archetype": "Experimental broker", "desc": "Collects things nobody can identify. Pays well for mysteries, asks favours for the rest.",
+   "categories": {"unknown_tech": 4, "experimental": 2, "prototype": 1}, "grades": {"unknown": 4, "prototype": 2},
+   "reliability": 0.8, "stock": [2, 3], "night": 1.3, "trust": 0, "lead": "The Curator buys and sells chrome nobody can name. Your black-market contacts can make an introduction.",
+   "discover": {"archetypes": ["bm_tech", "netrunner", "smuggler"], "dim": "black_market", "dim_min": 10}},
+  {"id": "juno", "name": "Juno Pell", "archetype": "Fixer", "desc": "Knows everyone, owns nothing, takes ten percent of everything.",
+   "categories": {"stolen": 2, "military_surplus": 1, "rare_tools": 1, "experimental": 1, "salvaged": 1}, "grades": {"refurbished": 2, "professional": 2, "military": 1},
+   "reliability": 0.85, "stock": [3, 4], "night": 1.2, "trust": 5, "lead": "Juno Pell fixes deals for the whole lower city. Fixers who come through your door know the number.",
+   "discover": {"archetypes": ["fixer"], "flag": "bm_access"}}
+ ],
+ "favors": [
+  {"id": "treat", "label": "Treat someone of theirs", "body": "{supplier}: \"One of mine got cut. No records, no questions. You'll see them tomorrow.\"", "accept": {"trust": 12, "patient": true}, "decline": {"trust": -4}},
+  {"id": "hide", "label": "Hide a patient", "body": "{supplier}: \"I need someone kept in your back room for two nights. Security is looking.\"", "accept": {"trust": 15, "heat": 6, "money": 200}, "decline": {"trust": -5}},
+  {"id": "deliver", "label": "Deliver a package", "body": "{supplier}: \"Take a box across the canal for me. Don't open it.\"", "accept": {"trust": 10, "heat": 3, "money": 150}, "decline": {"trust": -3}},
+  {"id": "store", "label": "Store contraband", "body": "{supplier}: \"Keep a crate in your stash for a few days. If anyone asks, it's medical waste.\"", "accept": {"trust": 14, "contraband": 4}, "decline": {"trust": -4}},
+  {"id": "repair", "label": "Repair something (3 parts)", "body": "{supplier}: \"My arm's grinding. Fix it and we're square.\"", "accept": {"trust": 10, "parts": -3}, "decline": {"trust": -2}},
+  {"id": "secret", "label": "Keep a secret", "body": "{supplier}: \"You saw a face last night you weren't meant to. You didn't see it. Right?\"", "accept": {"trust": 8, "suspicion": -10}, "decline": {"trust": -10, "suspicion": 20}}
+ ]
+}

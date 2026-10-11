@@ -1,0 +1,115 @@
+{
+ "cast": [
+  {
+   "id": "ilse_hartmann", "name": "Ilse Hartmann", "alias": "The Old Surgeon", "age": 67, "presentation": "femme",
+   "occupation": "Retired ripperdoc", "faction": "none", "role": "mentor", "dialogue_style": "doctor",
+   "personality": ["dry", "guilt-ridden", "pragmatic", "protective"],
+   "background": "Twenty years as a Lyra Biocomp neural architect, then twenty more cutting in the Sump after she walked out with something in her head they wanted back. Her hands shake now. Her eyes don't.",
+   "motivation": "Undo the thing she helped build before her own implants finish failing.",
+   "arc": "Mentor who teaches you the trade, then the truth: she co-designed THREAD. In Act IV she either turns herself in to buy your freedom, helps you expose Lyra, or is sold to them.",
+   "silhouette": "Tall, thin, stooped; long stained leather apron over a dark coat; cane in the left hand, a chrome right hand that never stops trembling.",
+   "relationship": 15, "relationship_state": "respectful", "portrait_bg": "clinic", "anim": "tremor", "voice": 0.85,
+   "appearance": {"v": 2, "presentation": "femme", "build": "slim", "posture": "hunched", "face": "gaunt", "nose": "hooked", "brows": "thin", "age_look": "old", "expr": "neutral", "outfit": "ripperdoc", "hair": "tied", "hair_color": "white", "skin": 1, "iris": "gray", "facial_hair": "", "scars": ["stitched"], "tattoos": [], "makeup": [], "piercings": [], "cyber": ["optic", "shoulder_chrome", "temple_ports"], "accessories": ["cigarette"], "body_cyber": ["arm_r", "eye"], "body_acc": ["cane", "cigarette"], "cloth_a": "charcoal", "cloth_b": "black", "cloth_c": "black", "metal": "gunmetal", "glow": "green", "rim": "3a8a7a"}
+  },
+  {
+   "id": "vesna_kalo", "name": "Vesna Kalo", "alias": "Wire", "age": 39, "presentation": "femme",
+   "occupation": "Fixer, Undermarket broker", "faction": "black_market", "role": "fixer", "dialogue_style": "fixer",
+   "personality": ["cryptic", "transactional", "amused", "careful"],
+   "background": "Started as a courier mule with a chip in her neck. Now half the hot chrome under Sublevel 3 moves through her ledgers, and nobody has seen the ledgers.",
+   "motivation": "Own the flow, not the product. Never owe anyone, especially Lyra, who she already owes.",
+   "arc": "Supplier who tests you, partner if you deliver, and the person who sells you to Lyra if you look like a bad investment. Her debt to Voss is the knife in Act IV.",
+   "silhouette": "Slim, upright, long magenta hair over a hooded purple coat; one hand always on a datapad, a lit cigarette in the other.",
+   "relationship": 0, "relationship_state": "transactional", "portrait_bg": "market", "anim": "smoker", "voice": 1.1,
+   "appearance": {"v": 2, "presentation": "femme", "build": "slim", "posture": "upright", "face": "oval", "nose": "small", "brows": "thin", "age_look": "adult", "expr": "smirk", "outfit": "dealer", "hair": "long", "hair_color": "dye_magenta", "skin": 4, "iris": "dark", "facial_hair": "", "scars": [], "tattoos": ["neck_code"], "makeup": ["liner", "lipstick"], "piercings": ["nose_ring", "studs"], "cyber": ["cheek_leds", "ear_module", "neck_ports"], "accessories": ["cigarette"], "body_cyber": [], "body_acc": ["datapad", "cigarette"], "cloth_a": "bm_purple", "cloth_b": "black", "cloth_c": "dark_red", "metal": "blackened", "glow": "magenta", "rim": "7a2a6a"}
+  },
+  {
+   "id": "cassian_voss", "name": "Dr. Cassian Voss", "alias": "", "age": 48, "presentation": "masc",
+   "occupation": "Director of Field Acquisitions, Lyra Biocomp", "faction": "lyra_biocomp", "role": "corporate", "dialogue_style": "corporate",
+   "personality": ["precise", "polite", "patient", "ruthless"],
+   "background": "Board-certified surgeon, never once raised his voice. His department recovers 'misplaced company assets' from bodies in the lower city.",
+   "motivation": "Recover every THREAD prototype and the people carrying them before the board learns how many walked out.",
+   "arc": "Arrives in Act III as a generous client offering priority contracts, becomes the conspiracy's face in Act IV. Can be your patron, your victim's executioner, or the man you put in front of a tribunal.",
+   "silhouette": "Narrow, perfectly upright; a high-collared white coat with nothing out of place; the only chrome is a seam at the jaw you notice too late.",
+   "relationship": 0, "relationship_state": "neutral", "portrait_bg": "corporate", "anim": "still", "voice": 0.95,
+   "appearance": {"v": 2, "presentation": "masc", "build": "slim", "posture": "upright", "face": "long", "nose": "straight", "brows": "thin", "age_look": "adult", "expr": "neutral", "outfit": "executive", "hair": "slick", "hair_color": "gray", "skin": 0, "iris": "blue", "facial_hair": "", "scars": [], "tattoos": [], "makeup": [], "piercings": [], "cyber": ["skin_seam", "twin_optics"], "accessories": ["earpiece"], "body_cyber": [], "body_acc": ["datapad"], "cloth_a": "corp_white", "cloth_b": "corp_gray", "cloth_c": "cold_blue", "metal": "ceramic", "glow": "blue", "rim": "5a7aa8"}
+  },
+  {
+   "id": "rika_kessel", "name": "Rika Kessel", "alias": "Mother", "age": 54, "presentation": "femme",
+   "occupation": "Boss of the Rustline Crews", "faction": "street_gangs", "role": "gang_leader", "dialogue_style": "gang",
+   "personality": ["direct", "aggressive", "loyal", "superstitious"],
+   "background": "Lost half her face to an Aegis sweep in the Industrial Belt and had it rebuilt in scrap. Runs the crews like a family that bites.",
+   "motivation": "Keep her crews alive, fed and chromed while Aegis and the corps squeeze the Belt.",
+   "arc": "Shakes you down for protection in Act I, tests you with her wounded in Act II, offers you the crews' trade in Act III. In Act V she either rides with you or burns your clinics.",
+   "silhouette": "Heavy, wide stance, spiked pauldron on one shoulder, open leather coat; the left half of her face is riveted chrome.",
+   "relationship": -10, "relationship_state": "suspicious", "portrait_bg": "street", "anim": "aggressive", "voice": 0.75,
+   "appearance": {"v": 2, "presentation": "femme", "build": "heavy", "posture": "wide", "face": "square", "nose": "broken", "brows": "heavy", "age_look": "old", "expr": "angry", "outfit": "gang", "hair": "mohawk", "hair_color": "gray", "skin": 3, "iris": "dark", "facial_hair": "", "scars": ["slash", "burn"], "tattoos": ["gang_throat", "jaw_ink"], "makeup": ["warpaint"], "piercings": ["ear_gauges", "brow_ring"], "cyber": ["face_half", "neck_ports"], "accessories": ["chain"], "body_cyber": ["eye", "arm_l"], "body_acc": ["blade", "bandolier"], "cloth_a": "black", "cloth_b": "charcoal", "cloth_c": "gang_red", "metal": "blackened", "glow": "red", "rim": "8a2a3a"}
+  },
+  {
+   "id": "rook_varga", "name": "Tomas Varga", "alias": "Rook", "age": 31, "presentation": "masc",
+   "occupation": "Rustline lieutenant", "faction": "street_gangs", "role": "contact", "dialogue_style": "gang",
+   "personality": ["ambitious", "hot-headed", "charming"],
+   "background": "Mother's best collector and worst listener. Has been counting how long she has left.",
+   "motivation": "Take the crews before Aegis takes the Belt.",
+   "arc": "Your first protection contact; in Act IV he can stage a coup with your chrome, or die for her.",
+   "silhouette": "Muscular, wide stance, short leather jacket, chrome jaw and a combat arm.",
+   "relationship": 0, "relationship_state": "neutral", "portrait_bg": "street", "anim": "aggressive", "voice": 0.8,
+   "appearance": {"v": 2, "presentation": "masc", "build": "muscular", "posture": "wide", "face": "square", "nose": "broken", "brows": "heavy", "age_look": "adult", "expr": "smirk", "outfit": "gang", "hair": "undercut", "hair_color": "black", "skin": 4, "iris": "brown", "facial_hair": "stubble", "scars": ["cheek"], "tattoos": ["cheek_lines"], "makeup": [], "piercings": ["lip_ring"], "cyber": ["jaw_plate", "shoulder_chrome"], "accessories": ["bandana"], "body_cyber": ["arm_r", "jaw"], "body_acc": ["holster"], "cloth_a": "black", "cloth_b": "charcoal", "cloth_c": "gang_red", "metal": "blackened", "glow": "red", "rim": "8a2a3a"}
+  },
+  {
+   "id": "adaeze_moor", "name": "Adaeze Moor", "alias": "The Inspector", "age": 44, "presentation": "femme",
+   "occupation": "Inspector, Civic Medical Board", "faction": "medical_authorities", "role": "inspector", "dialogue_style": "official",
+   "personality": ["precise", "weary", "incorruptible", "lonely"],
+   "background": "Closed forty-one illegal clinics. Buried patients from thirty of them. Her board is now funded by Lyra Biocomp grants.",
+   "motivation": "Stop the butchers. Lately, find out why her board keeps ignoring the static fever cases.",
+   "arc": "Hunts you in Acts I-II, starts asking you questions in Act III, and in Act IV is the only one who can carry evidence to a tribunal. She can arrest you, protect you, or be bought.",
+   "silhouette": "Upright, closed long medical coat, tied hair, round glasses, a scanner on the belt.",
+   "relationship": -15, "relationship_state": "suspicious", "portrait_bg": "medical", "anim": "typing", "voice": 1.0,
+   "appearance": {"v": 2, "presentation": "femme", "build": "average", "posture": "upright", "face": "long", "nose": "straight", "brows": "thin", "age_look": "adult", "expr": "neutral", "outfit": "medic", "hair": "tied", "hair_color": "black", "skin": 5, "iris": "dark", "facial_hair": "", "scars": [], "tattoos": [], "makeup": [], "piercings": [], "cyber": ["ear_module"], "accessories": ["glasses"], "body_cyber": [], "body_acc": ["datapad", "medkit"], "cloth_a": "scrub_green", "cloth_b": "dirty_white", "cloth_c": "charcoal", "metal": "chrome", "glow": "green", "rim": "3a8a7a"}
+  },
+  {
+   "id": "silas_dune", "name": "Silas Dune", "alias": "The Butcher of Furnace Line", "age": 41, "presentation": "masc",
+   "occupation": "Ripperdoc, Furnace Line clinic", "faction": "independent_mercs", "role": "rival", "dialogue_style": "doctor",
+   "personality": ["crude", "brilliant", "envious", "fearless"],
+   "background": "Learned surgery on a field rig in a corporate border war. Runs the busiest chop clinic in the Industrial Belt and a waiting list he sells.",
+   "motivation": "Be the only name anyone says when they need chrome. Prove the corporate boards wrong about street surgeons.",
+   "arc": "Undercuts you in Act II, sabotages your supply in Act III, and in Act IV knows things about THREAD he will trade. Can be ruined, absorbed into your network, or become a grudging ally.",
+   "silhouette": "Big, wide stance, shaved head, blood-black leather apron over bare chrome arms; a chrome grille where his teeth were.",
+   "relationship": -5, "relationship_state": "neutral", "portrait_bg": "industrial", "anim": "fidget", "voice": 0.7,
+   "appearance": {"v": 2, "presentation": "masc", "build": "muscular", "posture": "wide", "face": "heavy", "nose": "broken", "brows": "heavy", "age_look": "adult", "expr": "smirk", "outfit": "ripperdoc", "hair": "buzz", "hair_color": "dark_brown", "skin": 2, "iris": "hazel", "facial_hair": "chops", "scars": ["lip", "stitched"], "tattoos": [], "makeup": [], "piercings": [], "cyber": ["mouth_grille", "spine_cables", "serial_marks"], "accessories": [], "body_cyber": ["arm_l", "arm_r", "jaw"], "body_acc": ["toolbelt"], "cloth_a": "charcoal", "cloth_b": "black", "cloth_c": "black", "metal": "gunmetal", "glow": "amber", "rim": "8a6a3a"}
+  },
+  {
+   "id": "noor_sayeh", "name": "Noor Sayeh", "alias": "Patient Zero", "age": 19, "presentation": "andro",
+   "occupation": "Runaway trial subject", "faction": "none", "role": "experimental", "dialogue_style": "street",
+   "personality": ["frightened", "sharp", "stubborn", "kind"],
+   "background": "Signed a free-implant program at sixteen. Woke up in a Lyra ward with something growing along their spine that talks back. Escaped through the drowned district.",
+   "motivation": "Get it out. Or understand it. Or make it stop hurting the people next to them.",
+   "arc": "Arrives on your table in Act III with technology that should not exist. Saving, selling, studying or weaponising them decides who you become in Act V.",
+   "silhouette": "Slight, hunched, hospital gown under a stolen coat, half-shaved head, something wet and glowing climbing out of the collar.",
+   "relationship": 0, "relationship_state": "fearful", "portrait_bg": "lab", "anim": "nervous", "voice": 1.2,
+   "appearance": {"v": 2, "presentation": "andro", "build": "slim", "posture": "hunched", "face": "oval", "nose": "small", "brows": "thin", "age_look": "young", "expr": "fear", "outfit": "patient", "hair": "shaved", "hair_color": "black", "skin": 2, "iris": "gray", "facial_hair": "", "scars": ["stitched"], "tattoos": ["neck_code"], "makeup": [], "piercings": [], "cyber": ["organic_growth", "forehead_chip"], "accessories": [], "body_cyber": ["spine"], "body_acc": [], "cloth_a": "dirty_white", "cloth_b": "bone", "cloth_c": "scrub_green", "metal": "ceramic", "glow": "blue", "rim": "5a7aa8"}
+  },
+  {
+   "id": "teo_marr", "name": "Teo Marr", "alias": "", "age": 23, "presentation": "masc",
+   "occupation": "Apprentice ripperdoc", "faction": "none", "role": "employee", "dialogue_style": "street",
+   "personality": ["earnest", "idealistic", "nervous", "gifted"],
+   "background": "Dropped out of a med-tech program when the tuition chip in his neck bricked. Has been fixing neighbours' implants with a soldering iron ever since.",
+   "motivation": "Prove street medicine can be real medicine. Never put chrome into a kid.",
+   "arc": "Your first hire. Grows into a surgeon who can run a clinic, or breaks: a bad night costs him an eye, a faction can buy him, or he leaves if you cross his lines.",
+   "silhouette": "Thin, slouching, oversized technician jumpsuit, cracked glasses, a headlamp and a belt of cheap tools.",
+   "relationship": 20, "relationship_state": "friendly", "portrait_bg": "clinic", "anim": "fidget", "voice": 1.05,
+   "staff": {"specialization": "general", "skill": 2, "speed": 2, "precision": 3, "reliability": 3, "salary": 35, "ethics": ["no_minors", "no_harvest"], "traits": ["idealist", "quick_learner"]},
+   "appearance": {"v": 2, "presentation": "masc", "build": "slim", "posture": "slouch", "face": "oval", "nose": "straight", "brows": "thin", "age_look": "young", "expr": "neutral", "outfit": "technician", "hair": "messy", "hair_color": "brown", "skin": 3, "iris": "green", "facial_hair": "", "scars": [], "tattoos": [], "makeup": [], "piercings": [], "cyber": ["patched_implant", "neck_ports"], "accessories": ["glasses", "headlamp"], "body_cyber": [], "body_acc": ["toolbelt"], "cloth_a": "work_brown", "cloth_b": "charcoal", "cloth_c": "black", "metal": "brass", "glow": "amber", "rim": "3b9da0"}
+  },
+  {
+   "id": "pell_ormond", "name": "Pell Ormond", "alias": "The Landlord", "age": 58, "presentation": "masc",
+   "occupation": "Landlord and loan shark, the Sump", "faction": "none", "role": "creditor", "dialogue_style": "fixer",
+   "personality": ["genial", "greedy", "patient", "cruel"],
+   "background": "Owns every wet room on Sublevel 3 and most of the people renting them.",
+   "motivation": "Rent on time, interest forever.",
+   "arc": "Your Act I creditor. Pay him, cheat him, or make him need you.",
+   "silhouette": "Heavy, upright in a long coat with a fur collar, gold chain, gloves, a respirator he wears to be seen wearing it.",
+   "relationship": 0, "relationship_state": "transactional", "portrait_bg": "street", "anim": "smoker", "voice": 0.7,
+   "appearance": {"v": 2, "presentation": "masc", "build": "heavy", "posture": "upright", "face": "heavy", "nose": "broad", "brows": "heavy", "age_look": "old", "expr": "smirk", "outfit": "fixer", "hair": "receding", "hair_color": "gray", "skin": 1, "iris": "brown", "facial_hair": "mustache", "scars": [], "tattoos": [], "makeup": [], "piercings": ["studs"], "cyber": ["skin_seam"], "accessories": ["chain", "cigarette"], "body_cyber": [], "body_acc": ["cigarette"], "cloth_a": "brown", "cloth_b": "maroon", "cloth_c": "black", "metal": "brass", "glow": "amber", "rim": "8a6a3a"}
+  }
+ ]
+}
