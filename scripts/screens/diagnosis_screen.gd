@@ -164,13 +164,19 @@ func _build_plan(col: VBoxContainer) -> void:
 	var buttons := UIKit.vbox(12)
 	side.add_child(buttons)
 	buttons.add_child(UIKit.section_head("SURGERY PREVIEW", "", "odds"))
+	# The preview scrolls if it runs long, so the buttons below always fit.
+	var psc := UIKit.scroll()
+	psc.name = "PreviewScroll"
+	buttons.add_child(psc)
+	var pv := UIKit.vbox(8)
+	UIKit.expand(pv)
+	psc.add_child(pv)
 	_preview = UIKit.vbox(4)
 	_preview.name = "SurgeryPreview"
-	buttons.add_child(_preview)
+	pv.add_child(_preview)
 	_ready_note = UIKit.label("", &"", true)
 	_ready_note.name = "ReadyNote"
 	buttons.add_child(_ready_note)
-	buttons.add_child(UIKit.expand(Control.new(), false, true))
 	_begin = UIKit.button("BEGIN OPERATION   [ENTER]", &"BrandButton", GameManager.begin_surgery, "BeginButton", 72)
 	_begin.set_meta(&"default", true)
 	buttons.add_child(_begin)
@@ -178,10 +184,15 @@ func _build_plan(col: VBoxContainer) -> void:
 		UIManager.go_to(UIManager.SCREEN_CUSTOMER, {"assign": true}), "ChangeSurgeon", 44)
 	_hand_off.tooltip_text = "Hand the job to one of your ripperdocs instead (their odds, their stress)."
 	buttons.add_child(_hand_off)
+	var row := UIKit.hbox(8)
+	buttons.add_child(row)
 	var back := UIKit.button("RE-DIAGNOSE", &"GhostButton", _show_diagnose, "PlanBackButton", 44)
-	buttons.add_child(back)
-	var cancel := UIKit.button("CANCEL · BACK TO THE FILE", &"GhostButton", func() -> void: UIManager.go_to(UIManager.SCREEN_CUSTOMER), "PlanCancel", 44)
-	buttons.add_child(cancel)
+	UIKit.expand(back)
+	row.add_child(back)
+	var cancel := UIKit.button("CANCEL", &"GhostButton", func() -> void: UIManager.go_to(UIManager.SCREEN_CUSTOMER), "PlanCancel", 44)
+	cancel.tooltip_text = "Back to the patient's file (nothing is spent)."
+	UIKit.expand(cancel)
+	row.add_child(cancel)
 
 
 func _on_back() -> void:

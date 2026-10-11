@@ -284,8 +284,8 @@ func show_day_report(report: Dictionary) -> void:
 
 func confirm(title: String, body: String, confirm_label: String, on_confirm: Callable, danger: bool = false) -> void:
 	var buttons: Array[Dictionary] = [
-		{"label": "CANCEL", "style": &"GhostButton", "callback": Callable()},
-		{"label": confirm_label, "style": &"DangerButton" if danger else &"AccentButton", "callback": on_confirm},
+		{"label": "CANCEL", "style": &"GhostButton", "callback": Callable(), "name": "ConfirmNo"},
+		{"label": confirm_label, "style": &"DangerButton" if danger else &"AccentButton", "callback": on_confirm, "name": "ConfirmYes"},
 	]
 	show_dialog(title, body, buttons)
 
