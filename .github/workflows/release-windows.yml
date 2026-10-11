@@ -100,7 +100,7 @@ jobs:
         if: github.ref_type == 'tag'
         uses: softprops/action-gh-release@v2
         with:
-          name: Undercity: Ripper ${{ steps.ver.outputs.version }}
+          name: "Undercity: Ripper ${{ steps.ver.outputs.version }}"
           files: |
             build/windows/UndercityRipper.exe
             build/UndercityRipper-${{ steps.ver.outputs.version }}-windows-x64.zip
