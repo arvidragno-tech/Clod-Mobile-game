@@ -186,9 +186,18 @@ func _build_controls() -> void:
 	_bind_status = UIKit.label(_status_text, &"MonoLabel", false, Palette.OK)
 	_bind_status.name = "BindStatus"
 	top.add_child(_bind_status)
+	# The table scrolls on its own so PRESET / MOUSE stay in view beside it.
+	var tsc := UIKit.scroll()
+	tsc.name = "BindScroll"
+	tsc.custom_minimum_size.y = 560
+	tsc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	keys.add_child(tsc)
 	_table = UIKit.vbox(6)
 	_table.name = "BindTable"
-	keys.add_child(_table)
+	UIKit.expand(_table)
+	tsc.add_child(_table)
+	tsc.get_v_scroll_bar().value_changed.connect(func(v: float) -> void: _table_scroll = int(v))
+	_restore_table_scroll(tsc, _table_scroll)
 	search.text_changed.connect(func(t: String) -> void:
 		_search = t
 		_fill_bindings())
@@ -196,6 +205,15 @@ func _build_controls() -> void:
 
 
 var _search: String = ""
+var _table_scroll: int = 0
+
+
+## Puts the rebuilt table back where the player was (after layout settles).
+func _restore_table_scroll(tsc: ScrollContainer, to: int) -> void:
+	await get_tree().process_frame
+	await get_tree().process_frame
+	if is_instance_valid(tsc):
+		tsc.scroll_vertical = to
 var _table: VBoxContainer
 var _bind_status: Label
 var _status_text: String = ""

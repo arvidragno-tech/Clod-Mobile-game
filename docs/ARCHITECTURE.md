@@ -514,3 +514,46 @@ Event outcome keys on top of the incident vocabulary: `effects`
 - **Type**: Chakra Petch (medium/semibold/bold) and Share Tech Mono with a
   DejaVu Sans fallback, wrapped in FontVariations by `tools/build_theme.gd`;
   the title face is imported as MSDF.
+
+## 3.5: guidance and custom controls
+
+Complex systems underneath, simple decisions on screen. Everything here reads
+the live state of the existing managers and stores as little as possible.
+
+- **Input.** `Controls` (autoload) owns the actions: two slots each, a code
+  per slot (a keycode OR-ed with `KEY_MASK_CTRL/SHIFT/ALT/META`, a negative
+  mouse button, or 0 for unassigned), categories, presets, search, conflict
+  checks and `fill()` for `{action}` tokens in on-screen text. Actions match
+  exactly (`event.is_action(a, true)`), so CTRL+S never fires S. `CRITICAL`
+  actions (pause, dialogue continue, contextual) always keep one key.
+  `InputContext` decides who owns the keyboard, in priority order: rebinding
+  > a focused text field > the field guide / help overlays > a conversation >
+  a modal > the screen's own context (`SCREEN_CONTEXTS`). `UIManager` routes
+  every hotkey through it (`ROUTES`), and ESC closes the topmost thing first.
+- **ChangeLog** (autoload, saved): listens to EventBus (factions, heat,
+  reputation, money, levels, places, news, supplies, leads, upgrades,
+  quests, staff, relationships, comms, emergencies) and keeps merged,
+  categorised entries `{seq, cat, subject, text, level, link, delta, day,
+  minute}`. `mark()` / `since(seq, cats)` power the results screen's "NEW"
+  lines; `ChangesPanel` shows the list (G).
+- **Follows** (autoload, saved): followed quests, people, cast, places,
+  returns, deliveries and appointments. `live()` resolves each against the
+  current state (where, when, soon) and drops finished ones.
+- **Guidance** builds WHAT MATTERS NOW (`items()`), ranked critical >
+  important > info; **ClinicStatus** gives the six status rows and
+  `most_important()`; **Recommend** ranks staff by `EmployeeAI.success_chance`,
+  estimates your own odds from your record and level, and mirrors
+  `SurgeryManager.get_extra_complication_chance` for the preview.
+- **Consequence**: `snapshot()` before a decision, `show(headline, before)`
+  after it; the card lists the real deltas and never blocks input.
+- **Hints**: first-time cards (`Hints.first(id)`), remembered in the
+  settings (`seen_hints`), gated on TUTORIAL HINTS and the tutorial; test
+  harnesses set `Hints.enabled = false`.
+- **Nav**: every guidance line, change, follow and result link is a small
+  Dictionary (`{screen, params}`, `{location}`, `{customer}`, `{term}`,
+  `{panel}`); `Nav.open()` follows it and ignores stale links.
+- **Pause rule:** `UIManager.is_reading()` (reading screens, the field guide,
+  a modal) stops the emergency countdown in `CustomerManager`; the field
+  guide also pauses `SurgeryManager`.
+- **Journal tabs** are addressed by name (`tab_name`, `view`, `focus`); the
+  old integer tabs are mapped (`LEGACY`) so existing links keep working.

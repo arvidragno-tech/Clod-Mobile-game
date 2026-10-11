@@ -137,7 +137,9 @@ static func best_implant_uid(c: CustomerData) -> String:
 		return ""
 	var best := ""
 	var score := -INF
-	for inst: ImplantInstance in InventoryManager.get_instances_of(c.requested_cyberware_id):
+	for inst: ImplantInstance in InventoryManager.get_instances():
+		if inst.cyberware_id != c.requested_cyberware_id:
+			continue
 		var s := inst.condition - 100.0 * inst.get_extra_risk() + (10.0 if inst.identified else -25.0)
 		if s > score:
 			score = s

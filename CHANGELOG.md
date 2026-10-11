@@ -4,6 +4,39 @@ All notable changes to *UNDERCITY: RIPPER*. Versions follow
 `application/config/version` in `project.godot` and the Windows file version
 in `export_presets.cfg`.
 
+## 3.5.0 — The game tells you what matters
+
+### What should I do?
+- **WHAT MATTERS NOW** on the clinic screen: everything that needs you, read from the live game (an emergency, a patient at the door, supplies out, heat, debt, people waiting to talk, messages to answer, quest deadlines, returning patients, deliveries, staff close to breaking, skill points, new leads), ranked ■ critical, ▲ important, · info. Click a line to go straight there. The NEXT line is clickable too.
+- **CLINIC STATUS:** money, reputation, staff, supplies, authority heat and the black market, one word each with ✓ / ! / ✕, plus the one thing that matters most and what to do about it.
+- **Recommendations:** the customer file says who should operate and why; the ASSIGN list ranks your ripperdocs by their real odds and marks the best ★ RECOMMENDED with a reason; inventory picks the best unit in stock.
+
+### Before and after a decision
+- **SURGERY PREVIEW** replaces the plan's ready panel: patient, procedure, difficulty, patient risk, time, cost, pay, complication odds and which ones could happen, your odds (from your record and level) and who's recommended, with CHANGE SURGEON, RE-DIAGNOSE and CANCEL.
+- **Consequences:** big decisions (conversations, events, black-market deals, services, handing a job to staff, answering comms) show what actually changed (credits, reputation, each faction, heat, supplies) with ▲ / ▼, and say when something was set in motion.
+- **Results** list what the job opened up (leads, places, quests, messages, news) with VIEW PATIENT and VIEW NEW LEAD.
+- **RECENT CHANGES (G):** what moved while you were busy, merged by subject, newest first, with NEW marks and links; critical ones also toast.
+
+### Finding your way
+- **☆ FOLLOW** quests, people, patients and places; the journal's MAIN page keeps them up to date with where and when, and the map stars followed places.
+- **The journal** is reorganised into MAIN, MESSAGES, PEOPLE, PATIENTS (filters), FACTIONS, BUSINESS and DISCOVERIES (story, news, places, the wall).
+- **Smart filters:** inventory by category plus "fits this patient", "low risk", "good condition", "known traits"; staff by availability, stress and specialty.
+- **The map** lists who's at a place and their role, with FOLLOW.
+- **Learn as you go:** the first time a system shows up (neural load, the preview, priorities, heat, the map, follow, the black market, staff, emergencies, changes, the journal, consequences), a small card explains it in two sentences with MORE for the field guide. It never blocks; TUTORIAL HINTS in Gameplay turns them off and RESET HINTS shows them again.
+- **The pause rule:** reading screens, the field guide and dialogs stop an emergency's countdown; the field guide also pauses an operation.
+
+### Custom controls
+- Every action has a primary and a secondary key; modifiers (CTRL / SHIFT / ALT) and mouse buttons can be bound; a search box filters actions; categories each have RESET CATEGORY; each action has ↺ and there's RESET ALL CONTROLS (with a confirmation).
+- Conflicts open a dialog: REPLACE (the other action is left unassigned), SWAP, or CANCEL. Pause, dialogue continue and the contextual action always keep a key.
+- Presets DEFAULT, WASD and LEFT-HANDED; changing a key makes the layout CUSTOM. A first launch offers DEFAULT or CUSTOMIZE.
+- Input is context-aware and central: typing in a text field, the field guide, dialogs, conversations and rebinding each own the keyboard, and ESC closes the topmost thing first.
+- Every on-screen key hint (sidebar, coach marks, help, dialogs, the field guide) shows your current key. New actions: back to the clinic (H) and recent changes (G).
+- The keybind table scrolls on its own, so PRESET and MOUSE stay in view.
+
+### Under the hood
+- New: `InputContext`, `ChangeLog` and `Follows` (both saved), `Guidance`, `ClinicStatus`, `Recommend`, `Consequence`, `Hints`, `Nav`, `ChangesPanel`.
+- Tests: `tests/ux_tests.gd` (controls, persistence, contexts, change log, follows, guidance, recommendations, consequences, hints, navigation) and the rendered `tests/ux_probe.tscn` early-game probe at four resolutions and three window modes.
+
 ## 3.4.0 — New art style: more pixels, more detail, readable type
 
 ### Readable type

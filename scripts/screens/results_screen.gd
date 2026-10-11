@@ -113,12 +113,21 @@ func _add_links(_r: SurgeryResult, news: Array[Dictionary]) -> void:
 	if pid != &"" and PeopleManager.has_person(pid):
 		row.add_child(UIKit.button("VIEW PATIENT", &"GhostButton", func() -> void:
 			UIManager.go_to(UIManager.SCREEN_DOSSIER, {"tab_name": "PATIENTS", "focus": String(pid)}), "ViewPatient", 44))
+	# A real lead first; otherwise the first new thing that has somewhere to go.
 	var lead: Dictionary = {}
+	var label := "VIEW NEW LEAD"
 	for e in news:
-		if Nav.can_open(e.get("link", {})):
+		if str(e.get("cat", "")) == "lead" and Nav.can_open(e.get("link", {})):
 			lead = e["link"]
+			break
+	if lead.is_empty():
+		for e in news:
+			if Nav.can_open(e.get("link", {})):
+				lead = e["link"]
+				label = "VIEW NEW PLACE" if str(e.get("cat", "")) == "place" else "VIEW WHAT'S NEW"
+				break
 	if not lead.is_empty():
-		row.add_child(UIKit.button("VIEW NEW LEAD", &"Button", func() -> void: Nav.open(lead), "ViewLead", 44))
+		row.add_child(UIKit.button(label, &"Button", func() -> void: Nav.open(lead), "ViewLead", 44))
 	if row.get_child_count() > 0:
 		%LeftCol.add_child(row)
 	else:

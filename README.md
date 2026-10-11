@@ -7,7 +7,18 @@ almost nothing, take customers, install cyberware at a surgical workstation,
 hire staff, buy clinics across the city, and decide what you become while a
 corporate conspiracy spreads through your patients' nerves.
 
-**Status: 3.4.0**: a new art style with twice the detail: clinic rooms,
+**Status: 3.5.0**: the game now tells you what matters. WHAT MATTERS NOW
+on the clinic screen ranks what needs you (■ critical, ▲ important) and
+takes you there in one click; CLINIC STATUS sums up money, standing, staff,
+supplies, heat and the black market with ✓ / ! / ✕; a SURGERY PREVIEW shows
+risk, time, cost, pay, likely complications, your odds and who should
+operate before you cut; staff are ranked with a ★ RECOMMENDED; big decisions
+show what they changed; RECENT CHANGES (G) lists what moved while you were
+busy; ☆ FOLLOW keeps quests, people and places on the journal's new MAIN
+page; and first-time hints explain each system once. Every key is
+rebindable (primary and secondary, modifiers, mouse buttons, search,
+presets, conflict REPLACE / SWAP / CANCEL, reset one, a category or all).
+3.4 brought a new art style with twice the detail: clinic rooms,
 characters and city streets redrawn at 1.5x the resolution (shown at 2
 screen pixels per art pixel), a neon-alley title screen, and straight,
 readable cyberpunk type everywhere (Chakra Petch and Share Tech Mono).
@@ -91,6 +102,8 @@ mode and resolution in **SETTINGS → GRAPHICS**.
 | Field guide (every term explained) | FIELD GUIDE in the sidebar, or click any stat | F1 |
 | Pause / back | | ESC |
 | Cycle panels | | TAB |
+| Recent changes (what moved while you were busy) | CHANGES on the clinic screen | G |
+| Back to the clinic | CLINIC in the side nav | H |
 | Navigate menus | | WASD / arrows |
 | Contextual (hold to infuse, LOCK, SEAT) | | SPACE |
 | Previous / next tool | | Q / R |
@@ -102,6 +115,16 @@ mode and resolution in **SETTINGS → GRAPHICS**.
 | Dialogue: continue / answers 1–4 | click | ENTER (or SPACE) / 1–4 |
 | Quick save / quick load | | F5 / F9 |
 
+Every key can be changed in **Settings > Controls**: two keys per action
+(primary and secondary), modifiers (CTRL+S), mouse buttons, a search box,
+the presets DEFAULT / WASD / LEFT-HANDED, and a conflict dialog that lets
+you REPLACE the other action's key, SWAP them or CANCEL. ESC cancels a
+rebind and DEL unassigns a slot; pause, dialogue continue and the contextual
+action always keep a key. A first launch offers DEFAULT or CUSTOMIZE.
+Hotkeys are context-aware: typing in a search field, reading the field guide,
+a dialog or a conversation never triggers navigation underneath, and every
+on-screen key hint shows your current key.
+
 Everything gives feedback: hover highlights and a hover tick on every
 control, a pointing-hand cursor on clickables, a crosshair over the operating
 field, a cyan focus frame for keyboard users, and tooltips.
@@ -112,7 +135,13 @@ A new game starts a **10-step tutorial** on an easy first patient. Coach marks
 point at the control to use, and you can skip it at any time. **ESC** opens
 the pause menu (resume, save, load, settings, how to play, main menu, quit to
 desktop). The **NEXT** line above the clinic always shows the most useful next
-step. The clinic room is interactive: the diagnostics terminal, operating
+step (click it to go there), **WHAT MATTERS NOW** lists the rest by urgency,
+and **CLINIC STATUS** says how the clinic is doing and what to do about the
+worst of it. The **JOURNAL** (J) opens on **MAIN**: what you follow (with
+where and when), messages waiting for an answer and your objectives; then
+MESSAGES, PEOPLE, PATIENTS (with filters), FACTIONS, BUSINESS and
+DISCOVERIES (story, news, places, the wall). Reading screens, the field
+guide and dialogs stop an emergency's countdown. The clinic room is interactive: the diagnostics terminal, operating
 table, storage bench, supply cabinet and records server open their screens;
 wheel or double-click zooms into the room.
 
@@ -462,6 +491,7 @@ tests/run_tests.sh   # compile check, balance sim, stability suite, E2E (mouse +
 
   It also plays the story conversations that open in the clinic (picking answers, with a screenshot of each), buys a clinic, installs an upgrade, visits BUSINESS and the CITY MAP (clicking a district), hires a ripperdoc and assigns a customer to them, checks the journal QUESTS / COMMS / PEOPLE / STORY tabs, rebinds a key through the conflict dialog and a mouse button, and covers the Wire story event, black-market buy/study/sell, a skill upgrade, a clinic upgrade, all journal tabs, **I** (inventory: right-click compare, drag & drop onto a compare slot, tabs), **B** (database), **ESC** pause open/close, **F5** quick save, **TAB** focus, the settings tabs (graphics, audio slider drag, controls, gameplay toggles), and a reload. A layout guard asserts that every button is on-screen and nothing overflows the canvas. It runs rendered under Xvfb (headless Godot measures fonts differently).
 - **UI probe** (`tests/ui_probe.tscn`, needs a display or Xvfb): F1 opens the field guide (topics, close), clicking a status-bar value and a "?" chip opens its explanation, the door card and customer file show AT A GLANCE, SCAN buttons scan regions and unlock diagnoses, the plan explains readiness, settings has ROOM BRIGHTNESS; at 1920×1080, 1600×900, 1366×768, 1280×720 windowed, borderless and fullscreen, with on-screen checks.
+- **UX probe** (`tests/ux_probe.tscn`, needs a display or Xvfb): the 26-step early game: first-launch control setup, rebinding with search, a REPLACE conflict, a CTRL+ secondary key, critical keys that can't be unassigned, ESC cancelling; NEW GAME; WHAT MATTERS NOW leading to the patient; the recommendation and ★ RECOMMENDED ripperdoc; the surgery preview; the results' new lead; the custom key opening the map; FOLLOW on a place; travel; the journal's MAIN page; RECENT CHANGES; context checks (text fields, the field guide, dialogs, ESC order); save / load of follows and changes; the bindings surviving a restart; reset one action and a category; then a layout round at 1920×1080, 1600×900, 1366×768, 1280×720 windowed, borderless and fullscreen.
 - **City probe** (`tests/city_probe.tscn`, needs a display or Xvfb): opens the map with M, clicks a place, travels, uses the location screen (event, service, TAB, an encounter, ESC, GO IN, RETURN TO CLINIC), visits every place by day and night, and F5 / F9 while out, at 1920×1080, 1600×900, 1366×768, 1280×720 windowed, borderless and fullscreen, with screenshots and on-screen checks.
 - **Display probe** (`tests/display_probe.tscn`, needs a display or Xvfb): drives the real window through 1920×1080, 1600×900, 1366×768, 1280×720 windowed, borderless, fullscreen and a 5:4 window; checks the window size/mode, the uniform 16:9 canvas, nearest filtering and that every button stays on-screen on the menu, clinic, inventory, staff, business, city map, facility, journal, settings and an open conversation, with screenshots.
 - **Balance simulator** (`tests/balance_sim.tscn`): 40 jobs through the real economy for normal and struggling players. It asserts pacing milestones and that there are no dead ends.
