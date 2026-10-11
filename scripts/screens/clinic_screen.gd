@@ -34,6 +34,7 @@ var _close_button: Button
 var _agenda: Label
 var _security_button: Button
 var _close_row: HBoxContainer
+var _doors_row: HFlowContainer
 
 
 func on_enter(_params: Dictionary) -> void:
@@ -224,12 +225,17 @@ func _build() -> void:
 	_doors_button = UIKit.button("", &"GhostButton", func() -> void:
 		BusinessManager.set_doors_open(not BusinessManager.doors_open)
 		_refresh_doors(), "DoorsButton", 40)
-	_doors_button.clip_text = true
-	_doors_button.custom_minimum_size.x = 150
-	_security_button.clip_text = true
-	_security_button.custom_minimum_size.x = 110
-	_close_row.add_child(_doors_button)
-	_close_row.add_child(_security_button)
+	# Doors and security get their own row, which wraps rather than cuts
+	# the labels ("CLOSE DO" / "SECURI") when the card is narrow or the text big.
+	UIKit.expand(_doors_button)
+	UIKit.expand(_security_button)
+	_doors_row = HFlowContainer.new()
+	_doors_row.add_theme_constant_override(&"h_separation", 8)
+	_doors_row.add_theme_constant_override(&"v_separation", 6)
+	_doors_row.name = "DoorsRow"
+	_status_box.add_child(_doors_row)
+	_doors_row.add_child(_doors_button)
+	_doors_row.add_child(_security_button)
 	_refresh_doors()
 	_matters_box = UIKit.section(cards, "WHAT MATTERS NOW", &"CardPanel", "click to go there")
 	_matters_box.add_theme_constant_override(&"separation", 4)
@@ -379,7 +385,7 @@ func _refresh_status() -> void:
 		return
 	_stock_label.text = "CHROME IN STOCK: %d" % InventoryManager.get_instances().size()
 	for c in _status_box.get_children():
-		if c != _stock_label and c != _close_row and c.get_index() > 2:
+		if c != _stock_label and c != _close_row and c != _doors_row and c.get_index() > 2:
 			c.queue_free()
 	var full := BusinessManager.is_day_full()
 	_close_button.disabled = CustomerManager.has_customer() or SurgeryManager.is_active

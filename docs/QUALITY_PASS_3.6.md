@@ -226,3 +226,78 @@ Heat thresholds disagree between places (25/50/75 in security, 35/60 in the UI,
   - an identical live toast is never stacked twice.
 - **Field guide:** new entries for doors, standing, outlook, the money and
   guidance.
+
+## Phase G: results
+
+### Economy simulation (`tests/economy_sim.tscn -- --days=20 --seeds=3`)
+
+Median money after 20 days. Seeds are 1000, 1017 and 1034.
+
+| Strategy | Baseline (3.5 rules) | 3.6 | Clinic tier reached (3.6) |
+|---|---|---|---|
+| Conservative | 7,300 | 10,869 | 5 |
+| Specialist | 800 | 5,710 | 4–5 |
+| Black market | 2,600 | 2,245 | 4–5 (13–20 market buys, heat 6–25) |
+| Investment | 1,600 | 1,052 | 3–4 (2–3 staff) |
+| Mixed | 2,100 | 2,292 | 2–4 (2–3 staff) |
+
+Caveats on the comparison:
+- The baseline ran on the old simulator, so the numbers are not directly
+  comparable:
+  - its runs were not repeatable;
+  - its black-market strategy never reached the market, so it was simply
+    "take every job".
+- Investment and mixed end with less cash because they spend it on staff and
+  facilities.
+
+Every 3.6 target passes:
+- every strategy ends ahead in all runs;
+- no run spends 3+ nights deep in debt;
+- every run affords a first upgrade or clinic;
+- every run recovers from a mid-run loss of 400 cr;
+- money stays between 1,000 and 40,000 cr;
+- the top clinic is still a goal after 20 days.
+
+Investment passes by the smallest margin (median 1,052 cr).
+
+### Test suite (`tests/run_tests.sh`, rendered under Xvfb)
+
+| Step | Result |
+|---|---|
+| Compile check | 209 files, 0 failed |
+| Balance simulation (4 profiles) | BALANCE OK |
+| Economy simulation | ECONOMY OK |
+| Stability (soak, monkey, save fuzz, leaks) | OK (562 checks) |
+| Unit + end-to-end, mouse and keyboard (includes `quality_tests.gd`) | 1,500 checks passed; E2E surgeries graded S (clean) and B (sloppy) |
+| Display probe | 96 passed |
+| Living-world probe | 274 passed |
+| Living-city probe | 203 passed |
+| UI probe | 132 passed |
+| UI stability probe | 86 passed (baseline: 22 of 74 failed) |
+| UX probe | 129 passed |
+
+Failures found and fixed during Phase G:
+- The UI stability probe failed at TEXT 1.4 with LARGE TEXT: the grouped side
+  bar grew taller than the window and pushed SEE CUSTOMER off-screen. The side
+  bar now scrolls.
+- The living probe acted on the first open debt, which could already be on a
+  plan. It now uses the debt it created.
+- The early-game screenshots showed the TODAY card cutting off "CLOSE DOORS"
+  and "SECURITY". They now wrap onto their own line.
+- The economy sim was not repeatable, and its black-market strategy never
+  restocked the market. Both are fixed.
+
+### Remaining limitations and unverified behaviour
+
+- **Economy:** balance is checked by simulation of 5 scripted strategies over
+  20 days, not by human playtests.
+  - Surgery skill in the sim is modelled, not played.
+  - Story events, raids and world events are switched off in the sim.
+- **Surgery feel:** the per-procedure tuning is verified by the E2E bot and
+  the unit tests, not by players.
+- **Standing history:** causes are recorded at about 40 entry points. A change
+  from a path that isn't wrapped shows "No recorded cause" rather than a guess.
+- **GUIDANCE:** changes presentation only. RECENT CHANGES and the journal
+  always show everything.
+- **Display:** window modes are checked under Xvfb on Linux. The Windows export
+  isn't re-tested on real hardware in this pass.
