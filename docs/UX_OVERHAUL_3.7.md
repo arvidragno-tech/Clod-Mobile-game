@@ -73,3 +73,126 @@ help layer above screens.
   back step, TUTORIALS (revisit) section.
 - **H. Guidance**: the NEXT line says why; optional lines are marked.
 - **I. Tests and probes.**
+
+## Phases B–H: what was built
+
+### Patient summary (B)
+
+`PatientSummary` (modal) is built from `PatientBrief.build(c)`. Opened by SEE PATIENT,
+clicking the patient in the room, the customer key and WHAT MATTERS links.
+
+| Block | Shows | Source |
+|---|---|---|
+| REQUEST | implant (tier, category), what it does, procedure, known conditions | `CyberwareData`, `SurgeryData`, `revealed_conditions` |
+| OPERATION | difficulty in words (EASY … EXTREME, 1–5) and time; **your odds ≈ x% (estimate)** with what it's based on; what can go wrong; missing requirements with a fix button | `install_difficulty`, `TimeManager.procedure_minutes`, `Recommend.self_estimate`, `Recommend.possible_complications`, `JobVerdict.checks` (only `BLOCKING`: request, tools, supplies, accepts) |
+| FINANCES | patient pays (now / in instalments), implant (source), supplies, **direct margin** (labelled "before rent and wages"), cash in hand when the unit is from stock | `JobEstimate.for_customer` |
+| DECISION | one neutral line from the numbers above; ACCEPT JOB (disabled while blocked); DECLINE with its real cost; MORE DETAILS | `PatientBrief.recommendation`, `GameConfig.DECLINE_*` |
+
+Difficulty and odds are kept apart. The odds are always labelled an estimate:
+they assume a correct diagnosis, and hidden conditions are unknown. The
+patient's statement is styled as flavor (`UIKit.flavor`).
+
+### Clinic status dashboard (C)
+
+`ClinicStatus.dashboard()` gives one headline, the first that applies:
+
+1. OPERATION IN PROGRESS
+2. ACTION REQUIRED (an incident or a conversation waiting)
+3. CAN'T OPERATE: NO SUPPLIES
+4. PATIENT WAITING: MISSING … (from the door patient's blocking checks)
+5. FINANCIAL CONCERN (once BUSINESS is introduced)
+6. DOORS CLOSED
+7. DAY'S WORK DONE
+8. READY FOR PATIENTS
+
+After the headline come up to three issues: the non-fine `ClinicStatus.rows()`.
+- Staff and black-market issues show only once their section is introduced.
+- A new name (rep 0) isn't an issue.
+- On the first patient, only the headline shows.
+
+Every line is clickable through `Nav`. WHAT MATTERS drops what the dashboard
+shows (`DASHBOARD_IDS`, staff stress and raises) and lines that point into
+sections not introduced yet. The NEXT line adds why it matters and marks
+optional steps.
+
+### Consequence previews (D)
+
+`DecisionPreview.facts / summary / build` covers cost, cash now → after,
+tonight's bill and any recurring cost, with "can't afford" and "leaves less
+than tonight's bill" warnings. It never projects income.
+
+| Decision | Preview |
+|---|---|
+| Accepting a patient | the summary (money, odds, missing, risks) |
+| SUPPLY implant / tool | BEFORE YOU PAY box: cost, cash, stock now → after, purpose, limits, uncertainty |
+| Supply pack | button tooltip |
+| FACILITY upgrade | BEFORE YOU PAY with the new nightly upkeep |
+| Buying a clinic | a dialog when confirmations are on (cost, cash after, rent + running before → after, jobs/day) |
+| Hiring | cash after and the nightly wage under HIRE |
+| Black market / suppliers | tooltip: cost, cash after, heat and standing (`BUY_HEAT`, `BUY_STANDING`) |
+| Conversation choices | "Known: …" for faction, rep, heat and money. Relationship and fear stay hidden; checks say "if it works" |
+| Events | (existing) `Standing.preview` per choice |
+| Surgery | (existing) SURGERY PREVIEW in the plan |
+
+Routine purchases don't ask for confirmation. Buying a clinic and declining
+a patient go through `UIManager.guard`, so the CONFIRM DANGEROUS ACTIONS
+setting is respected.
+
+### Simplification (E)
+
+- **Door card:** now a teaser: who, what, about what they pay, and one advice line.
+  The neural meter, risk line and verdict rows moved to the summary.
+- **Dossier:** keeps what's unique to it (statement, history, payment terms,
+  staff, defer). Its money sentence became one reference line.
+- **Progressive TODAY card:**
+  - the HEAT meter appears once there is heat or the black market is open;
+  - SECURITY appears with FACILITY, an open case or rising heat.
+- **One word per action:** SEE PATIENT, ACCEPT JOB, DECLINE, MORE DETAILS.
+- **Flavor text:** quoted, slanted and dim in the summary and the dossier.
+
+### Progressive onboarding (F)
+
+| Stage | When | Sections |
+|---|---|---|
+| 1–2 | new game | CLINIC, SETTINGS, FIELD GUIDE (+ the first-operation tutorial) |
+| 3 | 1 job (journal also on a message) | SKILLS, SUPPLY, INVENTORY, BUSINESS, JOURNAL |
+| 3+ | 2 jobs | CYBERWARE DB |
+| 4 | 3 jobs (or staff hired, a better clinic) | STAFF, FACILITY |
+| 5 | 4 jobs, being out, or a lead into the city | CITY MAP |
+| — | its own rule (street rep or a contact) | BLACK MARKET |
+
+How introduction works:
+- **Rules:** `Features.relevant(id)` reads only existing state.
+- **Links:** a contextual link (`Nav.open`) introduces its section.
+- **Hidden sections:** a section that isn't introduced is hidden, not
+  padlocked. Its key or room prop gives a one-line "opens up …" message.
+- **Intro cards:** each introduction queues a card (WHAT / WHY / HOW / COST,
+  OPEN, MORE, GOT IT). It is shown on the clinic when nothing else is open,
+  and never during surgery, a conversation, the tutorial or a dialog.
+- **NEW mark:** a section is marked NEW in the side bar for a day.
+
+Persistence and fallbacks:
+- **Saving:** state lives in `TutorialManager.introduced` and `intro_pending`.
+- **Old saves:** saves without the key keep every section, with no cards.
+- **Validation:** `refresh()` runs on load, so a lost flag never locks
+  anything relevant.
+- **Setting:** INTRODUCE FEATURES GRADUALLY (off = everything). It works with
+  GUIDANCE (MINIMAL turns cards into one-line notices) and TUTORIAL HINTS.
+
+### Handbook (G) and guidance (H)
+
+- **Categories:** GETTING STARTED, PATIENTS & IMPLANTS, SURGERY, BUSINESS,
+  REPUTATION & RELATIONSHIPS, CITY & LOCATIONS, CLINIC & STAFF, TUTORIALS,
+  CONTROLS.
+- **Entries:** an entry's `feature` holds it back until introduced, with a
+  count ("3 more entries open up as your clinic grows"). NEW marks entries
+  introduced in the last day. Core entries add WHY IT MATTERS and WHERE.
+  SEE ALSO links related entries, and BACK returns. Search never reveals
+  held-back entries.
+- **TUTORIALS:** every introduced section and every first-time card seen,
+  with SHOW AGAIN.
+- **Help links:** the summary's `?` chips open "your odds", "direct margin",
+  "difficulty" and "payment terms". Intro cards' MORE opens the matching
+  entry.
+- **The NEXT line:** says why the step matters. Optional steps read
+  "WHEN YOU'RE READY >".

@@ -611,6 +611,11 @@ func _to_plan(dx: StringName) -> void:
 	await _frames(20)
 	await _checkpoint("clinic")
 	await _click_named("SeeButton")
+	# 3.7: the patient summary first; MORE DETAILS opens the full file.
+	await _wait_until(func() -> bool: return _find_visible("PatientSummary") != null, 5.0)
+	check(_find_visible("PatientSummary") != null, "SEE PATIENT opens the patient summary")
+	await _checkpoint("summary")
+	await _click_named("SummaryDetails")
 	await _wait_screen(UIManager.SCREEN_CUSTOMER)
 	await _frames(30)
 	await _checkpoint("customer")

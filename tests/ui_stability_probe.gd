@@ -262,11 +262,12 @@ func _rapid_switching(label: String) -> void:
 			blockers.append(String(c.get_path()))
 	_check(blockers.is_empty(), "%s D: no full-screen input blockers left over %s" % [label, blockers])
 	# The clinic's own buttons still click (nothing invisible on top).
-	var b := _find_button("Nav_inventory")
+	# (SETTINGS: always in the side bar, whatever the player has been introduced to.)
+	var b := _find_button("Nav_settings")
 	if b:
 		await _click(b.get_global_rect().get_center())
 		await _settle()
-	_check(UIManager.current_screen_id == UIManager.SCREEN_INVENTORY, "%s D: a nav click still lands after switching" % label)
+	_check(UIManager.current_screen_id == UIManager.SCREEN_SETTINGS, "%s D: a nav click still lands after switching" % label)
 
 
 func _connections() -> int:

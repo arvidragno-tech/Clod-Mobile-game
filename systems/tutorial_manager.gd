@@ -45,6 +45,8 @@ var completed: bool = false
 ## and the intro cards still to show. Saved with the game.
 var introduced: Dictionary = {}
 var intro_pending: Array = []
+## The "day" given to sections a player already had (old saves, resets).
+const INTRODUCED_BEFORE := -9999
 
 var _coach: CoachMark
 
@@ -179,7 +181,7 @@ func load_save_data(data: Dictionary) -> void:
 func _introduce_all() -> void:
 	introduced = {}
 	for id: StringName in Features.LIST:
-		introduced[String(id)] = 0
+		introduced[String(id)] = INTRODUCED_BEFORE  # long known: never marked NEW
 	intro_pending = []
 
 

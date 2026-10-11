@@ -152,12 +152,15 @@ func _flow() -> void:
 	await _frames(10)
 	var door := _find_matter("at the door")
 	_check(door != null, "4: WHAT MATTERS NOW lists the patient at the door")
-	_check(_find_visible("ClinicStatus") != null and _find_visible("Status_heat") != null, "4: CLINIC STATUS summarises the clinic")
+	_check(_find_visible("ClinicStatus") != null and _find_visible("StatusHeadline") != null, "4: CLINIC STATUS sums up the clinic in one headline")
 	await _shot("05_clinic_priorities")
 	if door:
 		await _press(door)
-		await _settle()
-	_check(UIManager.current_screen_id == UIManager.SCREEN_CUSTOMER, "4: clicking the line opens the patient")
+		await _frames(10)
+	_check(_find_visible("PatientSummary") != null, "4: clicking the line opens the patient summary")
+	await _press_named("SummaryDetails")
+	await _settle()
+	_check(UIManager.current_screen_id == UIManager.SCREEN_CUSTOMER, "4: MORE DETAILS opens the patient's file")
 	# 5. The file: the recommendation and the decision.
 	var rec := _find_visible("Recommendation") as Label
 	_check(rec != null and rec.text.begins_with("RECOMMENDED"), "5: the file recommends who should operate")

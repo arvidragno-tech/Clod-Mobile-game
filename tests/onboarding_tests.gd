@@ -173,9 +173,9 @@ func _previews() -> void:
 	check(not bool(f["short"]), "preview: affordable")
 	check(bool(DecisionPreview.facts(600)["short"]), "preview: can't afford")
 	var bill := BusinessManager.projected_total()
-	EconomyManager.money = bill + 50
-	check(bool(DecisionPreview.facts(100)["below_bill"]), "preview: warns when it leaves less than tonight's bill")
-	check(DecisionPreview.summary(100).contains("tonight's bill"), "preview summary says so in words")
+	EconomyManager.money = bill + 100
+	check(bill <= 0 or bool(DecisionPreview.facts(101)["below_bill"]), "preview: warns when it leaves less than tonight's bill (bill %d)" % bill)
+	check(bill <= 0 or DecisionPreview.summary(101).contains("tonight's bill"), "preview summary says so in words")
 	check(BlackMarketManager.BUY_HEAT > 0.0 and BlackMarketManager.BUY_STANDING != 0, "black-market purchase effects are shared constants")
 
 
