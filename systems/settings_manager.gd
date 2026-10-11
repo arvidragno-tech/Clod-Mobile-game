@@ -27,6 +27,10 @@ const DIFFICULTY_NAMES: Array[String] = ["STORY", "STANDARD", "BRUTAL"]
 const AUTOSAVE_NAMES: Array[String] = ["OFF", "EVERY JOB", "EVERY NIGHT"]
 ## How much the game explains (presentation only; never changes the rules).
 const GUIDANCE_NAMES: Array[String] = ["MINIMAL", "STANDARD", "DETAILED"]
+## The one player-facing guidance choice (3.9), stored in the existing keys:
+## GUIDED = tutorial + gradual sections + cards; BRIEF = gradual sections
+## with one-line notices, no tutorial; OFF = everything, no tutorial.
+const GUIDANCE_MODE_NAMES: Array[String] = ["GUIDED", "BRIEF", "OFF"]
 ## Emergency triage countdown multiplier (index = time_pressure; 0 = no countdown).
 const TIME_PRESSURE: Array[float] = [1.0, 2.0, 0.0]
 const TIME_PRESSURE_NAMES: Array[String] = ["NORMAL", "RELAXED (x2)", "OFF"]
@@ -369,3 +373,27 @@ func is_minimal() -> bool:
 
 func is_detailed() -> bool:
 	return guidance_level >= 2
+
+
+func guidance_mode() -> int:
+	if not progressive_features:
+		return 2
+	if not tutorial_hints or guidance_level == 0:
+		return 1
+	return 0
+
+
+func set_guidance_mode(mode: int) -> void:
+	match mode:
+		0:
+			set_value("tutorial_hints", true)
+			set_value("progressive_features", true)
+			set_value("guidance_level", 1)
+		1:
+			set_value("tutorial_hints", false)
+			set_value("progressive_features", true)
+			set_value("guidance_level", 0)
+		_:
+			set_value("tutorial_hints", false)
+			set_value("progressive_features", false)
+			set_value("guidance_level", 0)

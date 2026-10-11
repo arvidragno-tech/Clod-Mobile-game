@@ -250,7 +250,15 @@ func _on_tool_selected(category: StringName) -> void:
 func _build_side_panels() -> void:
 	var c := SurgeryManager.customer
 	var surgery := SurgeryManager.surgery
-	_procedure.text = "%s  ·  %s" % [surgery.display_name.to_upper(), c.display_name if c else "?"]
+	var it := SurgeryManager.implant_item
+	var unit_name := ""
+	if it:
+		unit_name = "unidentified device" if SurgeryManager.implant and not SurgeryManager.implant.identified else it.display_name
+	_procedure.text = "%s  ·  %s%s" % [surgery.display_name.to_upper(), c.display_name if c else "?", ("  ·  " + unit_name) if unit_name != "" else ""]
+	# During the operation only the procedure matters: who the patient is and
+	# the implant's specs were decided in the plan (the header names both).
+	(_patient_box.get_parent() as Control).visible = false
+	(_implant_box.get_parent() as Control).visible = false
 	# Patient
 	_patient_box.add_child(UIKit.section_head("PATIENT", "", "vitals"))
 	var row := UIKit.hbox(12)
@@ -290,10 +298,8 @@ func _build_side_panels() -> void:
 	else:
 		_implant_box.add_child(UIKit.label("No implant in this procedure.", &"DimLabel", true))
 	# Key hints
-	_key_hints.text = "[LMB] use tool / drag   [RMB] put tool down   [WHEEL] zoom   [1-%d] instruments   [%s/%s] cycle   [%s] [%s] [%s] emergency   [%s] action   [%s] pause" % [
-		mini(9, _tool_tray.categories.size()), Controls.key_name("tool_prev"), Controls.key_name("tool_next"),
-		Controls.key_name("quick_coag"), Controls.key_name("quick_sedate"), Controls.key_name("quick_stabilize"),
-		Controls.key_name("context"), Controls.key_name("pause")]
+	# The instrument and emergency buttons show their own keys.
+	_key_hints.text = "[RMB] put the tool down   [WHEEL] zoom   [%s] pause" % Controls.key_name("pause")
 
 
 ## Procedure checklist: done (green), current (cyan, pulsing marker), next (dim).

@@ -31,7 +31,6 @@ var _panels: Array[Control] = []
 
 
 func on_enter(_params: Dictionary) -> void:
-	(func() -> void: Hints.first("black_market")).call_deferred()
 	if not BlackMarketManager.is_unlocked():
 		GameManager.go_to_clinic.call_deferred()
 		return

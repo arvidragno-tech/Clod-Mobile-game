@@ -4,6 +4,38 @@ All notable changes to *UNDERCITY: RIPPER*. Versions follow
 `application/config/version` in `project.godot` and the Windows file version
 in `export_presets.cfg`.
 
+## 3.9.0 — Less on screen
+
+Every element now has to earn its place. Measured on the core loop
+(`tests/audit_probe`): labels 542 → 248 (−54%), buttons 138 → 97 (−30%),
+panels 79 → 60 (−24%). Details: `docs/UI_SIMPLIFICATION_3.9.md`.
+
+- **The patient** opens on four things: what they want, one risk sentence,
+  the money (pays ≈ X, you keep ≈ ±Y before rent) and ACCEPT JOB / DETAILS /
+  DECLINE. DETAILS adds the odds, costs and every risk factor. The intake
+  form and the full file sit one click further.
+- **The clinic** keeps one objective (NEXT), SEE PATIENT and one status line.
+  WHAT MATTERS NOW and the CLINIC STATUS card are merged into that line.
+- **Status bar:** level, rep, jobs, heat and black-market currencies appear
+  only once they mean something.
+- **Plan, surgery and supply** show what you need to decide now. Specs and
+  breakdowns are under DETAILS or in tooltips.
+- **Results:** at most two new items in AFTERMATH, so CONTINUE always fits.
+- **Tutorial:**
+  - one short step at a time, on the real control: clinic → patient → scan
+    → plan → sedate / cut / install / close → result → skills;
+  - new sections are introduced the same way, "NEW · SECTION" on their
+    button. The intro cards are gone; the field guide can replay any of them.
+- **Sections appear when they matter:** SKILLS after the first job; SUPPLY
+  when you're short (or the second job); INVENTORY and JOURNAL at the second
+  job; BUSINESS on day 2; DATABASE, STAFF and FACILITY at the third job; the
+  CITY at the fourth (or when a lead points there). Hidden sections can't be
+  opened by hotkey or link early. Old saves keep everything they had.
+- **One setting:** TUTORIAL & GUIDANCE (GUIDED / BRIEF / OFF) replaces
+  three.
+- No changes to generation, surgery, odds, economy, reputation,
+  progression or the save format.
+
 ## 3.8.0 — The intake form
 
 - **Patient intake form.** The patient summary now shows each patient's record as an in-world document: SUMP CLINIC // PATIENT INTAKE, with a document number, a timestamp and a RECEIVED stamp. It has four sections:

@@ -26,7 +26,6 @@ var _selected_msg: int = -1
 
 
 func on_enter(params: Dictionary) -> void:
-	(func() -> void: Hints.first("journal")).call_deferred()
 	_tab = Tab.MAIN
 	if params.has("tab_name"):
 		var n := str(params["tab_name"]).to_upper()

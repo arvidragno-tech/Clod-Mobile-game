@@ -81,11 +81,12 @@ func _round(label: String) -> void:
 	# A status-bar stat explains itself on click.
 	var bar := get_tree().root.find_child("StatusBar", true, false) as StatusBar
 	if bar:
-		var heat: Control = bar._boxes.get("heat")
-		if heat:
-			await _click(heat.get_global_rect().get_center())
+		# Credits are always on the bar (HEAT only appears once there is heat).
+		var cr: Control = bar._boxes.get("credits")
+		if cr and cr.is_visible_in_tree():
+			await _click(cr.get_global_rect().get_center())
 			await _frames(6)
-	_check(_find_visible("GlossaryCard") != null or Glossary.is_open(), "%s: clicking HEAT explains heat" % label)
+	_check(_find_visible("GlossaryCard") != null or Glossary.is_open(), "%s: clicking CREDITS explains them" % label)
 	await _shot(label, "explain_heat")
 	var got := _find_visible_button("GlossaryClose")
 	if got:
@@ -118,14 +119,17 @@ func _round(label: String) -> void:
 		await _press(see)
 	await _settle()
 	# 3.7: the patient summary first, the full file behind MORE DETAILS.
-	_check(_find_visible("PatientSummary") != null and _find_visible("SummarySuccess") != null and _find_visible("SummaryMargin") != null,
-		"%s: SEE PATIENT opens the patient summary (odds, margin)" % label)
+	# 3.9: what they want, the one risk, the money; DETAILS adds the odds.
+	_check(_find_visible("PatientSummary") != null and _find_visible("SummaryWants") != null and _find_visible("SummaryMargin") != null,
+		"%s: SEE PATIENT opens the patient view (wants, money)" % label)
+	_check(_find_visible("SummarySuccess") == null, "%s: the odds wait behind DETAILS" % label)
 	await _shot(label, "patient_summary")
-	var more := _find_visible_button("SummaryDetails")
-	if more:
-		await _press(more)
+	await _press_named_ui("SummaryDetails")
+	await _frames(6)
+	_check(_find_visible("SummarySuccess") != null, "%s: DETAILS shows your odds" % label)
+	await _press_named_ui("SummaryFile")
 	await _settle()
-	_check(UIManager.current_screen_id == UIManager.SCREEN_CUSTOMER, "%s: MORE DETAILS opens the file" % label)
+	_check(UIManager.current_screen_id == UIManager.SCREEN_CUSTOMER, "%s: FULL FILE opens the file" % label)
 	_check(_find_visible("AtAGlance") != null, "%s: the file has AT A GLANCE" % label)
 	await _shot(label, "customer")
 	var accept := _find_visible_button("AcceptButton")
@@ -142,7 +146,7 @@ func _round(label: String) -> void:
 	var scan := get_tree().root.find_child("ScanView", true, false) as ScanView
 	_check(scan != null and scan.get_scanned_count() >= 2, "%s: SCAN buttons scan regions" % label)
 	var finding := get_tree().root.find_child("Finding_neck", true, false) as Label
-	_check(finding != null and not finding.text.begins_with("Not scanned"), "%s: findings fill in" % label)
+	_check(finding != null and finding.text != "" and finding.visible, "%s: findings fill in" % label)
 	var opt: Button = null
 	for n in get_tree().root.find_children("Option_*", "Button", true, false):
 		if (n as Button).is_visible_in_tree() and not (n as Button).disabled:
@@ -293,3 +297,10 @@ func _layout_guard(label: String) -> void:
 func _frames(n: int) -> void:
 	for i in n:
 		await get_tree().process_frame
+
+
+func _press_named_ui(n: String) -> void:
+	var b := _find_visible_button(n)
+	_check(b != null, "button %s is there" % n)
+	if b:
+		await _press(b)

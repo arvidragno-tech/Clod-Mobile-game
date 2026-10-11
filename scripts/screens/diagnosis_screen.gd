@@ -80,9 +80,8 @@ func _build_diagnose(col: VBoxContainer, customer: CustomerData, surgery: Surger
 	UIKit.expand(_findings)
 	sc.add_child(_findings)
 	_findings.add_child(UIKit.section_head("FINDINGS", "", "diagnosis"))
-	var item := GameManager.get_requested_item()
-	_findings.add_child(UIKit.label("Surgical site: %s (%s), glowing pink on the scan. Scan at least %d regions; hidden conditions show up in red." % [
-		ScanView.REGION_LABELS.get(surgery.scan_region, "?"), item.category.to_upper() if item else "?", MIN_SCANS_TO_DIAGNOSE], &"DimLabel", true))
+	_findings.add_child(UIKit.label("Scan at least %d regions: click them on the body or press SCAN. Start with the surgical site (%s, pink)." % [
+		MIN_SCANS_TO_DIAGNOSE, ScanView.REGION_LABELS.get(surgery.scan_region, "?")], &"DimLabel", true))
 	# One row per region: status, what the scan found, a SCAN button.
 	for region: StringName in ScanView.REGIONS:
 		var card := UIKit.panel(&"CardPanel")
@@ -100,8 +99,10 @@ func _build_diagnose(col: VBoxContainer, customer: CustomerData, surgery: Surger
 		b.custom_minimum_size.x = 110
 		head.add_child(b)
 		_region_buttons[region] = b
-		var body := UIKit.label("Not scanned yet. Click it on the body or press SCAN.", &"DimLabel", true)
+		# Empty until scanned (one instruction above covers how to scan).
+		var body := UIKit.label("", &"DimLabel", true)
 		body.name = "Finding_%s" % region
+		body.visible = false
 		rv.add_child(body)
 		_region_text[region] = body
 	var side := UIKit.panel(&"CardPanel")
@@ -224,6 +225,7 @@ func _on_region_scanned(region: StringName) -> void:
 	var body: Label = _region_text.get(region)
 	if body:
 		body.text = text
+		body.visible = true
 		body.add_theme_color_override(&"font_color", Palette.TEXT)
 	for cid in CustomerManager.try_reveal_conditions(customer, region):
 		var cond := CustomerManager.get_condition(cid)
@@ -285,17 +287,15 @@ func _build_plan_contents() -> void:
 	var hv := UIKit.vbox(4)
 	head.add_child(hv)
 	hv.add_child(UIKit.label(surgery.display_name.to_upper(), &"MonoLabel", true, Palette.ACCENT))
-	hv.add_child(UIKit.label("Dx: %s · %d stages · target %d:%02d" % [surgery.get_diagnosis_name(_selected), surgery.stages.size(), int(surgery.target_time_sec) / 60, int(surgery.target_time_sec) % 60], &"DimLabel", true, null, 14))
-	var meter := NeuralLoadMeter.new()
-	meter.name = "PlanNeuralMeter"
-	hv.add_child(meter)
-	meter.set_load(NeuralLoad.compute_visible(customer), r["neural_after"] - (NeuralLoad.compute(customer) - NeuralLoad.compute_visible(customer)))
-	var band := NeuralLoad.band(float(r["neural_after"]))
-	if NeuralLoad.band_index(float(r["neural_after"])) >= 3:
-		hv.add_child(UIKit.label("WARNING: %s load after install. Risk of neural break." % str(band["name"]), &"DimLabel", true, Palette.DANGER, 14))
+	hv.add_child(UIKit.label("Diagnosis: %s" % surgery.get_diagnosis_name(_selected), &"DimLabel", true, null, 14))
+	# Neural load only when it matters (what the doctor can see).
+	var vis_after := float(r["neural_after"]) - (NeuralLoad.compute(customer) - NeuralLoad.compute_visible(customer))
+	var band := NeuralLoad.band(vis_after)
+	if NeuralLoad.band_index(vis_after) >= 2:
+		hv.add_child(UIKit.label("! Neural load ≈ %d%% after: %s. Complications are likelier." % [roundi(vis_after), str(band["name"]).to_lower()], &"DimLabel", true, Palette.DANGER if NeuralLoad.band_index(vis_after) >= 3 else Palette.WARN, 14))
 	_plan_info.add_child(head)
 	# Implant choice
-	_plan_list.add_child(UIKit.section_head("IMPLANT UNIT", "click to choose which unit goes in", "condition"))
+	_plan_list.add_child(UIKit.section_head("IMPLANT UNIT", "click to choose which unit goes in"))
 	var opts := GameManager.get_implant_options()
 	var selected := GameManager.get_selected_implant()
 	if opts.is_empty():
@@ -305,18 +305,14 @@ func _build_plan_contents() -> void:
 	for i in opts.size():
 		_plan_list.add_child(_implant_option(i, opts[i], opts[i] == selected, item))
 	# Checks
-	_plan_info.add_child(UIKit.section_head("CHECKS", "", "odds"))
+	_plan_info.add_child(UIKit.section_head("CHECKS"))
 	var missing: Array = r["missing_tools"]
 	_check("TOOLS", "READY" if missing.is_empty() else "MISSING " + ", ".join(missing), missing.is_empty())
 	_check("SUPPLIES", "%d / need %d" % [InventoryManager.supplies, surgery.supplies], bool(r["supplies_ok"]))
 	var refusal := "REFUSES: LOAD TOO HIGH" if GameManager.consent_risk_needed(float(r["neural_after"])) > 0.0 else "REFUSES THIS UNIT"
 	_check("CONSENT", "AGREES" if bool(r["accepts"]) else refusal, bool(r["accepts"]))
-	_check("REVEALED", "%d condition(s)" % customer.revealed_conditions.size(), customer.revealed_conditions.is_empty())
-	_plan_info.add_child(UIKit.section_head("PROCEDURE", "%d steps" % surgery.stages.size(), "vitals"))
-	for k in surgery.stages.size():
-		var st := surgery.stages[k]
-		var tool := "  [%s]" % String(st.tool_category).to_upper() if st.tool_category != &"" else ""
-		_plan_info.add_child(UIKit.label("%02d  %s%s" % [k + 1, st.title, tool], &"DimLabel"))
+	if not customer.revealed_conditions.is_empty():
+		_check("FOUND", "%d condition(s): see the patient's risks" % customer.revealed_conditions.size(), false)
 	_begin.disabled = not bool(r["ok"])
 	_fill_preview(customer, item, surgery, r)
 	# Say why BEGIN is blocked (or that you're good to go).
@@ -328,20 +324,25 @@ func _build_plan_contents() -> void:
 ## SURGERY PREVIEW: the decision on one card before you commit.
 func _fill_preview(c: CustomerData, item: CyberwareData, surgery: SurgeryData, r: Dictionary) -> void:
 	UIKit.clear(_preview)
-	(func() -> void: Hints.first("preview")).call_deferred()
 	var me := Recommend.self_estimate(c)
 	var d := int(item.install_difficulty) if item else 2
-	var row := func(cap: String, val: String, col: Variant = null, term: String = "") -> void:
+	# Essentials first (your odds, what you keep); the rest under DETAILS.
+	var target := {"box": _preview}
+	var row := func(cap: String, val: String, col: Variant = null, _term: String = "") -> void:
 		var h := UIKit.hbox(6)
-		var k := UIKit.caption(cap) if term == "" else UIKit.caption(cap)
+		var k := UIKit.caption(cap)
 		k.custom_minimum_size.x = 130
 		h.add_child(k)
 		var v := UIKit.label(val, &"", true, col, 15)
 		UIKit.expand(v)
 		h.add_child(v)
-		_preview.add_child(h)
-	row.call("PATIENT", c.display_name)
-	row.call("PROCEDURE", surgery.display_name)
+		(target["box"] as Control).add_child(h)
+	var est := JobEstimate.for_customer(c, r)
+	var chance := roundi(float(me["chance"]) * 100.0)
+	row.call("YOUR ODDS", "≈ %d%%  (estimate)" % chance, Palette.OK if chance >= 75 else (Palette.WARN if chance >= 50 else Palette.DANGER))
+	var keep := int(est["net"])
+	row.call("YOU KEEP", "≈ %s before rent and wages" % ("%+d cr" % keep), Palette.OK if keep > 0 else Palette.DANGER)
+	target["box"] = UIKit.collapsible(_preview, "DETAILS", false, &"CardPanel")
 	row.call("DIFFICULTY", "%s  %d / 5" % [UIKit.pips(d, 5), d])
 	var risk := c.get_risk_level()
 	row.call("PATIENT RISK", ["", "✓ Low", "! Medium", "✕ High"][clampi(risk, 1, 3)], [Palette.OK, Palette.OK, Palette.WARN, Palette.DANGER][clampi(risk, 1, 3)])
@@ -349,8 +350,6 @@ func _fill_preview(c: CustomerData, item: CyberwareData, surgery: SurgeryData, r
 	var cost := surgery.supplies
 	var buy := str(r.get("implant_source", "")) == "buy"
 	row.call("COST", "%d suppl%s%s" % [cost, "y" if cost == 1 else "ies", (" + implant %s" % EconomyManager.format_money(InventoryManager.implant_price(item))) if buy and item else ""])
-	# Revenue is not profit: the money estimate, from the real data.
-	var est := JobEstimate.for_customer(c, r)
 	var pay_txt := "≈ %s" % EconomyManager.format_money(int(est["fee"]))
 	if int(est["owed"]) > 0:
 		pay_txt += " · can pay %s now, owes the rest" % EconomyManager.format_money(int(est["can_pay"]))
@@ -358,8 +357,6 @@ func _fill_preview(c: CustomerData, item: CyberwareData, surgery: SurgeryData, r
 	var src := str(est["implant_source"])
 	row.call("USES UP", "implant %s (%s) + supplies %s" % [EconomyManager.format_money(int(est["implant_cost"])),
 		{"buy": "bought now", "salvaged": "salvaged", "stock": "from stock"}.get(src, "from stock"), EconomyManager.format_money(int(est["supplies_cost"]))])
-	var keep := int(est["net"])
-	row.call("YOU KEEP", "≈ %s (estimate; depends on how it goes)" % ("%+d cr" % keep), Palette.OK if keep > 0 else Palette.DANGER)
 	var extra := float(me["extra"])
 	var comp_text := "%d expected" % int(me["guaranteed"]) if int(me["guaranteed"]) > 0 else "none expected"
 	if extra > 0.0:
@@ -368,9 +365,7 @@ func _fill_preview(c: CustomerData, item: CyberwareData, surgery: SurgeryData, r
 	var names := Recommend.possible_complications(c)
 	if not names.is_empty():
 		row.call("COULD BE", ", ".join(names))
-	var chance := roundi(float(me["chance"]) * 100.0)
-	row.call("YOUR ODDS", "≈ %d%%  (%s%s)" % [chance, me["record"], (", " + ", ".join(me["factors"])) if not (me["factors"] as Array).is_empty() else ""],
-		Palette.OK if chance >= 75 else (Palette.WARN if chance >= 50 else Palette.DANGER))
+	row.call("ODDS BASED ON", "%s%s" % [me["record"], (", " + ", ".join(me["factors"])) if not (me["factors"] as Array).is_empty() else ""])
 	var rec := Recommend.surgeon(c)
 	var best := Recommend.best_staff(c)
 	row.call("RECOMMENDED", "%s · %d%%  (%s)" % [rec["name"], roundi(float(rec["chance"]) * 100.0), rec["reason"]], Palette.ACCENT)
@@ -378,7 +373,7 @@ func _fill_preview(c: CustomerData, item: CyberwareData, surgery: SurgeryData, r
 	if not best.is_empty():
 		var e: Dictionary = best["employee"]
 		_hand_off.text = "CHANGE SURGEON · %s %d%%" % [str(e["name"]).get_slice(" ", 0).to_upper(), roundi(float(best["chance"]) * 100.0)]
-	_preview.add_child(UIKit.label("Estimates from the same rules the operation uses (assuming your diagnosis is right). CHANGE IMPLANT: pick a unit on the left.", &"DimLabel", true, null, 13))
+	(target["box"] as Control).add_child(UIKit.label("Estimates from the same rules the operation uses (assuming your diagnosis is right).", &"DimLabel", true, null, 13))
 
 
 func _implant_option(i: int, inst: ImplantInstance, selected: bool, requested: CyberwareData) -> Control:

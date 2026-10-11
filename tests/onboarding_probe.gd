@@ -78,9 +78,9 @@ func _flow() -> void:
 		if _find_visible("Nav_%s" % id) != null:
 			hidden.append(id)
 	_check(hidden.is_empty(), "1: nothing else yet, no padlocks (%s)" % [hidden])
-	# 2. The dashboard: one headline, no extra rows during the first patient.
+	# 2. The status line: one sentence, no extra rows during the first patient.
 	var head := _find_visible("StatusHeadline") as Button
-	_check(head != null and head.text.contains("READY FOR PATIENTS"), "2: CLINIC STATUS headline (%s)" % (head.text if head else "-"))
+	_check(head != null and head.text.begins_with("Jobs 0 /"), "2: a quiet clinic's one status line is today's progress (%s)" % (head.text if head else "-"))
 	_check(_find_visible("Status_heat") == null and _find_visible("Status_rep") == null, "2: no permanent status rows on the first patient")
 	_check(_find_visible("ObjectiveWhy") != null and (_find_visible("ObjectiveWhy") as Label).text != "", "2: the NEXT line says why it matters")
 	await _shot("01_new_game_clinic")
@@ -92,26 +92,35 @@ func _flow() -> void:
 	await _press_named("SeeButton")
 	await _frames(10)
 	_check(_find_visible("PatientSummary") != null, "3: SEE PATIENT opens the patient summary")
-	for blk in ["SummaryRequest", "SummaryOperation", "SummaryFinances", "SummaryDecision"]:
-		_check(_find_visible(blk) != null, "3: summary block %s" % blk)
-	# The intake form: the patient's record as a document, every line sourced.
-	_check(_find_visible("IntakeForm") != null and _find_visible("IntakeRisks") != null and _find_visible("IntakeHistory") != null, "3: the patient's intake form is shown")
-	var form_text := _text_of(_find_visible("IntakeForm"))
-	_check(form_text.contains("REPORTED") and form_text.contains("ON FILE") and form_text.contains("UNKNOWN"), "3: form lines say where they come from")
-	_check(_find_visible("IntakeLegend") != null, "3: the form explains its labels")
+	# Level 1: what they want, the one risk, the money, three actions.
+	for blk in ["SummaryWants", "SummaryMargin", "AcceptButton", "SummaryDetails", "SummaryDecline"]:
+		_check(_find_visible(blk) != null, "3: the summary shows %s" % blk)
+	_check(_find_visible("SummarySuccess") == null and _find_visible("IntakeForm") == null, "3: odds and the intake form wait behind DETAILS")
 	var c := CustomerManager.current_customer
 	var est := JobEstimate.for_customer(c, GameManager.get_surgery_readiness())
 	var odds := roundi(float(Recommend.self_estimate(c)["chance"]) * 100.0)
-	var sl := _find_visible("SummarySuccess")
-	_check(sl != null and _text_of(sl).contains("%d%%" % odds), "3: YOUR ODDS is the game's estimate (%d%%)" % odds)
 	var ml := _find_visible("SummaryMargin")
-	_check(ml != null and _text_of(ml).contains("%+d" % int(est["net"])), "3: DIRECT MARGIN is JobEstimate's net (%+d)" % int(est["net"]))
-	_check(_text_of(_find_visible("SummaryFinances")).contains("PATIENT PAYS") and _text_of(_find_visible("SummaryFinances")).contains("before rent"), "3: payment, costs and margin are labelled apart")
+	_check(ml != null and _text_of(ml).contains("%+d" % int(est["net"])) and _text_of(ml).contains("before rent"), "3: the money line is JobEstimate's direct margin (%+d)" % int(est["net"]))
 	await _shot("02_patient_summary")
-	# MORE DETAILS opens the file; back, then ACCEPT goes to the scan.
+	# Level 2: DETAILS.
 	await _press_named("SummaryDetails")
+	await _frames(6)
+	var sl := _find_visible("SummarySuccess")
+	_check(sl != null and _text_of(sl).contains("%d%%" % odds), "3: DETAILS: YOUR ODDS is the game's estimate (%d%%)" % odds)
+	_check(_find_visible("SummaryCosts") != null, "3: DETAILS: the costs line by line")
+	# Level 3: the intake form, every line sourced.
+	await _press_named("SummaryForm")
+	await _frames(6)
+	_check(_find_visible("IntakeForm") != null and _find_visible("IntakeRisks") != null and _find_visible("IntakeHistory") != null, "3: INTAKE FORM shows the patient's record")
+	var form_text := _text_of(_find_visible("IntakeForm"))
+	_check(form_text.contains("REPORTED") and form_text.contains("ON FILE") and form_text.contains("UNKNOWN"), "3: form lines say where they come from")
+	_check(_find_visible("IntakeLegend") != null, "3: the form explains its labels")
+	# FULL FILE opens the file; back, then ACCEPT goes to the scan.
+	await _press_named("SummaryDetails")
+	await _frames(6)
+	await _press_named("SummaryFile")
 	await _settle()
-	_check(UIManager.current_screen_id == UIManager.SCREEN_CUSTOMER, "3: MORE DETAILS opens the full file")
+	_check(UIManager.current_screen_id == UIManager.SCREEN_CUSTOMER, "3: FULL FILE opens the patient's file")
 	GameManager.go_to_clinic()
 	await _settle()
 	await _key(Controls.get_slots("customer_info")[0] as Key)
@@ -137,21 +146,22 @@ func _flow() -> void:
 	for id in ["skills", "supply", "inventory", "business", "dossier"]:
 		if _find_visible("Nav_%s" % id) != null:
 			shown.append(id)
-	_check(shown.size() == 5, "5: after the first job SKILLS, SUPPLY, INVENTORY, BUSINESS, JOURNAL appear (%s)" % [shown])
+	_check(shown == ["skills"], "5: after the first job only SKILLS appears (%s)" % [shown])
 	_check(_find_visible("Nav_staff") == null and _find_visible("Nav_map") == null, "5: STAFF and the city still wait")
-	_check(_find_visible("FeatureCard") != null, "5: a new section comes with its intro card")
+	var coach := _find_visible("CoachCard")
+	_check(coach != null and _text_of(coach).contains("SKILLS"), "5: a new section is introduced by one coach step on its button")
 	await _shot("03_feature_intro")
-	var card_text := _text_of(_find_visible("FeatureCard"))
-	_check(card_text.contains("WHAT") and card_text.contains("WHY") and card_text.contains("HOW") and card_text.contains("COST"), "5: the card says what, why, how and cost")
-	# Each pending card in turn (GOT IT).
-	for i in 6:
-		if _find_visible("FeatureClose") == null:
-			break
-		await _press_named("FeatureClose")
-		await _frames(4)
-		GameManager.go_to_clinic()
-		await _settle()
-	_check(TutorialManager.intro_pending.is_empty(), "5: every intro card was shown once")
+	await _dismiss_intros()
+	# The second job: supply, inventory and the journal.
+	EventManager.operations = 2
+	Features.refresh()
+	GameManager.go_to_clinic()
+	await _settle()
+	await _frames(10)
+	_check(_find_visible("Nav_supply") != null and _find_visible("Nav_inventory") != null and _find_visible("Nav_dossier") != null, "5: two jobs in: SUPPLY, INVENTORY, JOURNAL")
+	_check(_find_visible("Nav_business") == null or BusinessManager.day >= 2 or BusinessManager.debt > 0, "5: BUSINESS waits for the second day")
+	await _dismiss_intros()
+	_check(TutorialManager.intro_pending.is_empty(), "5: every intro was shown once")
 	Hints.enabled = false
 	# 6. SUPPLY: before you pay.
 	await _press_named("Nav_supply")
@@ -187,7 +197,9 @@ func _flow() -> void:
 	await _shot("06_tutorials")
 	await _press_named("TutorialAgain_supply")
 	await _frames(6)
-	_check(_find_visible("FeatureCard") != null, "7: SHOW AGAIN brings the card back")
+	_check(_find_visible("CoachCard") != null, "7: SHOW AGAIN brings the introduction back")
+	await _press_named("CoachDone")
+	await _frames(4)
 	Hints.dismiss()
 	Glossary.close()
 	# 8. Three jobs in: staff and facility. Four: the city.
@@ -255,6 +267,18 @@ func _until(cond: Callable, max_frames: int = 600) -> void:
 	while not cond.call() and i < max_frames:
 		await get_tree().process_frame
 		i += 1
+
+
+## GOT IT on each pending section introduction, in turn.
+func _dismiss_intros() -> void:
+	for i in 8:
+		if _find_visible("CoachDone") == null:
+			break
+		await _press_named("CoachDone")
+		await _frames(4)
+		GameManager.go_to_clinic()
+		await _settle()
+		await _frames(4)
 
 
 func _find_visible(n: String) -> Node:

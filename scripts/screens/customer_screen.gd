@@ -131,6 +131,7 @@ func on_enter(params: Dictionary) -> void:
 	var assign := UIKit.button("ASSIGN RIPPERDOC  (%d ON SHIFT)" % staff_n, &"GhostButton", _toggle_staff, "AssignButton", 48)
 	assign.disabled = staff_n == 0
 	assign.tooltip_text = "Hire staff in STAFF to delegate jobs." if staff_n == 0 else "Let one of your ripperdocs take the job."
+	assign.visible = Features.is_on(&"staff")  # not before STAFF is introduced
 	decide.add_child(assign)
 	_staff_box = UIKit.vbox(6)
 	_staff_box.visible = false
@@ -140,7 +141,7 @@ func on_enter(params: Dictionary) -> void:
 	decide.add_child(defer)
 	var decline := UIKit.button("DECLINE  (%d REP)" % GameConfig.DECLINE_REPUTATION_PENALTY, &"GhostButton", _on_decline, "DeclineButton", 44)
 	decide.add_child(decline)
-	if PeopleManager.has_person(c.id):
+	if PeopleManager.has_person(c.id) and Features.is_on(&"dossier"):
 		var hist := UIKit.button("REVIEW HISTORY", &"GhostButton", func() -> void:
 			UIManager.go_to(UIManager.SCREEN_DOSSIER, {"tab_name": "PATIENTS", "focus": String(c.id)}), "HistoryButton", 40)
 		hist.tooltip_text = "Their visits, what they owe, what they remember (journal)."

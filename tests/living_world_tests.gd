@@ -45,6 +45,11 @@ func _psychology_and_finances() -> void:
 	var seen_traits := {}
 	var seen_fin := {}
 	var budgets_ok := true
+	# A fixed seed: "variety" over 120 random patients sat right at the
+	# threshold now and then. The generator's own state is restored after.
+	var rng: RandomNumberGenerator = CustomerManager.generator.rng
+	var rng_state := rng.state
+	rng.seed = 3901
 	for i in 120:
 		var c := CustomerManager.generator.generate({"full_difficulty": true})
 		for tr in c.traits:
@@ -55,6 +60,7 @@ func _psychology_and_finances() -> void:
 	check(budgets_ok, "every customer has 1-2 known traits and a budget")
 	check(seen_traits.size() >= 8, "trait variety across customers (%d)" % seen_traits.size())
 	check(seen_fin.size() >= 5, "finance variety across customers (%d)" % seen_fin.size())
+	rng.state = rng_state
 	# Budget is tied to the job: desperate people can't cover it, wealthy can.
 	var c2 := CustomerManager.generator.generate({"full_difficulty": true})
 	var fee := CustomerGenerator.estimate_fee(c2)

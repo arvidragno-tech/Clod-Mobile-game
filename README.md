@@ -7,7 +7,14 @@ almost nothing, take customers, install cyberware at a surgical workstation,
 hire staff, buy clinics across the city, and decide what you become while a
 corporate conspiracy spreads through your patients' nerves.
 
-**Status: 3.8.0**: every patient arrives with a **PATIENT INTAKE FORM**, an
+**Status: 3.9.0**: less on screen. A patient opens on what they want, one
+risk sentence, the money and ACCEPT JOB, with DETAILS one click away. The
+clinic keeps one objective and one status line. The tutorial is one short
+step at a time on the real controls, and sections appear only when they
+matter, each introduced on its own button. One TUTORIAL & GUIDANCE setting
+(GUIDED / BRIEF / OFF).
+
+**3.8.0**: every patient arrives with a **PATIENT INTAKE FORM**, an
 in-world document of their request, risk factors and history, each line
 marked REPORTED, ON FILE, CONFIRMED, SUSPECTED or UNKNOWN. Hidden conditions
 stay hidden until you scan.

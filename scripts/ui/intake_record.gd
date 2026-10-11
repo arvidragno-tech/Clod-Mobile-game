@@ -220,6 +220,22 @@ static func risks(c: CustomerData) -> Array[Dictionary]:
 	return out
 
 
+## THE one risk sentence for the patient's default view: the most serious
+## risk factor the clinic can see (same data, same order of severity), or {}.
+static func key_risk(c: CustomerData) -> Dictionary:
+	var best := {}
+	var rank := {CAUTION: 1, SIGNIFICANT: 2, CRITICAL: 3}
+	for e: Dictionary in risks(c):
+		if best.is_empty() or int(rank.get(e["level"], 0)) > int(rank.get(best["level"], 0)):
+			best = e
+	if best.is_empty():
+		return {}
+	var why := str(best["why"])
+	var first := why.get_slice(". ", 0).trim_suffix(".")
+	return {"text": "%s: %s%s" % [str(best["label"]).capitalize(), str(best["value"]), (". " + first + ".") if first != "" else "."],
+		"level": best["level"], "key": best["key"]}
+
+
 static func color(level: StringName) -> Color:
 	match level:
 		CAUTION:

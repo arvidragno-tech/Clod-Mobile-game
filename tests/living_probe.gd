@@ -172,8 +172,8 @@ func _time_of_day(label: String) -> void:
 		await _frames(10)
 		var clock := root.find_child("ClockLabel", true, false) as Label
 		_check(clock != null and clock.text.contains(TimeManager.clock_text()) and clock.text.contains(TimeManager.period_label()), "%s: the room shows %s %s" % [label, TimeManager.clock_text(), TimeManager.period_label()])
-		var ag := root.find_child("AgendaLabel", true, false) as Label
-		_check(ag != null and ag.text.contains("doors lock"), "%s: today's agenda shown" % label)
+		var st := root.find_child("StatusHeadline", true, false) as Button
+		_check(st != null and st.text != "", "%s: the clinic's status line is shown (%s)" % [label, st.text if st else "-"])
 		await _shot(label, "clinic_%s" % String(TimeManager.period()))
 	TimeManager.minute = TimeManager.open_minute()
 

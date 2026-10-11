@@ -134,8 +134,12 @@ func _add_aftermath(r: SurgeryResult) -> void:
 		notes.append("+%d SKILL POINT%s to spend." % [r.levels_gained * GameConfig.SKILL_POINTS_PER_LEVEL, "S" if r.levels_gained > 1 else ""])
 	# New information: leads, places, quests and messages that came out of it.
 	var news := ChangeLog.since(GameManager.surgery_log_mark, ["lead", "place", "quest", "message", "news"])
-	for e in news:
-		notes.append("NEW: %s · %s" % [str(e["subject"]), str(e["text"])])
+	# At most two, one sentence each: the rest waits in the journal (a long
+	# list pushed CONTINUE off the screen).
+	for i in mini(2, news.size()):
+		notes.append("NEW: %s · %s" % [str(news[i]["subject"]), PatientSummary._first_sentence(str(news[i]["text"]))])
+	if news.size() > 2:
+		notes.append("+%d more new: %s." % [news.size() - 2, "see the journal" if Features.is_on(&"dossier") else "you'll hear more"])
 	_add_links(r, news)
 	if notes.is_empty():
 		return
@@ -155,7 +159,7 @@ func _add_links(_r: SurgeryResult, news: Array[Dictionary]) -> void:
 	row.name = "ResultLinks"
 	var cust: CustomerData = CustomerManager.current_customer
 	var pid: StringName = cust.id if cust else &""
-	if pid != &"" and PeopleManager.has_person(pid):
+	if pid != &"" and PeopleManager.has_person(pid) and Features.is_on(&"dossier"):
 		row.add_child(UIKit.button("VIEW PATIENT", &"GhostButton", func() -> void:
 			UIManager.go_to(UIManager.SCREEN_DOSSIER, {"tab_name": "PATIENTS", "focus": String(pid)}), "ViewPatient", 44))
 	# A real lead first; otherwise the first new thing that has somewhere to go.

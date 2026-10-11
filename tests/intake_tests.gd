@@ -172,4 +172,10 @@ func _special_cases() -> void:
 	c.neural_stability = 50.0
 	r = IntakeRecord.build(c)
 	check((r["risks"] as Array).any(func(e: Dictionary) -> bool: return str(e["key"]) == "stability"), "low measured neural stability is a risk factor")
+	# The summary's one risk sentence: the most serious factor on the form.
+	c.is_emergency = true
+	var k := IntakeRecord.key_risk(c)
+	check(not k.is_empty() and k["level"] == IntakeRecord.CRITICAL and str(k["key"]) == "emergency", "the key risk is the most serious one on the form")
+	check(not str(k["text"]).contains("\n"), "... one sentence")
+	c.is_emergency = false
 	CustomerManager.dismiss_current()

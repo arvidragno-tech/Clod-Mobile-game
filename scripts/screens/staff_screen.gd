@@ -11,7 +11,6 @@ var _panels: Array[Control] = []
 
 
 func on_enter(params: Dictionary) -> void:
-	(func() -> void: Hints.first("staff")).call_deferred()
 	var col := UIKit.workstation(self, &"staff")
 	col.add_child(UIKit.header("CLINIC · %d / %d STAFF" % [StaffManager.count(), StaffManager.capacity_total()], "STAFF", GameManager.go_to_clinic))
 	col.add_child(UIKit.tabs(["TEAM", "HIRING BOARD"], _select, "StaffTab"))

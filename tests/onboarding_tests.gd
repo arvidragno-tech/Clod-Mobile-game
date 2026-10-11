@@ -128,13 +128,28 @@ func _features() -> void:
 	Features.refresh()
 	for id: StringName in [&"skills", &"supply", &"staff", &"upgrades", &"map", &"database"]:
 		check(not Features.is_on(id), "a new game: %s not yet" % id)
+	InventoryManager.supplies = 8
 	EventManager.operations = 1
 	Features.refresh()
-	for id: StringName in [&"skills", &"supply", &"inventory", &"business", &"dossier"]:
-		check(Features.is_on(id), "after the first job: %s" % id)
-	check(not Features.is_on(&"staff"), "after the first job: STAFF still waits")
-	check(TutorialManager.intro_pending.size() == 5, "each new section queues one intro card (%d)" % TutorialManager.intro_pending.size())
-	check(Features.is_new(&"supply"), "a section introduced today is NEW")
+	check(Features.is_on(&"skills"), "after the first job: SKILLS (the point to spend)")
+	for id: StringName in [&"supply", &"inventory", &"business", &"dossier", &"staff"]:
+		check(not Features.is_on(id), "after the first job: %s still waits" % id)
+	check(TutorialManager.intro_pending == ["skills"], "the new section queues one introduction (%s)" % [TutorialManager.intro_pending])
+	check(Features.is_new(&"skills"), "a section introduced today is NEW")
+	# SUPPLY comes when you need it.
+	InventoryManager.supplies = 1
+	Features.refresh()
+	check(Features.is_on(&"supply"), "low on supplies: SUPPLY is introduced")
+	InventoryManager.supplies = 8
+	EventManager.operations = 2
+	Features.refresh()
+	for id: StringName in [&"supply", &"inventory", &"dossier"]:
+		check(Features.is_on(id), "two jobs in: %s" % id)
+	check(not Features.is_on(&"database"), "two jobs in: the cyberware database waits")
+	check(Features.is_on(&"business") == (BusinessManager.day >= 2 or BusinessManager.debt > 0), "BUSINESS: from the second day (or a debt)")
+	BusinessManager.day = maxi(2, BusinessManager.day)
+	Features.refresh()
+	check(Features.is_on(&"business"), "the second day: BUSINESS")
 	EventManager.operations = 3
 	Features.refresh()
 	check(Features.is_on(&"staff") and Features.is_on(&"upgrades") and Features.is_on(&"database"), "three jobs in: STAFF, FACILITY, CYBERWARE DB")
@@ -157,6 +172,18 @@ func _features() -> void:
 	EventManager.operations = 5
 	Features.refresh()
 	check(Features.is_on(&"staff") and Features.is_on(&"supply"), "a lost flag is restored from the game state")
+	# The single guidance mode drives the three settings.
+	var keep := [Settings.tutorial_hints, Settings.progressive_features, Settings.guidance_level]
+	for mode in 3:
+		Settings.set_guidance_mode(mode)
+		check(Settings.guidance_mode() == mode, "guidance mode %d round-trips" % mode)
+	Settings.set_guidance_mode(0)
+	check(Settings.tutorial_hints and Settings.progressive_features, "GUIDED: tutorial and gradual sections")
+	Settings.set_guidance_mode(2)
+	check(not Settings.tutorial_hints and not Settings.progressive_features, "OFF: no tutorial, everything visible")
+	Settings.set_value("tutorial_hints", keep[0])
+	Settings.set_value("progressive_features", keep[1])
+	Settings.set_value("guidance_level", keep[2])
 	# The setting.
 	TutorialManager.introduced = {}
 	Settings.progressive_features = false

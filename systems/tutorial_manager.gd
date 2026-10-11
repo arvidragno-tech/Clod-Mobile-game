@@ -9,29 +9,29 @@ signal step_changed(step: Dictionary)
 ## Each step: id, context (screen id, "plan", or "stage:<type>"), target
 ## node name to highlight (optional) and the text.
 const STEPS: Array[Dictionary] = [
-	{"id": "arrive", "context": "clinic", "target": "SeeButton", "title": "YOUR FIRST PATIENT",
-		"text": "Someone is at the door. Click SEE PATIENT, or the patient in the room (or press {customer_info})."},
+	{"id": "arrive", "context": "clinic", "target": "SeeButton", "title": "THE CLINIC",
+		"text": "A patient is at the door. Click SEE PATIENT (or the patient in the room)."},
 	{"id": "intake", "context": "summary", "target": "AcceptButton", "title": "THE PATIENT",
-		"text": "What they want, how hard it is, your odds and what you'd keep. MORE DETAILS has their full file. Click ACCEPT JOB (or press ENTER)."},
-	{"id": "diagnose", "context": "diagnosis", "target": "ScanView", "title": "1 / DIAGNOSIS",
-		"text": "Click 2 glowing body regions to scan. Pick the diagnosis the findings point to, then CONFIRM."},
-	{"id": "plan", "context": "plan", "target": "BeginButton", "title": "2 / PROCEDURE",
-		"text": "The plan: implant, tools, supplies, risk. All checks show +. Click BEGIN OPERATION."},
-	{"id": "tools", "context": "stage:anesthesia", "target": "ControlsHost", "title": "3 / TOOLS",
-		"text": "Each step's instrument is put in your hand for you; it glows in the rack on the right (keys {tool_1}-{tool_9} switch). First, HOLD the button or {context} to sedate and release in the green."},
-	{"id": "cut", "context": "stage:incision", "target": "TrayScroll", "title": "4 / SURGERY",
-		"text": "The SCALPEL is in your hand. Drag along the dotted guide from the marker. Go slow: straying causes bleeding. Right-click puts a tool down."},
-	{"id": "install", "context": "stage:install_implant", "target": "FieldArea", "title": "5 / INSTALL",
-		"text": "Drag the implant into the socket, turn it with the mouse wheel or {rotate_left} and {rotate_right} until it lines up, then SEAT ({context})."},
-	{"id": "close", "context": "stage:close_incision", "target": "FieldArea", "title": "6 / FINISH",
-		"text": "Click the stitch points in number order to close up."},
-	{"id": "payment", "context": "results", "target": "ContinueButton", "title": "7 / PAYMENT",
-		"text": "Credits, XP and street rep. Clean, fast work pays more."},
-	{"id": "upgrade", "context": "clinic_after", "target": "Nav_skills", "title": "8 / UPGRADE",
-		"text": "You earned a skill point. Spend it in SKILLS on the left. SUPPLY sells tools and implants. {pause} opens the menu. Good luck, ripper."},
+		"text": "What they want, the main risk, what you'd keep. Click ACCEPT JOB."},
+	{"id": "diagnose", "context": "diagnosis", "target": "ScanView", "title": "1 · SCAN",
+		"text": "Click two glowing regions on the body, then pick the diagnosis that fits and CONFIRM."},
+	{"id": "plan", "context": "plan", "target": "BeginButton", "title": "2 · PLAN",
+		"text": "Implant, tools and supplies all show +. Click BEGIN OPERATION."},
+	{"id": "tools", "context": "stage:anesthesia", "target": "ControlsHost", "title": "3 · SEDATE",
+		"text": "Hold {context} (or the button) and let go in the green band."},
+	{"id": "cut", "context": "stage:incision", "target": "TrayScroll", "title": "4 · CUT",
+		"text": "Drag the scalpel along the dotted line from the marker. Slowly."},
+	{"id": "install", "context": "stage:install_implant", "target": "FieldArea", "title": "5 · INSTALL",
+		"text": "Drag the implant into the socket, turn it with the wheel until it lines up, then SEAT ({context})."},
+	{"id": "close", "context": "stage:close_incision", "target": "FieldArea", "title": "6 · CLOSE",
+		"text": "Click the stitch points in number order."},
+	{"id": "payment", "context": "results", "target": "ContinueButton", "title": "7 · RESULT",
+		"text": "What you earned and what the job used up. Click CONTINUE."},
+	{"id": "upgrade", "context": "clinic_after", "target": "Nav_skills", "title": "NEW · SKILLS",
+		"text": "You earned a skill point. Spend it in SKILLS, new in the side bar."},
 ]
 
-const HELP_TEXT := "1. See the customer (click them or press {customer_info}) and accept the job (ENTER).\n2. Scan 2+ body regions, then pick the diagnosis.\n3. Check the plan and BEGIN.\n4. Each stage puts its instrument in your hand (it glows in the rack; switch with {tool_1}-{tool_9} or {tool_prev}/{tool_next}); follow the instruction bar. Right-click puts the tool down; the wheel zooms the field.\n5. Complications: hit the flashing emergency action ({quick_coag} COAG / {quick_sedate} SEDATE / {quick_stabilize} STABIL).\n6. Get paid, spend skill points, upgrade your clinic.\n7. The clinic room is clickable; wheel or double-click to zoom. {inventory} inventory, {database} database, {journal} journal, {map} city map, {changes} recent changes, {help} field guide (click any stat to explain it), {quicksave} quick save, {pause} menu.\nColours: cyan = tech/OK, amber = careful, red = danger, magenta = black market. Every colour also carries a symbol or a word.\nAll keys can be changed in SETTINGS > CONTROLS."
+const HELP_TEXT := "1. SEE PATIENT (click them or press {customer_info}): what they want, the main risk, what you keep. ACCEPT JOB (ENTER).\n2. Scan 2+ body regions, then pick the diagnosis.\n3. Check the plan and BEGIN.\n4. Each stage puts its instrument in your hand (it glows in the rack; switch with {tool_1}-{tool_9} or {tool_prev}/{tool_next}); follow the instruction bar. Right-click puts the tool down; the wheel zooms the field.\n5. Complications: hit the flashing emergency action ({quick_coag} COAG / {quick_sedate} SEDATE / {quick_stabilize} STABIL).\n6. Get paid, spend skill points, upgrade your clinic.\n7. The clinic room is clickable; wheel or double-click to zoom. {inventory} inventory, {database} database, {journal} journal, {map} city map, {changes} recent changes, {help} field guide (click any stat to explain it), {quicksave} quick save, {pause} menu.\nColours: cyan = tech/OK, amber = careful, red = danger, magenta = black market. Every colour also carries a symbol or a word.\nAll keys can be changed in SETTINGS > CONTROLS."
 
 
 ## The help text with the player's current keys.
@@ -49,6 +49,8 @@ var intro_pending: Array = []
 const INTRODUCED_BEFORE := -9999
 
 var _coach: CoachMark
+## The section whose introduction is on screen ("" = none).
+var _feature_intro: String = ""
 
 
 func _ready() -> void:
@@ -96,6 +98,14 @@ func notify(context: String) -> void:
 
 
 func _on_screen_changed(screen_id: StringName) -> void:
+	if _feature_intro != "":
+		# Opening the new section is the introduction's action: done.
+		if Features.LIST.get(StringName(_feature_intro), {}).get("screen", &"") == screen_id:
+			finish_feature_intro()
+		else:
+			_hide()  # it comes back on the clinic until seen
+			_feature_intro = ""
+		return
 	if not is_active():
 		_hide()
 		return
@@ -124,6 +134,7 @@ func _index_of(id: String) -> int:
 
 func _show_step(i: int) -> void:
 	step_index = i
+	_feature_intro = ""
 	var step: Dictionary = STEPS[i]
 	_hide()
 	var host := UIManager.get_overlay_host()
@@ -149,8 +160,38 @@ func _confirm_skip() -> void:
 func _finish() -> void:
 	completed = true
 	active = false
+	# The last step introduced SKILLS: no second card for it.
+	intro_pending.erase("skills")
 	_hide()
 	SaveManager.save_game()
+
+
+## A section's introduction: one coach card pointing at its new side-bar
+## entry (what it is and why, in a sentence). Opening it, or GOT IT, ends it.
+func show_feature_intro(key: String) -> void:
+	var f: Dictionary = Features.LIST.get(StringName(key), {})
+	var host := UIManager.get_overlay_host()
+	if f.is_empty() or host == null:
+		return
+	_hide()
+	_feature_intro = key
+	_coach = CoachMark.new()
+	_coach.name = "CoachMark"
+	host.add_child(_coach)
+	host.move_child(_coach, 0)
+	_coach.setup({"id": "feature_" + key, "context": "clinic", "target": "Nav_%s" % key, "title": "NEW · %s" % str(f["title"]), "text": str(f["intro"])}, 0, 0)
+	_coach.done_pressed.connect(finish_feature_intro)
+	AudioManager.play_sfx(&"tutorial", 0.0)
+
+
+func has_feature_intro() -> bool:
+	return _feature_intro != "" and is_instance_valid(_coach)
+
+
+func finish_feature_intro() -> void:
+	intro_pending.erase(_feature_intro)
+	_feature_intro = ""
+	_hide()
 
 
 func _hide() -> void:

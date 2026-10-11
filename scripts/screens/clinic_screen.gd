@@ -25,18 +25,17 @@ var _verdict_box: VBoxContainer
 var _rumor: Label
 var _stock_label: Label
 var _status_box: VBoxContainer
-var _factions_box: VBoxContainer
-var _matters_box: VBoxContainer
 var _changes_button: Button
 var _nav: SideNav
 var _waiting_dots: float = 0.0
 var _panels: Array[Control] = []
 var _loc: Label
 var _close_button: Button
-var _agenda: Label
 var _security_button: Button
 var _close_row: HBoxContainer
 var _doors_row: HFlowContainer
+var _status_line: Button
+var _status_link: Dictionary = {}
 
 
 func on_enter(_params: Dictionary) -> void:
@@ -46,8 +45,6 @@ func on_enter(_params: Dictionary) -> void:
 		if not bool(LocationManager.return_to_clinic().get("ok", false)):
 			LocationManager.player_location = LocationManager.CLINIC
 	_build()
-	if EventManager.operations > 0:
-		(func() -> void: Hints.first("priorities")).call_deferred()
 	EventBus.customer_arrived.connect(_on_customer_arrived)
 	EventBus.inventory_changed.connect(_refresh_status)
 	EventBus.resources_changed.connect(_refresh_status)
@@ -125,7 +122,7 @@ func _build() -> void:
 	_panels.append(_card)
 	var cv := UIKit.vbox(12)
 	_card.add_child(cv)
-	cv.add_child(UIKit.section_head("AT THE DOOR", "", "loop"))
+	cv.add_child(UIKit.section_head("AT THE DOOR"))
 	# The details scroll if they're long; SEE PATIENT always stays visible.
 	var isc := UIKit.scroll()
 	isc.name = "DoorScroll"
@@ -205,58 +202,41 @@ func _build() -> void:
 	loc.clip_text = true
 	loc.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	overlay.add_child(loc)
-	_agenda = UIKit.label("", &"DimLabel", false, Palette.ACCENT, 14)
-	_agenda.name = "AgendaLabel"
-	_agenda.add_theme_color_override(&"font_outline_color", Palette.BG_0)
-	_agenda.add_theme_constant_override(&"outline_size", 4)
-	_agenda.clip_text = true
-	_agenda.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	overlay.add_child(_agenda)
-	var cards := UIKit.hbox(14)
-	UIKit.expand(cards, true, false)
-	cards.size_flags_vertical = Control.SIZE_SHRINK_END
-	centre.add_child(cards)
-	_status_box = UIKit.section(cards, "TODAY", &"CardPanel", "", "time")
-	(_status_box.get_parent() as Control).size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_panels.append(_status_box.get_parent())
+	# ONE bar under the room: one sentence (what needs you, else today's
+	# progress) and the clinic's own controls. It replaces the TODAY meters,
+	# WHAT MATTERS NOW and CLINIC STATUS cards (3.9): the NEXT line above is
+	# the one objective; people, messages and quests live in the journal.
+	var bar := UIKit.panel(&"CardPanel")
+	bar.name = "TodayBar"
+	UIKit.expand(bar, true, false)
+	bar.size_flags_vertical = Control.SIZE_SHRINK_END
+	centre.add_child(bar)
+	_panels.append(bar)
+	_status_box = UIKit.vbox(0)
+	bar.add_child(_status_box)
 	_stock_label = UIKit.label("", &"MonoLabel")
 	_stock_label.visible = false
 	_status_box.add_child(_stock_label)
-	_close_button = UIKit.button("CLOSE FOR THE NIGHT", &"GhostButton", _close_day, "CloseDayButton", 40)
-	_close_button.tooltip_text = "End the business day: pay rent, running costs and salaries, see the ledger."
-	_close_button.clip_text = true
-	_close_button.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	UIKit.expand(_close_button)
-	_close_row = UIKit.hbox(8)
+	_close_row = UIKit.hbox(10)
 	_status_box.add_child(_close_row)
+	_status_line = UIKit.button("", &"GhostButton", func() -> void: Nav.open(_status_link), "StatusHeadline", 44)
+	_status_line.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	_status_line.clip_text = true
+	_status_line.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	UIKit.expand(_status_line)
+	_close_row.add_child(_status_line)
+	_close_button = UIKit.button("CLOSE FOR THE NIGHT", &"GhostButton", _close_day, "CloseDayButton", 44)
+	_close_button.tooltip_text = "End the business day: pay rent, running costs and salaries, see the ledger."
 	_close_row.add_child(_close_button)
-	_security_button = UIKit.button("SECURITY", &"GhostButton", _open_security, "SecurityButton", 40)
-	_security_button.tooltip_text = "Heat level, break-ins and investigations."
 	_doors_button = UIKit.button("", &"GhostButton", func() -> void:
 		BusinessManager.set_doors_open(not BusinessManager.doors_open)
-		_refresh_doors(), "DoorsButton", 40)
-	# Doors and security get their own row, which wraps rather than cuts
-	# the labels ("CLOSE DO" / "SECURI") when the card is narrow or the text big.
-	UIKit.expand(_doors_button)
-	UIKit.expand(_security_button)
-	_doors_row = HFlowContainer.new()
-	_doors_row.add_theme_constant_override(&"h_separation", 8)
-	_doors_row.add_theme_constant_override(&"v_separation", 6)
-	_doors_row.name = "DoorsRow"
-	_status_box.add_child(_doors_row)
-	_doors_row.add_child(_doors_button)
-	_doors_row.add_child(_security_button)
+		_refresh_doors(), "DoorsButton", 44)
+	_close_row.add_child(_doors_button)
+	_security_button = UIKit.button("SECURITY", &"GhostButton", _open_security, "SecurityButton", 44)
+	_security_button.tooltip_text = "Heat level, break-ins and investigations."
+	_close_row.add_child(_security_button)
+	_doors_row = null
 	_refresh_doors()
-	_matters_box = UIKit.section(cards, "WHAT MATTERS NOW", &"CardPanel", "click to go there")
-	_matters_box.add_theme_constant_override(&"separation", 4)
-	_matters_box.name = "WhatMatters"
-	(_matters_box.get_parent() as Control).size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	(_matters_box.get_parent() as Control).size_flags_stretch_ratio = 1.4
-	_panels.append(_matters_box.get_parent())
-	_factions_box = UIKit.section(cards, "CLINIC STATUS", &"CardPanel", "", "")
-	_factions_box.name = "ClinicStatus"
-	(_factions_box.get_parent() as Control).size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_panels.append(_factions_box.get_parent())
 
 
 func _process(delta: float) -> void:
@@ -322,7 +302,10 @@ func _on_customer_arrived(customer: CustomerData) -> void:
 	_objective_timer = 0.0
 	_refresh_status()
 	AudioManager.play_sfx(&"customer")
-	UIManager.show_toast("%s is at the door" % customer.display_name, &"danger" if customer.is_emergency else &"info")
+	# The room, the door card and the NEXT line already say who's here;
+	# only an emergency also interrupts.
+	if customer.is_emergency:
+		UIManager.show_toast("EMERGENCY: %s is bleeding at the door" % customer.display_name, &"danger")
 	_show_customer(customer, true)
 
 
@@ -332,9 +315,12 @@ func _show_customer(customer: CustomerData, animate: bool) -> void:
 	var surgery := SurgeryManager.get_surgery(item.install_surgery_id) if item else null
 	_portrait.set_appearance(customer.appearance, FactionManager.get_color(customer.faction_id))
 	_name.text = customer.get_display_title()
-	_faction_tag.text = "%s%s" % ["EMERGENCY · " if customer.is_emergency else "", FactionManager.get_name_of(customer.faction_id).to_upper()]
-	_faction_tag.add_theme_color_override(&"font_color", Palette.DANGER if customer.is_emergency else FactionManager.get_color(customer.faction_id))
-	_occupation.text = "%d yrs · %s" % [customer.age, customer.occupation.capitalize()]
+	# The door card is a teaser: who and what. Their background is in the
+	# patient view (DETAILS / INTAKE FORM).
+	_faction_tag.text = "EMERGENCY" if customer.is_emergency else ""
+	_faction_tag.visible = customer.is_emergency
+	_faction_tag.add_theme_color_override(&"font_color", Palette.DANGER)
+	_occupation.visible = false
 	UIKit.clear(_request_box)
 	if item:
 		_request_box.add_child(CyberwareIcon.make(item))
@@ -342,7 +328,6 @@ func _show_customer(customer: CustomerData, animate: bool) -> void:
 		UIKit.expand(rv)
 		rv.add_child(UIKit.label("WANTS", &"SubHeaderLabel"))
 		rv.add_child(UIKit.label(item.display_name, &"", true))
-		rv.add_child(UIKit.label("T%d %s · difficulty %d/5" % [item.tier, item.category.to_upper(), item.install_difficulty], &"DimLabel", true))
 		_request_box.add_child(rv)
 	# Same numbers as the customer file (one source of truth).
 	var expected := CustomerGenerator.estimate_fee(customer) if surgery and item else 0
@@ -407,40 +392,19 @@ func _refresh_status() -> void:
 	if _stock_label == null:
 		return
 	_stock_label.text = "CHROME IN STOCK: %d" % InventoryManager.get_instances().size()
-	for c in _status_box.get_children():
-		if c != _stock_label and c != _close_row and c != _doors_row and c.get_index() > 2:
-			c.queue_free()
 	var full := BusinessManager.is_day_full()
 	_close_button.disabled = CustomerManager.has_customer() or SurgeryManager.is_active
 	_close_button.theme_type_variation = &"AccentButton" if full else &"GhostButton"
-	if _loc:
-		_loc.text = "%s · %s · %s" % [ClinicManager.get_tier_name().to_upper(), WorldManager.district_name().to_upper(), TimeManager.stamp()]
-	# Four meters: how much night is left, the day's jobs, supplies, heat.
-	var span := float(TimeManager.close_minute() - TimeManager.open_minute())
-	_meter_row("NIGHT LEFT", 1.0 - clampf(float(TimeManager.minute - TimeManager.open_minute()) / span, 0.0, 1.0),
-		Palette.WARN if TimeManager.minutes_left() < 120 else Palette.ACCENT, "%s · doors lock 04:00" % TimeManager.duration_text(TimeManager.minutes_left()), "time")
-	var cap := maxi(1, BusinessManager.capacity())
-	_meter_row("JOBS", float(BusinessManager.jobs_today) / cap, Palette.OK if full else Palette.ACCENT, "%d / %d · bill %s%s" % [BusinessManager.jobs_today, cap,
-		EconomyManager.format_money(BusinessManager.projected_total()), (" · DEBT %d" % BusinessManager.debt) if BusinessManager.debt > 0 else ""], "jobs")
-	var scap := maxi(1, ClinicManager.get_supplies_capacity())
-	_meter_row("SUPPLIES", float(InventoryManager.supplies) / scap, Palette.WARN if InventoryManager.supplies < 2 else Palette.OK, "%d / %d · %d implants" % [InventoryManager.supplies, scap, InventoryManager.get_instances().size()], "supplies")
-	# Heat matters once there's any (or the black market is open).
-	if FactionManager.heat > 0.0 or Features.is_on(&"blackmarket"):
-		_meter_row("HEAT", FactionManager.heat / 100.0, Palette.DANGER if FactionManager.heat >= 50.0 else (Palette.WARN if FactionManager.heat >= 25.0 else Palette.TEXT_DIM), "%d · %s" % [roundi(FactionManager.heat), SecurityManager.level_label()], "heat")
+	# The clinic's controls appear once the first job has taught the day.
+	var after_first := Difficulty.ops() >= 1 or not Features.progressive()
+	_close_button.visible = after_first or full
+	_doors_button.visible = after_first
 	var open := SecurityManager.open_cases().size()
 	_security_button.visible = open > 0 or Features.is_on(&"upgrades") or FactionManager.heat >= 25.0
 	_security_button.text = "SECURITY" if open == 0 else "%d OPEN CASE%s" % [open, "S" if open > 1 else ""]
 	_security_button.theme_type_variation = &"DangerButton" if open > 0 else &"GhostButton"
-	# Today's agenda: what's due and when the door locks.
-	var agenda: Array[String] = []
-	for a in TimeManager.upcoming():
-		agenda.append("%s  %s" % [TimeManager.clock_text(int(a["minute"])), str(a["label"])])
-	var due := PeopleManager.due_people().size()
-	if due > 0:
-		agenda.append("%d patient%s due back today" % [due, "s" if due > 1 else ""])
-	agenda.append("%s  doors lock (%s left)" % [TimeManager.clock_text(TimeManager.close_minute()), TimeManager.duration_text(TimeManager.minutes_left())])
-	if _agenda:
-		_agenda.text = "\n".join(agenda)
+	if _loc:
+		_loc.text = "%s · %s" % [WorldManager.district_name().to_upper(), TimeManager.stamp()]
 	_refresh_status_card()
 	_refresh_matters(true)
 	# New sections become available as they become relevant (Features).
@@ -450,106 +414,52 @@ func _refresh_status() -> void:
 			Features.show_next_intro()).call_deferred()
 
 
-## CLINIC STATUS (3.7 dashboard): one headline state and only what needs
-## you (ClinicStatus.dashboard), each line clickable when it can be fixed.
+## The bar's one sentence: what needs you (ClinicStatus.dashboard: the
+## headline, else the most serious issue), otherwise today's progress.
 func _refresh_status_card() -> void:
-	UIKit.clear_after(_factions_box, 1)
-	var d := ClinicStatus.dashboard()
+	if _status_line == null:
+		return
+	var d := ClinicStatus.dashboard(1)
 	var head: Dictionary = d["headline"]
-	var hl := UIKit.button("%s %s" % [ClinicStatus.mark(head["level"]), str(head["text"])], &"GhostButton", _open_link.bind(head["link"]), "Status_%s" % head["key"], 40)
-	hl.name = "StatusHeadline"
-	hl.alignment = HORIZONTAL_ALIGNMENT_LEFT
-	hl.clip_text = true
-	hl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	hl.add_theme_color_override(&"font_color", ClinicStatus.color(head["level"]))
-	hl.add_theme_color_override(&"font_disabled_color", ClinicStatus.color(head["level"]))
-	hl.tooltip_text = "%s\n%s" % [head["text"], head["why"]]
-	hl.disabled = not Nav.can_open(head["link"])
-	_factions_box.add_child(hl)
-	var why := UIKit.label(str(head["why"]), &"DimLabel", true, null, 14)
-	why.name = "StatusAdvice"
-	why.max_lines_visible = 2
-	_factions_box.add_child(why)
-	for it: Dictionary in d["issues"]:
-		var b := UIKit.button("%s %s" % [ClinicStatus.mark(it["level"]), str(it["text"])], &"GhostButton", _open_link.bind(it["link"]), "Status_%s" % it["key"], 32)
-		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		b.clip_text = true
-		b.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-		b.add_theme_color_override(&"font_color", ClinicStatus.color(it["level"]))
-		b.tooltip_text = "%s\n%s\n%s" % [it["text"], it["why"], it["detail"]]
-		b.disabled = not Nav.can_open(it["link"])
-		_factions_box.add_child(b)
-		if Settings.is_detailed():
-			_factions_box.add_child(UIKit.label("   " + str(it["why"]), &"DimLabel", true, null, 13))
+	var issues: Array = d["issues"]
+	var level: StringName = ClinicStatus.GOOD
+	var text := ""
+	_status_link = {}
+	if str(head["key"]) != "ready":
+		level = head["level"]
+		text = "%s %s · %s" % [ClinicStatus.mark(level), str(head["text"]), str(head["why"])]
+		_status_link = head["link"]
+	elif not issues.is_empty():
+		var it: Dictionary = issues[0]
+		level = it["level"]
+		text = "%s %s · %s" % [ClinicStatus.mark(level), str(it["text"]), str(it["why"])]
+		_status_link = it["link"]
+	else:
+		var cap := maxi(1, BusinessManager.capacity())
+		text = "Jobs %d / %d today · %s of the night left" % [BusinessManager.jobs_today, cap, TimeManager.duration_text(TimeManager.minutes_left())]
+	_status_line.text = text
+	_status_line.tooltip_text = text
+	var col := Palette.TEXT_DIM if level == ClinicStatus.GOOD else ClinicStatus.color(level)
+	_status_line.add_theme_color_override(&"font_color", col)
+	_status_line.add_theme_color_override(&"font_disabled_color", col)
+	_status_line.disabled = not Nav.can_open(_status_link)
 
 
 func _open_link(link: Dictionary) -> void:
 	Nav.open(link)
 
 
-var _matters_sig: String = ""
-
-
-## WHAT MATTERS NOW: the prioritised, clickable list (Guidance).
-func _refresh_matters(force: bool = false) -> void:
-	if _matters_box == null:
+## The CHANGES button (shown once the journal is introduced: it's where
+## changes are read in full).
+func _refresh_matters(_force: bool = false) -> void:
+	if _changes_button == null:
 		return
-	var its := Guidance.for_player()
-	var sig := ""
-	for it in its:
-		sig += str(it["text"]) + "|"
-	if _changes_button:
-		var n := ChangeLog.unread_count()
-		_changes_button.text = ("◷ CHANGES %d  [%s]" % [n, Controls.key_name("changes")]) if n > 0 else ("◷ CHANGES  [%s]" % Controls.key_name("changes"))
-		_changes_button.theme_type_variation = &"Button" if n > 0 else &"GhostButton"
-	if ChangeLog.unread_count() >= 4 and EventManager.operations > 0:
+	_changes_button.visible = Features.is_on(&"dossier")
+	var n := ChangeLog.unread_count()
+	_changes_button.text = ("◷ CHANGES %d  [%s]" % [n, Controls.key_name("changes")]) if n > 0 else ("◷ CHANGES  [%s]" % Controls.key_name("changes"))
+	_changes_button.theme_type_variation = &"Button" if n > 0 else &"GhostButton"
+	if n >= 4 and EventManager.operations > 0 and _changes_button.visible:
 		Hints.first("changes")
-	if sig == _matters_sig and not force:
-		return
-	_matters_sig = sig
-	UIKit.clear_after(_matters_box, 1)
-	if its.is_empty():
-		_matters_box.add_child(UIKit.label("Nothing urgent.", &"DimLabel"))
-		return
-	for i in its.size():
-		var it: Dictionary = its[i]
-		var lv: StringName = it["level"]
-		var txt := "%s %s  %s" % [Guidance.MARKS[lv], str(it["icon"]), str(it["text"])]
-		var link: Dictionary = it["link"]
-		var b := UIKit.button(txt, &"GhostButton", func() -> void: Nav.open(link), "Matter_%d" % i, 32)
-		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		b.clip_text = true
-		b.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-		b.tooltip_text = str(it["text"])
-		b.add_theme_color_override(&"font_color", Guidance.color(lv))
-		b.disabled = not Nav.can_open(link)
-		_matters_box.add_child(b)
-
-
-## One labelled meter in the TODAY card (hover/click the caption to learn more).
-func _meter_row(caption: String, ratio: float, color: Color, text: String, term: String) -> void:
-	var row := UIKit.hbox(8)
-	row.name = "Today_%s" % caption.replace(" ", "_")
-	var cap := UIKit.label(caption, &"SubHeaderLabel")
-	cap.custom_minimum_size.x = 104
-	cap.mouse_filter = Control.MOUSE_FILTER_STOP
-	cap.mouse_default_cursor_shape = Control.CURSOR_HELP
-	cap.tooltip_text = Glossary.short(term)
-	cap.gui_input.connect(func(e: InputEvent) -> void:
-		var mb := e as InputEventMouseButton
-		if mb and mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT:
-			Glossary.show(term))
-	row.add_child(cap)
-	var m := UIKit.meter(clampf(ratio, 0.0, 1.0), color, 10)
-	m.custom_minimum_size.x = 120
-	m.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	row.add_child(m)
-	var v := UIKit.label(text, &"DimLabel", false, null, 15)
-	v.clip_text = true
-	v.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	UIKit.expand(v)
-	row.add_child(v)
-	_status_box.add_child(row)
 
 
 func _refresh_rumor() -> void:

@@ -48,7 +48,9 @@ func setup(p_step: Dictionary, number: int, total: int) -> void:
 	var t := UIKit.label("> " + str(step.get("title", "")), &"HeaderLabel")
 	UIKit.expand(t)
 	head.add_child(t)
-	head.add_child(UIKit.label("%d/%d" % [number, total], &"MonoLabel", false, Palette.TEXT_DIM, 18))
+	# A feature introduction (total 0) has no step counter: it's one card.
+	if total > 0:
+		head.add_child(UIKit.label("%d/%d" % [number, total], &"MonoLabel", false, Palette.TEXT_DIM, 18))
 	v.add_child(head)
 	var body := TypewriterLabel.new()
 	body.text = Controls.fill(str(step.get("text", "")))
