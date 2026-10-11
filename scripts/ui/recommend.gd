@@ -8,7 +8,8 @@ extends RefCounted
 ##  - a ripperdoc's chance is EmployeeAI.success_chance (what assign rolls);
 ##  - your complication odds mirror SurgeryManager.get_extra_complication_chance
 ##    (customer risk, neural load, implant risk, tools, modifiers), assuming
-##    your diagnosis is right (the preview never leaks whether it is);
+##    your diagnosis is right (the preview never leaks whether it is), from
+##    what the doctor can see (unrevealed conditions don't count yet);
 ##  - your own success is an ESTIMATE from your record on this procedure
 ##    and the job's difficulty against your level, because the operation
 ##    itself is in your hands.
@@ -67,9 +68,11 @@ static func self_estimate(c: CustomerData) -> Dictionary:
 		factors.append("hard for your level")
 	var extra := complication_odds(c)
 	base -= extra * 0.25
-	if c and not c.hidden_conditions.is_empty() and Difficulty.hidden_conditions_allowed():
-		factors.append("may hide conditions")
-	if c and item and NeuralLoad.projected(c, ImplantInstance.create(item.id)) > 80.0:
+	# Said whenever hidden conditions are possible and nothing was scanned:
+	# never because this patient actually has one (that's the scan's to find).
+	if c and Difficulty.hidden_conditions_allowed() and GameManager.chosen_diagnosis_id == &"":
+		factors.append("hidden conditions not screened yet")
+	if c and item and NeuralLoad.projected_visible(c, ImplantInstance.create(item.id)) > 80.0:
 		base -= 0.08
 		factors.append("neural load past 80")
 	var record := "first time" if done + failed == 0 else "%d done, %d failed" % [done, failed]
@@ -77,17 +80,22 @@ static func self_estimate(c: CustomerData) -> Dictionary:
 		"guaranteed": mini(GameConfig.GUARANTEED_COMPLICATIONS, Difficulty.max_complications()), "factors": factors}
 
 
-## Chance of an extra complication, as SurgeryManager will roll it (if
-## your diagnosis is right).
+## Chance of an extra complication, the way SurgeryManager rolls it (if your
+## diagnosis is right), from what the doctor can see: a hidden condition the
+## scan hasn't found doesn't count yet (it never tips its hand early).
 static func complication_odds(c: CustomerData) -> float:
 	if c == null:
 		return 0.0
 	var item := CyberwareManager.get_cyberware(c.requested_cyberware_id)
-	var chance := GameConfig.EXTRA_COMPLICATION_BASE_CHANCE * c.complication_risk
+	var risk := c.complication_risk
+	for cid in c.hidden_conditions:
+		if not c.revealed_conditions.has(cid):
+			risk -= float(CustomerManager.get_condition(cid).get("modifiers", {}).get("complication_risk", 0.0))
+	var chance := GameConfig.EXTRA_COMPLICATION_BASE_CHANCE * risk
 	var unit := InventoryManager.get_instance(GameManager.selected_implant_uid) if GameManager.selected_implant_uid != "" else null
 	if item:
 		var inst := unit if unit else ImplantInstance.create(item.id)
-		chance += NeuralLoad.complication_bonus(NeuralLoad.projected(c, inst))
+		chance += NeuralLoad.complication_bonus(NeuralLoad.projected_visible(c, inst))
 		chance += inst.get_extra_risk() if unit else item.failure_risk
 	var s := SurgeryManager.get_surgery(c.requested_surgery_id)
 	var tool_risk := 1.0

@@ -94,6 +94,11 @@ func _flow() -> void:
 	_check(_find_visible("PatientSummary") != null, "3: SEE PATIENT opens the patient summary")
 	for blk in ["SummaryRequest", "SummaryOperation", "SummaryFinances", "SummaryDecision"]:
 		_check(_find_visible(blk) != null, "3: summary block %s" % blk)
+	# The intake form: the patient's record as a document, every line sourced.
+	_check(_find_visible("IntakeForm") != null and _find_visible("IntakeRisks") != null and _find_visible("IntakeHistory") != null, "3: the patient's intake form is shown")
+	var form_text := _text_of(_find_visible("IntakeForm"))
+	_check(form_text.contains("REPORTED") and form_text.contains("ON FILE") and form_text.contains("UNKNOWN"), "3: form lines say where they come from")
+	_check(_find_visible("IntakeLegend") != null, "3: the form explains its labels")
 	var c := CustomerManager.current_customer
 	var est := JobEstimate.for_customer(c, GameManager.get_surgery_readiness())
 	var odds := roundi(float(Recommend.self_estimate(c)["chance"]) * 100.0)

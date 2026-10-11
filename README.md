@@ -7,7 +7,12 @@ almost nothing, take customers, install cyberware at a surgical workstation,
 hire staff, buy clinics across the city, and decide what you become while a
 corporate conspiracy spreads through your patients' nerves.
 
-**Status: 3.7.0**: easy to learn, still deep. Click a patient for a
+**Status: 3.8.0**: every patient arrives with a **PATIENT INTAKE FORM**, an
+in-world document of their request, risk factors and history, each line
+marked REPORTED, ON FILE, CONFIRMED, SUSPECTED or UNKNOWN. Hidden conditions
+stay hidden until you scan.
+
+**3.7.0**: easy to learn, still deep. Click a patient for a
 one-screen **PATIENT SUMMARY**: what they want, how hard it is, your
 estimated odds, what you'd keep, and ACCEPT JOB / DECLINE / MORE DETAILS.
 **CLINIC STATUS** says in one line what needs you. The side bar starts small

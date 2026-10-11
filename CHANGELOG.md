@@ -4,6 +4,19 @@ All notable changes to *UNDERCITY: RIPPER*. Versions follow
 `application/config/version` in `project.godot` and the Windows file version
 in `export_presets.cfg`.
 
+## 3.8.0 — The intake form
+
+- **Patient intake form.** The patient summary now shows each patient's record as an in-world document: SUMP CLINIC // PATIENT INTAKE, with a document number, a timestamp and a RECEIVED stamp. It has four sections:
+  - **1 · Patient:** who they are, affiliation, debts, patience.
+  - **2 · Requested procedure:** implant, procedure, difficulty, instruments, added load, chrome already in the slot.
+  - **3 · Complications & risk factors:** each with what it is, why it matters and what it affects.
+  - **4 · History & disclosures:** statement, history, installed chrome, past jobs, findings, and what is still unknown.
+- Every line says where it comes from: **REPORTED**, **ON FILE**, **CONFIRMED**, **SUSPECTED** or **UNKNOWN**. Emphasis comes from the game's existing bands, with a mark and a word.
+- Presentation only: no new attributes, rolls, checks or calculations. Conditions the scan hasn't found are never named or counted, and scan findings stay on the scan table.
+- Fixed: the summary and the odds estimate could hint that a patient had a hidden condition (via the true neural load and the complication risk). They now use what the doctor can see. The surgery's real roll is unchanged.
+- The side bar's long labels trim instead of widening the bar.
+- Details: `docs/INTAKE_FORM.md`.
+
 ## 3.7.0 — Easy to learn, still deep
 
 The clinic now grows with you: new sections appear when they become useful,

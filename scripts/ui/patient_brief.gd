@@ -63,9 +63,8 @@ static func build(c: CustomerData) -> Dictionary:
 	var r := GameManager.get_surgery_readiness()
 	if str(r.get("implant_source", "")) == "salvaged":
 		risks.append("no new implant available: salvaged parts (lower quality)")
-	var nl := float(r.get("neural_after", 0.0))
-	if nl >= 60.0:
-		risks.append("neural load ≈ %d%% after (%s)" % [roundi(nl), str(NeuralLoad.band(nl)["name"]).to_lower()])
+	# Patient-level risk factors (conditions, neural load, stability...) are on
+	# the intake form, from what the doctor can see (IntakeRecord.risks).
 	var factors: Array[String] = [str(me["record"])]
 	for f in me["factors"]:
 		factors.append(str(f))

@@ -1,11 +1,12 @@
 class_name PatientSummary
 extends Control
-## PATIENT SUMMARY: the first thing you see when you click a patient. Four
-## blocks answer "who is this, what do they want, what will it cost, what
-## could go wrong, is it worth it?" from PatientBrief (the game's own
-## numbers), and the decision sits right under them: ACCEPT JOB, DECLINE
-## (with its real cost) or MORE DETAILS (the full dossier: history,
-## statement, payment terms, staff, deferring).
+## PATIENT SUMMARY: the first thing you see when you click a patient. On the
+## left, their PATIENT INTAKE FORM (IntakeForm: who they are, the request,
+## history and disclosures, complications and risk factors, each line tagged
+## REPORTED / ON FILE / CONFIRMED / SUSPECTED / UNKNOWN). On the right, the
+## operation (difficulty, your odds), the money and the decision: ACCEPT
+## JOB, DECLINE (with its real cost) or MORE DETAILS (the full dossier:
+## payment terms, staff, deferring). Numbers: PatientBrief (the game's own).
 ##
 ## Opened with GameManager.show_patient_summary(). A modal: ESC or CLOSE goes
 ## back to the clinic with the patient still waiting.
@@ -29,18 +30,25 @@ func _ready() -> void:
 	var b := PatientBrief.build(c)
 	var p := UIKit.panel(&"AccentPanel")
 	p.name = "SummaryPanel"
-	p.custom_minimum_size = Vector2(1180, 0)
+	p.custom_minimum_size = Vector2(1640, 0)
 	center.add_child(p)
 	var col := UIKit.vbox(12)
 	p.add_child(col)
 	_head(col, c, b)
-	var grid := GridContainer.new()
+	var row := UIKit.hbox(14)
+	row.name = "SummaryRow"
+	col.add_child(row)
+	# Left: the intake form (scrolls inside itself if a record is long).
+	var form := IntakeForm.new().setup(c)
+	form.custom_minimum_size = Vector2(960, 720)
+	UIKit.expand(form, true, true)
+	row.add_child(form)
+	# Right: the decision column.
+	var grid := VBoxContainer.new()
 	grid.name = "SummaryGrid"
-	grid.columns = 2
-	grid.add_theme_constant_override(&"h_separation", 14)
-	grid.add_theme_constant_override(&"v_separation", 14)
-	col.add_child(grid)
-	_request(grid, b)
+	grid.add_theme_constant_override(&"separation", 12)
+	grid.custom_minimum_size.x = 640
+	row.add_child(grid)
 	_operation(grid, b)
 	_finances(grid, b)
 	_decision(grid, c, b)
@@ -64,28 +72,14 @@ func _head(col: VBoxContainer, c: CustomerData, b: Dictionary) -> void:
 	who.add_child(UIKit.label("PATIENT SUMMARY" + ("  ·  EMERGENCY" if bool(b["emergency"]) else ""), &"SubHeaderLabel", false, Palette.DANGER if bool(b["emergency"]) else Palette.ACCENT))
 	var nm := str(b["name"]) + ((" \"%s\"" % str(b["alias"])) if str(b["alias"]) != "" else "")
 	who.add_child(UIKit.label(nm, &"HeaderLabel"))
-	who.add_child(UIKit.label("%s · %s%s" % [str(b["faction"]), str(b["occupation"]), "  ·  returning patient" if bool(b["request"]["returning"]) else ""], &"DimLabel", true))
-	# Their own words: atmosphere, styled as such (not a requirement).
-	var said := _first_sentence(str(b["statement"]))
-	if said != "":
-		who.add_child(UIKit.flavor(said))
+	# Who they are, their words and their history are on the intake form below.
+	who.add_child(UIKit.label("Read their intake form, then decide on the right.", &"DimLabel", true, null, 14))
 	var close := UIKit.button("CLOSE  %s" % Controls.hint("pause"), &"GhostButton", _close, "SummaryClose", 40)
 	close.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	head.add_child(close)
 
 
-func _request(grid: GridContainer, b: Dictionary) -> void:
-	var r: Dictionary = b["request"]
-	var box := _block(grid, "REQUEST", "SummaryRequest")
-	_row(box, "IMPLANT", "%s  ·  T%d %s" % [r["implant"], int(r["tier"]), r["category"]], Palette.TEXT, "tier")
-	if str(r["does"]) != "":
-		box.add_child(UIKit.label(str(r["does"]), &"DimLabel", true, null, 14))
-	_row(box, "PROCEDURE", str(r["procedure"]), Palette.TEXT)
-	var known: Array = r["known_conditions"]
-	_row(box, "KNOWN CONDITIONS", ", ".join(known) if not known.is_empty() else "none on file (a scan can find more)", Palette.TEXT if not known.is_empty() else Palette.TEXT_DIM, "conditions")
-
-
-func _operation(grid: GridContainer, b: Dictionary) -> void:
+func _operation(grid: Container, b: Dictionary) -> void:
 	var o: Dictionary = b["operation"]
 	var box := _block(grid, "OPERATION", "SummaryOperation")
 	var d := int(o["difficulty"])
@@ -114,7 +108,7 @@ func _operation(grid: GridContainer, b: Dictionary) -> void:
 				Nav.open(link), "Fix_%s" % m["key"], 34))
 
 
-func _finances(grid: GridContainer, b: Dictionary) -> void:
+func _finances(grid: Container, b: Dictionary) -> void:
 	var f: Dictionary = b["finance"]
 	var box := _block(grid, "FINANCES", "SummaryFinances")
 	var pay := "≈ %s" % EconomyManager.format_money(int(f["fee"]))
@@ -136,7 +130,7 @@ func _finances(grid: GridContainer, b: Dictionary) -> void:
 	box.add_child(UIKit.label("Estimate before rent and wages. The real fee depends on how the operation goes.", &"DimLabel", true, null, 13))
 
 
-func _decision(grid: GridContainer, c: CustomerData, b: Dictionary) -> void:
+func _decision(grid: Container, c: CustomerData, b: Dictionary) -> void:
 	var box := _block(grid, "DECISION", "SummaryDecision")
 	var rec: Dictionary = b["recommendation"]
 	var rl := UIKit.label(str(rec["text"]), &"", true, JobVerdict.color(rec["level"]))
@@ -200,11 +194,10 @@ func _close() -> void:
 
 # --- Helpers ------------------------------------------------------------------------
 
-func _block(grid: GridContainer, title: String, node_name: String) -> VBoxContainer:
+func _block(grid: Container, title: String, node_name: String) -> VBoxContainer:
 	var panel := UIKit.panel(&"CardPanel")
 	panel.name = node_name
-	panel.custom_minimum_size.x = 570
-	UIKit.expand(panel, true, true)
+	UIKit.expand(panel, true, false)
 	grid.add_child(panel)
 	var v := UIKit.vbox(6)
 	panel.add_child(v)

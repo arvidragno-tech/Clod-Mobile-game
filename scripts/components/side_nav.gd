@@ -82,6 +82,9 @@ func _ready() -> void:
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		b.theme_type_variation = &"NavButton"
 		b.custom_minimum_size = Vector2(0, 42)
+		# A long label (a hotkey, "· NEW") trims instead of widening the side bar.
+		b.clip_text = true
+		b.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		b.toggle_mode = true
 		b.tooltip_text = TIPS.get(item[0], "")
 		b.pressed.connect(func() -> void: nav_pressed.emit(item[0]))

@@ -19,6 +19,7 @@ const UiOverhaulTests := preload("res://tests/ui_overhaul_tests.gd")
 const UxTests := preload("res://tests/ux_tests.gd")
 const QualityTests := preload("res://tests/quality_tests.gd")
 const OnboardingTests := preload("res://tests/onboarding_tests.gd")
+const IntakeTests := preload("res://tests/intake_tests.gd")
 
 var _failures: Array[String] = []
 var _dilemmas_seen: bool = false
@@ -63,6 +64,7 @@ func _run_all() -> void:
 	UxTests.new().run(self)
 	QualityTests.new().run(self)
 	OnboardingTests.new().run(self)
+	IntakeTests.new().run(self)
 	if OS.get_cmdline_user_args().has("--unit-only"):
 		_finish()
 		return
