@@ -66,7 +66,7 @@ func _living(label: String) -> void:
 	first.terms = &"discount"
 	PeopleManager.after_visit(first, "success", 200)
 	MemoryManager.remember(first.id, &"PLAYER_KEPT_SECRET")
-	PeopleManager.add_debt(first.id, 340, "couldn't cover the fee")
+	var made := PeopleManager.add_debt(first.id, 340, "couldn't cover the fee")
 	PeopleManager.get_person(first.id)["last_day"] = BusinessManager.day - 15
 	PeopleManager.get_person(first.id)["next_day"] = BusinessManager.day
 	CustomerManager.dismiss_current()
@@ -96,7 +96,8 @@ func _living(label: String) -> void:
 	# Business: the debt panel and its actions.
 	UIManager.go_to(UIManager.SCREEN_BUSINESS)
 	await _settle()
-	var debts := PeopleManager.open_debts()
+	# The debt made above (earlier ones may already be on a plan).
+	var debts := PeopleManager.open_debts().filter(func(d: Dictionary) -> bool: return int(d["id"]) == int(made.get("id", -1)))
 	_check(not debts.is_empty(), "%s: a debt is open" % label)
 	if not debts.is_empty():
 		var did := int(debts[0]["id"])
