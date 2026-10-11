@@ -80,8 +80,8 @@ SmartScreen may ask once: **More info → Run anyway**.
 Releases are built by GitHub Actions (`.github/workflows/release-windows.yml`):
 pushing a tag `vX.Y.Z` that matches `config/version` exports the .exe on
 Windows, smoke-tests it (new game, every main screen, save and reload) and
-publishes it. **Actions → Windows release → Run workflow** builds and tests
-without publishing.
+publishes it. **Actions → Windows release → Run workflow** builds and tests;
+tick **publish** there to also tag `v<version>` and publish the release.
 
 ## Requirements
 
