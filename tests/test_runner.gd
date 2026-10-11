@@ -289,8 +289,12 @@ func _e2e() -> void:
 	# Facility upgrade (visible overlay in the room).
 	await _click_named("FacilityTab_0")
 	await _frames(3)
-	EconomyManager.add_money(400)
+	# Enough for the upgrade whatever the run has earned (events move money).
+	var up_cost := int(ClinicManager.upgrade_def(&"surgery", ClinicManager.upgrade_level(&"surgery") + 1).get("cost", 0))
+	EconomyManager.add_money(maxi(400, up_cost - EconomyManager.money + 100))
 	await _frames(4)
+	if ClinicManager.install_block_reason(&"surgery") != "":
+		print("    install blocked: ", ClinicManager.install_block_reason(&"surgery"))
 	await _click_named("Install_surgery")
 	check(ClinicManager.upgrade_level(&"surgery") == 1, "installed a surgery upgrade via the UI")
 	await _checkpoint("facility_installed")
