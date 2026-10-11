@@ -167,7 +167,7 @@ func _build_controls() -> void:
 			for o: String in clashes[id]:
 				others.append(str(Controls.ACTIONS[o]["label"]))
 			warn.add_child(UIKit.label("%s shares a key with %s" % [Controls.ACTIONS[id]["label"], ", ".join(others)], &"DimLabel", true, Palette.WARN))
-	left.add_child(UIKit.button("RESET ALL CONTROLS", &"GhostButton", func() -> void:
+	pre.add_child(UIKit.button("RESET ALL CONTROLS", &"GhostButton", func() -> void:
 		UIManager.confirm("RESET ALL CONTROLS?", "Every key and mouse binding goes back to the default layout.", "RESET", func() -> void:
 			Controls.reset_bindings()
 			_feedback("✓ All controls reset to defaults", &"success")), "ResetBindings"))

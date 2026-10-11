@@ -242,6 +242,18 @@ func _consequence() -> void:
 	check(d.any(func(x: Dictionary) -> bool: return str(x["label"]) == "Reputation" and roundi(float(x["delta"])) == 4 and bool(x["good"])), "consequence shows the real reputation change")
 	check(d.any(func(x: Dictionary) -> bool: return str(x["label"]) == "Authority heat" and not bool(x["good"])), "more heat is shown as bad")
 	check(Consequence.diff(Consequence.snapshot()).is_empty(), "nothing changed, nothing shown")
+	var shown_before := Consequence.snapshot()
+	ReputationManager.change(2)
+	Consequence.show("A test decision.", shown_before)
+	var card: Control = null
+	for n in get_tree().root.find_children("ConsequenceCard", "", true, false):
+		card = n as Control
+	var blocks := card == null or card.mouse_filter != Control.MOUSE_FILTER_IGNORE
+	if card:
+		for n in card.find_children("*", "Control", true, false):
+			blocks = blocks or (n as Control).mouse_filter != Control.MOUSE_FILTER_IGNORE
+		card.free()
+	check(card != null and not blocks, "the consequence card never takes a click")
 
 
 func _hints() -> void:

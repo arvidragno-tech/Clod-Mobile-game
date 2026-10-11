@@ -11,8 +11,8 @@ extends RefCounted
 ##   ...apply the choice...
 ##   Consequence.show("You sold restricted military chrome to a gang.", before)
 ##
-## The card sits at the top of the screen, doesn't block input, and fades
-## after a few seconds (click to dismiss). Symbols ▲ ▼ carry the direction,
+## The card sits top right, never takes a click, and fades after a few
+## seconds. Symbols ▲ ▼ carry the direction,
 ## so it never relies on colour alone.
 
 const SHOW_SECONDS := 6.0
@@ -61,7 +61,7 @@ static func show(headline: String, before: Dictionary, title: String = "CONSEQUE
 		c.queue_free()
 	var card := UIKit.panel(&"AccentPanel")
 	card.name = "ConsequenceCard"
-	card.mouse_filter = Control.MOUSE_FILTER_STOP
+	card.mouse_filter = Control.MOUSE_FILTER_IGNORE  # never in the way of a click
 	host.add_child(card)
 	var v := UIKit.vbox(4)
 	card.add_child(v)
@@ -76,14 +76,13 @@ static func show(headline: String, before: Dictionary, title: String = "CONSEQUE
 		v.add_child(UIKit.label("%s %s  %+d" % ["▲" if up else "▼", str(x["label"]), roundi(float(x["delta"]))], &"MonoLabel", false, col, 17))
 	if future:
 		v.add_child(UIKit.label("This may affect future events.", &"DimLabel", true, Palette.TEXT_DIM, 14))
+	for n in card.find_children("*", "Control", true, false):
+		(n as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card.reset_size()
 	(func() -> void: Hints.first("consequence")).call_deferred()
 	var vp := host.get_viewport_rect().size
-	card.position = Vector2(((vp.x - card.get_combined_minimum_size().x) / 2.0), 96).floor()
-	card.gui_input.connect(func(e: InputEvent) -> void:
-		var mb := e as InputEventMouseButton
-		if mb and mb.pressed:
-			card.queue_free())
+	# Top right, under the status bar: clear of the toasts and screen tabs.
+	card.position = Vector2(vp.x - card.get_combined_minimum_size().x - 24, 96).floor()
 	var tw := card.create_tween()
 	tw.tween_interval(SHOW_SECONDS)
 	tw.tween_property(card, "modulate:a", 0.0, 0.6)
