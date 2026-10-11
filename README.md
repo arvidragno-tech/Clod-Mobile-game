@@ -68,6 +68,21 @@ staff, business, districts and a five-act story). The game has:
 
 ---
 
+## Download and play (Windows)
+
+Get **`UndercityRipper.exe`** from the
+[latest release](https://github.com/arvidragno-tech/clod-mobile-game/releases/latest)
+and double-click it. It is the whole game in a single file (every expansion
+included), with no installer and no admin rights. Saves and settings live in
+`%APPDATA%\UndercityRipper\`. The build isn't code-signed, so Windows
+SmartScreen may ask once: **More info → Run anyway**.
+
+Releases are built by GitHub Actions (`.github/workflows/release-windows.yml`):
+pushing a tag `vX.Y.Z` that matches `config/version` exports the .exe on
+Windows, smoke-tests it (new game, every main screen, save and reload) and
+publishes it. **Actions → Windows release → Run workflow** builds and tests
+without publishing.
+
 ## Requirements
 
 | | |
