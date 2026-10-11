@@ -998,6 +998,11 @@ func _click_named(node_name: String, timeout: float = STEP_TIMEOUT) -> void:
 	# on the clinic between scripted steps: resolve them first.
 	if not (node_name.begins_with("Choice_") or node_name == "EventContinue") and _find_visible("EventPanel") != null:
 		await _resolve_incident()
+	# Back on the clinic with the day's jobs done (and nobody at the door),
+	# the night closes by itself and its report covers the screen: read it.
+	if node_name != "DayReportClose" and _find_visible("DayReportClose") != null:
+		await _click(_find_visible("DayReportClose"))
+		await _frames(4)
 	var found := await _wait_until(func() -> bool:
 		var n := _find_visible(node_name)
 		return n != null and not (n is BaseButton and (n as BaseButton).disabled) and not UIManager.is_transitioning(), timeout)
