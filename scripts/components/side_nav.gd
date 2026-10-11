@@ -54,8 +54,17 @@ var _buttons: Dictionary = {}
 func _ready() -> void:
 	theme_type_variation = &"HudPanel"
 	custom_minimum_size.x = 250
+	# The list scrolls instead of growing: at big text sizes it must never
+	# push the screen beside it taller than the window.
+	var scroll := ScrollContainer.new()
+	scroll.name = "NavScroll"
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	add_child(scroll)
 	var col := UIKit.vbox(4)
-	add_child(col)
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	col.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.add_child(col)
 	for item: Array in ITEMS:
 		if str(item[0]) == "#":
 			var h := UIKit.label(str(item[1]), &"SubHeaderLabel", false, Palette.TEXT_DIM, 13)
