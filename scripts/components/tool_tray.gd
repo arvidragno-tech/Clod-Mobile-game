@@ -135,7 +135,24 @@ func set_hint(category: StringName) -> void:
 	_hint_category = category
 
 
+## Puts the instrument for `category` in hand (the stage's tool, at stage
+## start). Returns false if it isn't owned / usable.
+func select_category(category: StringName) -> bool:
+	var b := get_button(category)
+	if b == null or b.disabled:
+		return false
+	if selected == category and b.button_pressed:
+		return true
+	b.button_pressed = true
+	return true
+
+
 func _on_toggled(pressed: bool, category: StringName) -> void:
+	# Clicking the tool you're holding keeps it in hand (right-click puts it
+	# down); a toggle-off click on the active tool felt like a dead click.
+	if not pressed and selected == category:
+		get_button(category).set_pressed_no_signal(true)
+		return
 	if pressed:
 		selected = category
 		AudioManager.play_sfx(&"tool")

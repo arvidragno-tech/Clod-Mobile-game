@@ -87,15 +87,19 @@ func _burn(delta: float) -> void:
 			_nerve_hits += 1
 	var reach := (NODE_RADIUS_ART + BURN_REACH_ART) * _px()
 	var removed: Array[int] = []
+	var any_in_reach := false
 	for i in site.damaged_nodes.size():
 		var node: Dictionary = site.damaged_nodes[i]
 		var center := site.to_local_pos(node["pos"])
 		if center.distance_to(_pointer) <= reach:
+			any_in_reach = true
 			node["burn"] = float(node["burn"]) + delta / _burn_time
 			if fmod(_time, 0.12) < delta:
 				feedback.emit(&"burn", center)
 			if float(node["burn"]) >= 1.0:
 				removed.append(i)
+	if not any_in_reach:
+		_hint_limited("Hold the cautery over a marked node: the red ring is its reach", 2.5)
 	removed.reverse()
 	for i in removed:
 		var center := site.to_local_pos(site.damaged_nodes[i]["pos"])
@@ -117,5 +121,6 @@ func _draw() -> void:
 		draw_arc(c.floor(), r + roundf(pulse * 2.0), 0, TAU, 16, Color(Palette.WARN, 0.7), 1.0)
 	if _burning and is_pointer_down:
 		var reach := (NODE_RADIUS_ART + BURN_REACH_ART) * _px()
-		draw_arc(_pointer.floor(), reach * 0.5, 0, TAU, 16, Palette.DANGER, 1.0)
+		# The ring is the real burn reach (it was drawn at half).
+		draw_arc(_pointer.floor(), reach, 0, TAU, 16, Palette.DANGER, 1.0)
 		draw_rect(Rect2(_pointer.floor() - Vector2(1, 1), Vector2(3, 3)), Palette.WARN)

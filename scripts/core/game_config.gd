@@ -124,7 +124,7 @@ const DIFFICULTY_TOLERANCE_STEP := 0.12
 ## Extra complication risk for a fully worn (0% condition) implant.
 const WORN_IMPLANT_RISK := 0.15
 ## Install pay markup on the implant's price.
-const IMPLANT_PRICE_MARKUP := 0.45
+const IMPLANT_PRICE_MARKUP := 0.85
 
 # --- Surgery: vitals (all vitals are 0..100) --------------------------------
 const VITAL_MAX := 100.0
@@ -215,9 +215,9 @@ const COMPLICATION_FINAL_STAGE_SEC := 0.2
 
 # --- Surgery: pacing ---------------------------------------------------------
 ## Pause after a stage is cleared before the next one starts.
-const STAGE_CLEAR_DELAY_SEC := 0.6
+const STAGE_CLEAR_DELAY_SEC := 0.35
 ## Pause on the success / failure stamp before the results screen.
-const RESULTS_DELAY_SEC := 1.8
+const RESULTS_DELAY_SEC := 1.1
 
 # --- Surgery: scoring --------------------------------------------------------
 const SCORE_WEIGHT_STAGES := 0.4

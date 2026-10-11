@@ -356,9 +356,10 @@ func settle(c: CustomerData, fee: int) -> Dictionary:
 	if int(out["debt"]) > 0 and not cast:
 		register(c)
 		var d := add_debt(c.id, int(out["debt"]), "payment plan" if t == &"plan" else "couldn't cover the fee")
-		if t == &"plan":
-			set_plan(int(d["id"]))
-		lines.append("%s owes you %d cr." % [c.display_name, int(out["debt"])])
+		# Whatever they can't pay today goes on instalments automatically
+		# (an unpaid tab used to sit there until you chased it).
+		set_plan(int(d["id"]))
+		lines.append("%s owes you %d cr, paid off in instalments of %d a night." % [c.display_name, int(out["debt"]), int(d.get("plan", 0))])
 	elif cast:
 		out["paid"] = price
 		out["debt"] = 0

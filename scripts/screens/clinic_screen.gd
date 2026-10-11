@@ -49,6 +49,9 @@ func on_enter(_params: Dictionary) -> void:
 	EventBus.inventory_changed.connect(_refresh_status)
 	EventBus.resources_changed.connect(_refresh_status)
 	EventBus.day_started.connect(func(_d: int) -> void: _refresh_status())
+	BusinessManager.doors_changed.connect(func(_open: bool) -> void:
+		_refresh_doors()
+		_refresh_matters(true))
 	EventBus.rumor_unlocked.connect(func(_id: StringName) -> void: _refresh_rumor())
 	StoryManager.update_rumors()
 	_refresh_status()
@@ -218,9 +221,16 @@ func _build() -> void:
 	_close_row.add_child(_close_button)
 	_security_button = UIKit.button("SECURITY", &"GhostButton", _open_security, "SecurityButton", 40)
 	_security_button.tooltip_text = "Heat level, break-ins and investigations."
+	_doors_button = UIKit.button("", &"GhostButton", func() -> void:
+		BusinessManager.set_doors_open(not BusinessManager.doors_open)
+		_refresh_doors(), "DoorsButton", 40)
+	_doors_button.clip_text = true
+	_doors_button.custom_minimum_size.x = 150
 	_security_button.clip_text = true
 	_security_button.custom_minimum_size.x = 110
+	_close_row.add_child(_doors_button)
 	_close_row.add_child(_security_button)
+	_refresh_doors()
 	_matters_box = UIKit.section(cards, "WHAT MATTERS NOW", &"CardPanel", "click to go there")
 	_matters_box.add_theme_constant_override(&"separation", 4)
 	_matters_box.name = "WhatMatters"
@@ -242,6 +252,8 @@ func _process(delta: float) -> void:
 		_waiting_dots += delta * 2.0
 		if BusinessManager.is_day_full():
 			_waiting.text = "It's %s. The day's work is done.\n\nPress CLOSE FOR THE NIGHT (below the room) to pay the bills and start tomorrow." % TimeManager.clock_text()
+		elif not BusinessManager.doors_open:
+			_waiting.text = "DOORS CLOSED\n\nNobody new comes in while the doors are shut. Take your time: restock in SUPPLY, spend skill points, read the JOURNAL. Press OPEN DOORS (below the room) when you're ready."
 		else:
 			_waiting.text = "Waiting for the next customer" + ".".repeat(int(_waiting_dots) % 4) + "\n\nWhile you wait: restock in SUPPLY, spend skill points, read the JOURNAL, or go out into the city (CITY MAP, %s)." % Controls.key_name("map")
 
@@ -335,6 +347,23 @@ func _show_customer(customer: CustomerData, animate: bool) -> void:
 func _close_day() -> void:
 	GameManager.close_for_the_night()
 	_refresh_status()
+
+
+var _doors_button: Button
+
+
+## CLOSE DOORS / OPEN DOORS: pauses walk-ins (not the same as closing for
+## the night, which ends the day and pays the bills).
+func _refresh_doors() -> void:
+	if _doors_button == null:
+		return
+	var open := BusinessManager.doors_open
+	_doors_button.text = "CLOSE DOORS" if open else "OPEN DOORS"
+	_doors_button.theme_type_variation = &"GhostButton" if open else &"AccentButton"
+	_doors_button.tooltip_text = ("Stop walk-ins for a while: nobody new comes in until you open again, so you can read, shop and level up in peace. Time only moves when you act. Someone already at the door stays." if open
+		else "Let customers in again.")
+	if open and not CustomerManager.has_customer():
+		CustomerManager.request_next_customer()
 
 
 func _show_waiting() -> void:

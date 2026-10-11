@@ -74,3 +74,22 @@ func get_required_tool_categories() -> Array[StringName]:
 		if stage.tool_category != &"" and not out.has(stage.tool_category):
 			out.append(stage.tool_category)
 	return out
+
+
+## The procedure as it will actually run for this diagnosis. A site you
+## correctly diagnosed as clean has nothing to debride, so that step is
+## skipped (a right diagnosis shortens the job). Returns self when nothing
+## changes; never edits the shared template.
+func for_diagnosis(diagnosis_id: StringName, correct: bool) -> SurgeryData:
+	if diagnosis_id != &"clean_site" or not correct:
+		return self
+	var kept: Array[SurgeryStageData] = []
+	for st in stages:
+		if st.type != &"remove_tissue":
+			kept.append(st)
+	if kept.size() == stages.size():
+		return self
+	var copy := duplicate(false) as SurgeryData
+	copy.stages = kept
+	copy.target_time_sec = maxf(60.0, target_time_sec - 15.0)
+	return copy

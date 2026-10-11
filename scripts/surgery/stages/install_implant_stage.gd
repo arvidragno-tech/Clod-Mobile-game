@@ -7,6 +7,9 @@ extends SurgeryStage
 const TRAY_MARGIN := 22.0
 const IMPLANT_HALF_ART := 8.0
 const ROTATE_STEP_DEG := 15.0
+## Keys / wheel never step past the alignment window (it can be under 8° on
+## hard implants, so a fixed 15° step could jump over it forever).
+const MIN_ROTATE_STEP_DEG := 3.0
 const RETURN_TWEEN_SEC := 0.2
 
 enum Phase { PLACE, ROTATE, DONE }
@@ -74,7 +77,10 @@ func key_action(action: StringName, pressed: bool) -> bool:
 			_rotate_step(1.0)
 			return true
 		&"context", &"interact":
-			_seat()
+			if phase == Phase.PLACE:
+				hint.emit("Drag the implant from the tray onto the socket ring first.")
+			else:
+				_seat()
 			return true
 	return false
 
@@ -143,7 +149,8 @@ func _pointer_move(pos: Vector2) -> void:
 		if pos.distance_to(center) < 3.0:
 			return
 		var a := (pos - center).angle()
-		site.implant_angle += wrapf(a - _last_angle, -PI, PI) * Settings.mouse_sensitivity
+		# 1:1 with the cursor: the implant turns exactly as far as you drag.
+		site.implant_angle += wrapf(a - _last_angle, -PI, PI)
 		_last_angle = a
 		_update_alignment()
 
@@ -162,7 +169,10 @@ func _pointer_up(pos: Vector2) -> void:
 			if _seat_button:
 				_seat_button.disabled = false
 		else:
-			if site.is_inside_opening(site.to_norm(pos)):
+			var miss := pos.distance_to(socket_local)
+			if miss <= (_snap_art * 2.2) * _px() + _ui(GameConfig.CLICK_SLOP):
+				hint.emit("Just short of the socket: drop it inside the ring.")
+			elif site.is_inside_opening(site.to_norm(pos)):
 				mistake.emit(&"implant_drop", 1.0, pos)
 			site.implant_state = SurgicalSiteView.ImplantState.IN_TRAY
 			_return_tween = create_tween()
@@ -173,8 +183,12 @@ func _pointer_up(pos: Vector2) -> void:
 func _rotate_step(direction: float) -> void:
 	if phase != Phase.ROTATE or is_finished:
 		return
-	site.implant_angle += deg_to_rad(ROTATE_STEP_DEG) * direction
+	site.implant_angle += deg_to_rad(rotate_step_deg()) * direction
 	_update_alignment()
+
+
+func rotate_step_deg() -> float:
+	return clampf(_tolerance_deg * 0.8, MIN_ROTATE_STEP_DEG, ROTATE_STEP_DEG)
 
 
 func _update_alignment() -> void:
@@ -182,6 +196,11 @@ func _update_alignment() -> void:
 	site.implant_aligned = absf(rad_to_deg(_angle_error())) <= _tolerance_deg
 	if site.implant_aligned and not was:
 		feedback.emit(&"good", site.to_local_pos(site.implant_pos))
+	# SEAT says whether it's lined up (seating misaligned is allowed, but
+	# it's a choice, not an accident).
+	if _seat_button and phase == Phase.ROTATE:
+		_seat_button.text = ("SEAT IMPLANT   [%s]" if site.implant_aligned else "SEAT (MISALIGNED)   [%s]") % Controls.key_name("context")
+		_seat_button.theme_type_variation = &"AccentButton" if site.implant_aligned else &"DangerButton"
 
 
 func _seat() -> void:

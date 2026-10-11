@@ -61,6 +61,8 @@ func _pointer_down(pos: Vector2) -> void:
 			best_d = d
 			best = i
 	if best < 0 or best_d > _touch_radius(POINT_RADIUS_ART) * 0.8:
+		if best >= 0 and best_d <= _touch_radius(POINT_RADIUS_ART) * 1.8:
+			_hint_limited("Click right on stitch point %d" % (next_index + 1))
 		return
 	if best == next_index:
 		site.stitches.append(points[best])
@@ -75,6 +77,7 @@ func _pointer_down(pos: Vector2) -> void:
 			_finish(1.0 - 0.2 * _errors)
 	elif _mistake_limited(&"bad_stitch", 1.0, pos, BAD_STITCH_COOLDOWN):
 		_errors += 1
+		_hint_limited("Out of order: stitch point %d is next" % (next_index + 1))
 
 
 func _stage_process(delta: float) -> void:

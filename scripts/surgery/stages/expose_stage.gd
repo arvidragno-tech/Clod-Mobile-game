@@ -52,6 +52,8 @@ func _pointer_down(pos: Vector2) -> void:
 		if _mistake_limited(&"tissue_tear", 1.0, pos, TEAR_COOLDOWN):
 			_errors += 1
 			site.add_blood_splat(site.to_norm(pos), 4)
+	else:
+		_hint_limited("Close: clamp right on the bracket marker")
 
 
 func _place(index: int) -> void:

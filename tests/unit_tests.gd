@@ -349,9 +349,12 @@ func _settings() -> void:
 	Settings.apply_runtime()
 	check((Engine.get_main_loop() as SceneTree).root.content_scale_stretch == Window.CONTENT_SCALE_STRETCH_INTEGER, "integer pixel scaling applies")
 	Settings.set_value("pixel_scaling", "fit")
+	# 3.6: one scale authority. The old UI SCALE (a content scale factor that
+	# shrank the canvas under the layouts) is folded into TEXT SCALE.
 	Settings.set_value("ui_scale", 2)
 	Settings.apply_runtime()
-	check(is_equal_approx((Engine.get_main_loop() as SceneTree).root.content_scale_factor, 1.1), "UI scale applies")
+	check(is_equal_approx((Engine.get_main_loop() as SceneTree).root.content_scale_factor, 1.0), "the canvas stretch is the only UI scale (no content scale factor)")
+	Settings.set_value("ui_scale", 1)
 	# Tooltips off: a tooltip panel (built the way Godot builds one) is blanked
 	# the moment it enters the tree.
 	Settings.set_value("tooltips", false)

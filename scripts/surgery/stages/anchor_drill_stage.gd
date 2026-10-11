@@ -61,6 +61,8 @@ func _pointer_down(pos: Vector2) -> void:
 	if best >= 0 and best_d <= _touch_radius(ANCHOR_RADIUS_ART):
 		_active = best
 		feedback.emit(&"clamp", site.to_local_pos(anchors[best]))
+	elif best >= 0:
+		_hint_limited("Hold the drill on an anchor point (the bracketed marks)")
 
 
 func _pointer_up(_pos: Vector2) -> void:

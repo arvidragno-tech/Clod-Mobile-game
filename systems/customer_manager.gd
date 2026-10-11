@@ -104,6 +104,9 @@ func request_next_customer(delay: float = GameConfig.CUSTOMER_ARRIVAL_DELAY_SEC)
 	# Nobody opens the door while you're out in the city.
 	if LocationManager.is_away():
 		return
+	# CLOSE DOORS: no walk-ins until you open again.
+	if not BusinessManager.doors_open:
+		return
 	if delay <= 0.0:
 		_on_arrival_timer_timeout()
 	else:
@@ -140,7 +143,7 @@ func dismiss_current() -> void:
 
 
 func _on_arrival_timer_timeout() -> void:
-	if LocationManager.is_away():
+	if LocationManager.is_away() or not BusinessManager.doors_open:
 		return
 	# Whoever has been waiting on the bench goes first.
 	var seated := ClinicLifeManager.take_next()

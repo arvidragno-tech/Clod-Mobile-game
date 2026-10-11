@@ -91,6 +91,8 @@ static func items(n: int = MAX_ITEMS) -> Array[Dictionary]:
 		if WorldSimulationManager.has_flag(loc, &"lead") or WorldSimulationManager.has_flag(loc, &"event"):
 			add.call("lead:%s" % loc, INFO, "◆", "Something is happening at %s" % LocationManager.location_name(loc), {"location": loc})
 			break
+	if not BusinessManager.doors_open:
+		add.call("doors", INFO, "▮", "Doors closed: no walk-ins. Open them when you're ready", {"doors": "open"})
 	if c == null and waiting == 0 and BusinessManager.is_day_full():
 		add.call("day_done", INFO, "☾", "Day's work done: close for the night", {"screen": &"clinic"})
 	elif c == null and waiting == 0 and out.is_empty():

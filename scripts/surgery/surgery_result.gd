@@ -46,6 +46,9 @@ var consequences: Dictionary = {}
 var settlement: Dictionary = {}
 ## What happened at the surgical dilemma, if there was one.
 var dilemma_notes: Array[String] = []
+## The money, line by line: fee, patience_cut, terms_adjust, paid, owed,
+## implant_cost (+ implant_source), supplies_used, supplies_cost, net.
+var finance: Dictionary = {}
 
 
 func get_failure_text() -> String:

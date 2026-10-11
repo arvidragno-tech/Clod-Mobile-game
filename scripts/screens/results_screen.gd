@@ -62,11 +62,56 @@ func _fill() -> void:
 	if absf(r.heat_delta) >= 0.5:
 		_add_stat("HEAT", "%+d" % roundi(r.heat_delta), r.heat_delta <= 0.0)
 	_add_aftermath(r)
+	_add_money(r)
 	_pay.text = "+%s" % EconomyManager.format_money(0)
 	_xp.text = "+0 XP"
 	_rep.text = "%+d" % 0
 	_level_bar.value = ProgressionManager.get_level_progress() * 100.0
 	_level_up.visible = false
+
+
+## THE MONEY: what came in and what the job used up, line by line, from the
+## real amounts (revenue is not profit: the implant and supplies count).
+func _add_money(r: SurgeryResult) -> void:
+	var f := r.finance
+	if f.is_empty():
+		return
+	var box := get_node_or_null("Margin/VBox/Body/RewardsCard/VBox") as VBoxContainer
+	if box == null:
+		return
+	var v := UIKit.vbox(2)
+	v.name = "MoneyBreakdown"
+	box.add_child(v)
+	v.add_child(UIKit.section_head("THE MONEY", "", "credits"))
+	var line := func(cap: String, amount: int, note: String = "", strong: bool = false) -> void:
+		var h := UIKit.hbox(8)
+		var c := UIKit.label(cap, &"SubHeaderLabel", false)
+		UIKit.expand(c)
+		h.add_child(c)
+		if note != "":
+			h.add_child(UIKit.label(note, &"DimLabel", false, null, 13))
+		var col := Palette.OK if amount > 0 else (Palette.DANGER if amount < 0 else Palette.TEXT_DIM)
+		h.add_child(UIKit.label("%+d cr" % amount if amount != 0 else "0 cr", &"MonoLabel", false, col, 20 if strong else 16))
+		v.add_child(h)
+	var fee := int(f.get("fee", 0))
+	if r.success:
+		line.call("FEE", fee)
+		if int(f.get("patience_cut", 0)) > 0:
+			line.call("TOOK TOO LONG", -int(f["patience_cut"]), "impatient patient")
+		if int(f.get("terms_adjust", 0)) != 0:
+			line.call("TERMS", int(f["terms_adjust"]), "haggling / deal")
+		if int(f.get("owed", 0)) > 0:
+			line.call("OWED (LATER)", -int(f["owed"]), "in the journal")
+	else:
+		line.call("FEE", 0, "no pay for a failed job")
+	var src := str(f.get("implant_source", ""))
+	var note: String = str({"buy": "bought for this job", "salvaged": "salvaged", "": ""}.get(src, "from stock (replacement value)"))
+	line.call("IMPLANT", -int(f.get("implant_cost", 0)), str(note))
+	if int(f.get("supplies_used", 0)) > 0:
+		line.call("SUPPLIES", -int(f.get("supplies_cost", 0)), "%d used" % int(f["supplies_used"]))
+	line.call("NET", int(f.get("net", 0)), "this job, est.", true)
+	var hint := UIKit.label("Cash in now: %s. Rent and wages are paid at closing." % EconomyManager.format_money(r.pay), &"DimLabel", true, null, 13)
+	v.add_child(hint)
 
 
 func _add_aftermath(r: SurgeryResult) -> void:
@@ -148,12 +193,16 @@ func _add_stat(caption: String, value: String, good: bool) -> void:
 	_stats.add_child(v)
 
 
+var _anim: Tween
+
+
 func _animate() -> void:
 	var r := _result
 	_grade.pivot_offset = _grade.size / 2.0
 	_grade.scale = Vector2(2.5, 2.5)
 	_grade.modulate.a = 0.0
 	var t := create_tween()
+	_anim = t
 	t.tween_interval(0.25)
 	t.tween_property(_grade, "modulate:a", 1.0, 0.05)
 	t.parallel().tween_property(_grade, "scale", Vector2.ONE, 0.3).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
@@ -184,6 +233,18 @@ func _animate() -> void:
 		_continue.grab_focus())
 
 
-## ESC / ENTER skip the count-up, then continue.
+## ESC or a click skips the count-up (it was unskippable); then CONTINUE.
 func on_escape() -> bool:
+	_skip_count_up()
 	return true
+
+
+func _skip_count_up() -> void:
+	if _anim and _anim.is_valid() and _anim.is_running():
+		_anim.custom_step(60.0)
+
+
+func _gui_input(event: InputEvent) -> void:
+	var mb := event as InputEventMouseButton
+	if mb and mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT and _continue and _continue.disabled:
+		_skip_count_up()

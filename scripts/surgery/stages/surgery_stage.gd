@@ -204,6 +204,17 @@ func _check_tool(pos: Vector2) -> bool:
 	return false
 
 
+## Explains a click that did nothing (a near miss, the wrong spot, too
+## fast), at most once per `cooldown` seconds per message, so no click ever
+## feels dead and the toasts don't pile up.
+func _hint_limited(text: String, cooldown: float = 1.5) -> void:
+	var key := StringName("hint:" + text)
+	if float(_cooldowns.get(key, 0.0)) > 0.0:
+		return
+	_cooldowns[key] = cooldown
+	hint.emit(text)
+
+
 ## Emits a mistake at most once per `cooldown` seconds for the same kind.
 func _mistake_limited(kind: StringName, severity: float, pos: Vector2, cooldown: float) -> bool:
 	if float(_cooldowns.get(kind, 0.0)) > 0.0:

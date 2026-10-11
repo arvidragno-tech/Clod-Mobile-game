@@ -739,7 +739,7 @@ func _play_stage(stage: SurgeryStage, sloppy: bool) -> void:
 		await _drag([_fs(h["implant"]), _fs(h["socket"])])
 		await _frames(3)
 		var error: float = stage.get_autoplay_hints()["angle_error_deg"]
-		var steps := roundi(absf(error) / InstallImplantStage.ROTATE_STEP_DEG)
+		var steps := roundi(absf(error) / (stage as InstallImplantStage).rotate_step_deg())
 		var button_name := "RotateLeft" if error > 0.0 else "RotateRight"
 		if sloppy:
 			steps = maxi(steps - 3, 0)

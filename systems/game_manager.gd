@@ -267,9 +267,22 @@ func assign_customer(employee_id: StringName, insist: bool = false) -> Dictionar
 	var c := get_current_customer()
 	if c == null:
 		return {"refused": true, "text": "Nobody is waiting."}
+	# Staff use real chrome and supplies too (they used to cost nothing).
+	var req_item := CyberwareManager.get_cyberware(c.requested_cyberware_id)
+	var surgery := get_current_surgery()
+	var sup := surgery.supplies if surgery else 1
+	if req_item and InventoryManager.get_implant_count(req_item.id) <= 0 and not EconomyManager.can_afford(InventoryManager.implant_price(req_item)):
+		return {"refused": true, "text": "No %s in stock and not enough credits to buy one." % req_item.display_name}
+	if InventoryManager.supplies < sup:
+		return {"refused": true, "text": "Out of medical supplies: restock in SUPPLY first."}
 	var r := StaffManager.assign(employee_id, c, insist)
 	if bool(r.get("refused", true)):
 		return r
+	if req_item:
+		if InventoryManager.get_implant_count(req_item.id) <= 0:
+			InventoryManager.buy_implant(req_item.id)
+		InventoryManager.consume_implant(req_item.id)
+	InventoryManager.use_supplies(sup)
 	var e := StaffManager.get_employee(employee_id)
 	if bool(r["success"]):
 		var settled := PeopleManager.settle(c, int(r["pay"]))
@@ -643,6 +656,17 @@ func begin_surgery() -> void:
 		return
 	var implant_quality := 1.0
 	var inst: ImplantInstance = readiness["implant"]
+	# What this job really costs, for the money breakdown on the results.
+	var req := get_requested_item()
+	_job_costs = {"implant_source": String(readiness["implant_source"]), "implant_cost": 0, "supplies_used": 0, "supplies_cost": 0}
+	match readiness["implant_source"]:
+		&"buy":
+			_job_costs["implant_cost"] = InventoryManager.implant_price(req) if req else 0
+		&"salvaged":
+			pass
+		_:
+			# A unit from the shelf: what it would cost to replace.
+			_job_costs["implant_cost"] = InventoryManager.implant_price(CyberwareManager.get_cyberware(inst.cyberware_id)) if inst else 0
 	match readiness["implant_source"]:
 		&"buy":
 			InventoryManager.buy_implant(get_requested_item().id)
@@ -658,7 +682,10 @@ func begin_surgery() -> void:
 	var session_mods := {}
 	if not InventoryManager.use_supplies(surgery.supplies):
 		session_mods = GameConfig.NO_SUPPLIES_MODIFIERS.duplicate()
-	SurgeryManager.start_session(surgery, get_current_customer(), diagnosis_correct, implant_quality, -1, inst, session_mods)
+	else:
+		_job_costs["supplies_used"] = surgery.supplies
+		_job_costs["supplies_cost"] = int(round(surgery.supplies * supply_unit_cost()))
+	SurgeryManager.start_session(surgery.for_diagnosis(chosen_diagnosis_id, diagnosis_correct), get_current_customer(), diagnosis_correct, implant_quality, -1, inst, session_mods)
 	UIManager.go_to(UIManager.SCREEN_SURGERY)
 
 
@@ -668,9 +695,19 @@ func abort_surgery() -> void:
 
 # --- Results -----------------------------------------------------------------
 
+## Per-unit cost of medical supplies (a pack's price / its size).
+static func supply_unit_cost() -> float:
+	return float(GameConfig.SUPPLY_PACK_PRICE) / maxf(1.0, float(GameConfig.SUPPLY_PACK_SIZE))
+
+
+var _job_costs: Dictionary = {}
+
+
 func _on_surgery_finished(result: SurgeryResult) -> void:
 	var c := SurgeryManager.customer
+	var fee_before := result.pay
 	_apply_patience(result, c)
+	var patience_cut := fee_before - result.pay
 	if result.failure_reason == &"aborted" and not SurgeryManager.implant_installed and _implant_returnable and SurgeryManager.implant:
 		InventoryManager.add_instance(SurgeryManager.implant)
 		result.dilemma_notes.append("You stopped before the implant went in: it's back in stock.")
@@ -679,6 +716,18 @@ func _on_surgery_finished(result: SurgeryResult) -> void:
 		result.settlement = PeopleManager.settle(c, result.pay)
 		result.pay = int(result.settlement["paid"])
 	EconomyManager.add_money(result.pay, &"revenue")
+	# The money, line by line (all real amounts; "owed" may come in later).
+	var st: Dictionary = result.settlement
+	var price := int(st.get("price", fee_before - patience_cut))
+	result.finance = {
+		"fee": fee_before, "patience_cut": patience_cut,
+		"terms_adjust": price - (fee_before - patience_cut) if result.success else 0,
+		"paid": result.pay, "owed": int(st.get("debt", 0)),
+		"implant_cost": int(_job_costs.get("implant_cost", 0)), "implant_source": str(_job_costs.get("implant_source", "")),
+		"supplies_used": int(_job_costs.get("supplies_used", 0)), "supplies_cost": int(_job_costs.get("supplies_cost", 0)),
+	}
+	result.finance["net"] = result.pay - int(result.finance["implant_cost"]) - int(result.finance["supplies_cost"])
+	_job_costs = {}
 	var tier_before := CyberwareManager.get_available_tier()
 	result.levels_gained = ProgressionManager.add_xp(result.xp)
 	if CyberwareManager.get_available_tier() > tier_before:

@@ -215,6 +215,12 @@ func _load_stage(index: int, stage_data: SurgeryStageData) -> void:
 	_controls_host.visible = controls != null
 	_tool_tray.clear_selection()
 	_tool_tray.set_hint(category)
+	# The step's instrument goes straight into your hand: picking the one
+	# glowing tool every stage was busywork, not a decision. (Unowned or
+	# worn-out tools still have to be dealt with; other tools stay a click
+	# or a number key away.)
+	if category != &"":
+		_tool_tray.select_category(category)
 	var hint_button := _tool_tray.get_button(category)
 	if hint_button:
 		_tray_scroll.ensure_control_visible.call_deferred(hint_button)
@@ -483,6 +489,11 @@ func _on_vital_warning(vital: StringName) -> void:
 
 
 func _on_quick_pressed(id: StringName) -> void:
+	var left := SurgeryManager.get_cooldown_remaining(id)
+	if SurgeryManager.is_active and left > 0.0:
+		AudioManager.play_sfx(&"denied", 0.0)
+		UIManager.show_toast("%s is recharging (%.1fs)" % [String(id).to_upper(), left], &"warn")
+		return
 	if SurgeryManager.use_quick_action(id):
 		var b: QuickActionButton = _quick_buttons[id]
 		var pos := b.get_global_rect().get_center() - _fx_text.get_global_rect().position
