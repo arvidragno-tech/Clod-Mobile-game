@@ -196,3 +196,63 @@ Persistence and fallbacks:
   entry.
 - **The NEXT line:** says why the step matters. Optional steps read
   "WHEN YOU'RE READY >".
+
+## Phase I: tests (final run, `tests/run_tests.sh`, rendered under Xvfb)
+
+| Step | Result |
+|---|---|
+| Compile check | 216 files, 0 failed |
+| Balance simulation (4 profiles) | BALANCE OK |
+| Economy simulation | ECONOMY OK |
+| Stability (soak, monkey, save fuzz, leaks) | OK (550 checks) |
+| Unit + end-to-end, mouse and keyboard (now through the patient summary; includes `onboarding_tests.gd`) | 1,583 checks passed; E2E surgeries graded S (clean) and B (sloppy) |
+| Display probe | 96 passed |
+| Living-world probe | 274 passed |
+| Living-city probe | 203 passed |
+| UI probe (SEE PATIENT → summary → MORE DETAILS → file) | 144 passed |
+| UI stability probe | 86 passed |
+| UX probe | 131 passed |
+| **Onboarding probe** (new): new game, sections by stage, summary numbers vs the game's, keys, intro cards, previews, handbook, old saves, the setting; summary and clinic at 4 resolutions × 3 window modes | 71 passed |
+
+`tests/onboarding_tests.gd` covers:
+- **Patient brief:** its money equals JobEstimate, its odds equal Recommend,
+  and missing requirements block with a fix.
+- **Dashboard:** headlines and issues.
+- **Guidance:** deduplication with the dashboard.
+- **Features:** stages, NEW, links, save round-trip, old saves, validation
+  and the setting.
+- **Previews:** the money facts.
+- **Handbook:** gates, SEE ALSO validity, held-back entries.
+- **Conversations:** known vs hidden consequences.
+
+Found and fixed during Phase I:
+- **First patient showed later sections.** At the very start the rules showed
+  SKILLS (everyone starts with a point), the JOURNAL and the CITY (the main
+  quests start at once). The rules now wait for real relevance.
+- **WHAT MATTERS pointed into sections not yet introduced.** On the first
+  patient it showed a city lead and skill points. Those lines now wait.
+- **Old saves and resets marked every section NEW.** Fixed.
+- **Alarming margin on the first job.** It used a unit from stock and showed
+  a margin of −2 cr. The summary now also shows cash in hand, and the advice
+  explains the gap.
+
+**Clean launch:** the main scene was run for 300 frames under Xvfb and exited
+with code 0. At exit Godot reports "ObjectDB instances leaked / 12 resources
+still in use". The 3.6 build does the same when launched the same way, so it
+isn't from this change. The stability suite's leak and orphan checks pass.
+
+## Known limitations
+
+- **Odds:** your odds are the game's existing estimate (`Recommend`). They come
+  from your record, the difficulty against your level and complication odds.
+  It isn't a simulation of your hands, so the summary calls it an estimate.
+- **Stages:** stage thresholds (1 / 2 / 3 / 4 jobs) were checked by the probes
+  and tests, not by first-time human players.
+- **City lead:** a lead into the city introduces the CITY MAP when its line is
+  clicked. Until then the lead waits off WHAT MATTERS on very early days.
+- **Handbook:** WHY IT MATTERS / WHERE were written for the core entries (12).
+  The others keep their single explanation.
+- **Dossier:** the full file still uses the 3.5 three-column layout. It is now a
+  secondary view (MORE DETAILS), with its money line reduced to a reference.
+- **Localization:** the game has no localization system. New texts follow the
+  existing English-in-code / JSON approach.
