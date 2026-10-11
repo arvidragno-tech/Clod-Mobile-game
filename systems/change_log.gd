@@ -8,7 +8,8 @@ extends Node
 ##
 ## Repeated changes to the same thing within an hour of game time merge into
 ## one line ("Medical supplies -3" instead of three "-1"s). Only CRITICAL
-## entries interrupt with a toast; the rest wait in the panel (G).
+## entries interrupt with a toast (DETAILED guidance adds IMPORTANT ones
+## outside surgery and dialogue); the rest wait in the panel (G).
 
 signal added(entry: Dictionary)
 signal read_changed()
@@ -170,6 +171,15 @@ func add(cat: String, subject: String, text: String, level: StringName = INFO, l
 	read_changed.emit()
 	if level == CRITICAL:
 		UIManager.show_toast("%s %s: %s" % [LEVEL_MARKS[level], subject, text], &"danger")
+	elif level == IMPORTANT and Settings.is_detailed() and not _busy():
+		# DETAILED guidance also announces important changes, but never over
+		# an operation or a conversation (they wait in CHANGES).
+		UIManager.show_toast("%s %s: %s" % [LEVEL_MARKS[level], subject, text], &"warn")
+
+
+## The player is operating or talking: only critical news interrupts.
+static func _busy() -> bool:
+	return SurgeryManager.is_active or DialogueManager.is_active()
 
 
 func _now() -> int:

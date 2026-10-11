@@ -17,6 +17,9 @@ static func for_customer(c: CustomerData, readiness: Dictionary = {}) -> Diction
 	if c == null:
 		return out
 	var fee := CustomerGenerator.estimate_fee(c)
+	var planned: ImplantInstance = readiness.get("implant", null)
+	if planned and planned.source == &"black_market":
+		fee -= int(round(CustomerGenerator.estimate_part(c) * (1.0 - GameConfig.BLACK_MARKET_PART_SHARE)))
 	var cast := c.character_id != &"" and CharacterManager.has_character(c.character_id)
 	var can_pay := fee if (cast or c.budget <= 0) else mini(fee, c.budget)
 	out["fee"] = fee

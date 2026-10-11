@@ -6,19 +6,27 @@ extends PanelContainer
 
 signal nav_pressed(id: StringName)
 
+## Four places (3.6): CLINIC (patients, surgery, staff), BUSINESS (money,
+## stock, buying), CITY (map, people, places), MESSAGES & JOURNAL. Then the
+## always-there tools. A header row is ["#", "TITLE"].
 ## id, label, icon, hotkey action ("" = none)
 const ITEMS := [
+	["#", "CLINIC"],
 	[&"clinic", "CLINIC", "res://assets/sprites/ui/icons/menu.png", ""],
-	[&"inventory", "INVENTORY", "res://assets/sprites/ui/icons/supplies.png", "inventory"],
-	[&"database", "CYBERWARE DB", "res://assets/sprites/ui/icons/neural.png", "database"],
-	[&"supply", "SUPPLY", "res://assets/sprites/ui/icons/supply.png", ""],
+	[&"staff", "STAFF", "res://assets/sprites/ui/icons/skills.png", "staff"],
 	[&"skills", "SKILLS", "res://assets/sprites/ui/icons/skills.png", ""],
 	[&"upgrades", "FACILITY", "res://assets/sprites/ui/icons/upgrade.png", "facility"],
-	[&"staff", "STAFF", "res://assets/sprites/ui/icons/skills.png", "staff"],
+	["#", "BUSINESS"],
 	[&"business", "BUSINESS", "res://assets/sprites/ui/icons/money.png", "business"],
-	[&"map", "CITY MAP", "res://assets/sprites/ui/icons/rep.png", "map"],
-	[&"dossier", "JOURNAL", "res://assets/sprites/ui/icons/dossier.png", "journal"],
+	[&"inventory", "INVENTORY", "res://assets/sprites/ui/icons/supplies.png", "inventory"],
+	[&"supply", "SUPPLY", "res://assets/sprites/ui/icons/supply.png", ""],
+	[&"database", "CYBERWARE DB", "res://assets/sprites/ui/icons/neural.png", "database"],
 	[&"blackmarket", "BLACK MARKET", "res://assets/sprites/ui/icons/blackmarket.png", ""],
+	["#", "CITY"],
+	[&"map", "CITY MAP", "res://assets/sprites/ui/icons/rep.png", "map"],
+	["#", "MESSAGES & JOURNAL"],
+	[&"dossier", "JOURNAL", "res://assets/sprites/ui/icons/dossier.png", "journal"],
+	["#", ""],
 	[&"settings", "SETTINGS", "res://assets/sprites/ui/icons/lock.png", ""],
 	[&"help", "FIELD GUIDE", "res://assets/sprites/ui/icons/dossier.png", "help"],
 ]
@@ -49,6 +57,11 @@ func _ready() -> void:
 	var col := UIKit.vbox(4)
 	add_child(col)
 	for item: Array in ITEMS:
+		if str(item[0]) == "#":
+			var h := UIKit.label(str(item[1]), &"SubHeaderLabel", false, Palette.TEXT_DIM, 13)
+			h.custom_minimum_size.y = 18 if str(item[1]) != "" else 6
+			col.add_child(h)
+			continue
 		var b := Button.new()
 		b.name = "Nav_%s" % item[0]
 		var hk: String = item[3]
@@ -56,7 +69,7 @@ func _ready() -> void:
 		b.icon = PixelArt.scaled(item[2])
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		b.theme_type_variation = &"NavButton"
-		b.custom_minimum_size = Vector2(0, 46)
+		b.custom_minimum_size = Vector2(0, 42)
 		b.toggle_mode = true
 		b.tooltip_text = TIPS.get(item[0], "")
 		b.pressed.connect(func() -> void: nav_pressed.emit(item[0]))

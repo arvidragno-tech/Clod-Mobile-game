@@ -4,6 +4,47 @@ All notable changes to *UNDERCITY: RIPPER*. Versions follow
 `application/config/version` in `project.godot` and the Windows file version
 in `export_presets.cfg`.
 
+## 3.6.0 — Steadier, fairer, clearer
+
+A quality pass. The game has the same systems; what changed is how they hold
+together. Root causes and the numbers behind each fix are in
+`docs/QUALITY_PASS_3.6.md`.
+
+### Close the doors
+- **CLOSE DOORS / OPEN DOORS** in the clinic's TODAY card stops walk-ins and keeps the waiting room empty. You get time to read, shop, level up and plan. Whoever is already in the chair stays. The clock and the bills keep running, and the doors open again every morning. WHAT MATTERS NOW reminds you while they're shut.
+
+### Menus, clicks and scaling
+- Shop and black-market BUY buttons no longer move under the cursor. The detail panel has a fixed width and keeps the item you were looking at across refreshes.
+- A double-click buys once. Black-market buys find the offer by its id, not its place in the list.
+- A click during a screen fade is queued, not dropped. The field guide closes on an outside click without eating it.
+- There is one source of scaling, the window. UI SCALE is folded into TEXT SCALE. The text slider applies on release. Settings writes no longer re-theme the screen. Window changes keep your window size.
+- Layouts fit at TEXT SCALE 1.4 with LARGE TEXT: the status bar, clinic, facility, inventory, map, database compare and diagnosis plan scroll or wrap instead of pushing buttons off-screen.
+
+### Surgery
+- The stage's instrument is picked for you. Near misses, wrong order, a wire dropped off a terminal, SEAT before PLACE and quick actions on cooldown all say what happened instead of doing nothing.
+- Keyboard rotation steps fit the implant's tolerance, and dragging rotates 1:1. Anesthesia can be topped up (at a small quality cost). The cautery ring shows its real reach.
+- Each procedure family has its own instructions and feel: eyes are fine and precise, dermal is forgiving, limbs are heavy, spine needs a careful drill, neural has more calibration rounds. A correct clean-site diagnosis skips the duplicate debridement step.
+- Shorter waits between stages and before the results. The results count-up can be skipped. **THE MONEY** shows the fee, the patience cut, what was paid and what is owed, the implant and supplies used, and the net.
+
+### Economy
+- Parts are paid back at 90 % of their price (capped by the district's pay), so jobs with a bought implant no longer lose money by design.
+- A black-market part has no paperwork, so patients pay 80 % of the usual part price for it. Cheap off-the-books chrome is a saving, not free money.
+- A patient's shortfall becomes an instalment plan automatically. Staff jobs use the implant and supplies they need. Mothballed clinics pay half rent and no running costs. Your own debt's interest is 4 %/day (was 8 %).
+- Before a job, the customer file and the plan show **PAYMENT**, **USES UP** and **YOU KEEP**. BUSINESS has an **OUTLOOK** for the next three days. If it projects a loss it says why and what to do.
+- `tests/economy_sim.tscn` plays five strategies (conservative, specialist, black market, investment, mixed) on the real systems. Each seed gives exactly the same run, and the sim checks progression targets.
+
+### Standing
+- The journal's **STANDING** tab (was FACTIONS) keeps reputation, faction standing, personal relationships, trust and authority heat apart. Each shows its value, trend, what it does now, the next threshold and its own history.
+- Every change records its real cause, written down when it happens (an operation and its grade, "Turned away <name>", "Bought from <supplier>", "Closing for the night", "Event: <title>"). Repeats with the same cause batch, and the history is bounded (200 entries) and saved.
+- Choices in events show exactly what they'll change in standing, or "Risky (x%)" when it depends on a roll.
+- Heat uses one set of thresholds everywhere (MEDIUM 25, HIGH 50, CRITICAL 75). The reputation ladder gains "Distrusted" before "Butcher".
+
+### Less to read
+- The side bar is grouped into four places: **CLINIC**, **BUSINESS**, **CITY**, **MESSAGES & JOURNAL**.
+- **GUIDANCE** (Settings > Gameplay): MINIMAL shows only critical and important lines, only the status rows that aren't fine, and no first-time cards. STANDARD is the default. DETAILED shows more lines, the numbers behind each status row, and a notice for important changes. Presentation only: the rules don't change.
+- First-time cards wait until you're not operating or talking. Only critical changes interrupt, and the same notice never stacks twice.
+- New field-guide entries: closing the doors, standing, the outlook, the money on a job, guidance.
+
 ## 3.5.0 — The game tells you what matters
 
 ### What should I do?

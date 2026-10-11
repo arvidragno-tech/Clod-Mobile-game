@@ -50,15 +50,29 @@ func _ready() -> void:
 
 # --- one run -----------------------------------------------------------------------------
 
+## Repeatable runs: the global generator and every manager's own generator
+## are seeded from the run's seed (each manager offset by its name).
+var _bm_buys := 0
+
+
+func _seed_everything(seed_value: int) -> void:
+	seed(seed_value)
+	CustomerManager.generator.rng.seed = seed_value
+	for n in get_tree().root.get_children():
+		var r: Variant = n.get("_rng")
+		if r is RandomNumberGenerator:
+			(r as RandomNumberGenerator).seed = seed_value + absi(hash(String(n.name)))
+
 func _run(strat: String, seed_value: int, days: int) -> Dictionary:
 	SaveManager.reset_all()
 	StoryManager.unlock_rumor(&"welcome")
 	_rng.seed = seed_value
-	CustomerManager.generator.rng.seed = seed_value
+	_seed_everything(seed_value)
+	_bm_buys = 0
 	WorldEventManager.auto_roll = false
 	SecurityManager.auto_roll = false
 	var curve: Array[int] = []
-	var tot := {"revenue": 0, "direct": 0, "recurring": 0, "jobs": 0, "staff_jobs": 0, "declined": 0, "fails": 0}
+	var tot := {"revenue": 0, "direct": 0, "recurring": 0, "jobs": 0, "staff_jobs": 0, "declined": 0, "fails": 0, "bm_buys": 0}
 	var first_upgrade := -1
 	var first_clinic := -1
 	var bankrupt_days := 0
@@ -116,6 +130,7 @@ func _run(strat: String, seed_value: int, days: int) -> Dictionary:
 		if day > loss_day and recovered < 0 and EconomyManager.money >= money_before_loss:
 			recovered = day - loss_day
 		curve.append(EconomyManager.money - BusinessManager.debt)
+	tot["bm_buys"] = _bm_buys
 	return {"seed": seed_value, "curve": curve, "tot": tot, "first_upgrade": first_upgrade, "first_clinic": first_clinic,
 		"bankrupt_days": bankrupt_days, "recovered": recovered, "final": EconomyManager.money - BusinessManager.debt,
 		"debt": BusinessManager.debt, "tier": ClinicManager.tier, "staff": StaffManager.count(), "upgrades": _upgrades(), "heat": roundi(FactionManager.heat)}
@@ -158,6 +173,7 @@ func _operate(strat: String, c: CustomerData, r: Dictionary, op: int, tot: Dicti
 		for i in BlackMarketManager.stock.size():
 			var o: ImplantInstance = BlackMarketManager.stock[i]["instance"]
 			if o.cyberware_id == item.id and BlackMarketManager.buy(i):
+				_bm_buys += 1
 				inst = InventoryManager.get_instance(o.uid)
 				InventoryManager.remove_instance(o.uid)
 				r["implant_source"] = &"stock"
@@ -214,6 +230,7 @@ func _operate(strat: String, c: CustomerData, r: Dictionary, op: int, tot: Dicti
 	CustomerManager.dismiss_current()
 	EventManager.on_operation_completed()
 	EventManager.pending_event = &""
+	BlackMarketManager.on_operation_completed()  # as GameManager does: restocks the market
 	_spend_skills()
 	return res
 
@@ -274,6 +291,19 @@ func _invest(strat: String, _day: int) -> void:
 		for i in StaffManager.candidates.size():
 			if StaffManager.hire_block_reason(StaffManager.candidates[i]) == "" and StaffManager.hire(i):
 				break
+	# Black-market players stock cheap off-the-books chrome they can install.
+	if strat == "black_market" and BlackMarketManager.is_unlocked():
+		var bought := 0
+		var i := 0
+		while i < BlackMarketManager.stock.size() and bought < 2:
+			var o: Dictionary = BlackMarketManager.stock[i]
+			var data := (o["instance"] as ImplantInstance).get_data()
+			if data and CyberwareManager.is_tier_available(data.tier) and int(o["price"]) <= data.price * 0.8 \
+					and EconomyManager.money >= int(o["price"]) + reserve and BlackMarketManager.buy(i):
+				bought += 1
+				_bm_buys += 1
+				continue
+			i += 1
 	# Facility upgrades (surgery first).
 	if strat in ["investment", "mixed", "specialist"]:
 		for cat: StringName in [&"surgery", &"diagnostics", &"customer"]:
@@ -288,13 +318,13 @@ func _invest(strat: String, _day: int) -> void:
 
 func _print_strategy(strat: String, runs: Array[Dictionary]) -> void:
 	print("\n== %s ==" % strat.to_upper())
-	print("seed  final  debt  revenue  direct  recurring  profit/day  jobs staff decl fails  1st upgr  1st clinic  bankrupt  recov  tier staff heat")
+	print("seed  final  debt  revenue  direct  recurring  profit/day  jobs staff decl fails  1st upgr  1st clinic  bankrupt  recov  tier staff heat  bm")
 	for r in runs:
 		var t: Dictionary = r["tot"]
 		var days := (r["curve"] as Array).size()
 		var profit := int(t["revenue"]) - int(t["direct"]) - int(t["recurring"])
-		print("%4d %6d %5d %8d %7d %10d %11d %5d %5d %4d %5d %9s %11s %9d %6s %5d %5d %4d" % [r["seed"], r["final"], r["debt"], t["revenue"], t["direct"], t["recurring"],
-			profit / maxi(1, days), t["jobs"], t["staff_jobs"], t["declined"], t["fails"], _d(r["first_upgrade"]), _d(r["first_clinic"]), r["bankrupt_days"], _d(r["recovered"]), r["tier"], r["staff"], r["heat"]])
+		print("%4d %6d %5d %8d %7d %10d %11d %5d %5d %4d %5d %9s %11s %9d %6s %5d %5d %4d %3d" % [r["seed"], r["final"], r["debt"], t["revenue"], t["direct"], t["recurring"],
+			profit / maxi(1, days), t["jobs"], t["staff_jobs"], t["declined"], t["fails"], _d(r["first_upgrade"]), _d(r["first_clinic"]), r["bankrupt_days"], _d(r["recovered"]), r["tier"], r["staff"], r["heat"], t["bm_buys"]])
 	var mid: Array = []
 	for r in runs:
 		mid.append(r["curve"])

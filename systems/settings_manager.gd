@@ -25,6 +25,8 @@ const PIXEL_SCALING: Array[String] = ["fit", "integer"]
 const PIXEL_SCALING_NAMES: Array[String] = ["FIT (FILL WINDOW)", "INTEGER (PIXEL PERFECT)"]
 const DIFFICULTY_NAMES: Array[String] = ["STORY", "STANDARD", "BRUTAL"]
 const AUTOSAVE_NAMES: Array[String] = ["OFF", "EVERY JOB", "EVERY NIGHT"]
+## How much the game explains (presentation only; never changes the rules).
+const GUIDANCE_NAMES: Array[String] = ["MINIMAL", "STANDARD", "DETAILED"]
 ## Emergency triage countdown multiplier (index = time_pressure; 0 = no countdown).
 const TIME_PRESSURE: Array[float] = [1.0, 2.0, 0.0]
 const TIME_PRESSURE_NAMES: Array[String] = ["NORMAL", "RELAXED (x2)", "OFF"]
@@ -67,6 +69,7 @@ const DEFAULTS := {
 	"auto_advance": false,
 	"confirm_dangerous": true,
 	"tutorial_hints": true,
+	"guidance_level": 1,
 	"controls_setup_done": false,
 	"seen_hints": [],
 	"tooltips": true,
@@ -118,6 +121,9 @@ var ui_volume: float = 0.7
 var auto_advance: bool = false
 var confirm_dangerous: bool = true
 var tutorial_hints: bool = true
+## 0 MINIMAL (only what needs you), 1 STANDARD, 2 DETAILED (numbers and
+## reasons everywhere). Changes what is shown, never the game rules.
+var guidance_level: int = 1
 ## First launch: the main menu offers DEFAULT / CUSTOMIZE controls once.
 var controls_setup_done: bool = false
 ## Learn-as-you-go hints already shown (ids); player knowledge, so it
@@ -178,6 +184,7 @@ func load_settings() -> void:
 	dialogue_volume = clampf(dialogue_volume, 0.0, 1.0)
 	ui_volume = clampf(ui_volume, 0.0, 1.0)
 	difficulty = clampi(difficulty, 0, 2)
+	guidance_level = clampi(guidance_level, 0, GUIDANCE_NAMES.size() - 1)
 	autosave = clampi(autosave, 0, 2)
 	# 3.6: the window stretch is the only UI scale (one authority). The old
 	# UI SCALE shrank the logical canvas below the 1920x1080 layouts and
@@ -350,3 +357,11 @@ func font_scale() -> float:
 ## Multiplier for real-time emergency countdowns (0 = no countdown).
 func time_pressure_mult() -> float:
 	return TIME_PRESSURE[clampi(time_pressure, 0, TIME_PRESSURE.size() - 1)]
+
+
+func is_minimal() -> bool:
+	return guidance_level == 0
+
+
+func is_detailed() -> bool:
+	return guidance_level >= 2

@@ -557,3 +557,54 @@ the live state of the existing managers and stores as little as possible.
   guide also pauses `SurgeryManager`.
 - **Journal tabs** are addressed by name (`tab_name`, `view`, `focus`); the
   old integer tabs are mapped (`LEGACY`) so existing links keep working.
+
+
+## 3.6: quality pass
+
+Fixes go to the existing systems; no new managers. Root causes and
+numbers are in `docs/QUALITY_PASS_3.6.md`.
+
+- **One scale authority.** `Settings._apply_stretch` sets the
+  `canvas_items` stretch (FIT, or INTEGER only when the window is at least
+  the 1920×1080 canvas) on every `root.size_changed`;
+  `content_scale_factor` is always 1. `ui_scale` survives only as a legacy
+  key folded into `text_scale`. `apply_display(force)` touches the window
+  only when the display settings changed, and `main.gd` re-themes only when
+  theme keys change.
+- **Purchases.** `UIKit.debounce(key)` guards every BUY. Shop and black
+  market rebuilds are deferred (`_queue_rebuild`) and keep the shown item and
+  the scroll position. `BlackMarketManager.index_of(uid)` resolves an offer
+  at click time. `UIManager.go_to` queues one `_pending_nav` during a fade.
+- **Doors.** `BusinessManager.doors_open` (saved, reopened in `end_day`,
+  `doors_changed` signal). `CustomerManager` and `ClinicLifeManager` skip
+  arrivals and walk-ins while closed.
+- **Money.** `JobEstimate.for_customer(c, readiness)` is the one estimate
+  used by the file, the plan, the door card and the simulator.
+  `SurgeryResult.finance` carries the real breakdown that the results
+  screen's THE MONEY shows. `BusinessManager.outlook(days)` projects
+  revenue, direct and recurring costs and names the main cause of a loss.
+  `PeopleManager` turns any shortfall into a plan.
+- **Standing history.** `ChangeLog.push_cause / pop_cause` wrap every
+  entry point that can change standing (events, dialogue, comms, world
+  actions, quests, security, staff, suppliers, the black market, the night
+  report, location services, operations, triage). `record_standing(group,
+  …)` stores `{group, label, delta, value, reason, day, minute}`. Groups are
+  `rep`, `dim:<d>`, `faction:<id>`, `heat` and `person:<id>`. Repeats are
+  batched and the list holds at most 200 entries. `standing_trend(group,
+  days)` feeds the ▲/▼ marks. The managers' change functions take an
+  optional `reason`. `Standing` (scripts/ui) builds the journal's STANDING
+  rows, thresholds and the exact previews on event choices.
+- **Guidance level.** `Settings.guidance_level` (0 minimal, 1 standard,
+  2 detailed) is read only by presentation: `Guidance.for_player()`,
+  `ClinicStatus.visible_rows()`, `Hints.first` and the DETAILED toasts in
+  `ChangeLog.add`. `Hints` and non-critical toasts wait while
+  `SurgeryManager.is_active` or `DialogueManager.is_active()`.
+  `UIManager.show_toast` drops an exact repeat of a live toast.
+- **Surgery.** `ToolTray.select_category` auto-selects the stage's tool.
+  `SurgeryStage._hint_limited` gives rate-limited feedback for near misses.
+  `SurgeryData.for_diagnosis` drops the duplicate debridement after a
+  correct clean-site diagnosis.
+- **Tests.** `tests/quality_tests.gd` (in the unit run),
+  `tests/ui_stability_probe.tscn` (real mouse events at four resolutions and
+  three window modes), and `tests/economy_sim.tscn` (five strategies on the
+  real systems with fixed seeds, `--check` against the targets).

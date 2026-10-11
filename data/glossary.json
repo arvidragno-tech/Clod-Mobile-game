@@ -330,6 +330,36 @@
    "title": "Controls",
    "short": "Every key can be changed in SETTINGS > CONTROLS: presets, search, two keys per action.",
    "text": "SETTINGS > CONTROLS lists every action with a primary and a secondary key. Click a key and press the new one (CTRL, SHIFT and ALT combinations work; DEL unassigns). If the key is taken you choose: REPLACE (the other action loses it), SWAP or CANCEL. Presets: DEFAULT, WASD, LEFT-HANDED. RESET puts one action, a category or everything back. Help texts always show your current keys."
+  },
+  "doors": {
+   "topic": "basics",
+   "title": "Closing the doors",
+   "short": "CLOSE DOORS stops walk-ins so you can read, shop and plan.",
+   "text": "CLOSE DOORS (TODAY card in the clinic) stops new customers walking in and keeps the waiting room empty. Nobody already in the chair is sent away, and the clock, rent and story keep running as normal.\nUse it to read messages, compare implants, spend skill points or restock without someone waiting at the door. OPEN DOORS lets the next customer in. The doors open again on their own every morning."
+  },
+  "standing": {
+   "topic": "street",
+   "title": "Standing: reputation, relationships, trust, heat",
+   "short": "Who thinks what of you, why it changed, and what the next step does.",
+   "text": "Four different things, kept apart:\n- REPUTATION: what the street thinks of your clinic (one number, plus five sides: skill, care, discretion, reliability, ethics). It brings richer customers and better jobs.\n- FACTION STANDING: what each group thinks of you. It opens or closes their jobs, prices and protection.\n- RELATIONSHIP and TRUST: what one person thinks of you. Separate from their faction: a gang member can like you while their gang doesn't.\n- AUTHORITY HEAT: how much attention the law is paying. It goes up with black-market and messy work, down with clean work and time.\nThe journal's STANDING tab shows each value with its trend, what it does now, the next threshold, and the history of what changed it and why."
+  },
+  "outlook": {
+   "topic": "money",
+   "title": "Business outlook",
+   "short": "What the next few days should earn and cost, and why you're losing money if you are.",
+   "text": "The OUTLOOK card in BUSINESS projects the next three days from your recent days: expected job income, what jobs use up (implants, supplies), the fixed bills (rent, salaries, upkeep, interest) and anything due. If the projection is a loss it names the biggest cause and what to do about it. It is an estimate from your own history, not a promise."
+  },
+  "the_money": {
+   "topic": "money",
+   "title": "The money on a job",
+   "short": "Fee, what the patient paid, what they still owe, and what the job used up.",
+   "text": "Before an operation the file and the plan show PAYMENT (the expected fee and what the patient can pay today), USES UP (the implant and medical supplies) and YOU KEEP (what's left). After it, THE MONEY on the results screen shows the real numbers: the fee, any cut for waiting, what was paid now, what is owed (it becomes an instalment plan automatically) and the net."
+  },
+  "guidance": {
+   "topic": "basics",
+   "title": "Guidance level",
+   "short": "MINIMAL, STANDARD or DETAILED: how much the screens explain.",
+   "text": "Settings > Gameplay > GUIDANCE changes only what is shown, never the rules.\nMINIMAL: WHAT MATTERS shows only critical and important lines, CLINIC STATUS only what isn't fine, no first-time cards.\nSTANDARD: the default.\nDETAILED: more lines, the numbers behind every status line, and a short notice for important changes (never during surgery or a conversation)."
   }
  }
 }

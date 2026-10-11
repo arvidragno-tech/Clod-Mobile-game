@@ -17,6 +17,7 @@ func run(runner: Node) -> void:
 	_standing_history()
 	_standing_overview()
 	_doors()
+	_guidance_levels()
 	_surgery_rules()
 	GameManager.is_running = was
 
@@ -188,6 +189,31 @@ func _doors() -> void:
 	check(CustomerManager.has_customer() or CustomerManager.is_customer_pending(), "opening the doors lets the next customer in")
 	CustomerManager.dismiss_current()
 	SaveManager.reset_all()
+
+
+func _guidance_levels() -> void:
+	SaveManager.reset_all()
+	var was := Settings.guidance_level
+	BusinessManager.set_doors_open(false)  # adds an INFO line
+	InventoryManager.supplies = 0          # adds a CRITICAL line
+	Settings.guidance_level = 0
+	var minimal := Guidance.for_player()
+	check(minimal.size() <= 3 and minimal.all(func(it: Dictionary) -> bool: return it["level"] != Guidance.INFO),
+		"MINIMAL guidance shows only critical and important lines")
+	check(ClinicStatus.visible_rows().all(func(r: Dictionary) -> bool: return r["level"] != ClinicStatus.GOOD),
+		"MINIMAL clinic status hides what is fine")
+	check(not Hints.first("heat"), "MINIMAL guidance shows no first-time cards")
+	Settings.guidance_level = 1
+	check(Guidance.for_player().size() <= 4, "STANDARD guidance keeps the list short")
+	check(ClinicStatus.visible_rows().size() == ClinicStatus.rows().size(), "STANDARD shows every status row")
+	Settings.guidance_level = 2
+	var detailed := Guidance.for_player()
+	check(detailed.any(func(it: Dictionary) -> bool: return it["id"] == "doors"), "DETAILED guidance includes information lines")
+	Settings.guidance_level = was
+	BusinessManager.set_doors_open(true)
+	check(Settings.DEFAULTS.has("guidance_level") and Settings.GUIDANCE_NAMES.size() == 3, "the guidance setting exists with three levels")
+	for k in ["doors", "standing", "outlook", "the_money", "guidance"]:
+		check(Glossary.has(k), "the field guide explains %s" % k)
 
 
 func _surgery_rules() -> void:

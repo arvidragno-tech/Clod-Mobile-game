@@ -127,6 +127,9 @@ const WORN_IMPLANT_RISK := 0.15
 ## they're poor: x their pay multiplier, capped at 1). Your service fee on
 ## top is what scales with how well you work, and where profit comes from.
 const IMPLANT_PRICE_MARKUP := 0.9
+## A black-market part has no paperwork: patients pay this share of the
+## usual part price for it (so buying cheap off the books is not free money).
+const BLACK_MARKET_PART_SHARE := 0.8
 
 # --- Surgery: vitals (all vitals are 0..100) --------------------------------
 const VITAL_MAX := 100.0

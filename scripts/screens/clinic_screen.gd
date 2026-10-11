@@ -420,7 +420,10 @@ func _refresh_status_card() -> void:
 	grid.columns = 1
 	grid.add_theme_constant_override(&"v_separation", 0)
 	_factions_box.add_child(grid)
-	for r: Dictionary in ClinicStatus.rows():
+	var shown := ClinicStatus.visible_rows()
+	if shown.is_empty():
+		grid.add_child(UIKit.label("✓ Everything is fine", &"DimLabel", false, Palette.OK, 15))
+	for r: Dictionary in shown:
 		var line := UIKit.hbox(6)
 		line.name = "Status_%s" % r["key"]
 		UIKit.expand(line)
@@ -439,6 +442,10 @@ func _refresh_status_card() -> void:
 		UIKit.expand(v)
 		line.add_child(v)
 		grid.add_child(line)
+		if Settings.is_detailed():
+			var d := UIKit.label("   " + str(r["detail"]), &"DimLabel", true, Palette.TEXT_DIM, 13)
+			d.name = "StatusDetail_%s" % r["key"]
+			grid.add_child(d)
 	var top := ClinicStatus.most_important()
 	var tip := UIKit.label(("▲ " if top["level"] != ClinicStatus.GOOD else "✓ ") + str(top["text"]), &"DimLabel", true, ClinicStatus.color(top["level"]) if top["level"] != ClinicStatus.GOOD else Palette.TEXT_DIM, 14)
 	tip.name = "StatusAdvice"
@@ -453,7 +460,7 @@ var _matters_sig: String = ""
 func _refresh_matters(force: bool = false) -> void:
 	if _matters_box == null:
 		return
-	var its := Guidance.items(4)
+	var its := Guidance.for_player()
 	var sig := ""
 	for it in its:
 		sig += str(it["text"]) + "|"

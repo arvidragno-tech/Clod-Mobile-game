@@ -161,6 +161,10 @@ func show_toast(text: String, kind: StringName = &"info") -> void:
 		return
 	# Keep at most MAX_TOASTS on screen: the oldest makes way immediately.
 	var live: Array[Node] = _toast_box.get_children().filter(func(n: Node) -> bool: return not n.is_queued_for_deletion())
+	# The same message twice in a row says nothing new: never repeat it.
+	for n in live:
+		if n.has_meta(&"text") and str(n.get_meta(&"text")) == text:
+			return
 	while live.size() >= GameConfig.MAX_TOASTS:
 		var oldest: Node = live.pop_front()
 		_toast_box.remove_child(oldest)
@@ -168,6 +172,7 @@ func show_toast(text: String, kind: StringName = &"info") -> void:
 	var toast := PanelContainer.new()
 	toast.theme_type_variation = &"ToastPanel"
 	toast.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	toast.set_meta(&"text", text)
 	var label := Label.new()
 	label.text = text
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

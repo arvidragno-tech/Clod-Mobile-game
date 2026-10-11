@@ -106,6 +106,18 @@ static func items(n: int = MAX_ITEMS) -> Array[Dictionary]:
 	return ranked.slice(0, n)
 
 
+## What the clinic's WHAT MATTERS card shows at the player's GUIDANCE
+## setting: MINIMAL only critical and important lines (3), STANDARD 4,
+## DETAILED 6 including information.
+static func for_player() -> Array[Dictionary]:
+	match Settings.guidance_level:
+		0:
+			return items().filter(func(it: Dictionary) -> bool: return it["level"] != INFO).slice(0, 3)
+		2:
+			return items(6)
+	return items(4)
+
+
 ## The single most important line (the clinic's NEXT strip).
 static func top() -> Dictionary:
 	var all := items(1)

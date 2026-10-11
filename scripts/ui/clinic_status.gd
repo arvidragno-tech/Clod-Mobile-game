@@ -72,6 +72,15 @@ static func rows() -> Array[Dictionary]:
 	return out
 
 
+## The rows the clinic card shows at the player's GUIDANCE setting:
+## MINIMAL hides the ones that are fine.
+static func visible_rows() -> Array[Dictionary]:
+	var all := rows()
+	if Settings.is_minimal():
+		return all.filter(func(r: Dictionary) -> bool: return r["level"] != GOOD)
+	return all
+
+
 ## The single line that matters most: {text, level, link}.
 static func most_important() -> Dictionary:
 	var rs := rows()
