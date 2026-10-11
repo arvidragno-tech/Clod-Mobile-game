@@ -31,6 +31,7 @@ var _panels: Array[Control] = []
 
 
 func on_enter(_params: Dictionary) -> void:
+	(func() -> void: Hints.first("black_market")).call_deferred()
 	if not BlackMarketManager.is_unlocked():
 		GameManager.go_to_clinic.call_deferred()
 		return
@@ -325,7 +326,9 @@ func _cases_card() -> Control:
 
 
 func _buy(i: int) -> void:
+	var before := Consequence.snapshot()
 	if BlackMarketManager.buy(i):
+		Consequence.show("You bought off the books. The market remembers; so might the authorities.", before)
 		UIManager.celebrate(&"bm_purchase")
 		UIManager.show_toast("Bought. Don't ask where it came from.", &"success")
 		SaveManager.save_game()
@@ -353,8 +356,10 @@ func _modify(uid: String) -> void:
 
 
 func _sell(uid: String) -> void:
+	var before := Consequence.snapshot()
 	var v := BlackMarketManager.sell(uid)
 	if v > 0:
+		Consequence.show("Sold to the market.", before)
 		UIManager.show_toast("Sold for %s" % EconomyManager.format_money(v), &"success")
 		UIManager.celebrate(&"sell")
 		SaveManager.save_game()

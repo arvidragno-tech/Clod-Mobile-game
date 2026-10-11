@@ -15,6 +15,7 @@ var _panels: Array[Control] = []
 
 
 func on_enter(params: Dictionary) -> void:
+	(func() -> void: Hints.first("map")).call_deferred()
 	var col := UIKit.workstation(self, &"map")
 	col.add_child(UIKit.header("CALDERA · %d DISTRICTS · %d PLACES KNOWN · YOU: %s" % [WorldManager.order.size(), LocationManager.known_locations().size(),
 		LocationManager.location_name(LocationManager.player_location).to_upper()], "CITY MAP", GameManager.go_to_clinic))

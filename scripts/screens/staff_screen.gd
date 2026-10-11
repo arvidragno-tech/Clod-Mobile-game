@@ -11,6 +11,7 @@ var _panels: Array[Control] = []
 
 
 func on_enter(params: Dictionary) -> void:
+	(func() -> void: Hints.first("staff")).call_deferred()
 	var col := UIKit.workstation(self, &"staff")
 	col.add_child(UIKit.header("CLINIC · %d / %d STAFF" % [StaffManager.count(), StaffManager.capacity_total()], "STAFF", GameManager.go_to_clinic))
 	col.add_child(UIKit.tabs(["TEAM", "HIRING BOARD"], _select, "StaffTab"))
@@ -39,6 +40,42 @@ func get_panels() -> Array[Control]:
 	return _panels
 
 
+const STAFF_FILTERS := ["ALL", "ON SHIFT HERE", "BEST FOR THE PATIENT", "STRESSED", "UNHAPPY", "TOP SKILL"]
+var _sfilter: int = 0
+
+
+## Smart filters for the team (BEST FOR THE PATIENT only with someone waiting).
+func _staff_filters() -> Control:
+	var row := UIKit.hbox(6)
+	row.name = "StaffFilters"
+	row.add_child(UIKit.label("SHOW", &"SubHeaderLabel"))
+	for i in STAFF_FILTERS.size():
+		if i == 2 and CustomerManager.current_customer == null:
+			continue
+		var b := UIKit.button(STAFF_FILTERS[i], &"TabButton", func() -> void:
+			_sfilter = i
+			_rebuild(), "SFilter_%d" % i, 36)
+		b.toggle_mode = true
+		b.button_pressed = i == _sfilter
+		row.add_child(b)
+	return row
+
+
+func _staff_match(e: Dictionary, ranked: Array) -> bool:
+	match _sfilter:
+		1:
+			return int(e.get("clinic", -1)) == ClinicManager.tier
+		2:
+			return ranked.has(str(e["id"]))
+		3:
+			return float(e.get("stress", 0)) >= 50.0
+		4:
+			return float(e.get("loyalty", 50)) < 40.0 or bool(e.get("raise_pending", false))
+		5:
+			return int(e.get("skill", 1)) >= 4
+	return true
+
+
 func _select(i: int) -> void:
 	_tab = i
 	_rebuild()
@@ -52,7 +89,16 @@ func _rebuild() -> void:
 	if _tab == 0:
 		if StaffManager.employees.is_empty():
 			_body.add_child(UIKit.label("Nobody works for you yet. The hiring board has names; the Staff upgrade makes room.", &"DimLabel", true))
-		for e in StaffManager.employees:
+		else:
+			_body.add_child(_staff_filters())
+		var c: CustomerData = CustomerManager.current_customer
+		var ranked: Array = Recommend.staff_ranked(c).map(func(o: Dictionary) -> String: return str(o["employee"]["id"])) if c else []
+		var list: Array = StaffManager.employees.duplicate()
+		if _sfilter == 2 and c:
+			list.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return ranked.find(str(a["id"])) < ranked.find(str(b["id"])))
+		for e: Dictionary in list:
+			if not _staff_match(e, ranked):
+				continue
 			var card := _person(e, false, -1)
 			_body.add_child(card)
 			_panels.append(card)

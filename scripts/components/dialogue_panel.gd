@@ -215,7 +215,9 @@ func _pick(index: int) -> void:
 	if _type_tween and _type_tween.is_running():
 		_type_tween.kill()
 		_line.visible_ratio = 1.0
+	var before := Consequence.snapshot()
 	var r := DialogueManager.choose(index)
+	Consequence.show("", before)
 	if r.is_empty():
 		AudioManager.play_sfx(&"denied", 0.0)
 		return

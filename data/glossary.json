@@ -294,6 +294,42 @@
    "title": "Salary",
    "short": "Paid every night, whether they worked or not.",
    "text": "Salaries are part of tonight's bill. Raises improve loyalty."
+  },
+  "reading": {
+   "topic": "basics",
+   "title": "Reading is free",
+   "short": "Information screens and the field guide stop the emergency timer and pause an operation.",
+   "text": "Reading never costs you. While you're on the map, the journal, inventory, staff, the shop, the database, business, skills, facility or settings, or have the field guide or recent changes open, a bleeding patient's countdown stops and an operation in progress holds still. Game time itself only moves when you act: a job, a conversation, a trip, closing the day."
+  },
+  "priorities": {
+   "topic": "basics",
+   "title": "What matters now",
+   "short": "The clinic's short list of what needs you, most urgent first. Click a line to go there.",
+   "text": "WHAT MATTERS NOW on the clinic screen is built from the real state of the game every time you look: emergencies, the patient at the door, who wants to talk, followed people and places, unread messages, quests on their last day, patients due back, stressed staff, low supplies, rising heat. ■ is critical, ▲ important, · useful. Click a line and the game takes you there."
+  },
+  "follow": {
+   "topic": "basics",
+   "title": "Follow",
+   "short": "Keep a quest, person, patient or place on your MAIN page with where and when.",
+   "text": "Use ☆ FOLLOW on a quest, a cast member, a patient or a place. The journal's MAIN page then shows where they are right now (people keep their own hours), how many days are left, or what's happening there, and the clinic's priorities remind you when it's time. Followed places get a ★ on the city map. Finished things drop off by themselves."
+  },
+  "changes": {
+   "topic": "basics",
+   "title": "Recent changes",
+   "short": "What changed while you were busy: money, standing, heat, supplies, staff, people, places.",
+   "text": "RECENT CHANGES (the CHANGES button on the clinic, or its key) lists what moved and by how much, newest first, merged so it stays short. ■ critical, ▲ important, · info. Click a line to go to the thing. Only critical changes interrupt you with a pop-up."
+  },
+  "preview": {
+   "topic": "surgery",
+   "title": "Surgery preview",
+   "short": "The decision on one card before you cut: risk, time, cost, pay, complications, odds, surgeon.",
+   "text": "The operation plan shows a SURGERY PREVIEW: difficulty, patient risk, how much of the night it takes, what it costs and pays, how many complications to expect and the chance of another, what could go wrong, your estimated odds (from your record on this procedure and the job's difficulty) and the recommended surgeon with the reason. Estimates assume your diagnosis is right. CHANGE SURGEON hands the job to a ripperdoc; the choice is always yours."
+  },
+  "controls": {
+   "topic": "basics",
+   "title": "Controls",
+   "short": "Every key can be changed in SETTINGS > CONTROLS: presets, search, two keys per action.",
+   "text": "SETTINGS > CONTROLS lists every action with a primary and a secondary key. Click a key and press the new one (CTRL, SHIFT and ALT combinations work; DEL unassigns). If the key is taken you choose: REPLACE (the other action loses it), SWAP or CANCEL. Presets: DEFAULT, WASD, LEFT-HANDED. RESET puts one action, a category or everything back. Help texts always show your current keys."
   }
  }
 }

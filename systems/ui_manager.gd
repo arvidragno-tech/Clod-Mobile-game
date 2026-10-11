@@ -320,6 +320,19 @@ func close_modal() -> void:
 	_modal_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 
+## THE PAUSE RULE: reading never costs you. On information screens and
+## while help or recent changes are open, real-time pressure stops (the
+## emergency countdown at the door, the vitals of a running operation).
+## Game time itself only moves when you act (TimeManager), never while
+## you read.
+const READING_SCREENS := [SCREEN_MAP, SCREEN_INVENTORY, SCREEN_DATABASE, SCREEN_DOSSIER, SCREEN_STAFF, SCREEN_SETTINGS,
+	SCREEN_BUSINESS, SCREEN_SHOP, SCREEN_SKILLS, SCREEN_UPGRADES, SCREEN_BLACK_MARKET]
+
+
+func is_reading() -> bool:
+	return Glossary.is_open() or READING_SCREENS.has(current_screen_id)
+
+
 func top_modal() -> Node:
 	if _modal_host == null or _modal_host.get_child_count() == 0:
 		return null

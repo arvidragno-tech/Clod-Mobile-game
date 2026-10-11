@@ -18,6 +18,13 @@ const ICONS := {
 var _tab: int = 0
 var _sort: int = 0
 var _filter: String = ""
+var _chips: HBoxContainer
+var _chips_tab: int = -1
+## Smart filter state: category ("" = all) and toggles.
+var _cat: String = ""
+var _flags: Dictionary = {}
+const CYBER_CATS := ["eyes", "arms", "legs", "neural", "dermal", "respiratory", "internal", "spine"]
+const FLAG_LABELS := {"patient": "FOR THE PATIENT", "low_risk": "LOW RISK", "good": "GOOD CONDITION", "known": "IDENTIFIED"}
 var _grid: GridContainer
 var _detail: VBoxContainer
 var _compare: VBoxContainer
@@ -73,6 +80,10 @@ func on_enter(params: Dictionary) -> void:
 	hint.mouse_filter = Control.MOUSE_FILTER_PASS
 	UIKit.expand(hint)
 	bar.add_child(hint)
+	# Smart filters: only the ones that make sense for this tab.
+	_chips = UIKit.hbox(6)
+	_chips.name = "SmartFilters"
+	col.add_child(_chips)
 	# Body
 	var row := UIKit.hbox(18)
 	UIKit.expand(row, true, true)
@@ -165,11 +176,12 @@ func _entries() -> Array[Dictionary]:
 					# Partial information only: the slot it fits, nothing else.
 					out.append({"kind": &"implant", "key": inst.uid, "name": inst.display_name(), "icon": PixelArt.scaled("res://assets/sprites/ui/icons/warning.png"),
 						"count": 1, "condition": -1.0, "tier": 0, "value": 0, "load": 0.0, "accent": Palette.BRAND,
-						"search": "unidentified unknown %s" % d.category})
+						"search": "unidentified unknown %s" % d.category, "cat": String(d.category), "risk": 1.0, "known": false, "model": String(d.id)})
 					continue
 				out.append({"kind": &"implant", "key": inst.uid, "name": d.display_name, "icon": PixelArt.scaled(d.icon_path),
 					"count": 1, "condition": inst.condition, "tier": d.tier, "value": d.price, "load": inst.get_neural_load(),
-					"accent": d.get_rarity_color(), "search": "%s %s %s %s" % [d.display_name, d.category, d.manufacturer, d.rarity]})
+					"accent": d.get_rarity_color(), "search": "%s %s %s %s" % [d.display_name, d.category, d.manufacturer, d.rarity],
+					"cat": String(d.category), "risk": inst.get_extra_risk() + d.failure_risk, "known": true, "model": String(d.id)})
 			if _tab == 4:
 				out.append(_resource(&"tokens", "Black-market tokens", InventoryManager.tokens))
 		1:
@@ -179,13 +191,25 @@ func _entries() -> Array[Dictionary]:
 					continue
 				out.append({"kind": &"tool", "key": String(id), "name": t.display_name, "icon": PixelArt.scaled(t.icon_path),
 					"count": 1, "condition": InventoryManager.get_tool_condition(id), "tier": t.tier, "value": t.price, "load": 0.0,
-					"accent": Palette.LINE_HI, "search": "%s %s" % [t.display_name, t.category]})
+					"accent": Palette.LINE_HI, "search": "%s %s" % [t.display_name, t.category], "cat": String(t.category), "risk": 0.0, "known": true})
 		2:
 			out.append(_resource(&"supplies", "Medical supplies", InventoryManager.supplies))
 		3:
 			out.append(_resource(&"parts", "Salvaged parts", InventoryManager.parts))
 	if _filter != "":
 		out = out.filter(func(e: Dictionary) -> bool: return str(e["search"]).to_lower().contains(_filter))
+	if _cat != "":
+		out = out.filter(func(e: Dictionary) -> bool: return str(e.get("cat", "")) == _cat)
+	var c: CustomerData = CustomerManager.current_customer
+	if _flags.get("patient", false) and c:
+		var want := CyberwareManager.get_cyberware(c.requested_cyberware_id)
+		out = out.filter(func(e: Dictionary) -> bool: return want != null and str(e.get("cat", "")) == String(want.category))
+	if _flags.get("low_risk", false):
+		out = out.filter(func(e: Dictionary) -> bool: return float(e.get("risk", 0.0)) < 0.08)
+	if _flags.get("good", false):
+		out = out.filter(func(e: Dictionary) -> bool: return float(e.get("condition", 100.0)) >= 70.0)
+	if _flags.get("known", false):
+		out = out.filter(func(e: Dictionary) -> bool: return bool(e.get("known", true)))
 	match _sort:
 		1: out.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return str(a["name"]) < str(b["name"]))
 		2: out.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return int(a["tier"]) > int(b["tier"]))
@@ -195,12 +219,65 @@ func _entries() -> Array[Dictionary]:
 	return out
 
 
+## Context filters: categories present in this tab plus the toggles that
+## apply (FOR THE PATIENT only when someone is waiting).
+func _fill_chips() -> void:
+	if _chips == null or _chips_tab == _tab:
+		return
+	_chips_tab = _tab
+	_cat = ""
+	_flags = {}
+	UIKit.clear(_chips)
+	var cats: Array[String] = []
+	var flags: Array[String] = []
+	match _tab:
+		0, 4:
+			for inst in InventoryManager.get_instances():
+				var d := inst.get_data()
+				if d and not cats.has(String(d.category)):
+					cats.append(String(d.category))
+			cats.sort_custom(func(a: String, b: String) -> bool: return CYBER_CATS.find(a) < CYBER_CATS.find(b))
+			flags = ["low_risk", "good", "known"]
+			if CustomerManager.current_customer:
+				flags.insert(0, "patient")
+		1:
+			for id in InventoryManager.owned_tools:
+				var t := InventoryManager.get_tool(id)
+				if t and not cats.has(String(t.category)):
+					cats.append(String(t.category))
+			flags = ["good"]
+	if cats.is_empty() and flags.is_empty():
+		_chips.visible = false
+		return
+	_chips.visible = true
+	_chips.add_child(UIKit.label("SHOW", &"SubHeaderLabel"))
+	var group := ButtonGroup.new()
+	for c in [""] + cats:
+		var b := UIKit.button("ALL" if c == "" else c.to_upper(), &"TabButton", func() -> void:
+			_cat = c
+			_rebuild(), "Cat_%s" % (c if c != "" else "all"), 36)
+		b.toggle_mode = true
+		b.button_group = group
+		b.button_pressed = c == ""
+		_chips.add_child(b)
+	if not flags.is_empty():
+		_chips.add_child(UIKit.label("  ONLY", &"SubHeaderLabel"))
+	for f in flags:
+		var b := UIKit.button(str(FLAG_LABELS[f]), &"TabButton", Callable(), "Only_%s" % f, 36)
+		b.toggle_mode = true
+		b.toggled.connect(func(on: bool) -> void:
+			_flags[f] = on
+			_rebuild())
+		_chips.add_child(b)
+
+
 func _resource(kind: StringName, label: String, amount: int) -> Dictionary:
 	return {"kind": kind, "key": String(kind), "name": label, "icon": PixelArt.scaled(ICONS[kind]), "count": amount,
 		"condition": -1.0, "tier": 0, "value": 0, "load": 0.0, "accent": Palette.LINE_HI, "search": label}
 
 
 func _rebuild() -> void:
+	_fill_chips()
 	if not is_inside_tree():
 		return
 	UIKit.clear(_grid)

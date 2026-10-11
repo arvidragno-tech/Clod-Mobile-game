@@ -368,6 +368,8 @@ static func _average(values: Array[float], count: int) -> float:
 func _process(delta: float) -> void:
 	if not is_active or not is_running:
 		return
+	if Glossary.is_open():
+		return  # reading the field guide never costs blood
 	elapsed += delta
 	vitals.tick(delta)
 	_tick_cooldowns(delta)

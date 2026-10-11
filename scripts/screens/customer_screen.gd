@@ -24,6 +24,11 @@ var _params: Dictionary = {}
 
 func on_enter(params: Dictionary) -> void:
 	_params = params
+	var cc := GameManager.get_current_customer()
+	if cc and cc.is_emergency:
+		(func() -> void: Hints.first("emergency")).call_deferred()
+	else:
+		(func() -> void: Hints.first("neural_load")).call_deferred()
 	var c := GameManager.get_current_customer()
 	if c == null:
 		UIManager.go_to.call_deferred(UIManager.SCREEN_CLINIC)
@@ -463,7 +468,9 @@ func _toggle_staff() -> void:
 
 
 func _on_assign(id: StringName, insist: bool) -> void:
+	var before := Consequence.snapshot()
 	var r := GameManager.assign_customer(id, insist)
+	Consequence.show("", before, "JOB HANDED OVER")
 	if bool(r.get("refused", true)):
 		UIManager.show_toast(str(r.get("text", "")), &"warn")
 		return

@@ -26,6 +26,7 @@ var _main: Node
 
 
 func _ready() -> void:
+	Hints.enabled = false
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--shots="):
 			_shots = arg.trim_prefix("--shots=")

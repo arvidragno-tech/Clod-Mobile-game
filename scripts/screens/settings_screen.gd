@@ -283,7 +283,13 @@ func _build_gameplay() -> void:
 	play.add_child(UIKit.label("How long a bleeding patient waits for your triage decision. OFF: they wait until you decide.", &"DimLabel", true))
 	var help := UIKit.section(right, "HELP")
 	_toggle(help, "CONFIRM DANGEROUS ACTIONS", "confirm_dangerous", "Ask before firing staff, selling clinics, borrowing, refusing and aborting.")
-	_toggle(help, "TUTORIAL HINTS", "tutorial_hints", "Coach marks on your first operation (new games).")
+	_toggle(help, "TUTORIAL HINTS", "tutorial_hints", "Coach marks on your first operation, and a short card the first time each system appears.")
+	var rh := UIKit.button("SHOW FIRST-TIME HINTS AGAIN (%d SEEN)" % Settings.seen_hints.size(), &"GhostButton", func() -> void:
+		Hints.reset_all()
+		UIManager.show_toast("✓ First-time hints will show again", &"success")
+		_build.call_deferred(), "ResetHints", 40)
+	rh.disabled = Settings.seen_hints.is_empty()
+	help.add_child(rh)
 	_toggle(help, "TOOLTIPS", "tooltips", "Hover details on props, stats and buttons.")
 	_toggle(help, "DAMAGE FEEDBACK", "damage_feedback", "Screen shake and red flashes on mistakes.")
 	if DisplayServer.is_touchscreen_available() or OS.has_feature("mobile"):

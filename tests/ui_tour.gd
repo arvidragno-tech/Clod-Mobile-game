@@ -12,6 +12,7 @@ var _n: int = 0
 
 
 func _ready() -> void:
+	Hints.enabled = false
 	var res := "1920x1080"
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--shots="):

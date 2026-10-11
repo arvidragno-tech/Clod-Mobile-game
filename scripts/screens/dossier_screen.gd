@@ -26,6 +26,7 @@ var _selected_msg: int = -1
 
 
 func on_enter(params: Dictionary) -> void:
+	(func() -> void: Hints.first("journal")).call_deferred()
 	_tab = Tab.MAIN
 	if params.has("tab_name"):
 		var n := str(params["tab_name"]).to_upper()
@@ -390,7 +391,9 @@ func _comms() -> void:
 			for i in acts.size():
 				var uid := int(m["uid"])
 				row.add_child(UIKit.button(str(acts[i]["label"]), &"AccentButton" if i == 0 else &"GhostButton", func() -> void:
+					var before := Consequence.snapshot()
 					CommsManager.act(uid, i)
+					Consequence.show("You answered: %s" % str(acts[i]["label"]), before)
 					_rebuild(), "MsgAction_%d" % i, 44))
 
 

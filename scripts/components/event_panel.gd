@@ -64,7 +64,9 @@ func _build() -> void:
 
 
 func _on_choice(i: int) -> void:
+	var before := Consequence.snapshot()
 	var text := EventManager.resolve(i)
+	Consequence.show("", before)
 	AudioManager.play_sfx(&"stage", 0.0)
 	UIKit.clear(_box)
 	_box.add_child(UIKit.label("OUTCOME", &"SubHeaderLabel"))

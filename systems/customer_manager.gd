@@ -348,7 +348,7 @@ func _process(delta: float) -> void:
 	var c := current_customer
 	if c == null or not c.is_emergency or not GameManager.is_running or Settings.time_pressure_mult() <= 0.0:
 		return
-	if SurgeryManager.is_active or UIManager.has_modal() or UIManager.is_transitioning() or (_arrival_timer and _arrival_timer.paused):
+	if SurgeryManager.is_active or UIManager.has_modal() or UIManager.is_transitioning() or UIManager.is_reading() or (_arrival_timer and _arrival_timer.paused):
 		return
 	emergency_seconds_left()
 	c.emergency_deadline -= int(delta * 1000.0)

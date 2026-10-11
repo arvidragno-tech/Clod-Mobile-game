@@ -15,6 +15,7 @@ var _failures: Array[String] = []
 
 
 func _ready() -> void:
+	Hints.enabled = false
 	var ops := 40
 	var skill_bias := 0.0
 	_rng.seed = 1

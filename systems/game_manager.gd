@@ -630,7 +630,12 @@ func get_surgery_readiness() -> Dictionary:
 var _implant_returnable: bool = false
 
 
+## ChangeLog position when the operation started (results list what's new).
+var surgery_log_mark: int = 0
+
+
 func begin_surgery() -> void:
+	surgery_log_mark = ChangeLog.mark()
 	var surgery := get_current_surgery()
 	var readiness := get_surgery_readiness()
 	if surgery == null or not readiness["ok"]:

@@ -16,6 +16,7 @@ var _last_text: String = ""
 
 
 func on_enter(_params: Dictionary) -> void:
+	(func() -> void: Hints.first("follow")).call_deferred()
 	_id = LocationManager.player_location
 	if not LocationManager.is_away():
 		GameManager.go_to_clinic.call_deferred()
@@ -232,7 +233,9 @@ func _crowd_line() -> String:
 
 
 func _choose(i: int) -> void:
+	var before := Consequence.snapshot()
 	var t := WorldSimulationManager.resolve_event(_id, i)
+	Consequence.show("", before)
 	AudioManager.play_sfx(&"stage", 0.0)
 	_last_text = t
 	SaveManager.save_game()
@@ -240,14 +243,19 @@ func _choose(i: int) -> void:
 
 
 func _act_missing(i: int) -> void:
+	var before := Consequence.snapshot()
 	var t := WorldSimulationManager.act_missing(_id, i)
+	Consequence.show("", before)
 	_last_text = t
 	SaveManager.save_game()
 	_refresh()
 
 
 func _service(sid: String, option: int = 0) -> void:
+	var before := Consequence.snapshot()
 	var r := LocationServices.perform(_id, sid, option)
+	if bool(r.get("ok", false)):
+		Consequence.show("", before)
 	if str(r.get("screen", "")) != "":
 		match str(r["screen"]):
 			"shop":

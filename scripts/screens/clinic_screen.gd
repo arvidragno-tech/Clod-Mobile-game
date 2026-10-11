@@ -43,6 +43,8 @@ func on_enter(_params: Dictionary) -> void:
 		if not bool(LocationManager.return_to_clinic().get("ok", false)):
 			LocationManager.player_location = LocationManager.CLINIC
 	_build()
+	if EventManager.operations > 0:
+		(func() -> void: Hints.first("priorities")).call_deferred()
 	EventBus.customer_arrived.connect(_on_customer_arrived)
 	EventBus.inventory_changed.connect(_refresh_status)
 	EventBus.resources_changed.connect(_refresh_status)
@@ -417,6 +419,8 @@ func _refresh_matters(force: bool = false) -> void:
 		var n := ChangeLog.unread_count()
 		_changes_button.text = ("◷ CHANGES %d  [%s]" % [n, Controls.key_name("changes")]) if n > 0 else ("◷ CHANGES  [%s]" % Controls.key_name("changes"))
 		_changes_button.theme_type_variation = &"Button" if n > 0 else &"GhostButton"
+	if ChangeLog.unread_count() >= 4 and EventManager.operations > 0:
+		Hints.first("changes")
 	if sig == _matters_sig and not force:
 		return
 	_matters_sig = sig

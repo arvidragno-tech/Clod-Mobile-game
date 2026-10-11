@@ -87,6 +87,11 @@ func _add_aftermath(r: SurgeryResult) -> void:
 		notes.append(str(l))
 	if r.levels_gained > 0:
 		notes.append("+%d SKILL POINT%s to spend." % [r.levels_gained * GameConfig.SKILL_POINTS_PER_LEVEL, "S" if r.levels_gained > 1 else ""])
+	# New information: leads, places, quests and messages that came out of it.
+	var news := ChangeLog.since(GameManager.surgery_log_mark, ["lead", "place", "quest", "message", "news"])
+	for e in news:
+		notes.append("NEW: %s · %s" % [str(e["subject"]), str(e["text"])])
+	_add_links(r, news)
 	if notes.is_empty():
 		return
 	var card := UIKit.panel(&"DangerPanel" if r.neural_break else &"CardPanel")
@@ -97,6 +102,27 @@ func _add_aftermath(r: SurgeryResult) -> void:
 		v.add_child(UIKit.label(n, &"", true, Palette.DANGER if n.begins_with("NEURAL") else Palette.TEXT, 15))
 	card.custom_minimum_size.x = 520
 	%LeftCol.add_child(card)
+
+
+## VIEW PATIENT / VIEW NEW LEAD next to CONTINUE (they finish the debrief first).
+func _add_links(_r: SurgeryResult, news: Array[Dictionary]) -> void:
+	var row := UIKit.hbox(10)
+	row.name = "ResultLinks"
+	var cust: CustomerData = CustomerManager.current_customer
+	var pid: StringName = cust.id if cust else &""
+	if pid != &"" and PeopleManager.has_person(pid):
+		row.add_child(UIKit.button("VIEW PATIENT", &"GhostButton", func() -> void:
+			UIManager.go_to(UIManager.SCREEN_DOSSIER, {"tab_name": "PATIENTS", "focus": String(pid)}), "ViewPatient", 44))
+	var lead: Dictionary = {}
+	for e in news:
+		if Nav.can_open(e.get("link", {})):
+			lead = e["link"]
+	if not lead.is_empty():
+		row.add_child(UIKit.button("VIEW NEW LEAD", &"Button", func() -> void: Nav.open(lead), "ViewLead", 44))
+	if row.get_child_count() > 0:
+		%LeftCol.add_child(row)
+	else:
+		row.free()
 
 
 func _add_stat(caption: String, value: String, good: bool) -> void:

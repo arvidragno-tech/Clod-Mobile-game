@@ -21,6 +21,7 @@ var _main: Node
 
 
 func _ready() -> void:
+	Hints.enabled = false
 	var shifts := 30
 	var monkey := 3000
 	for arg in OS.get_cmdline_user_args():

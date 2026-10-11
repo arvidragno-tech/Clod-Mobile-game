@@ -27,6 +27,7 @@ var _handling_complication: bool = false
 
 
 func _ready() -> void:
+	Hints.enabled = false
 	# Pin the logical viewport (headless windows are 64x64). The design canvas
 	# is 1920x1080; smaller sizes emulate a window at that resolution.
 	var viewport_size := Vector2i(1920, 1080)

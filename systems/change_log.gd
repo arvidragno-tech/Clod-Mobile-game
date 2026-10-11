@@ -41,6 +41,8 @@ func _ready() -> void:
 		if bool(item.get("about_you", false)):
 			add("news", "In the news", str(item.get("headline", "")), IMPORTANT, {"screen": &"dossier", "params": {"tab_name": "DISCOVERIES"}}))
 	EventBus.resources_changed.connect(_on_resources)
+	EventBus.rumor_unlocked.connect(func(id: StringName) -> void:
+		add("lead", "New lead", StoryManager.get_rumor_text(id), IMPORTANT, {"screen": &"dossier", "params": {"tab_name": "DISCOVERIES", "view": "NEWS"}}))
 	EventBus.clinic_upgrade_installed.connect(func(cat: StringName, lv: int) -> void:
 		add("clinic", "Clinic", "%s upgraded to level %d" % [String(cat).replace("_", " ").capitalize(), lv], INFO, {"screen": &"upgrades"}))
 	EventBus.new_game_started.connect(clear)
@@ -112,6 +114,20 @@ static func _rank(level: StringName) -> int:
 	return {&"info": 0, &"important": 1, &"critical": 2}.get(level, 0)
 
 
+## The current sequence number (to find what happened after a moment).
+func mark() -> int:
+	return _seq
+
+
+## Entries after `seq` in the given categories (oldest first).
+func since(seq: int, cats: Array = []) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	for e in entries:
+		if int(e["seq"]) > seq and (cats.is_empty() or cats.has(str(e["cat"]))):
+			out.append(e)
+	return out
+
+
 func unread_count() -> int:
 	var n := 0
 	for e in entries:
@@ -151,13 +167,27 @@ func _on_faction(id: StringName, value: int, delta: int) -> void:
 	if delta == 0:
 		return
 	var lv := IMPORTANT if absi(delta) >= 5 else INFO
+	var was := _standing(value - delta)
+	var now := _standing(value)
+	if was != now:
+		add("faction_standing", FactionManager.get_name_of(id), "Now %s (was %s)" % [now, was], IMPORTANT,
+			{"screen": &"dossier", "params": {"tab_name": "FACTIONS"}})
 	add("faction", FactionManager.get_name_of(id), "", lv, {"screen": &"dossier", "params": {"tab_name": "FACTIONS"}},
 		float(delta), "faction:%s" % id, "Standing %+.0f · now " + str(value))
+
+
+static func _standing(v: int) -> String:
+	for st: Array in GameConfig.FACTION_STANDINGS:
+		if v < int(st[0]):
+			return String(st[1])
+	return "ALLIED"
 
 
 func _on_heat(value: float, delta: float) -> void:
 	if absf(delta) < 1.0:
 		return
+	if delta > 0.0:
+		(func() -> void: Hints.first("heat")).call_deferred()
 	var lv := IMPORTANT if value >= 60.0 and delta > 0.0 else INFO
 	if value >= 85.0 and delta > 0.0:
 		lv = CRITICAL

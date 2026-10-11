@@ -317,6 +317,7 @@ func _build_plan_contents() -> void:
 ## SURGERY PREVIEW: the decision on one card before you commit.
 func _fill_preview(c: CustomerData, item: CyberwareData, surgery: SurgeryData, r: Dictionary) -> void:
 	UIKit.clear(_preview)
+	(func() -> void: Hints.first("preview")).call_deferred()
 	var me := Recommend.self_estimate(c)
 	var d := int(item.install_difficulty) if item else 2
 	var row := func(cap: String, val: String, col: Variant = null, term: String = "") -> void:
