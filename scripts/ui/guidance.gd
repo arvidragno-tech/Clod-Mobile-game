@@ -110,12 +110,27 @@ static func items(n: int = MAX_ITEMS) -> Array[Dictionary]:
 ## setting: MINIMAL only critical and important lines (3), STANDARD 4,
 ## DETAILED 6 including information.
 static func for_player() -> Array[Dictionary]:
+	# The clinic dashboard already shows the clinic's own state (supplies,
+	# money, heat, doors, staff): this list keeps to people and tasks.
+	# Lines that lead into a section the player hasn't been introduced to
+	# yet (a lead in the city, skill points before the first job) wait too.
+	var all := items().filter(func(it: Dictionary) -> bool:
+		var id := str(it["id"])
+		return not ClinicStatus.DASHBOARD_IDS.has(id) and not id.begins_with("stress:") and not id.begins_with("raise:") and _link_on(it["link"]))
 	match Settings.guidance_level:
 		0:
-			return items().filter(func(it: Dictionary) -> bool: return it["level"] != INFO).slice(0, 3)
+			return all.filter(func(it: Dictionary) -> bool: return it["level"] != INFO).slice(0, 3)
 		2:
-			return items(6)
-	return items(4)
+			return all.slice(0, 6)
+	return all.slice(0, 4)
+
+
+static func _link_on(link: Dictionary) -> bool:
+	if link.has("location"):
+		return Features.is_on(&"map")
+	if link.has("screen"):
+		return Features.screen_on(StringName(str(link["screen"])))
+	return true
 
 
 ## The single most important line (the clinic's NEXT strip).

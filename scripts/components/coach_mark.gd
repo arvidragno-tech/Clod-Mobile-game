@@ -87,6 +87,12 @@ func _process(delta: float) -> void:
 func _find_target() -> Control:
 	if _target_name.is_empty() or UIManager.current_screen == null:
 		return null
+	# A dialog on top (the patient summary) comes first.
+	var m := UIManager.top_modal()
+	if m:
+		var in_modal := m.find_child(_target_name, true, false) as Control
+		if in_modal:
+			return in_modal
 	return UIManager.current_screen.find_child(_target_name, true, false) as Control
 
 

@@ -101,7 +101,7 @@ func _round(label: String) -> void:
 	UIManager.close_modal()
 	await _frames(5)
 	_check(_find_visible("DoorVerdict") != null and _find_visible("VerdictAdvice") != null, "%s: the door card has AT A GLANCE" % label)
-	_check(_find_visible_button("SeeButton") != null, "%s: SEE CUSTOMER is visible" % label)
+	_check(_find_visible_button("SeeButton") != null, "%s: SEE PATIENT is visible" % label)
 	var chip := _find_visible_button("Info_time")
 	if chip:
 		await _press(chip)
@@ -117,7 +117,15 @@ func _round(label: String) -> void:
 	if see:
 		await _press(see)
 	await _settle()
-	_check(UIManager.current_screen_id == UIManager.SCREEN_CUSTOMER, "%s: SEE CUSTOMER opens the file" % label)
+	# 3.7: the patient summary first, the full file behind MORE DETAILS.
+	_check(_find_visible("PatientSummary") != null and _find_visible("SummarySuccess") != null and _find_visible("SummaryMargin") != null,
+		"%s: SEE PATIENT opens the patient summary (odds, margin)" % label)
+	await _shot(label, "patient_summary")
+	var more := _find_visible_button("SummaryDetails")
+	if more:
+		await _press(more)
+	await _settle()
+	_check(UIManager.current_screen_id == UIManager.SCREEN_CUSTOMER, "%s: MORE DETAILS opens the file" % label)
 	_check(_find_visible("AtAGlance") != null, "%s: the file has AT A GLANCE" % label)
 	await _shot(label, "customer")
 	var accept := _find_visible_button("AcceptButton")

@@ -146,6 +146,16 @@ func _show_implant(item: CyberwareData) -> void:
 	_detail.add_child(UIKit.label(item.description, &"DimLabel", true))
 	if not item.benefits.is_empty():
 		_detail.add_child(UIKit.label("EFFECTS: " + ", ".join(item.benefits), &"", true, Palette.ACCENT))
+	# Before you pay: the real price and what it leaves you (DecisionPreview).
+	var have := InventoryManager.get_implant_count(item.id)
+	var limits: Array[String] = []
+	if not CyberwareManager.is_tier_available(item.tier):
+		limits.append("Locked: needs LV %d and a clinic rated for T%d." % [GameConfig.CYBERWARE_TIER_LEVEL.get(item.tier, 99), item.tier])
+	if not item.required_tools.is_empty():
+		limits.append("Fitting it needs: %s." % ", ".join(item.required_tools).to_lower())
+	DecisionPreview.build(_detail, InventoryManager.implant_price(item), {"stock": "%d → %d" % [have, have + 1],
+		"purpose": "Stock for a patient who asks for it: they pay for the part when you fit it (up to %d%% of its price, less in poor districts)." % roundi(GameConfig.IMPLANT_PRICE_MARKUP * 100.0),
+		"limits": limits, "uncertain": "Nobody may ask for this model soon. Units in stock keep."})
 	# Compare against the customer's installed chrome in that slot, else the
 	# best unit in stock of the same category.
 	var current := _current_for(item)
@@ -181,6 +191,13 @@ func _show_tool(t: ToolData) -> void:
 	_detail.add_child(UIKit.label(t.description, &"DimLabel", true))
 	if not t.modifiers.is_empty():
 		_detail.add_child(UIKit.label(UIKit.describe_modifiers(t.modifiers), &"", true, Palette.ACCENT))
+	var best := InventoryManager.get_best_tool(t.category)
+	var tl: Array[String] = []
+	if t.unlock_level > ProgressionManager.level:
+		tl.append("Unlocks at LV %d." % t.unlock_level)
+	DecisionPreview.build(_detail, InventoryManager.tool_price(t), {"stock": "best %s now: %s" % [String(t.category).to_lower(), best.display_name if best else "none"],
+		"purpose": "Used whenever a step needs a %s. Better instruments lower the risk; they wear %d%% per operation." % [String(t.category).to_lower(), roundi(InventoryManager.WEAR_PER_OP)],
+		"limits": tl})
 	Compare.build_tool_table(_detail, InventoryManager.get_best_tool(t.category), t)
 
 
@@ -230,7 +247,9 @@ func _implant_card(item: CyberwareData) -> Control:
 	row.add_child(info)
 	info.add_child(UIKit.label(item.display_name, &"", true))
 	info.add_child(UIKit.label("T%d %s · %s" % [item.tier, item.get_tier_name(), item.category.to_upper()], &"SubHeaderLabel", true, item.get_rarity_color()))
-	info.add_child(UIKit.label("LOAD +%d%%  ·  DIFF %d/5  ·  IN STOCK %d" % [roundi(item.neural_load), item.install_difficulty, InventoryManager.get_implant_count(item.id)], &"MonoLabel", true, Palette.TEXT_DIM, 17))
+	info.add_child(UIKit.label("LOAD +%d%%  ·  DIFF %d/5" % [roundi(item.neural_load), item.install_difficulty], &"MonoLabel", true, Palette.TEXT_DIM, 17))
+	var have := InventoryManager.get_implant_count(item.id)
+	info.add_child(UIKit.label("IN STOCK %d" % have, &"MonoLabel", false, Palette.OK if have > 0 else Palette.TEXT_DIM, 15))
 	if not item.required_tools.is_empty():
 		info.add_child(UIKit.label("Needs: " + ", ".join(item.required_tools).to_upper(), &"DimLabel", true, Palette.WARN, 13))
 	var price := InventoryManager.implant_price(item)
@@ -284,6 +303,7 @@ func _supplies_card() -> Control:
 	v.add_child(UIKit.label("Every operation uses 1-2 units. Operating without supplies raises bleeding and complications.", &"DimLabel", true))
 	var price := int(round(GameConfig.SUPPLY_PACK_PRICE * ModifierManager.mult(&"price.buy")))
 	var b := UIKit.button("BUY %d FOR %s" % [GameConfig.SUPPLY_PACK_SIZE, EconomyManager.format_money(price)], &"AccentButton", _buy_supplies, "BuySupplies")
+	b.tooltip_text = DecisionPreview.summary(price) + " · supplies %d → %d" % [InventoryManager.supplies, mini(InventoryManager.supplies + GameConfig.SUPPLY_PACK_SIZE, ClinicManager.get_supplies_capacity())]
 	b.disabled = not EconomyManager.can_afford(price) or InventoryManager.supplies >= ClinicManager.get_supplies_capacity()
 	v.add_child(b)
 	v.add_child(UIKit.label("PARTS %d  ·  TOKENS %d" % [InventoryManager.parts, InventoryManager.tokens], &"MonoLabel", false, Palette.TEXT_DIM))

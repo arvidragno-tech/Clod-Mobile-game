@@ -10,9 +10,9 @@ signal step_changed(step: Dictionary)
 ## node name to highlight (optional) and the text.
 const STEPS: Array[Dictionary] = [
 	{"id": "arrive", "context": "clinic", "target": "SeeButton", "title": "YOUR FIRST PATIENT",
-		"text": "Someone is at the door. Click SEE CUSTOMER (or press {customer_info})."},
-	{"id": "intake", "context": "customer", "target": "AcceptButton", "title": "THE FILE",
-		"text": "Who they are, what chrome they want, what they pay. Click ACCEPT JOB (or press ENTER)."},
+		"text": "Someone is at the door. Click SEE PATIENT, or the patient in the room (or press {customer_info})."},
+	{"id": "intake", "context": "summary", "target": "AcceptButton", "title": "THE PATIENT",
+		"text": "What they want, how hard it is, your odds and what you'd keep. MORE DETAILS has their full file. Click ACCEPT JOB (or press ENTER)."},
 	{"id": "diagnose", "context": "diagnosis", "target": "ScanView", "title": "1 / DIAGNOSIS",
 		"text": "Click 2 glowing body regions to scan. Pick the diagnosis the findings point to, then CONFIRM."},
 	{"id": "plan", "context": "plan", "target": "BeginButton", "title": "2 / PROCEDURE",
@@ -41,6 +41,10 @@ static func help_text() -> String:
 var active: bool = false
 var step_index: int = -1
 var completed: bool = false
+## PROGRESSIVE FEATURES (Features): feature id -> the day it was introduced,
+## and the intro cards still to show. Saved with the game.
+var introduced: Dictionary = {}
+var intro_pending: Array = []
 
 var _coach: CoachMark
 
@@ -63,6 +67,9 @@ func start() -> void:
 	active = true
 	completed = false
 	step_index = -1
+	# A new clinic starts small: sections appear as they become relevant.
+	introduced = {}
+	intro_pending = []
 	# Tutorial hints off: no coach marks, no scripted first patient.
 	if not Settings.tutorial_hints:
 		completed = true
@@ -123,7 +130,9 @@ func _show_step(i: int) -> void:
 	_coach = CoachMark.new()
 	_coach.name = "CoachMark"
 	host.add_child(_coach)
-	host.move_child(_coach, 0)
+	# Normally under dialogs; a step that points into a dialog (the patient
+	# summary) sits above it so its highlight isn't dimmed out.
+	host.move_child(_coach, host.get_child_count() - 1 if str(step.get("context", "")) == "summary" else 0)
 	_coach.setup(step, i + 1, STEPS.size())
 	_coach.skip_pressed.connect(_confirm_skip)
 	_coach.done_pressed.connect(_finish)
@@ -149,13 +158,29 @@ func _hide() -> void:
 
 
 func get_save_data() -> Dictionary:
-	return {"active": active, "step": step_index, "completed": completed}
+	return {"active": active, "step": step_index, "completed": completed, "introduced": introduced.duplicate(), "intro_pending": intro_pending.duplicate()}
 
 
 func load_save_data(data: Dictionary) -> void:
 	active = bool(data.get("active", false))
 	step_index = int(data.get("step", -1))
 	completed = bool(data.get("completed", true))
+	if data.has("introduced") and data["introduced"] is Dictionary:
+		introduced = (data["introduced"] as Dictionary).duplicate()
+		intro_pending = (data.get("intro_pending", []) as Array).duplicate() if data.get("intro_pending", []) is Array else []
+	else:
+		# Saves from before 3.7 had every section on screen: keep it that way
+		# (no cards, nothing hidden that was there before).
+		_introduce_all()
+	# Validation: anything relevant is introduced (a lost flag never locks).
+	Features.refresh.call_deferred()
+
+
+func _introduce_all() -> void:
+	introduced = {}
+	for id: StringName in Features.LIST:
+		introduced[String(id)] = 0
+	intro_pending = []
 
 
 ## Saves from before the tutorial existed count as completed.
@@ -163,4 +188,5 @@ func reset_state() -> void:
 	active = false
 	completed = true
 	step_index = -1
+	_introduce_all()
 	_hide()

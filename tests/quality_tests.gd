@@ -208,7 +208,7 @@ func _guidance_levels() -> void:
 	check(ClinicStatus.visible_rows().size() == ClinicStatus.rows().size(), "STANDARD shows every status row")
 	Settings.guidance_level = 2
 	var detailed := Guidance.for_player()
-	check(detailed.any(func(it: Dictionary) -> bool: return it["id"] == "doors"), "DETAILED guidance includes information lines")
+	check(detailed.size() <= 6 and Guidance.items().any(func(it: Dictionary) -> bool: return it["id"] == "doors"), "DETAILED guidance shows up to 6 lines (the doors line lives in the dashboard)")
 	Settings.guidance_level = was
 	BusinessManager.set_doors_open(true)
 	check(Settings.DEFAULTS.has("guidance_level") and Settings.GUIDANCE_NAMES.size() == 3, "the guidance setting exists with three levels")

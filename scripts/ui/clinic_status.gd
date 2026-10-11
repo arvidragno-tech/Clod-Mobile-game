@@ -81,6 +81,74 @@ static func visible_rows() -> Array[Dictionary]:
 	return all
 
 
+## THE DASHBOARD (3.7): one headline state and only the issues that need
+## you, most urgent first, each with why it matters and where to fix it.
+## Everything is derived from the rows above, the patient at the door
+## (GameManager.get_surgery_readiness via PatientBrief's blocking checks)
+## and the business: nothing is tracked twice.
+##   {headline: {key, text, why, level, link}, issues: [{key, text, why, level, link}]}
+## Rows for sections the player hasn't been introduced to (staff, the
+## black market) never show; during the first patient only the headline.
+static func dashboard(max_issues: int = 3) -> Dictionary:
+	var rs := rows()
+	var by := {}
+	for r in rs:
+		by[str(r["key"])] = r
+	var c: CustomerData = CustomerManager.current_customer
+	var blocking: Array = []
+	if c and not c.is_emergency:
+		for x in JobVerdict.checks(c):
+			if x["level"] == BAD and PatientBrief.BLOCKING.has(str(x["key"])):
+				blocking.append(x)
+	var waiting := ClinicLifeManager.waiting_customers().size()
+	var head := {}
+	if SurgeryManager.is_active:
+		head = {"key": "operating", "text": "OPERATION IN PROGRESS", "why": "Finish it before anything else.", "level": WARN, "link": {}}
+	elif EventManager.has_pending() or StoryManager.has_talk():
+		head = {"key": "action", "text": "ACTION REQUIRED", "why": "Someone is waiting for your answer.", "level": WARN, "link": {"screen": &"clinic"}}
+	elif InventoryManager.supplies <= 0:
+		head = {"key": "supplies", "text": "CAN'T OPERATE: NO SUPPLIES", "why": "Every operation uses medical supplies. Restock in SUPPLY.", "level": BAD, "link": {"screen": &"shop"}}
+	elif not blocking.is_empty():
+		var x: Dictionary = blocking[0]
+		head = {"key": "missing", "text": "PATIENT WAITING: MISSING %s" % str(x["label"]).to_upper(), "why": "%s. %s" % [str(x["value"]).capitalize(), "Buy it in SUPPLY, or hand the job to staff." if Features.is_on(&"staff") else "Buy it in SUPPLY or turn the job down."],
+			"level": BAD, "link": {"screen": &"shop"} if str(x["key"]) in ["tools", "supplies"] else {"customer": true}}
+	elif by["money"]["level"] == BAD and Features.is_on(&"business"):
+		head = {"key": "money", "text": "FINANCIAL CONCERN", "why": str(by["money"]["advice"]), "level": BAD, "link": {"screen": &"business"}}
+	elif not BusinessManager.doors_open:
+		head = {"key": "doors", "text": "DOORS CLOSED", "why": "No walk-ins until you open them. Take your time.", "level": WARN, "link": {"doors": "open"}}
+	elif BusinessManager.is_day_full() and c == null:
+		head = {"key": "day_done", "text": "DAY'S WORK DONE", "why": "Close for the night: rent and wages are paid, the books are shown.", "level": GOOD, "link": {}}
+	else:
+		var who := "A patient is at the door." if c else ("%d waiting in the waiting room." % waiting if waiting > 0 else "Nobody at the door yet.")
+		head = {"key": "ready", "text": "READY FOR PATIENTS", "why": who, "level": GOOD, "link": {"customer": true} if c else {}}
+	var issues: Array[Dictionary] = []
+	var learning := TutorialManager.is_active() or Difficulty.ops() == 0
+	if not learning:
+		var gated := {"staff": &"staff", "black_market": &"blackmarket", "money": &"business"}
+		for lv in [BAD, WARN]:
+			for r in rs:
+				var key := str(r["key"])
+				if r["level"] != lv or key == str(head["key"]) or (key == "supplies" and str(head["key"]) == "supplies"):
+					continue
+				if gated.has(key) and not Features.is_on(gated[key]):
+					continue
+				# A new name isn't a problem: only a bad reputation is.
+				if key == "rep" and lv != BAD:
+					continue
+				if key == "money" and str(head["key"]) == "money":
+					continue
+				var why := str(r["advice"]) if lv == BAD else _warn_tip(key)
+				issues.append({"key": key, "text": "%s: %s" % [str(r["label"]).capitalize(), str(r["state"]).to_lower()], "why": why,
+					"detail": str(r["detail"]), "level": lv, "link": r["link"]})
+		if Settings.is_minimal():
+			issues = issues.filter(func(i: Dictionary) -> bool: return i["level"] == BAD)
+	return {"headline": head, "issues": issues.slice(0, max_issues)}
+
+
+## Guidance ids the dashboard already shows (WHAT MATTERS doesn't repeat them).
+const DASHBOARD_IDS := ["supplies_out", "supplies_low", "debt", "heat", "heat_high", "doors", "day_done"]
+
+
 ## The single line that matters most: {text, level, link}.
 static func most_important() -> Dictionary:
 	var rs := rows()

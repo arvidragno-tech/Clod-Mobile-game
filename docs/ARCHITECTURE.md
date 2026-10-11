@@ -608,3 +608,68 @@ numbers are in `docs/QUALITY_PASS_3.6.md`.
   `tests/ui_stability_probe.tscn` (real mouse events at four resolutions and
   three window modes), and `tests/economy_sim.tscn` (five strategies on the
   real systems with fixed seeds, `--check` against the targets).
+
+
+## 3.7: progressive onboarding and the patient summary
+
+No new managers: the state lives in the existing saved `TutorialManager`, and
+every view reads the existing rules. Audit and results:
+`docs/UX_OVERHAUL_3.7.md`.
+
+- **Features** (`scripts/ui/features.gd`, static) defines each side-bar
+  section: title, screen, stage, WHAT / WHY / HOW / COST, and its handbook
+  term.
+  - `relevant(id)` reads existing state: `Difficulty.ops()`, comms, staff,
+    clinic tier, `LocationManager.is_away()` and
+    `BlackMarketManager.is_unlocked()`.
+  - `refresh()` introduces what has become relevant and queues its intro
+    card. It is called from `_begin_play`, the clinic's status refresh and
+    `TutorialManager.load_save_data`.
+  - `TutorialManager.introduced` (`id -> day`) and `intro_pending` are saved.
+    `start()` clears them for a new game; `reset_state()` and saves without
+    the key introduce everything.
+  - Gates:
+    - `SideNav` hides the button, and a group header hides when all its
+      items are hidden;
+    - `GameManager.navigate` (side bar and room props) and
+      `UIManager._route` (hotkeys) call `Features.not_yet()` instead;
+    - `Nav.open` introduces the target, because a link means it's relevant.
+  - `Settings.progressive_features` turns the gating off. The black market
+    keeps its own unlock rule.
+- **PatientBrief** (`scripts/ui/patient_brief.gd`) holds the summary's facts.
+  - Money comes from `JobEstimate.for_customer`, odds from
+    `Recommend.self_estimate`, and missing requirements from
+    `JobVerdict.checks` filtered to `BLOCKING`, each with a `Nav` link that
+    fixes it.
+  - `recommendation()` is a neutral line built from those numbers.
+- **PatientSummary** (`scripts/components/patient_summary.gd`) is a modal.
+  `GameManager.show_patient_summary()` opens it from SEE PATIENT, the room
+  and the customer key; `open_customer()` still opens the full file (MORE
+  DETAILS, staff hand-off, tests).
+  - The tutorial's intake step uses the "summary" context, and `CoachMark`
+    looks inside the top modal first.
+- **Dashboard**: `ClinicStatus.dashboard()` returns `{headline, issues}`,
+  derived from `rows()`, the door patient's blocking checks and the
+  business. `Guidance.for_player()` drops `ClinicStatus.DASHBOARD_IDS` and
+  lines that link into sections not introduced yet.
+  `GameManager.get_next_objective()` adds `why` and `optional`.
+- **DecisionPreview** (`scripts/ui/decision_preview.gd`):
+  - `facts(cost, recurring)` gives cash now and after, tonight's bill
+    (`BusinessManager.projected_total`) and short / below-bill flags;
+  - `summary()` is the one-line form;
+  - `build()` makes the BEFORE YOU PAY box.
+
+  It is used by SUPPLY, FACILITY, clinic purchases, hiring, the black market
+  and suppliers. It never projects income.
+- **Known consequences**: `DialogueManager.known_effects(option)` reads the
+  option's faction, rep, heat and money through `Standing.preview`.
+  Relationship and fear are never shown.
+- **Handbook**: glossary entries may carry:
+  - `feature` (hidden until it is introduced; counted by `hidden_in`);
+  - `why` and `where`;
+  - `see` (related entries).
+
+  The field guide keeps a back stack, and its TUTORIALS section re-shows
+  `Features.show_intro` and `Hints.show_again`.
+- **UIKit.flavor(text)** styles atmosphere (quoted, slanted, dim) so it
+  never reads like a requirement.

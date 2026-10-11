@@ -2,6 +2,10 @@ extends Node
 ## The Undermarket: rotating stock of illegal / stolen / experimental chrome
 ## with hidden traits, plus STUDY, MODIFY, SELL and mystery cases.
 
+## What every purchase does to your standing (shown before you buy).
+const BUY_STANDING := 2
+const BUY_HEAT := 3.0
+
 var config: Dictionary = {}
 var traits: Dictionary = {}  # StringName -> Dictionary
 ## Array of {"instance": ImplantInstance, "price": int}
@@ -119,8 +123,8 @@ func _buy_impl(index: int) -> bool:
 		return false
 	stock.remove_at(index)
 	InventoryManager.add_instance(offer["instance"])
-	FactionManager.change(&"black_market", 2)
-	FactionManager.add_heat(3.0)
+	FactionManager.change(&"black_market", BUY_STANDING)
+	FactionManager.add_heat(BUY_HEAT)
 	EventBus.black_market_changed.emit()
 	return true
 

@@ -45,6 +45,12 @@ static func first(id: String) -> bool:
 	return true
 
 
+## The field guide's TUTORIALS: a card you've seen, shown again on request.
+static func show_again(id: String) -> void:
+	if HINTS.has(id):
+		_show(id)
+
+
 static func seen(id: String) -> bool:
 	return Settings.seen_hints.has(id)
 

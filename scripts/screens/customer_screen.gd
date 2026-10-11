@@ -33,6 +33,8 @@ func on_enter(params: Dictionary) -> void:
 	if c == null:
 		UIManager.go_to.call_deferred(UIManager.SCREEN_CLINIC)
 		return
+	# The tutorial's intake step also fits the full file (ACCEPT JOB is here too).
+	(func() -> void: TutorialManager.notify("summary")).call_deferred()
 	var item := GameManager.get_requested_item()
 	var surgery := GameManager.get_current_surgery()
 	var col := UIKit.workstation(self, &"clinic")
@@ -64,7 +66,8 @@ func on_enter(params: Dictionary) -> void:
 	var sv := UIKit.vbox(8)
 	statement.add_child(sv)
 	sv.add_child(UIKit.section_head("STATEMENT"))
-	_dialogue = UIKit.label(c.dialogue, &"MonoLabel", true)
+	# Their own words: atmosphere, styled as such (quoted, slanted, dim).
+	_dialogue = UIKit.flavor(c.dialogue, 17)
 	sv.add_child(_dialogue)
 	statement.gui_input.connect(_on_dialogue_input)
 	statement.tooltip_text = "Click to skip the typing"
@@ -116,18 +119,12 @@ func on_enter(params: Dictionary) -> void:
 	rl.tooltip_text = "An estimate from the same rules the game uses. You decide."
 	rl.mouse_filter = Control.MOUSE_FILTER_PASS
 	decide.add_child(rl)
-	# The money, before you commit (revenue is not profit).
+	# The money lives in the PATIENT SUMMARY (FINANCES); one line here for reference.
 	var est := JobEstimate.for_customer(c, GameManager.get_surgery_readiness())
-	var keep := int(est["net"])
-	var ml := UIKit.label("THE MONEY ≈ they pay %s · implant %s · supplies %s → you keep %s%s" % [EconomyManager.format_money(int(est["can_pay"])),
-		EconomyManager.format_money(int(est["implant_cost"])), EconomyManager.format_money(int(est["supplies_cost"])), "%+d cr" % keep,
-		("  (they'll owe %s more, paid in instalments)" % EconomyManager.format_money(int(est["owed"]))) if int(est["owed"]) > 0 else ""],
-		&"DimLabel", true, Palette.OK if keep > 0 else Palette.DANGER, 15)
+	var ml := UIKit.label("Estimated direct margin %+d cr (patient summary: FINANCES)." % int(est["net"]), &"DimLabel", true, Palette.TEXT_DIM, 14)
 	ml.name = "MoneyEstimate"
-	ml.tooltip_text = "An estimate: the fee depends on how the operation goes. A unit from stock counts at what it would cost to replace."
-	ml.mouse_filter = Control.MOUSE_FILTER_PASS
 	decide.add_child(ml)
-	var accept := UIKit.button("PERFORM SURGERY YOURSELF  [ENTER]", &"AccentButton", GameManager.accept_customer, "AcceptButton", 60)
+	var accept := UIKit.button("ACCEPT JOB: OPERATE YOURSELF  [ENTER]", &"AccentButton", GameManager.accept_customer, "AcceptButton", 60)
 	accept.set_meta(&"default", true)
 	decide.add_child(accept)
 	var staff_n := StaffManager.at_clinic(ClinicManager.tier).size()
@@ -141,7 +138,7 @@ func on_enter(params: Dictionary) -> void:
 	var defer := UIKit.button("DEFER TO TOMORROW", &"GhostButton", _on_defer, "DeferButton", 44)
 	defer.tooltip_text = "They may not come back. Emergencies won't wait."
 	decide.add_child(defer)
-	var decline := UIKit.button("REFUSE  (-%d REP)" % absi(GameConfig.DECLINE_REPUTATION_PENALTY), &"GhostButton", _on_decline, "DeclineButton", 44)
+	var decline := UIKit.button("DECLINE  (%d REP)" % GameConfig.DECLINE_REPUTATION_PENALTY, &"GhostButton", _on_decline, "DeclineButton", 44)
 	decide.add_child(decline)
 	if PeopleManager.has_person(c.id):
 		var hist := UIKit.button("REVIEW HISTORY", &"GhostButton", func() -> void:
@@ -439,8 +436,9 @@ func _on_dialogue_input(event: InputEvent) -> void:
 
 
 func _on_decline() -> void:
-	UIManager.confirm("TURN THEM AWAY?", "Word gets around. Declining costs %d rep." % absi(GameConfig.DECLINE_REPUTATION_PENALTY),
-			"DECLINE", GameManager.decline_customer, true)
+	var c := GameManager.get_current_customer()
+	UIManager.guard("TURN THEM AWAY?", "They leave. Word gets around: %d street rep and %d standing with %s." % [GameConfig.DECLINE_REPUTATION_PENALTY, GameConfig.DECLINE_FACTION_PENALTY, FactionManager.get_name_of(c.faction_id) if c else "their people"],
+			"DECLINE", GameManager.decline_customer)
 
 
 func _toggle_staff() -> void:

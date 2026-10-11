@@ -433,7 +433,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 	if _act(event, "customer_info") and InputContext.allows("customer_info", ctx) and CustomerManager.has_customer():
 		get_viewport().set_input_as_handled()
-		GameManager.open_customer()
+		GameManager.show_patient_summary()
 	elif _act(event, "changes") and InputContext.allows("changes", ctx):
 		get_viewport().set_input_as_handled()
 		ChangesPanel.toggle()
@@ -451,6 +451,10 @@ static func _act(event: InputEvent, action: String) -> bool:
 
 func _route(action: String) -> void:
 	var target: StringName = InputContext.ROUTES[action]
+	var feature: StringName = Features.BY_SCREEN.get(target, &"")
+	if feature != &"" and not Features.is_on(feature):
+		Features.not_yet(feature)
+		return
 	if action == "clinic":
 		if current_screen_id != SCREEN_CLINIC:
 			GameManager.go_to_clinic()

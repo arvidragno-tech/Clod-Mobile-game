@@ -5,6 +5,8 @@ extends BaseScreen
 ## and section navigation on the left. Double-click the room to zoom.
 
 var _objective: Label
+var _objective_why: Label
+var _waiting_tail: String = ""
 var _objective_timer: float = 0.0
 var _view: ClinicView
 var _card: PanelContainer
@@ -95,8 +97,16 @@ func _build() -> void:
 		var mb := e as InputEventMouseButton
 		if mb and mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT:
 			Nav.open(Guidance.top().get("link", {})))
-	UIKit.expand(_objective)
-	strip.add_child(_objective)
+	var obj_col := UIKit.vbox(0)
+	UIKit.expand(obj_col)
+	strip.add_child(obj_col)
+	obj_col.add_child(_objective)
+	# Why it matters, in one short line under it.
+	_objective_why = UIKit.label("", &"DimLabel", false, Palette.TEXT_DIM, 14)
+	_objective_why.name = "ObjectiveWhy"
+	_objective_why.clip_text = true
+	_objective_why.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	obj_col.add_child(_objective_why)
 	_changes_button = UIKit.button("", &"GhostButton", ChangesPanel.open, "ChangesButton", 36)
 	_changes_button.tooltip_text = "What changed while you were busy (money, standing, heat, supplies, staff, people, places)."
 	strip.add_child(_changes_button)
@@ -116,7 +126,7 @@ func _build() -> void:
 	var cv := UIKit.vbox(12)
 	_card.add_child(cv)
 	cv.add_child(UIKit.section_head("AT THE DOOR", "", "loop"))
-	# The details scroll if they're long; SEE CUSTOMER always stays visible.
+	# The details scroll if they're long; SEE PATIENT always stays visible.
 	var isc := UIKit.scroll()
 	isc.name = "DoorScroll"
 	UIKit.expand(isc, true, true)
@@ -157,7 +167,7 @@ func _build() -> void:
 	UIKit.expand(_waiting, true, true)
 	_waiting.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	cv.add_child(_waiting)
-	_see_button = UIKit.button("SEE CUSTOMER  [%s]" % Controls.key_name("customer_info"), &"AccentButton", GameManager.open_customer, "SeeButton", 56)
+	_see_button = UIKit.button("SEE PATIENT  [%s]" % Controls.key_name("customer_info"), &"AccentButton", GameManager.show_patient_summary, "SeeButton", 56)
 	_see_button.set_meta(&"default", true)
 	cv.add_child(_see_button)
 	# --- Centre: the room + status cards
@@ -179,7 +189,7 @@ func _build() -> void:
 	_view._base_tooltip = _view.tooltip_text
 	_view.hotspot_clicked.connect(GameManager.navigate)
 	frame.add_child(_view)
-	_view.customer_tapped.connect(GameManager.open_customer)
+	_view.customer_tapped.connect(GameManager.show_patient_summary)
 	var overlay := UIKit.vbox(2)
 	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	overlay.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
@@ -261,7 +271,7 @@ func _process(delta: float) -> void:
 		elif not BusinessManager.doors_open:
 			_waiting.text = "DOORS CLOSED\n\nNobody new comes in while the doors are shut. Take your time: restock in SUPPLY, spend skill points, read the JOURNAL. Press OPEN DOORS (below the room) when you're ready."
 		else:
-			_waiting.text = "Waiting for the next customer" + ".".repeat(int(_waiting_dots) % 4) + "\n\nWhile you wait: restock in SUPPLY, spend skill points, read the JOURNAL, or go out into the city (CITY MAP, %s)." % Controls.key_name("map")
+			_waiting.text = "Waiting for the next patient" + ".".repeat(int(_waiting_dots) % 4) + _waiting_tail
 
 
 func _show_event() -> void:
@@ -337,10 +347,15 @@ func _show_customer(customer: CustomerData, animate: bool) -> void:
 	# Same numbers as the customer file (one source of truth).
 	var expected := CustomerGenerator.estimate_fee(customer) if surgery and item else 0
 	_offer.text = "PAYS ≈ %s" % EconomyManager.format_money(expected)
-	_risk.text = "Patience %d · known conditions %d" % [customer.patience, customer.revealed_conditions.size()]
+	# The door card is a teaser: who, what, roughly what it pays and one line
+	# of advice. Everything else is one click away in the PATIENT SUMMARY.
+	_risk.visible = false
+	_load_meter.visible = false
 	UIKit.clear(_verdict_box)
-	JobVerdict.build(_verdict_box, customer, true)
-	_load_meter.set_load(NeuralLoad.compute(customer), NeuralLoad.projected(customer, ImplantInstance.create(item.id)) if item else NeuralLoad.compute(customer))
+	var adv := PatientBrief.recommendation(customer, PatientBrief.build(customer))
+	var a := UIKit.label(str(adv["text"]), &"", true, JobVerdict.color(adv["level"]))
+	a.name = "VerdictAdvice"
+	_verdict_box.add_child(a)
 	_waiting.visible = false
 	_info_box.visible = true
 	(_info_box.get_parent() as Control).visible = true
@@ -374,6 +389,14 @@ func _refresh_doors() -> void:
 
 func _show_waiting() -> void:
 	_view.hide_customer()
+	# Only suggest what the player has been introduced to.
+	var ideas: Array[String] = []
+	for pair: Array in [[&"supply", "restock in SUPPLY"], [&"skills", "spend skill points"], [&"dossier", "read the JOURNAL"],
+			[&"map", "go out into the city (CITY MAP, %s)" % Controls.key_name("map")]]:
+		if Features.is_on(pair[0]):
+			ideas.append(str(pair[1]))
+	_waiting_tail = ("\n\nWhile you wait: " + ", ".join(ideas) + ".") if not ideas.is_empty() else "\n\nSomeone will knock soon."
+	_waiting.text = "Nobody at the door yet." + _waiting_tail
 	_waiting.visible = true
 	_info_box.visible = false
 	(_info_box.get_parent() as Control).visible = false
@@ -401,8 +424,11 @@ func _refresh_status() -> void:
 		EconomyManager.format_money(BusinessManager.projected_total()), (" · DEBT %d" % BusinessManager.debt) if BusinessManager.debt > 0 else ""], "jobs")
 	var scap := maxi(1, ClinicManager.get_supplies_capacity())
 	_meter_row("SUPPLIES", float(InventoryManager.supplies) / scap, Palette.WARN if InventoryManager.supplies < 2 else Palette.OK, "%d / %d · %d implants" % [InventoryManager.supplies, scap, InventoryManager.get_instances().size()], "supplies")
-	_meter_row("HEAT", FactionManager.heat / 100.0, Palette.DANGER if FactionManager.heat >= 50.0 else (Palette.WARN if FactionManager.heat >= 25.0 else Palette.TEXT_DIM), "%d · %s" % [roundi(FactionManager.heat), SecurityManager.level_label()], "heat")
+	# Heat matters once there's any (or the black market is open).
+	if FactionManager.heat > 0.0 or Features.is_on(&"blackmarket"):
+		_meter_row("HEAT", FactionManager.heat / 100.0, Palette.DANGER if FactionManager.heat >= 50.0 else (Palette.WARN if FactionManager.heat >= 25.0 else Palette.TEXT_DIM), "%d · %s" % [roundi(FactionManager.heat), SecurityManager.level_label()], "heat")
 	var open := SecurityManager.open_cases().size()
+	_security_button.visible = open > 0 or Features.is_on(&"upgrades") or FactionManager.heat >= 25.0
 	_security_button.text = "SECURITY" if open == 0 else "%d OPEN CASE%s" % [open, "S" if open > 1 else ""]
 	_security_button.theme_type_variation = &"DangerButton" if open > 0 else &"GhostButton"
 	# Today's agenda: what's due and when the door locks.
@@ -417,46 +443,48 @@ func _refresh_status() -> void:
 		_agenda.text = "\n".join(agenda)
 	_refresh_status_card()
 	_refresh_matters(true)
+	# New sections become available as they become relevant (Features).
+	Features.refresh()
+	(func() -> void:
+		if is_inside_tree() and UIManager.current_screen == self:
+			Features.show_next_intro()).call_deferred()
 
 
-## CLINIC STATUS: six one-word summaries (✓ ! ✕) and the one thing to do.
+## CLINIC STATUS (3.7 dashboard): one headline state and only what needs
+## you (ClinicStatus.dashboard), each line clickable when it can be fixed.
 func _refresh_status_card() -> void:
 	UIKit.clear_after(_factions_box, 1)
-	var grid := GridContainer.new()
-	grid.columns = 1
-	grid.add_theme_constant_override(&"v_separation", 0)
-	_factions_box.add_child(grid)
-	var shown := ClinicStatus.visible_rows()
-	if shown.is_empty():
-		grid.add_child(UIKit.label("✓ Everything is fine", &"DimLabel", false, Palette.OK, 15))
-	for r: Dictionary in shown:
-		var line := UIKit.hbox(6)
-		line.name = "Status_%s" % r["key"]
-		UIKit.expand(line)
-		line.add_child(UIKit.label(ClinicStatus.mark(r["level"]), &"MonoLabel", false, ClinicStatus.color(r["level"]), 17))
-		var cap := UIKit.caption(str(r["label"]))
-		cap.add_theme_font_size_override(&"font_size", 15)
-		cap.custom_minimum_size.x = 120
-		cap.clip_text = true
-		cap.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-		line.add_child(cap)
-		var v := UIKit.label(str(r["state"]), &"", false, ClinicStatus.color(r["level"]), 15)
-		v.tooltip_text = "%s: %s\n%s" % [r["label"], r["state"], r["detail"]]
-		v.mouse_filter = Control.MOUSE_FILTER_PASS
-		v.clip_text = true
-		v.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-		UIKit.expand(v)
-		line.add_child(v)
-		grid.add_child(line)
+	var d := ClinicStatus.dashboard()
+	var head: Dictionary = d["headline"]
+	var hl := UIKit.button("%s %s" % [ClinicStatus.mark(head["level"]), str(head["text"])], &"GhostButton", _open_link.bind(head["link"]), "Status_%s" % head["key"], 40)
+	hl.name = "StatusHeadline"
+	hl.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	hl.clip_text = true
+	hl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	hl.add_theme_color_override(&"font_color", ClinicStatus.color(head["level"]))
+	hl.add_theme_color_override(&"font_disabled_color", ClinicStatus.color(head["level"]))
+	hl.tooltip_text = "%s\n%s" % [head["text"], head["why"]]
+	hl.disabled = not Nav.can_open(head["link"])
+	_factions_box.add_child(hl)
+	var why := UIKit.label(str(head["why"]), &"DimLabel", true, null, 14)
+	why.name = "StatusAdvice"
+	why.max_lines_visible = 2
+	_factions_box.add_child(why)
+	for it: Dictionary in d["issues"]:
+		var b := UIKit.button("%s %s" % [ClinicStatus.mark(it["level"]), str(it["text"])], &"GhostButton", _open_link.bind(it["link"]), "Status_%s" % it["key"], 32)
+		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		b.clip_text = true
+		b.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		b.add_theme_color_override(&"font_color", ClinicStatus.color(it["level"]))
+		b.tooltip_text = "%s\n%s\n%s" % [it["text"], it["why"], it["detail"]]
+		b.disabled = not Nav.can_open(it["link"])
+		_factions_box.add_child(b)
 		if Settings.is_detailed():
-			var d := UIKit.label("   " + str(r["detail"]), &"DimLabel", true, Palette.TEXT_DIM, 13)
-			d.name = "StatusDetail_%s" % r["key"]
-			grid.add_child(d)
-	var top := ClinicStatus.most_important()
-	var tip := UIKit.label(("▲ " if top["level"] != ClinicStatus.GOOD else "✓ ") + str(top["text"]), &"DimLabel", true, ClinicStatus.color(top["level"]) if top["level"] != ClinicStatus.GOOD else Palette.TEXT_DIM, 14)
-	tip.name = "StatusAdvice"
-	tip.max_lines_visible = 2
-	_factions_box.add_child(tip)
+			_factions_box.add_child(UIKit.label("   " + str(it["why"]), &"DimLabel", true, null, 13))
+
+
+func _open_link(link: Dictionary) -> void:
+	Nav.open(link)
 
 
 var _matters_sig: String = ""
@@ -532,8 +560,11 @@ func _refresh_objective() -> void:
 	if _objective == null:
 		return
 	var o := GameManager.get_next_objective()
-	_objective.text = "NEXT > " + str(o["text"]).to_upper()
+	_objective.text = ("WHEN YOU'RE READY > " if bool(o.get("optional", false)) else "NEXT > ") + str(o["text"]).to_upper()
 	_objective.add_theme_color_override(&"font_color", Palette.WARN if o["kind"] == &"warn" else Palette.ACCENT)
+	_objective.tooltip_text = str(o.get("why", ""))
+	if _objective_why:
+		_objective_why.text = str(o.get("why", ""))
 	_refresh_matters()
 
 

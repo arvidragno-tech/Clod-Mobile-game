@@ -79,6 +79,8 @@ const CYBERWARE_TIER_LEVEL := {1: 1, 2: 3, 3: 5, 4: 8, 5: 99}
 # --- Clinic ------------------------------------------------------------------
 const CUSTOMER_ARRIVAL_DELAY_SEC := 1.2
 const DECLINE_REPUTATION_PENALTY := -1
+## ...and standing with the patient's faction (both shown before you decline).
+const DECLINE_FACTION_PENALTY := -1
 ## Used when the clinic has no implant in stock and cannot afford one: the
 ## customer brings a salvaged unit, which performs worse.
 const SALVAGED_IMPLANT_QUALITY := 0.8

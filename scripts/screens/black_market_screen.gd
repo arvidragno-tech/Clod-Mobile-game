@@ -277,6 +277,8 @@ func _offer_card(i: int) -> Control:
 	b.custom_minimum_size.x = 140
 	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	b.disabled = not EconomyManager.can_afford(int(offer["price"]))
+	# Known consequences of buying here (BlackMarketManager.buy): heat and standing.
+	b.tooltip_text = "%s\nAuthority heat +%d · black-market standing +%d.\nHidden traits (??) are only known once you scan or fit it." % [DecisionPreview.summary(int(offer["price"])), roundi(BlackMarketManager.BUY_HEAT), BlackMarketManager.BUY_STANDING]
 	row.add_child(b)
 	return card
 
@@ -494,6 +496,8 @@ func _supplier_offer(id: String, i: int, o: Dictionary) -> Control:
 		var b := UIKit.button(label, &"BMButton" if mode == "cash" else &"GhostButton", _buy_supplier.bind(id, SupplierManager.st(id)["stock"][i], mode), "SupplierBuy_%s_%d_%s" % [id, i, mode], 34)
 		b.disabled = why != ""
 		b.tooltip_text = why if why != "" else {"cash": "Pay now; delivered at opening tomorrow.", "credit": "Delivered tomorrow; pay after your next %d jobs. Miss it and they get suspicious." % int(SupplierManager.data.get("credit_jobs", 3)), "rush": "Delivered right now, any hour: +50%."}[mode]
+		if why == "" and mode != "credit":
+			b.tooltip_text += "\n" + DecisionPreview.summary(SupplierManager.price_for(id, i, mode))
 		b.custom_minimum_size.x = 210
 		btns.add_child(b)
 	return row

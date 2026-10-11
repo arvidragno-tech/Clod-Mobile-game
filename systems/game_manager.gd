@@ -81,6 +81,10 @@ func quick_load() -> void:
 
 ## Sidebar / hotkey navigation between workstation sections.
 func navigate(id: StringName) -> void:
+	# Sections that haven't been introduced yet (Features) say when they open.
+	if Features.LIST.has(id) and not Features.is_on(id):
+		Features.not_yet(id)
+		return
 	match id:
 		&"clinic":
 			# Out in the city, the CLINIC button takes you home (the trip takes its time).
@@ -169,6 +173,7 @@ func _begin_play() -> void:
 	if BlackMarketManager.is_unlocked() and BlackMarketManager.stock.is_empty():
 		BlackMarketManager.refresh_stock()
 	StoryManager.check()
+	Features.refresh()
 
 
 # --- Navigation helpers -------------------------------------------------------
@@ -196,28 +201,31 @@ func close_for_the_night() -> void:
 
 ## The single most useful next step for the player (clinic "NEXT" line).
 ## Returns {"text": String, "kind": &"info"|&"warn"}.
+## The one clear next step: {text, why, kind, optional}. `why` says why it
+## matters; `optional` marks a suggestion rather than something that needs you.
 func get_next_objective() -> Dictionary:
 	if LocationManager.is_away():
-		return {"text": "You're at %s: RETURN TO CLINIC when you're done" % LocationManager.location_name(LocationManager.player_location), "kind": &"info"}
+		return {"text": "You're at %s: RETURN TO CLINIC when you're done" % LocationManager.location_name(LocationManager.player_location), "why": "Patients only come while you're there.", "kind": &"info", "optional": false}
 	if EventManager.has_pending():
-		return {"text": "Someone is waiting: deal with the incident", "kind": &"warn"}
+		return {"text": "Someone is waiting: deal with the incident", "why": "Nothing else moves until you answer.", "kind": &"warn", "optional": false}
 	if StoryManager.has_talk():
 		var who := CharacterManager.get_character(StringName(str(DialogueManager.get_dialogue(StoryManager.peek_talk()).get("character", ""))))
-		return {"text": "%s wants to talk" % (who.display_name if who else "Someone"), "kind": &"warn"}
+		return {"text": "%s wants to talk" % (who.display_name if who else "Someone"), "why": "The story moves through the people you meet.", "kind": &"warn", "optional": false}
 	var c := get_current_customer()
 	if c:
-		return {"text": "See %s at the door%s" % [c.display_name, " (EMERGENCY)" if c.is_emergency else ""], "kind": &"warn" if c.is_emergency else &"info"}
-	if SkillManager.points > 0:
-		return {"text": "Spend %d skill point%s in SKILLS" % [SkillManager.points, "s" if SkillManager.points > 1 else ""], "kind": &"info"}
+		return {"text": "See %s at the door%s" % [c.display_name, " (EMERGENCY)" if c.is_emergency else ""],
+			"why": "They're bleeding out: decide fast." if c.is_emergency else "Jobs are how you earn: check what they want and what you'd keep.", "kind": &"warn" if c.is_emergency else &"info", "optional": false}
+	if SkillManager.points > 0 and Features.is_on(&"skills"):
+		return {"text": "Spend %d skill point%s in SKILLS" % [SkillManager.points, "s" if SkillManager.points > 1 else ""], "why": "Steadier hands raise your odds on every job.", "kind": &"info", "optional": true}
 	if BusinessManager.is_day_full():
-		return {"text": "Day's work done: CLOSE FOR THE NIGHT", "kind": &"info"}
+		return {"text": "Day's work done: CLOSE FOR THE NIGHT", "why": "Rent and wages are paid at closing; tomorrow brings new patients.", "kind": &"info", "optional": false}
 	if BusinessManager.debt >= BusinessManager.DEBT_WARNING:
-		return {"text": "You owe %d: pay it down in BUSINESS" % BusinessManager.debt, "kind": &"warn"}
-	if ClinicManager.get_upgrade_block_reason() == "":
-		return {"text": "A new clinic is within reach: open PROPERTY", "kind": &"info"}
+		return {"text": "You owe %d: pay it down in BUSINESS" % BusinessManager.debt, "why": "Debt grows with interest every night.", "kind": &"warn", "optional": false}
+	if ClinicManager.get_upgrade_block_reason() == "" and Features.is_on(&"upgrades"):
+		return {"text": "A new clinic is within reach: open PROPERTY", "why": "More jobs a day and richer patients. Check the cost and the new rent first.", "kind": &"info", "optional": true}
 	if InventoryManager.supplies < 2:
-		return {"text": "Supplies low: restock in SUPPLY", "kind": &"warn"}
-	return {"text": "Waiting for the next customer", "kind": &"info"}
+		return {"text": "Supplies low: restock in SUPPLY", "why": "Every operation uses supplies.", "kind": &"warn", "optional": false}
+	return {"text": "Waiting for the next patient", "why": "A good moment to restock, read the journal or plan.", "kind": &"info", "optional": true}
 
 
 func open_screen(screen_id: StringName) -> void:
@@ -249,6 +257,17 @@ func open_customer() -> void:
 		UIManager.go_to(UIManager.SCREEN_CUSTOMER)
 
 
+## Clicking a patient: the compact PATIENT SUMMARY first (request, odds,
+## money, decision); MORE DETAILS opens the full file (open_customer).
+func show_patient_summary() -> void:
+	if not CustomerManager.has_customer():
+		return
+	if UIManager.current_screen_id != UIManager.SCREEN_CLINIC:
+		open_customer()
+		return
+	UIManager.show_modal(PatientSummary.new())
+
+
 ## Records why standing changes in here (ChangeLog standing history).
 func decline_customer() -> void:
 	ChangeLog.push_cause("Turned away %s" % (get_current_customer().display_name if get_current_customer() else "a patient"))
@@ -260,7 +279,7 @@ func _decline_customer_impl() -> void:
 	var c := get_current_customer()
 	ReputationManager.change(GameConfig.DECLINE_REPUTATION_PENALTY)
 	if c:
-		FactionManager.change(c.faction_id, -1)
+		FactionManager.change(c.faction_id, GameConfig.DECLINE_FACTION_PENALTY)
 		PeopleManager.after_visit(c, "refused")
 	TimeManager.on_talk()
 	CustomerManager.dismiss_current()

@@ -4,6 +4,60 @@ All notable changes to *UNDERCITY: RIPPER*. Versions follow
 `application/config/version` in `project.godot` and the Windows file version
 in `export_presets.cfg`.
 
+## 3.7.0 — Easy to learn, still deep
+
+The clinic now grows with you: new sections appear when they become useful,
+every patient opens on a one-screen summary, and the clinic says in one line
+what needs you. Audit, plan and results: `docs/UX_OVERHAUL_3.7.md`.
+
+### The patient summary
+- Clicking a patient (the room, SEE PATIENT, or the customer key) opens a **PATIENT SUMMARY**, not the full file. It has four blocks:
+  - **REQUEST:** the implant, what it does, the procedure and known conditions.
+  - **OPERATION:** difficulty in words, **your odds** as an estimate with what it's based on, what can go wrong, and anything missing, with a button to fix it.
+  - **FINANCES:** what the patient pays, the implant and supplies, and the **direct margin** (labelled as before rent and wages). It adds cash in hand when the implant comes from stock.
+  - **DECISION:** ACCEPT JOB, DECLINE (its real cost shown) and MORE DETAILS (the full file).
+- Every number comes from the game's own rules (`JobEstimate`, `Recommend`, the operation's readiness checks). ACCEPT JOB waits while tools or supplies are missing.
+- The patient's own words are shown as flavor: quoted, slanted and dim.
+
+### Clinic status
+- CLINIC STATUS is one headline (READY FOR PATIENTS, DOORS CLOSED, CAN'T OPERATE: NO SUPPLIES, PATIENT WAITING: MISSING TOOLS, FINANCIAL CONCERN, ACTION REQUIRED, DAY'S WORK DONE) with why it matters, plus up to three issues that need you. Each line is clickable.
+- During the first patient it shows only the headline. WHAT MATTERS NOW no longer repeats the dashboard (supplies, money, heat, doors, staff).
+- The NEXT line says why each step matters, and marks optional steps "WHEN YOU'RE READY".
+- The door card is short: who, what, roughly what it pays and one line of advice.
+
+### Sections appear when they're useful
+- A new game starts with the clinic, settings and the field guide.
+- After the first job: SKILLS, SUPPLY, INVENTORY, BUSINESS and the JOURNAL (a message can bring the journal sooner).
+- After the second job: CYBERWARE DB.
+- Three jobs in: STAFF and FACILITY.
+- Four jobs in, or when a lead points into the city: the CITY MAP.
+- The black market keeps its own rule.
+- There are no padlocks. Each new section arrives with a card (WHAT / WHY / HOW / COST, OPEN, MORE) and is marked NEW in the side bar for a day. A hidden section's key says when it opens.
+- Saves from before 3.7 keep every section. **INTRODUCE FEATURES GRADUALLY** (Settings > Gameplay) turns this off.
+
+### Before you pay
+- **BEFORE YOU PAY** in SUPPLY (implants and tools) shows:
+  - the cost and your cash now → after;
+  - the stock you'd have;
+  - what it's for and its limits;
+  - a warning when it leaves less than tonight's bill.
+- FACILITY upgrades show the same, plus the new nightly upkeep.
+- Buying a clinic asks first, with the cost, cash after and how the nightly rent and jobs change.
+- Hiring shows cash after and the nightly wage.
+- Black-market and supplier buys show the same facts, plus the heat and standing they cost.
+- Conversation choices show their **known** public consequences (faction standing, street rep, heat, money). How a person feels about it stays hidden.
+
+### The field guide
+- Categories match the game: GETTING STARTED, PATIENTS & IMPLANTS, SURGERY, BUSINESS, REPUTATION & RELATIONSHIPS, CITY & LOCATIONS, CLINIC & STAFF, TUTORIALS, CONTROLS.
+- Entries for sections you haven't met yet wait (with a count). Newly opened ones are marked NEW.
+- Core entries add WHY IT MATTERS and WHERE. SEE ALSO links related entries, and BACK returns.
+- **TUTORIALS** lists every card you've seen, with SHOW AGAIN.
+- New entries: your odds (success estimate) and direct margin.
+
+### Consistency
+- One word per action: SEE PATIENT, ACCEPT JOB, DECLINE, MORE DETAILS.
+- Declining's costs (`DECLINE_FACTION_PENALTY`) and black-market purchase effects (`BUY_HEAT`, `BUY_STANDING`) are shared constants, used by both the rule and its preview.
+
 ## 3.6.0 — Steadier, fairer, clearer
 
 A quality pass. The game has the same systems; what changed is how they hold

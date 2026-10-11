@@ -18,6 +18,7 @@ const LivingCityTests := preload("res://tests/living_city_tests.gd")
 const UiOverhaulTests := preload("res://tests/ui_overhaul_tests.gd")
 const UxTests := preload("res://tests/ux_tests.gd")
 const QualityTests := preload("res://tests/quality_tests.gd")
+const OnboardingTests := preload("res://tests/onboarding_tests.gd")
 
 var _failures: Array[String] = []
 var _dilemmas_seen: bool = false
@@ -61,6 +62,7 @@ func _run_all() -> void:
 	UiOverhaulTests.new().run(self)
 	UxTests.new().run(self)
 	QualityTests.new().run(self)
+	OnboardingTests.new().run(self)
 	if OS.get_cmdline_user_args().has("--unit-only"):
 		_finish()
 		return
@@ -287,6 +289,9 @@ func _e2e() -> void:
 	await _frames(3)
 	await _checkpoint("property")
 	await _click_named("UpgradeClinic")
+	# 3.7: a new clinic is a big commitment: the preview dialog (when confirms are on).
+	if get_tree().root.find_child("ConfirmYes", true, false):
+		await _click_named("ConfirmYes")
 	check(ClinicManager.tier == tier + 1, "upgraded the clinic via the UI")
 	# Facility upgrade (visible overlay in the room).
 	await _click_named("FacilityTab_0")

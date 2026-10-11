@@ -70,6 +70,7 @@ const DEFAULTS := {
 	"confirm_dangerous": true,
 	"tutorial_hints": true,
 	"guidance_level": 1,
+	"progressive_features": true,
 	"controls_setup_done": false,
 	"seen_hints": [],
 	"tooltips": true,
@@ -124,6 +125,9 @@ var tutorial_hints: bool = true
 ## 0 MINIMAL (only what needs you), 1 STANDARD, 2 DETAILED (numbers and
 ## reasons everywhere). Changes what is shown, never the game rules.
 var guidance_level: int = 1
+## New games introduce clinic sections as they become relevant (Features);
+## off shows every section from the start.
+var progressive_features: bool = true
 ## First launch: the main menu offers DEFAULT / CUSTOMIZE controls once.
 var controls_setup_done: bool = false
 ## Learn-as-you-go hints already shown (ids); player knowledge, so it

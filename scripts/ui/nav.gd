@@ -26,8 +26,10 @@ static func open(link: Dictionary) -> void:
 		return
 	Glossary.close()
 	if link.has("customer"):
-		GameManager.open_customer()
+		GameManager.show_patient_summary()
 	elif link.has("location"):
+		# A link to a place makes the city relevant (Features).
+		Features.introduce(&"map")
 		UIManager.go_to(UIManager.SCREEN_MAP, {"location": StringName(str(link["location"]))})
 	elif link.has("term"):
 		Glossary.show(str(link["term"]))
@@ -38,6 +40,9 @@ static func open(link: Dictionary) -> void:
 			ChangesPanel.open()
 	else:
 		var id := StringName(str(link["screen"]))
+		# Following a link to a section introduces it: it's relevant now.
+		if Features.BY_SCREEN.has(id):
+			Features.introduce(Features.BY_SCREEN[id])
 		if id == UIManager.SCREEN_CLINIC:
 			GameManager.go_to_clinic()
 		else:

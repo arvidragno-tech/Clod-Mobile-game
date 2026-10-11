@@ -301,6 +301,7 @@ func _build_gameplay() -> void:
 	play.add_child(UIKit.label("How long a bleeding patient waits for your triage decision. OFF: they wait until you decide.", &"DimLabel", true))
 	var help := UIKit.section(right, "HELP")
 	_choice_int(help, "GUIDANCE", "guidance_level", Settings.GUIDANCE_NAMES)
+	_toggle(help, "INTRODUCE FEATURES GRADUALLY", "progressive_features", "New sections (staff, facility, the city...) appear when they become useful, each with a short card. Off: everything from the start.")
 	help.add_child(UIKit.label("How much the screens explain. MINIMAL: only what needs you, no first-time cards. DETAILED: numbers and reasons on every status line. The game itself plays the same.", &"DimLabel", true))
 	_toggle(help, "CONFIRM DANGEROUS ACTIONS", "confirm_dangerous", "Ask before firing staff, selling clinics, borrowing, refusing and aborting.")
 	_toggle(help, "TUTORIAL HINTS", "tutorial_hints", "Coach marks on your first operation, and a short card the first time each system appears.")

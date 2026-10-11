@@ -49,6 +49,8 @@ const TIPS := {
 
 var active: StringName = &""
 var _buttons: Dictionary = {}
+## Group header -> the ids under it (a header hides when all of them are).
+var _groups: Array = []
 
 
 func _ready() -> void:
@@ -70,6 +72,7 @@ func _ready() -> void:
 			var h := UIKit.label(str(item[1]), &"SubHeaderLabel", false, Palette.TEXT_DIM, 13)
 			h.custom_minimum_size.y = 18 if str(item[1]) != "" else 6
 			col.add_child(h)
+			_groups.append([h, []])
 			continue
 		var b := Button.new()
 		b.name = "Nav_%s" % item[0]
@@ -84,9 +87,12 @@ func _ready() -> void:
 		b.pressed.connect(func() -> void: nav_pressed.emit(item[0]))
 		col.add_child(b)
 		_buttons[item[0]] = b
+		if not _groups.is_empty():
+			(_groups[-1][1] as Array).append(item[0])
 	col.add_child(UIKit.expand(Control.new(), false, true))
 	var hint := UIKit.label("[%s] pause   [%s] cycle panels" % [Controls.key_name("pause"), Controls.key_name("cycle_panel")], &"SubHeaderLabel", true)
 	col.add_child(hint)
+	EventBus.resources_changed.connect(refresh)
 	refresh()
 
 
@@ -96,18 +102,32 @@ func set_active(id: StringName) -> void:
 
 
 func refresh() -> void:
+	if not is_inside_tree():
+		return
+	# Sections appear when they become relevant (Features): no padlocks.
 	for id: StringName in _buttons:
 		var b: Button = _buttons[id]
 		b.set_pressed_no_signal(id == active)
-	var locked := not BlackMarketManager.is_unlocked()
-	var bm: Button = _buttons.get(&"blackmarket")
-	if bm:
-		bm.modulate = Color(1, 1, 1, 0.45) if locked else Color.WHITE
-		bm.tooltip_text = "No contact yet. Build street rep (%d) or meet a fixer." % GameConfig.BLACK_MARKET_REPUTATION if locked else "The Undermarket"
+		b.visible = Features.is_on(id)
+		var label := str(_label_of(id))
+		b.text = label + ("  · NEW" if Features.is_new(id) and Features.progressive() else "")
+	for g: Array in _groups:
+		var any := false
+		for id: StringName in g[1]:
+			any = any or Features.is_on(id)
+		(g[0] as Control).visible = any or (g[1] as Array).is_empty()
 	_badge(&"skills", SkillManager.points > 0, "%d skill point(s) to spend" % SkillManager.points)
 	_badge(&"dossier", CommsManager.unread_count() > 0, "%d unread message(s)" % CommsManager.unread_count())
 	_badge(&"upgrades", ClinicManager.get_upgrade_block_reason() == "", "A new clinic is within reach")
 	_badge(&"business", BusinessManager.debt > 0 or BusinessManager.is_day_full(), "Debt %d" % BusinessManager.debt if BusinessManager.debt > 0 else "Day's work done: close for the night")
+
+
+func _label_of(id: StringName) -> String:
+	for item: Array in ITEMS:
+		if str(item[0]) != "#" and item[0] == id:
+			var hk: String = item[3]
+			return str(item[1]) + (("  [%s]" % Controls.key_name(hk)) if hk != "" else "")
+	return String(id)
 
 
 func _badge(id: StringName, on: bool, tip: String) -> void:
