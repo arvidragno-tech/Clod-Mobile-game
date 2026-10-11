@@ -423,7 +423,15 @@ func can_talk(kind: String, id: String) -> bool:
 
 ## Talks to someone here. Returns {text, dialogue} (dialogue: a story
 ## conversation to open, &"" if none).
+## Records why standing changes in here (ChangeLog standing history).
 func talk(kind: String, id: String) -> Dictionary:
+	ChangeLog.push_cause("Talking around the city")
+	var r: Dictionary = _talk_impl(kind, id)
+	ChangeLog.pop_cause()
+	return r
+
+
+func _talk_impl(kind: String, id: String) -> Dictionary:
 	var here := LocationManager.player_location
 	if kind == "cast":
 		var d := _talk_for(StringName(id))
@@ -659,7 +667,15 @@ func resolve_event(id: StringName, index: int) -> String:
 ## city keys: patient (sent to your clinic), lead (supplier or place),
 ## candidate (a hire), zone (way into the Zone), close (place shuts for the
 ## day), staff_loyalty / person_rel / person_visit (with vars).
+## Records why standing changes in here (ChangeLog standing history).
 func apply(o: Dictionary, loc: StringName = &"", vars: Dictionary = {}) -> String:
+	ChangeLog.push_cause(("At %s" % LocationManager.location_name(loc)) if loc != &"" else "In the city")
+	var r: String = _apply_impl(o, loc, vars)
+	ChangeLog.pop_cause()
+	return r
+
+
+func _apply_impl(o: Dictionary, loc: StringName = &"", vars: Dictionary = {}) -> String:
 	if o.has("risk"):
 		var risk: Dictionary = o["risk"]
 		return apply(risk["success"] if _rng.randf() < float(risk.get("chance", 0.5)) else risk["fail"], loc, vars)
@@ -867,7 +883,15 @@ func missing_at(loc: StringName) -> Dictionary:
 	return {}
 
 
+## Records why standing changes in here (ChangeLog standing history).
 func act_missing(loc: StringName, index: int) -> String:
+	ChangeLog.push_cause("Missing person at %s" % LocationManager.location_name(loc))
+	var r: String = _act_missing_impl(loc, index)
+	ChangeLog.pop_cause()
+	return r
+
+
+func _act_missing_impl(loc: StringName, index: int) -> String:
 	var mc := missing_at(loc)
 	if mc.is_empty():
 		return ""

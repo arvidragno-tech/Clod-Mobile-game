@@ -128,7 +128,8 @@ func _payment_terms() -> void:
 	s = PeopleManager.settle(c, 1000)
 	check(int(s["paid"]) == 300 and int(s["debt"]) == 700, "pay later: 30% now")
 	var plans := PeopleManager.open_debts().filter(func(d: Dictionary) -> bool: return str(d["status"]) == "plan")
-	check(plans.size() == 1, "pay later sets up a payment plan")
+	# 3.6: a shortfall goes on instalments automatically too.
+	check(plans.size() == 2, "pay later sets up a payment plan (and so does a shortfall)")
 	# Backer pays.
 	c.terms = &"faction"
 	c.backer = &"street_gangs"

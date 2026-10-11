@@ -38,7 +38,7 @@ func get_rep(id: StringName) -> int:
 	return int(rep.get(id, 0))
 
 
-func change(id: StringName, delta: int) -> int:
+func change(id: StringName, delta: int, reason: String = "") -> int:
 	if not factions.has(id) or delta == 0:
 		return 0
 	var scaled := delta
@@ -49,6 +49,7 @@ func change(id: StringName, delta: int) -> int:
 	var actual := get_rep(id) - old
 	if actual != 0:
 		EventBus.faction_changed.emit(id, get_rep(id), actual)
+		ChangeLog.record_standing("faction:%s" % id, get_name_of(id), actual, get_rep(id), reason)
 	return actual
 
 
@@ -74,12 +75,13 @@ func customer_weight(id: StringName) -> float:
 	return clampf(1.0 + get_rep(id) / 50.0, 0.15, 3.0)
 
 
-func add_heat(amount: float) -> void:
+func add_heat(amount: float, reason: String = "") -> void:
 	var scaled := amount * (ModifierManager.mult(&"heat.gain") * ReputationManager.heat_gain_mult() if amount > 0.0 else 1.0)
 	var old := heat
 	heat = clampf(heat + scaled, 0.0, GameConfig.MAX_HEAT)
 	if not is_equal_approx(old, heat):
 		EventBus.heat_changed.emit(heat, heat - old)
+		ChangeLog.record_standing("heat", "Authority attention (heat)", heat - old, heat, reason)
 
 
 func get_save_data() -> Dictionary:

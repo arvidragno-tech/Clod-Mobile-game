@@ -249,7 +249,14 @@ func open_customer() -> void:
 		UIManager.go_to(UIManager.SCREEN_CUSTOMER)
 
 
+## Records why standing changes in here (ChangeLog standing history).
 func decline_customer() -> void:
+	ChangeLog.push_cause("Turned away %s" % (get_current_customer().display_name if get_current_customer() else "a patient"))
+	_decline_customer_impl()
+	ChangeLog.pop_cause()
+
+
+func _decline_customer_impl() -> void:
 	var c := get_current_customer()
 	ReputationManager.change(GameConfig.DECLINE_REPUTATION_PENALTY)
 	if c:
@@ -263,7 +270,15 @@ func decline_customer() -> void:
 
 ## ASSIGN RIPPERDOC: an employee at this clinic takes the job.
 ## Returns the result dictionary (see StaffManager.assign).
+## Records why standing changes in here (ChangeLog standing history).
 func assign_customer(employee_id: StringName, insist: bool = false) -> Dictionary:
+	ChangeLog.push_cause("%s, operated by your staff" % (get_current_customer().display_name if get_current_customer() else "A patient"))
+	var r: Dictionary = _assign_customer_impl(employee_id, insist)
+	ChangeLog.pop_cause()
+	return r
+
+
+func _assign_customer_impl(employee_id: StringName, insist: bool = false) -> Dictionary:
 	var c := get_current_customer()
 	if c == null:
 		return {"refused": true, "text": "Nobody is waiting."}
@@ -323,7 +338,15 @@ func assign_customer(employee_id: StringName, insist: bool = false) -> Dictionar
 
 
 ## DEFER: ask them to come back tomorrow. Some don't.
+## Records why standing changes in here (ChangeLog standing history).
 func defer_customer() -> bool:
+	ChangeLog.push_cause("Deferred %s" % (get_current_customer().display_name if get_current_customer() else "a patient"))
+	var r: bool = _defer_customer_impl()
+	ChangeLog.pop_cause()
+	return r
+
+
+func _defer_customer_impl() -> bool:
 	var c := get_current_customer()
 	if c == null:
 		return false
@@ -356,7 +379,15 @@ const RIG_PARTS := 3
 
 ## STABILIZE: stop the bleeding, send them on. A small fee now; they'll be
 ## back for the real job.
+## Records why standing changes in here (ChangeLog standing history).
 func triage_stabilize() -> Dictionary:
+	ChangeLog.push_cause("Emergency: stabilised at the door")
+	var r: Dictionary = _triage_stabilize_impl()
+	ChangeLog.pop_cause()
+	return r
+
+
+func _triage_stabilize_impl() -> Dictionary:
 	var c := get_current_customer()
 	if c == null or not c.is_emergency or InventoryManager.supplies < STABILIZE_SUPPLIES:
 		return {}
@@ -379,7 +410,15 @@ func specialist_cost(c: CustomerData) -> int:
 
 ## CALL A SPECIALIST: someone better takes over. They take a big cut; odds
 ## are good, not certain.
+## Records why standing changes in here (ChangeLog standing history).
 func triage_specialist() -> Dictionary:
+	ChangeLog.push_cause("Emergency: sent to a specialist")
+	var r: Dictionary = _triage_specialist_impl()
+	ChangeLog.pop_cause()
+	return r
+
+
+func _triage_specialist_impl() -> Dictionary:
 	var c := get_current_customer()
 	if c == null or not c.is_emergency or not EconomyManager.can_afford(specialist_cost(c)):
 		return {}
@@ -447,7 +486,15 @@ func triage_premium() -> bool:
 
 
 ## Nobody decided in time. First they crash; then they die on the floor.
+## Records why standing changes in here (ChangeLog standing history).
 func emergency_crash() -> bool:
+	ChangeLog.push_cause("Emergency at the door")
+	var r: bool = _emergency_crash_impl()
+	ChangeLog.pop_cause()
+	return r
+
+
+func _emergency_crash_impl() -> bool:
 	var c := get_current_customer()
 	if c == null or not c.is_emergency:
 		return false
@@ -518,7 +565,15 @@ func set_care(care: StringName) -> bool:
 
 
 ## STABILISE (dependency): talk them down, flush the stims, no new chrome.
+## Records why standing changes in here (ChangeLog standing history).
 func dependency_stabilize() -> Dictionary:
+	ChangeLog.push_cause("Dependency care")
+	var r: Dictionary = _dependency_stabilize_impl()
+	ChangeLog.pop_cause()
+	return r
+
+
+func _dependency_stabilize_impl() -> Dictionary:
 	var c := get_current_customer()
 	if c == null or c.dependency <= 0 or InventoryManager.supplies < STABILIZE_SUPPLIES:
 		return {}
@@ -705,6 +760,9 @@ var _job_costs: Dictionary = {}
 
 func _on_surgery_finished(result: SurgeryResult) -> void:
 	var c := SurgeryManager.customer
+	# Everything this operation does to your standing is recorded with it.
+	ChangeLog.push_cause(("Operation on %s (grade %s)" % [c.display_name if c else "a patient", result.grade]) if result.success
+		else ("%s died on your table" % (c.display_name if c else "A patient") if result.failure_reason == &"flatline" else "Failed operation on %s" % (c.display_name if c else "a patient")))
 	var fee_before := result.pay
 	_apply_patience(result, c)
 	var patience_cut := fee_before - result.pay
@@ -762,6 +820,7 @@ func _on_surgery_finished(result: SurgeryResult) -> void:
 	StoryManager.update_rumors()
 	StoryManager.check()
 	last_result = result
+	ChangeLog.pop_cause()
 	SaveManager.save_game()
 	EventBus.surgery_rewarded.emit(result)
 	# Let the surgery screen play its success/failure moment first.

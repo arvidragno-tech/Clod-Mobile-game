@@ -35,18 +35,19 @@ func dim(d: StringName) -> int:
 
 ## Changes one reputation dimension (trade-offs are applied by the caller's
 ## data, e.g. criminal work costs corporate standing).
-func change_dim(d: StringName, delta: int) -> void:
+func change_dim(d: StringName, delta: int, reason: String = "") -> void:
 	if not dims.has(d) or delta == 0:
 		return
 	var old := dim(d)
 	dims[d] = clampi(old + delta, -100, 100)
 	if dim(d) != old:
 		EventBus.reputation_dim_changed.emit(d, dim(d), dim(d) - old)
+		ChangeLog.record_standing("dim:%s" % d, "%s reputation" % DIMENSION_LABELS.get(d, d), dim(d) - old, dim(d), reason)
 
 
-func change_dims(deltas: Dictionary) -> void:
+func change_dims(deltas: Dictionary, reason: String = "") -> void:
 	for k: Variant in deltas:
-		change_dim(StringName(str(k)), int(deltas[k]))
+		change_dim(StringName(str(k)), int(deltas[k]), reason)
 
 
 ## Who the street thinks you are, inferred from what you've done (no class
@@ -111,7 +112,7 @@ func dominant_dim() -> StringName:
 	return best
 
 
-func change(delta: int) -> void:
+func change(delta: int, reason: String = "") -> void:
 	var old := reputation
 	# Diminishing returns: each point is harder to earn the higher you are,
 	# so "Legend" stays a long-term goal (losses always hit in full).
@@ -120,6 +121,7 @@ func change(delta: int) -> void:
 	reputation = clampi(reputation + delta, GameConfig.MIN_REPUTATION, GameConfig.MAX_REPUTATION)
 	if reputation != old:
 		EventBus.reputation_changed.emit(reputation, reputation - old)
+		ChangeLog.record_standing("rep", "Street reputation", reputation - old, reputation, reason)
 
 
 func get_tier_name() -> String:

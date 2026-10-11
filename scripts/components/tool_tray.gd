@@ -150,7 +150,9 @@ func select_category(category: StringName) -> bool:
 func _on_toggled(pressed: bool, category: StringName) -> void:
 	# Clicking the tool you're holding keeps it in hand (right-click puts it
 	# down); a toggle-off click on the active tool felt like a dead click.
-	if not pressed and selected == category:
+	# (Only a click on the held tool itself: when you switch tools the group
+	# un-presses the old one first, and that must go through.)
+	if not pressed and selected == category and _group.get_pressed_button() == null:
 		get_button(category).set_pressed_no_signal(true)
 		return
 	if pressed:

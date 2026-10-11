@@ -173,7 +173,15 @@ func _pick_culprit() -> Dictionary:
 
 
 ## Takes something real from the clinic.
+## Records why standing changes in here (ChangeLog standing history).
 func _take_loot() -> Dictionary:
+	ChangeLog.push_cause("Break-in at the clinic")
+	var r: Dictionary = _take_loot_impl()
+	ChangeLog.pop_cause()
+	return r
+
+
+func _take_loot_impl() -> Dictionary:
 	var lt: Dictionary = data.get("loot_text", {})
 	var weights: Dictionary = (data.get("loot", {}) as Dictionary).duplicate()
 	if EconomyManager.money < 60:
@@ -350,7 +358,15 @@ func investigate(case_id: int, action: String) -> String:
 
 
 ## Accuse someone. Right: most of it comes back. Wrong: an innocent is hurt.
+## Records why standing changes in here (ChangeLog standing history).
 func confront(case_id: int, key: String) -> Dictionary:
+	ChangeLog.push_cause("Security case")
+	var r: Dictionary = _confront_impl(case_id, key)
+	ChangeLog.pop_cause()
+	return r
+
+
+func _confront_impl(case_id: int, key: String) -> Dictionary:
 	var c := get_case(case_id)
 	if c.is_empty() or str(c["status"]) != "open":
 		return {}
@@ -464,7 +480,14 @@ func roll_pressure(force_level: String = "") -> String:
 
 
 ## A COMMS answer to security pressure.
+## Records why standing changes in here (ChangeLog standing history).
 func apply(fx: Dictionary) -> void:
+	ChangeLog.push_cause("Security")
+	_apply_impl(fx)
+	ChangeLog.pop_cause()
+
+
+func _apply_impl(fx: Dictionary) -> void:
 	if fx.has("money"):
 		var m := int(fx["money"])
 		if not EconomyManager.spend(-m, &"bribes"):
@@ -512,7 +535,14 @@ func confiscate() -> int:
 
 
 ## Cooperating means naming names: the street remembers.
+## Records why standing changes in here (ChangeLog standing history).
 func _betray() -> void:
+	ChangeLog.push_cause("You talked to the authorities")
+	_betray_impl()
+	ChangeLog.pop_cause()
+
+
+func _betray_impl() -> void:
 	FactionManager.change(&"black_market", -6)
 	FactionManager.change(&"street_gangs", -4)
 	var told := 0

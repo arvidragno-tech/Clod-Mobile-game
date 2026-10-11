@@ -85,7 +85,15 @@ func mark_read(uid: int) -> void:
 
 
 ## Contract / reply action.
+## Records why standing changes in here (ChangeLog standing history).
 func act(uid: int, index: int) -> bool:
+	ChangeLog.push_cause("Message: %s" % str(get_message(uid).get("subject", "a reply")))
+	var r: bool = _act_impl(uid, index)
+	ChangeLog.pop_cause()
+	return r
+
+
+func _act_impl(uid: int, index: int) -> bool:
 	var m := get_message(uid)
 	var acts: Array = m.get("actions", [])
 	if m.is_empty() or int(m["resolved"]) >= 0 or index < 0 or index >= acts.size():

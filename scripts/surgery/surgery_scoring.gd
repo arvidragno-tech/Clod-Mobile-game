@@ -45,8 +45,11 @@ static func apply_rewards(result: SurgeryResult, surgery: SurgeryData, customer:
 	if not result.diagnosis_correct:
 		pay_mult *= GameConfig.WRONG_DIAGNOSIS_PAY_MULT
 	pay_mult *= result.implant_pay_mult * ModifierManager.mult(&"pay")
-	var base_pay := surgery.base_pay + result.implant_price * GameConfig.IMPLANT_PRICE_MARKUP
-	result.pay = int(round(base_pay * pay_mult * (0.5 + result.score)))
+	# Your service (scaled by how well it went) plus the part, which the
+	# patient pays for at their means (not scaled by your score).
+	var service := surgery.base_pay * pay_mult * (0.5 + result.score)
+	var part := result.implant_price * GameConfig.IMPLANT_PRICE_MARKUP * minf(pay_mult, 1.0)
+	result.pay = int(round(service + part))
 	var xp_mult := (0.5 + result.score) * (1.0 + 0.15 * (result.install_difficulty - 1)) * ModifierManager.mult(&"xp")
 	if result.diagnosis_correct:
 		xp_mult += GameConfig.CORRECT_DIAGNOSIS_XP_BONUS

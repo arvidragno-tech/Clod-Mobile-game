@@ -123,8 +123,10 @@ const CONSENT_RISK_CRITICAL := 0.75
 const DIFFICULTY_TOLERANCE_STEP := 0.12
 ## Extra complication risk for a fully worn (0% condition) implant.
 const WORN_IMPLANT_RISK := 0.15
-## Install pay markup on the implant's price.
-const IMPLANT_PRICE_MARKUP := 0.85
+## The part: patients pay up to this share of the implant's price (less if
+## they're poor: x their pay multiplier, capped at 1). Your service fee on
+## top is what scales with how well you work, and where profit comes from.
+const IMPLANT_PRICE_MARKUP := 0.9
 
 # --- Surgery: vitals (all vitals are 0..100) --------------------------------
 const VITAL_MAX := 100.0

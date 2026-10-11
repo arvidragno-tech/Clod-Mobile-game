@@ -724,14 +724,14 @@ func _play_stage(stage: SurgeryStage, sloppy: bool) -> void:
 			await _release(_fs(p))
 	elif stage is AnchorDrillStage:
 		var drill := stage as AnchorDrillStage
-		while not drill.is_finished:
+		while is_instance_valid(drill) and not drill.is_finished:
 			var h := drill.get_autoplay_hints()
 			var targets: Array = h["targets"]
 			if targets.is_empty():
 				break
 			var mid := (float(h["zone_min"]) + float(h["zone_max"])) / 2.0
 			await _press(_fs(targets[0]))
-			await _wait_until(func() -> bool: return drill.current_depth() >= mid or drill.is_finished, 5.0)
+			await _wait_until(func() -> bool: return not is_instance_valid(drill) or drill.is_finished or drill.current_depth() >= mid, 5.0)
 			await _release(_fs(targets[0]))
 			await _frames(3)
 	elif stage is InstallImplantStage:
@@ -750,7 +750,7 @@ func _play_stage(stage: SurgeryStage, sloppy: bool) -> void:
 		if sloppy:
 			var wrong: Array = stage.get_autoplay_hints()["wrong"]
 			await _drag([_fs(wrong[0]), _fs(wrong[1])])
-		while not stage.is_finished:
+		while is_instance_valid(stage) and not stage.is_finished:
 			var pairs: Array = stage.get_autoplay_hints()["pairs"]
 			if pairs.is_empty():
 				break
@@ -758,7 +758,7 @@ func _play_stage(stage: SurgeryStage, sloppy: bool) -> void:
 			await _frames(2)
 	elif stage is CalibrateStage:
 		var cal := stage as CalibrateStage
-		while not cal.is_finished:
+		while is_instance_valid(cal) and not cal.is_finished:
 			var h := cal.get_autoplay_hints()
 			var slider: TouchSlider = h["slider"]
 			var value: float = 0.02 if sloppy else float(h["target"])

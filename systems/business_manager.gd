@@ -144,7 +144,15 @@ static func _scaled(v: int) -> int:
 
 
 ## Closes the clinic for the night and settles the books. Returns the report.
+## Records why standing changes in here (ChangeLog standing history).
 func end_day() -> Dictionary:
+	ChangeLog.push_cause("Closing for the night (%s)" % ClinicManager.get_tier_name())
+	var r: Dictionary = _end_day_impl()
+	ChangeLog.pop_cause()
+	return r
+
+
+func _end_day_impl() -> Dictionary:
 	var notes: Array[String] = []
 	var staff := _staff()
 	if staff:

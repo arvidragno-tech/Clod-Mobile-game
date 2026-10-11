@@ -231,7 +231,15 @@ func reputation_mod(kind: String) -> float:
 
 ## Picks visible option `index` (the original option index from options()).
 ## Returns {success, summary[]} or {} if not allowed.
+## Records why standing changes in here (ChangeLog standing history).
 func choose(index: int) -> Dictionary:
+	ChangeLog.push_cause("Talking with %s" % (CharacterManager.get_character(character_id()).display_name if CharacterManager.has_character(character_id()) else "someone"))
+	var r: Dictionary = _choose_impl(index)
+	ChangeLog.pop_cause()
+	return r
+
+
+func _choose_impl(index: int) -> Dictionary:
 	var opts: Array = current_node().get("options", [])
 	if index < 0 or index >= opts.size():
 		return {}

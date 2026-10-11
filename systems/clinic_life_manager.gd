@@ -132,7 +132,14 @@ func _check_rivals() -> void:
 					return
 
 
+## Records why standing changes in here (ChangeLog standing history).
 func _scene(i: int, j: int) -> void:
+	ChangeLog.push_cause("In the waiting room")
+	_scene_impl(i, j)
+	ChangeLog.pop_cause()
+
+
+func _scene_impl(i: int, j: int) -> void:
 	var a: CustomerData = waiting[i]["customer"]
 	var b: CustomerData = waiting[j]["customer"]
 	var leaver := j if b.patience <= a.patience else i
@@ -215,7 +222,14 @@ func vignette() -> String:
 	return str(v["id"])
 
 
+## Records why standing changes in here (ChangeLog standing history).
 func _apply(fx: Dictionary) -> void:
+	ChangeLog.push_cause("In the waiting room")
+	_apply_impl(fx)
+	ChangeLog.pop_cause()
+
+
+func _apply_impl(fx: Dictionary) -> void:
 	if fx.has("supplies"):
 		InventoryManager.add_supplies(int(fx["supplies"]))
 	if fx.has("parts"):

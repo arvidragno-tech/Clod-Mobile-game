@@ -228,7 +228,15 @@ func hire_block_reason(e: Dictionary) -> String:
 	return ""
 
 
+## Records why standing changes in here (ChangeLog standing history).
 func hire(index: int) -> bool:
+	ChangeLog.push_cause("Hired staff")
+	var r: bool = _hire_impl(index)
+	ChangeLog.pop_cause()
+	return r
+
+
+func _hire_impl(index: int) -> bool:
 	if index < 0 or index >= candidates.size():
 		return false
 	var e: Dictionary = candidates[index]
@@ -252,7 +260,15 @@ func hire(index: int) -> bool:
 
 
 ## Lets someone go: one day's severance, the others notice.
+## Records why standing changes in here (ChangeLog standing history).
 func fire(id: StringName) -> bool:
+	ChangeLog.push_cause("Fired %s" % str(get_employee(id).get("name", "staff")))
+	var r: bool = _fire_impl(id)
+	ChangeLog.pop_cause()
+	return r
+
+
+func _fire_impl(id: StringName) -> bool:
 	var e := get_employee(id)
 	if e.is_empty():
 		return false
@@ -381,7 +397,15 @@ func _on_skill_up(e: Dictionary) -> void:
 # --- Days ----------------------------------------------------------------------------
 
 ## Called by BusinessManager when the clinic closes. Returns note strings.
+## Records why standing changes in here (ChangeLog standing history).
 func end_of_day() -> Array[String]:
+	ChangeLog.push_cause("Your staff, overnight")
+	var r: Array[String] = _end_of_day_impl()
+	ChangeLog.pop_cause()
+	return r
+
+
+func _end_of_day_impl() -> Array[String]:
 	var notes: Array[String] = []
 	notes.append_array(_run_other_clinics())
 	for e in employees.duplicate():
@@ -448,7 +472,15 @@ func trait_floor(e: Dictionary) -> float:
 
 
 ## Owned clinics you don't work in earn money if someone runs them.
+## Records why standing changes in here (ChangeLog standing history).
 func _run_other_clinics() -> Array[String]:
+	ChangeLog.push_cause("Your other clinics")
+	var r: Array[String] = _run_other_clinics_impl()
+	ChangeLog.pop_cause()
+	return r
+
+
+func _run_other_clinics_impl() -> Array[String]:
 	var notes: Array[String] = []
 	for i in ClinicManager.owned:
 		if i == ClinicManager.tier:

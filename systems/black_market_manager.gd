@@ -103,7 +103,15 @@ func index_of(uid: String) -> int:
 	return -1
 
 
+## Records why standing changes in here (ChangeLog standing history).
 func buy(index: int) -> bool:
+	ChangeLog.push_cause("Black-market purchase")
+	var r: bool = _buy_impl(index)
+	ChangeLog.pop_cause()
+	return r
+
+
+func _buy_impl(index: int) -> bool:
 	if not is_unlocked() or index < 0 or index >= stock.size():
 		return false
 	var offer: Dictionary = stock[index]
