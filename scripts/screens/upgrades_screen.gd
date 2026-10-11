@@ -66,10 +66,10 @@ func _build_upgrades() -> void:
 	var sv := UIKit.vbox(6)
 	stats.add_child(sv)
 	var t := ClinicManager.get_tier_data()
-	sv.add_child(UIKit.label(ClinicManager.get_tier_name().to_upper(), &"HeaderLabel"))
-	sv.add_child(UIKit.label("%s · %s" % [WorldManager.district_name(), str(WorldManager.current_district().get("label", ""))], &"SubHeaderLabel", false, Palette.ACCENT))
+	sv.add_child(UIKit.label(ClinicManager.get_tier_name().to_upper(), &"HeaderLabel", true))
+	sv.add_child(UIKit.label("%s · %s" % [WorldManager.district_name(), str(WorldManager.current_district().get("label", ""))], &"SubHeaderLabel", true, Palette.ACCENT))
 	sv.add_child(UIKit.label(str(t.get("description", "")), &"DimLabel", true))
-	sv.add_child(UIKit.label("Upgrade slots  %d / %d" % [ClinicManager.used_slots(), ClinicManager.slots()], &"MonoLabel", false, Palette.TEXT))
+	sv.add_child(UIKit.label("Upgrade slots  %d / %d" % [ClinicManager.used_slots(), ClinicManager.slots()], &"MonoLabel", true, Palette.TEXT))
 	sv.add_child(UIKit.meter(float(ClinicManager.used_slots()) / maxf(1.0, ClinicManager.slots()), Palette.ACCENT))
 	sv.add_child(UIKit.label("Security %d · Staff %d · Jobs/day %d" % [ClinicManager.security_rating(), ClinicManager.staff_capacity(), ClinicManager.surgery_capacity()], &"MonoLabel", true, Palette.TEXT_DIM, 17))
 	var c := ClinicManager.daily_costs()
@@ -81,8 +81,13 @@ func _build_upgrades() -> void:
 	grid.columns = 3
 	grid.add_theme_constant_override(&"h_separation", 12)
 	grid.add_theme_constant_override(&"v_separation", 12)
-	UIKit.expand(grid, true, true)
-	_body.add_child(grid)
+	UIKit.expand(grid, true, false)
+	# The cards scroll when text is large, instead of falling off-screen.
+	var gsc := UIKit.scroll()
+	gsc.name = "UpgradeScroll"
+	UIKit.expand(gsc, true, true)
+	_body.add_child(gsc)
+	gsc.add_child(grid)
 	for cat in ClinicManager.CATEGORIES:
 		var card := _category_card(cat)
 		grid.add_child(card)
@@ -105,7 +110,7 @@ func _category_card(cat: StringName) -> Control:
 		v.add_child(UIKit.label("Installed: %s" % str(ClinicManager.upgrade_def(cat, lv).get("name", "")), &"DimLabel", true, Palette.OK, 13))
 	if lv < ClinicManager.MAX_UPGRADE_LEVEL:
 		var d := ClinicManager.upgrade_def(cat, lv + 1)
-		v.add_child(UIKit.label("NEXT  %s  · upkeep %d/day" % [str(d.get("name", "")).to_upper(), int(d.get("upkeep", 0))], &"", false, Palette.TEXT, 15))
+		v.add_child(UIKit.label("NEXT  %s  · upkeep %d/day" % [str(d.get("name", "")).to_upper(), int(d.get("upkeep", 0))], &"", true, Palette.TEXT, 15))
 		v.add_child(UIKit.label(str(d.get("text", "")), &"DimLabel", true, null, 13))
 		var reason := ClinicManager.install_block_reason(cat)
 		var b := UIKit.button(("INSTALL · %s" % EconomyManager.format_money(int(d.get("cost", 0)))) if reason == "" else reason.to_upper(),

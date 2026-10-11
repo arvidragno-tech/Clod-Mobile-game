@@ -62,7 +62,10 @@ func get_panels() -> Array[Control]:
 
 
 func _legend(parent: Control) -> void:
-	var row := UIKit.hbox(14)
+	# Wraps to a second line with big text instead of widening the screen.
+	var row := HFlowContainer.new()
+	row.add_theme_constant_override(&"h_separation", 14)
+	row.add_theme_constant_override(&"v_separation", 4)
 	parent.add_child(row)
 	for t: String in ["clinic", "bar", "night_market", "black_market", "industrial", "residential", "transit", "corporate", "restricted"]:
 		var item := UIKit.hbox(4)
@@ -187,7 +190,7 @@ func _select(id: StringName) -> void:
 	_info.add_child(UIKit.label(str(d.get("label", "")), &"SubHeaderLabel", false, Palette.ACCENT))
 	_info.add_child(UIKit.label(str(d["name"]).to_upper(), &"HeaderLabel"))
 	if not unlocked:
-		_info.add_child(UIKit.label("LOCKED · %s" % WorldManager.unlock_reason(id), &"MonoLabel", false, Palette.WARN))
+		_info.add_child(UIKit.label("LOCKED · %s" % WorldManager.unlock_reason(id), &"MonoLabel", true, Palette.WARN))
 	_info.add_child(UIKit.label(str(d.get("description", "")), &"", true))
 	for pair: Array in [["ARCHITECTURE", "architecture"], ["LIGHT", "lighting"], ["PEOPLE", "population"]]:
 		_info.add_child(UIKit.label(pair[0], &"SubHeaderLabel"))
@@ -227,7 +230,7 @@ func _select(id: StringName) -> void:
 		var v := UIKit.vbox(4)
 		card.add_child(v)
 		var state := "YOUR PRACTICE" if i == ClinicManager.tier else ("OWNED" if ClinicManager.owns(i) else "FOR LEASE · %s" % EconomyManager.format_money(ClinicManager.price(i)))
-		v.add_child(UIKit.label("%s  [%s]" % [str(t["name"]).to_upper(), state], &"SubHeaderLabel", false, Palette.ACCENT if ClinicManager.owns(i) else Palette.TEXT))
+		v.add_child(UIKit.label("%s  [%s]" % [str(t["name"]).to_upper(), state], &"SubHeaderLabel", true, Palette.ACCENT if ClinicManager.owns(i) else Palette.TEXT))
 		v.add_child(UIKit.label("Rent %d/day · %d jobs/day · Undermarket %s" % [int(t["rent"]), int(t["surgery_capacity"]), UIKit.pips(int(t["black_market_access"]), 3)], &"DimLabel", true, null, 13))
 		if ClinicManager.owns(i) and i != ClinicManager.tier:
 			v.add_child(UIKit.button("MOVE PRACTICE HERE", &"AccentButton", func() -> void:
@@ -237,3 +240,4 @@ func _select(id: StringName) -> void:
 		elif not ClinicManager.owns(i):
 			v.add_child(UIKit.button("VIEW IN PROPERTY", &"GhostButton", func() -> void:
 				UIManager.go_to(UIManager.SCREEN_UPGRADES, {"tab": 1}), "MapProperty_%d" % i, 40))
+			(v.get_child(v.get_child_count() - 1) as Button).clip_text = true

@@ -245,6 +245,9 @@ const ART_SCALE := 2
 ## Body sprites are authored at this width (art px) for ART_SCALE; older,
 ## narrower bodies are scaled up to match.
 const BODY_ART_W := 60.0
+## The logical canvas every layout is built for (project.godot viewport).
+const VIEWPORT_WIDTH := 1920
+const VIEWPORT_HEIGHT := 1080
 ## Minimum height of a clickable control at the 1920x1080 design size.
 const MIN_CONTROL := 40.0
 ## Extra forgiveness (UI units) around small click targets.

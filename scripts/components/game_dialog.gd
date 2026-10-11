@@ -45,17 +45,14 @@ func setup(title: String, body: String, buttons: Array[Dictionary]) -> void:
 		var callback: Callable = spec.get("callback", Callable())
 		b.pressed.connect(_on_button_pressed.bind(callback))
 		container.add_child(b)
-	var panel := %Panel as Control
-	panel.pivot_offset = panel.size / 2.0
-	panel.scale = Vector2(0.92, 0.92)
+	# Fade in only: a scale pop-in (pivot set before layout) drew the buttons
+	# away from where they click for the first moments.
 	modulate.a = 0.0
 	# Keyboard users land on the first (safe) choice.
 	var first := find_children("*", "Button", true, false)
 	if not first.is_empty():
 		(first[0] as Button).call_deferred("grab_focus")
-	var t := create_tween().set_parallel()
-	t.tween_property(self, "modulate:a", 1.0, 0.12)
-	t.tween_property(panel, "scale", Vector2.ONE, 0.16).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	create_tween().tween_property(self, "modulate:a", 1.0, 0.12)
 
 
 ## ESC: activates the dialog's safe choice (RESUME / CANCEL / GOT IT /

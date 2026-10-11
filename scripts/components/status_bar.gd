@@ -23,8 +23,20 @@ var _boxes: Dictionary = {}
 func _ready() -> void:
 	theme_type_variation = &"HudPanel"
 	custom_minimum_size.y = 72
+	# Two parts: the stats (which may be clipped at the right edge with big
+	# text) and MENU, which is always on screen.
+	var outer := UIKit.hbox(18)
+	add_child(outer)
+	var clip := ScrollContainer.new()
+	clip.name = "StatsClip"
+	clip.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
+	clip.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	clip.mouse_filter = Control.MOUSE_FILTER_PASS
+	UIKit.expand(clip)
+	outer.add_child(clip)
 	var row := UIKit.hbox(18)
-	add_child(row)
+	row.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	clip.add_child(row)
 	# Clinic mark + location
 	var brand := UIKit.vbox(0)
 	brand.custom_minimum_size.x = 230
@@ -78,11 +90,10 @@ func _ready() -> void:
 	_values[&"parts"] = _stat(row, "PARTS", "res://assets/sprites/ui/icons/parts.png", Palette.TEXT, 80, "parts")
 	_values[&"tokens"] = _stat(row, "TOKENS", "res://assets/sprites/ui/icons/tokens.png", Palette.BRAND, 80, "tokens")
 	_values[&"ops"] = _stat(row, "TODAY", "res://assets/sprites/ui/icons/dossier.png", Palette.TEXT, 90, "jobs")
-	row.add_child(UIKit.expand(Control.new()))
 	var menu := UIKit.button("MENU  [%s]" % Controls.key_name("pause"), &"GhostButton", menu_pressed.emit, "MenuButton")
 	menu.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	menu.tooltip_text = "Pause menu: save, load, settings, quit"
-	row.add_child(menu)
+	outer.add_child(menu)
 	EventBus.money_changed.connect(_on_money)
 	EventBus.xp_changed.connect(func(_a: int, _b: int) -> void: _refresh())
 	EventBus.reputation_changed.connect(func(_a: int, _b: int) -> void: _refresh())

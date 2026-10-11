@@ -94,6 +94,15 @@ func modify_cost_parts() -> int:
 	return maxi(1, int(round(int(config.get("modify_cost_parts", 3)) * ModifierManager.mult(&"bm.modify"))))
 
 
+## Position of the offer whose implant has this uid (-1 if it's gone).
+func index_of(uid: String) -> int:
+	for i in stock.size():
+		var inst: ImplantInstance = stock[i]["instance"]
+		if inst and inst.uid == uid:
+			return i
+	return -1
+
+
 func buy(index: int) -> bool:
 	if not is_unlocked() or index < 0 or index >= stock.size():
 		return false

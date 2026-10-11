@@ -232,6 +232,21 @@ static func header(step: String, title: String, on_back: Callable) -> HBoxContai
 	return h
 
 
+## Purchase / action guard: true the first time `key` fires, false again
+## until `sec` has passed. A double-click (two presses ~0.1 s apart) on a BUY
+## button is one purchase; a deliberate second click a moment later is not
+## blocked.
+static var _last_action: Dictionary = {}
+
+
+static func debounce(key: String, sec: float = 0.4) -> bool:
+	var now := Time.get_ticks_msec()
+	if now - int(_last_action.get(key, -100000)) < int(sec * 1000.0):
+		return false
+	_last_action[key] = now
+	return true
+
+
 static func scroll() -> ScrollContainer:
 	var s := ScrollContainer.new()
 	s.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED

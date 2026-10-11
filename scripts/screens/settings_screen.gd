@@ -318,9 +318,8 @@ func _build_accessibility() -> void:
 	var left := _column()
 	var right := _column()
 	var size := UIKit.section(left, "SIZE")
-	_choice_int(size, "UI SCALE", "ui_scale", Settings.UI_SCALE_NAMES, true)
-	size.add_child(UIKit.label("Applies with FIT pixel scaling (integer scaling keeps the art at whole pixels).", &"DimLabel", true))
-	_slider(size, "TEXT SCALE", "text_scale", 0.85, 1.4, 0.05, true)
+	size.add_child(UIKit.label("The whole game scales with the window (Graphics > RESOLUTION / WINDOW MODE). TEXT SCALE and LARGE TEXT size the text on top of that.", &"DimLabel", true))
+	_slider(size, "TEXT SCALE", "text_scale", 0.85, 1.4, 0.05, true, true)
 	_toggle(size, "LARGE TEXT", "large_text", "Extra size on body text across menus.")
 	var vis := UIKit.section(left, "VISION")
 	_toggle(vis, "HIGH CONTRAST", "high_contrast", "Brighter secondary text, lighter CRT overlay.")
@@ -335,7 +334,7 @@ func _build_accessibility() -> void:
 
 # --- Rows ----------------------------------------------------------------------
 
-func _slider(parent: Control, caption: String, key: String, lo: float = 0.0, hi: float = 1.0, step: float = 0.05, as_mult: bool = false) -> void:
+func _slider(parent: Control, caption: String, key: String, lo: float = 0.0, hi: float = 1.0, step: float = 0.05, as_mult: bool = false, on_release: bool = false) -> void:
 	var row := UIKit.hbox(12)
 	var l := UIKit.label(caption, &"", false)
 	l.custom_minimum_size.x = 200
@@ -353,10 +352,20 @@ func _slider(parent: Control, caption: String, key: String, lo: float = 0.0, hi:
 	var pct := UIKit.label(fmt.call(s.value), &"MonoLabel", false, Palette.ACCENT)
 	pct.custom_minimum_size.x = 90
 	pct.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	# Layout-changing sliders (text scale) apply when the drag ends, so the
+	# page doesn't relayout (and move the slider) under the mouse.
+	var dragging := [false]
+	s.drag_started.connect(func() -> void: dragging[0] = true)
 	s.value_changed.connect(func(v: float) -> void:
 		pct.text = fmt.call(v)
-		Settings.set_value(key, v))
-	s.drag_ended.connect(func(_c: bool) -> void: AudioManager.play_sfx(&"beep" if key != "sfx_volume" else &"confirm", 0.0))
+		if not (on_release and dragging[0]):
+			Settings.set_value(key, v))
+	s.drag_ended.connect(func(_c: bool) -> void:
+		dragging[0] = false
+		if on_release:
+			Settings.set_value(key, s.value)
+			_build.call_deferred()
+		AudioManager.play_sfx(&"beep" if key != "sfx_volume" else &"confirm", 0.0))
 	row.add_child(s)
 	row.add_child(pct)
 	parent.add_child(row)

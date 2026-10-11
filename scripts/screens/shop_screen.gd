@@ -11,6 +11,9 @@ var _detail: VBoxContainer
 var _balance: Label
 var _tab: int = 0
 var _panels: Array[Control] = []
+## The implant / tool the detail panel shows (kept across rebuilds).
+var _shown: StringName = &""
+var _rebuild_queued: bool = false
 
 
 func on_enter(params: Dictionary) -> void:
@@ -40,19 +43,25 @@ func on_enter(params: Dictionary) -> void:
 	_list.add_theme_constant_override(&"v_separation", 12)
 	UIKit.expand(_list)
 	sc.add_child(_list)
+	# A fixed-width detail panel: its content must never resize the card grid
+	# (a reflow on hover would move BUY buttons under the cursor).
 	var dp := UIKit.panel(&"AccentPanel")
-	dp.custom_minimum_size.x = 520
+	dp.custom_minimum_size.x = 540
+	dp.size_flags_horizontal = Control.SIZE_SHRINK_END
+	dp.clip_contents = true
 	row.add_child(dp)
 	_panels.append(dp)
 	var dsc := UIKit.scroll()
+	dsc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	dp.add_child(dsc)
 	_detail = UIKit.vbox(10)
 	_detail.name = "Detail"
 	UIKit.expand(_detail)
 	dsc.add_child(_detail)
-	EventBus.money_changed.connect(func(_a: int, _d: int) -> void: _rebuild())
-	EventBus.inventory_changed.connect(_rebuild)
-	EventBus.resources_changed.connect(_rebuild)
+	# One purchase emits several signals: rebuild once, after them all.
+	EventBus.money_changed.connect(func(_a: int, _d: int) -> void: _queue_rebuild())
+	EventBus.inventory_changed.connect(_queue_rebuild)
+	EventBus.resources_changed.connect(_queue_rebuild)
 	_rebuild()
 
 
@@ -62,12 +71,23 @@ func get_panels() -> Array[Control]:
 
 func _on_tab(i: int) -> void:
 	_tab = i
+	_shown = &""
 	_rebuild()
 
 
+func _queue_rebuild() -> void:
+	if _rebuild_queued:
+		return
+	_rebuild_queued = true
+	_rebuild.call_deferred()
+
+
 func _rebuild() -> void:
+	_rebuild_queued = false
 	if not is_inside_tree():
 		return
+	var scroll := _list.get_parent() as ScrollContainer
+	var keep_scroll := scroll.scroll_vertical if scroll else 0
 	_balance.text = "BALANCE %s  ·  TIER T%d ACCESS" % [EconomyManager.format_money(EconomyManager.money), CyberwareManager.get_available_tier()]
 	UIKit.clear(_list)
 	UIKit.clear(_detail)
@@ -75,19 +95,30 @@ func _rebuild() -> void:
 	match _tab:
 		0:
 			var items := CyberwareManager.get_supply_catalog(true)
+			var shown: CyberwareData = items[0] if not items.is_empty() else null
 			for item in items:
 				_list.add_child(_implant_card(item))
-			if not items.is_empty():
-				_show_implant(items[0])
+				if item.id == _shown:
+					shown = item
+			if shown:
+				_show_implant(shown)
 		1:
 			var tools := InventoryManager.get_purchasable_tools(true)
+			var shown_tool: ToolData = null
 			for t in tools:
 				_list.add_child(_tool_card(t))
-			_show_owned_tools()
+				if t.id == _shown:
+					shown_tool = t
+			if shown_tool:
+				_show_tool(shown_tool)
+			else:
+				_show_owned_tools()
 		2:
 			_list.columns = 1
 			_list.add_child(_supplies_card())
 			_show_owned_tools()
+	if scroll:
+		scroll.set_deferred(&"scroll_vertical", keep_scroll)
 
 
 ## Card behaviour: hover or click shows the item in the detail panel.
@@ -102,6 +133,7 @@ func _inspectable(card: Control, show: Callable) -> void:
 
 
 func _show_implant(item: CyberwareData) -> void:
+	_shown = item.id
 	UIKit.clear(_detail)
 	var row := UIKit.hbox(14)
 	_detail.add_child(row)
@@ -136,6 +168,7 @@ func _current_for(item: CyberwareData) -> CyberwareData:
 
 
 func _show_tool(t: ToolData) -> void:
+	_shown = t.id
 	UIKit.clear(_detail)
 	var row := UIKit.hbox(14)
 	_detail.add_child(row)
@@ -175,6 +208,8 @@ func _show_owned_tools() -> void:
 
 
 func _service() -> void:
+	if not UIKit.debounce("service_tools"):
+		return
 	if InventoryManager.service_tools():
 		UIManager.celebrate(&"tool", "Instruments serviced")
 		SaveManager.save_game()
@@ -187,7 +222,9 @@ func _implant_card(item: CyberwareData) -> Control:
 	var row := UIKit.hbox(12)
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card.add_child(row)
-	row.add_child(CyberwareIcon.make(item))
+	var icon := CyberwareIcon.make(item)
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE  # the whole card inspects
+	row.add_child(icon)
 	var info := UIKit.vbox(2)
 	UIKit.expand(info)
 	row.add_child(info)
@@ -255,6 +292,9 @@ func _supplies_card() -> Control:
 
 
 func _buy_implant(id: StringName) -> void:
+	if not UIKit.debounce("buy_implant_%s" % id):
+		return  # a double-click is one purchase
+	_shown = id
 	if InventoryManager.buy_implant(id):
 		UIManager.celebrate(&"purchase", "%s stocked" % CyberwareManager.get_cyberware(id).display_name)
 		SaveManager.save_game()
@@ -264,6 +304,9 @@ func _buy_implant(id: StringName) -> void:
 
 
 func _buy_tool(id: StringName) -> void:
+	if not UIKit.debounce("buy_tool_%s" % id):
+		return
+	_shown = id
 	if InventoryManager.buy_tool(id):
 		UIManager.celebrate(&"tool", "%s acquired" % InventoryManager.get_tool(id).display_name)
 		SaveManager.save_game()
@@ -272,6 +315,8 @@ func _buy_tool(id: StringName) -> void:
 
 
 func _buy_supplies() -> void:
+	if not UIKit.debounce("buy_supplies"):
+		return
 	if InventoryManager.buy_supply_pack():
 		UIManager.celebrate(&"purchase")
 		SaveManager.save_game()

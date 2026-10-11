@@ -136,11 +136,16 @@ static func show(term: String) -> void:
 	if h == null or not has(term):
 		return
 	close()
-	_catcher(h, 0.0)
 	var card := UIKit.panel(&"AccentPanel")
 	card.name = "GlossaryCard"
 	card.mouse_filter = Control.MOUSE_FILTER_STOP
 	h.add_child(card)
+	# A click outside closes the card and still reaches what was clicked.
+	var closer: Node = preload("res://scripts/ui/click_outside_closer.gd").new()
+	closer.name = "GlossaryCloser"
+	closer.set("target", card)
+	closer.set("on_close", close)
+	h.add_child(closer)
 	var v := UIKit.vbox(8)
 	card.add_child(v)
 	v.add_child(UIKit.label(title(term).to_upper(), &"SectionLabel"))

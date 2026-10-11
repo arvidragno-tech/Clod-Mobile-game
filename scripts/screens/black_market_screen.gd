@@ -111,11 +111,12 @@ func on_enter(_params: Dictionary) -> void:
 	# The shader samples the whole screen: skip the pass entirely when off.
 	glitch.visible = intensity > 0.0
 	add_child(UIKit.full_rect(glitch))
-	EventBus.money_changed.connect(func(_a: int, _d: int) -> void: _rebuild())
-	EventBus.inventory_changed.connect(_rebuild)
-	EventBus.resources_changed.connect(_rebuild)
-	EventBus.black_market_changed.connect(_rebuild)
-	SupplierManager.changed.connect(_rebuild)
+	# One purchase emits several signals: rebuild once, after them all.
+	EventBus.money_changed.connect(func(_a: int, _d: int) -> void: _queue_rebuild())
+	EventBus.inventory_changed.connect(_queue_rebuild)
+	EventBus.resources_changed.connect(_queue_rebuild)
+	EventBus.black_market_changed.connect(_queue_rebuild)
+	SupplierManager.changed.connect(_queue_rebuild)
 	AudioManager.play_sfx(&"glitch", 0.15)
 	_rebuild()
 
@@ -174,7 +175,18 @@ func _on_tab(i: int) -> void:
 	_rebuild()
 
 
+var _rebuild_queued: bool = false
+
+
+func _queue_rebuild() -> void:
+	if _rebuild_queued:
+		return
+	_rebuild_queued = true
+	_rebuild.call_deferred()
+
+
 func _rebuild() -> void:
+	_rebuild_queued = false
 	if not is_inside_tree() or _list == null:
 		return
 	_money.text = "CR %d · TOKENS %d · PARTS %d · HEAT %d" % [EconomyManager.money, InventoryManager.tokens, InventoryManager.parts, roundi(FactionManager.heat)]
@@ -258,7 +270,10 @@ func _offer_card(i: int) -> Control:
 	card.add_child(row)
 	_item_header(row, inst)
 	UIKit.expand(card)
-	var b := UIKit.button(EconomyManager.format_money(int(offer["price"])), &"BMButton", func() -> void: _buy(i), "BMBuy_%d" % i)
+	# The button holds the offer's own uid, never its list position: after a
+	# purchase the list shifts and an index would point at the next offer.
+	var uid := inst.uid
+	var b := UIKit.button(EconomyManager.format_money(int(offer["price"])), &"BMButton", func() -> void: _buy(uid), "BMBuy_%d" % i)
 	b.custom_minimum_size.x = 140
 	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	b.disabled = not EconomyManager.can_afford(int(offer["price"]))
@@ -325,7 +340,13 @@ func _cases_card() -> Control:
 	return card
 
 
-func _buy(i: int) -> void:
+func _buy(uid: String) -> void:
+	if not UIKit.debounce("bm_buy_" + uid):
+		return
+	var i := BlackMarketManager.index_of(uid)
+	if i < 0:
+		UIManager.show_toast("That offer is gone.", &"warn")
+		return
 	var before := Consequence.snapshot()
 	if BlackMarketManager.buy(i):
 		Consequence.show("You bought off the books. The market remembers; so might the authorities.", before)
@@ -470,7 +491,7 @@ func _supplier_offer(id: String, i: int, o: Dictionary) -> Control:
 		if mode != "cash" and why == "Needs more trust":
 			continue
 		var label: String = str({"cash": "BUY %s", "credit": "ON CREDIT %s", "rush": "RUSH NOW %s"}[mode]) % EconomyManager.format_money(SupplierManager.price_for(id, i, mode))
-		var b := UIKit.button(label, &"BMButton" if mode == "cash" else &"GhostButton", _buy_supplier.bind(id, i, mode), "SupplierBuy_%s_%d_%s" % [id, i, mode], 34)
+		var b := UIKit.button(label, &"BMButton" if mode == "cash" else &"GhostButton", _buy_supplier.bind(id, SupplierManager.st(id)["stock"][i], mode), "SupplierBuy_%s_%d_%s" % [id, i, mode], 34)
 		b.disabled = why != ""
 		b.tooltip_text = why if why != "" else {"cash": "Pay now; delivered at opening tomorrow.", "credit": "Delivered tomorrow; pay after your next %d jobs. Miss it and they get suspicious." % int(SupplierManager.data.get("credit_jobs", 3)), "rush": "Delivered right now, any hour: +50%."}[mode]
 		b.custom_minimum_size.x = 210
@@ -478,7 +499,15 @@ func _supplier_offer(id: String, i: int, o: Dictionary) -> Control:
 	return row
 
 
-func _buy_supplier(id: String, i: int, mode: String) -> void:
+## `offer` is the stock entry itself (not its position, which shifts after
+## a purchase).
+func _buy_supplier(id: String, offer: Dictionary, mode: String) -> void:
+	if not UIKit.debounce("supplier_%s_%s" % [id, mode]):
+		return
+	var i := (SupplierManager.st(id)["stock"] as Array).find(offer)
+	if i < 0:
+		UIManager.show_toast("That offer is gone.", &"warn")
+		return
 	var got := SupplierManager.buy(id, i, mode)
 	if got == "":
 		AudioManager.play_sfx(&"denied", 0.0)

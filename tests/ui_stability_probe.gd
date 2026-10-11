@@ -11,8 +11,8 @@ extends Node
 ##   D  40 rapid screen switches: no drifting scale / position, no stacked
 ##      signal handlers, no leftover input-blocking overlays
 ##   E  every main screen fits the canvas (minimum size, buttons on-screen)
-##      with default text, TEXT SCALE 1.4 and LARGE TEXT, and at UI SCALE
-##      0.9 / 1.1
+##      with default text, TEXT SCALE 1.4, LARGE TEXT, both, and INTEGER
+##      pixel scaling (which must never crop a small window)
 ## at 1920x1080, 1600x900, 1366x768 and 1280x720 windowed, then borderless
 ## and fullscreen.
 ##
@@ -279,11 +279,17 @@ func _connections() -> int:
 # --- E: every screen fits ------------------------------------------------------------------
 
 func _fit_round(label: String) -> void:
-	for variant: Array in [["default", 1.0, false, 1], ["text 1.4", 1.4, false, 1], ["large text", 1.0, true, 1], ["ui 0.9", 1.0, false, 0], ["ui 1.1", 1.0, false, 2]]:
+	for variant: Array in [["default", 1.0, false, "fit"], ["text 1.4", 1.4, false, "fit"], ["large text", 1.0, true, "fit"], ["text 1.4 + large", 1.4, true, "fit"], ["integer pixels", 1.0, false, "integer"]]:
 		Settings.set_value("text_scale", float(variant[1]))
 		Settings.set_value("large_text", bool(variant[2]))
-		Settings.set_value("ui_scale", int(variant[3]))
+		Settings.set_value("pixel_scaling", str(variant[3]))
 		await _frames(3)
+		if str(variant[3]) == "integer":
+			var win := get_tree().root.size
+			var small := win.x < 1920 or win.y < 1080
+			_check(not small or get_tree().root.content_scale_stretch == Window.CONTENT_SCALE_STRETCH_FRACTIONAL,
+				"%s E: INTEGER pixels never crop a window smaller than the canvas (%s)" % [label, win])
+		_check(is_equal_approx(get_tree().root.content_scale_factor, 1.0), "%s E [%s]: one scale authority (content scale factor 1.0)" % [label, variant[0]])
 		var too_big: Array[String] = []
 		var offscreen: Array[String] = []
 		for s in SCREENS:
@@ -296,6 +302,8 @@ func _fit_round(label: String) -> void:
 			var ms := scr.get_combined_minimum_size()
 			if ms.x > vp.x + 1.0 or ms.y > vp.y + 1.0:
 				too_big.append("%s %dx%d" % [s, ms.x, ms.y])
+			if str(variant[0]) == "text 1.4 + large" and label == "windowed_1920x1080":
+				await _shot("bigtext_" + String(s))
 			var bad := _offscreen_buttons()
 			if not bad.is_empty():
 				offscreen.append("%s %s" % [s, bad])
@@ -303,7 +311,7 @@ func _fit_round(label: String) -> void:
 		_check(offscreen.is_empty(), "%s E [%s]: every button on-screen %s" % [label, variant[0], offscreen])
 	Settings.set_value("text_scale", 1.0)
 	Settings.set_value("large_text", false)
-	Settings.set_value("ui_scale", 1)
+	Settings.set_value("pixel_scaling", "fit")
 	await _frames(3)
 
 

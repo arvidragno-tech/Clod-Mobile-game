@@ -95,15 +95,30 @@ func is_transitioning() -> bool:
 
 # --- Navigation --------------------------------------------------------------
 
+## A request made while a transition runs is kept (the latest wins) and
+## followed as soon as the transition ends, instead of being dropped: a
+## quick second click, a hotkey during a fade or a screen redirecting in its
+## on_enter all land where the player expects.
+var _pending_nav: Array = []
+
+
 func go_to(screen_id: StringName, params: Dictionary = {}) -> void:
-	if _transitioning or _screen_host == null:
+	if _screen_host == null:
 		return
 	var path: String = SCREEN_SCENES.get(screen_id, "")
 	if path.is_empty():
 		push_error("UIManager: unknown screen '%s'" % screen_id)
 		return
+	if _transitioning:
+		_pending_nav = [screen_id, params]
+		return
 	_transitioning = true
 	_fade.mouse_filter = Control.MOUSE_FILTER_STOP
+	# The old screen's dialogs, toasts and field guide go with it. Anything
+	# opened from here on (e.g. the night report) belongs to the new screen.
+	close_modal()
+	clear_toasts()
+	Glossary.close()
 	if current_screen:
 		var out := create_tween()
 		out.tween_property(_fade, "color:a", 1.0, GameConfig.SCREEN_FADE_OUT_SEC)
@@ -111,8 +126,6 @@ func go_to(screen_id: StringName, params: Dictionary = {}) -> void:
 		current_screen.on_exit()
 		current_screen.queue_free()
 		current_screen = null
-	close_modal()
-	clear_toasts()
 	var scene := load(path) as PackedScene
 	var screen := scene.instantiate() as BaseScreen
 	_screen_host.add_child(screen)
@@ -126,6 +139,11 @@ func go_to(screen_id: StringName, params: Dictionary = {}) -> void:
 	await fade_in.finished
 	_fade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_transitioning = false
+	if not _pending_nav.is_empty():
+		var nav := _pending_nav
+		_pending_nav = []
+		if StringName(nav[0]) != current_screen_id or not (nav[1] as Dictionary).is_empty():
+			go_to(nav[0], nav[1])
 
 
 # --- Feedback ----------------------------------------------------------------

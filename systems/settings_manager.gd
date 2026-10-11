@@ -179,7 +179,12 @@ func load_settings() -> void:
 	ui_volume = clampf(ui_volume, 0.0, 1.0)
 	difficulty = clampi(difficulty, 0, 2)
 	autosave = clampi(autosave, 0, 2)
-	ui_scale = clampi(ui_scale, 0, UI_SCALES.size() - 1)
+	# 3.6: the window stretch is the only UI scale (one authority). The old
+	# UI SCALE shrank the logical canvas below the 1920x1080 layouts and
+	# pushed buttons off-screen; LARGE carries over as bigger text.
+	if ui_scale == 2:
+		text_scale = maxf(text_scale, 1.1)
+	ui_scale = 1
 	text_scale = clampf(text_scale, 0.85, 1.4)
 	changed.emit()
 
@@ -232,9 +237,20 @@ static func parse_resolution(text: String) -> Vector2i:
 ## Applies window mode, windowed size, vsync and texture filtering. The
 ## logical canvas stays 1920x1080 (canvas_items stretch, keep aspect), so
 ## other 16:9 sizes scale uniformly and other aspects letterbox.
-func apply_display() -> void:
+## The window mode / size last put on the window: other settings re-apply
+## without snapping a resized window back (vsync, filtering...).
+var _applied_window: String = ""
+
+
+func apply_display(force: bool = false) -> void:
 	if DisplayServer.get_name() == "headless":
 		return
+	var key := "%s|%s" % [window_mode, resolution]
+	if not force and key == _applied_window:
+		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED if vsync else DisplayServer.VSYNC_DISABLED)
+		apply_runtime()
+		return
+	_applied_window = key
 	match window_mode:
 		"fullscreen":
 			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN)
@@ -262,9 +278,29 @@ func apply_runtime() -> void:
 	var tree := Engine.get_main_loop() as SceneTree
 	if tree:
 		var root := tree.root
-		root.content_scale_stretch = Window.CONTENT_SCALE_STRETCH_INTEGER if pixel_scaling == "integer" else Window.CONTENT_SCALE_STRETCH_FRACTIONAL
-		# Integer stretch floors the factor, so UI scale only applies in FIT.
-		root.content_scale_factor = UI_SCALES[ui_scale] if pixel_scaling == "fit" else 1.0
+		_apply_stretch(root)
+		if not root.size_changed.is_connected(_on_window_resized):
+			root.size_changed.connect(_on_window_resized)
+
+
+## One scaling authority: the 1920x1080 canvas stretched to the window
+## (keep aspect). INTEGER only when the window holds a whole multiple of the
+## canvas; below that it would crop the screen, so it falls back to FIT.
+## No extra content scale factor: every layout is built for the canvas.
+func _apply_stretch(root: Window) -> void:
+	var win := root.size
+	var whole := win.x >= GameConfig.VIEWPORT_WIDTH and win.y >= GameConfig.VIEWPORT_HEIGHT
+	var mode := Window.CONTENT_SCALE_STRETCH_INTEGER if pixel_scaling == "integer" and whole else Window.CONTENT_SCALE_STRETCH_FRACTIONAL
+	if root.content_scale_stretch != mode:
+		root.content_scale_stretch = mode
+	if not is_equal_approx(root.content_scale_factor, 1.0):
+		root.content_scale_factor = 1.0
+
+
+func _on_window_resized() -> void:
+	var tree := Engine.get_main_loop() as SceneTree
+	if tree:
+		_apply_stretch(tree.root)
 
 
 func apply_filter() -> void:

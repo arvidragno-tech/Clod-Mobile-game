@@ -96,7 +96,6 @@ func _build() -> void:
 	_changes_button = UIKit.button("", &"GhostButton", ChangesPanel.open, "ChangesButton", 36)
 	_changes_button.tooltip_text = "What changed while you were busy (money, standing, heat, supplies, staff, people, places)."
 	strip.add_child(_changes_button)
-	strip.add_child(UIKit.label("[%s] customer  [%s] inventory  [%s] journal  [%s] map" % [Controls.key_name("customer_info"), Controls.key_name("inventory"), Controls.key_name("journal"), Controls.key_name("map")], &"SubHeaderLabel"))
 	_refresh_objective()
 	var row := UIKit.hbox(16)
 	UIKit.expand(row, true, true)
@@ -163,11 +162,15 @@ func _build() -> void:
 	row.add_child(centre)
 	var frame := UIKit.panel(&"HudPanel")
 	frame.add_theme_stylebox_override(&"panel", StyleBoxEmpty.new())
-	frame.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	# The room crops its art to whatever space it gets, so it flexes: with
+	# big text the cards below and the door card keep their room instead of
+	# the whole screen growing past the canvas.
+	UIKit.expand(frame, true, true)
 	centre.add_child(frame)
 	_view = ClinicView.new()
 	_view.name = "ClinicView"
-	_view.custom_minimum_size = Vector2(1100, 580)
+	_view.custom_minimum_size = Vector2(760, 400)
+	UIKit.expand(_view, true, true)
 	_view.tooltip_text = "Click the customer or a lit prop · wheel / double-click to zoom · drag to look around"
 	_view._base_tooltip = _view.tooltip_text
 	_view.hotspot_clicked.connect(GameManager.navigate)
@@ -185,11 +188,15 @@ func _build() -> void:
 	_loc = loc
 	loc.add_theme_color_override(&"font_outline_color", Palette.BG_0)
 	loc.add_theme_constant_override(&"outline_size", 4)
+	loc.clip_text = true
+	loc.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	overlay.add_child(loc)
 	_agenda = UIKit.label("", &"DimLabel", false, Palette.ACCENT, 14)
 	_agenda.name = "AgendaLabel"
 	_agenda.add_theme_color_override(&"font_outline_color", Palette.BG_0)
 	_agenda.add_theme_constant_override(&"outline_size", 4)
+	_agenda.clip_text = true
+	_agenda.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	overlay.add_child(_agenda)
 	var cards := UIKit.hbox(14)
 	UIKit.expand(cards, true, false)
@@ -203,12 +210,16 @@ func _build() -> void:
 	_status_box.add_child(_stock_label)
 	_close_button = UIKit.button("CLOSE FOR THE NIGHT", &"GhostButton", _close_day, "CloseDayButton", 40)
 	_close_button.tooltip_text = "End the business day: pay rent, running costs and salaries, see the ledger."
+	_close_button.clip_text = true
+	_close_button.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	UIKit.expand(_close_button)
 	_close_row = UIKit.hbox(8)
 	_status_box.add_child(_close_row)
 	_close_row.add_child(_close_button)
 	_security_button = UIKit.button("SECURITY", &"GhostButton", _open_security, "SecurityButton", 40)
 	_security_button.tooltip_text = "Heat level, break-ins and investigations."
+	_security_button.clip_text = true
+	_security_button.custom_minimum_size.x = 110
 	_close_row.add_child(_security_button)
 	_matters_box = UIKit.section(cards, "WHAT MATTERS NOW", &"CardPanel", "click to go there")
 	_matters_box.add_theme_constant_override(&"separation", 4)
@@ -387,7 +398,9 @@ func _refresh_status_card() -> void:
 		line.add_child(UIKit.label(ClinicStatus.mark(r["level"]), &"MonoLabel", false, ClinicStatus.color(r["level"]), 17))
 		var cap := UIKit.caption(str(r["label"]))
 		cap.add_theme_font_size_override(&"font_size", 15)
-		cap.custom_minimum_size.x = 160
+		cap.custom_minimum_size.x = 120
+		cap.clip_text = true
+		cap.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		line.add_child(cap)
 		var v := UIKit.label(str(r["state"]), &"", false, ClinicStatus.color(r["level"]), 15)
 		v.tooltip_text = "%s: %s\n%s" % [r["label"], r["state"], r["detail"]]

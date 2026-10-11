@@ -73,6 +73,12 @@ if command -v xvfb-run >/dev/null 2>&1; then
   code=$?
   grep -E "FAIL|PASSED|SCRIPT ERROR" "$LOG"
   if [ $code -ne 0 ] || grep -q "SCRIPT ERROR" "$LOG"; then status=1; echo "    -> FAILED (exit $code)"; fi
+  echo "=== UI stability probe (shop accuracy, double clicks, navigation, rapid switching, big text; 4 resolutions, 3 window modes) ==="
+  xvfb-run -a -s "-screen 0 1920x1080x24" "$GODOT" --path . --rendering-driver opengl3 --resolution 1920x1080 \
+    res://tests/ui_stability_probe.tscn >"$LOG" 2>&1
+  code=$?
+  grep -E "FAIL|PASSED|SCRIPT ERROR" "$LOG"
+  if [ $code -ne 0 ] || grep -q "SCRIPT ERROR" "$LOG"; then status=1; echo "    -> FAILED (exit $code)"; fi
   echo "=== UX probe (early game: controls, priorities, preview, follow, journal, changes; 4 resolutions, 3 window modes) ==="
   xvfb-run -a -s "-screen 0 1920x1080x24" "$GODOT" --path . --rendering-driver opengl3 --resolution 1920x1080 \
     res://tests/ux_probe.tscn >"$LOG" 2>&1
