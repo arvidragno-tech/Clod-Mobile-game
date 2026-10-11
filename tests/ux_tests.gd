@@ -244,16 +244,17 @@ func _consequence() -> void:
 	check(Consequence.diff(Consequence.snapshot()).is_empty(), "nothing changed, nothing shown")
 	var shown_before := Consequence.snapshot()
 	ReputationManager.change(2)
-	Consequence.show("A test decision.", shown_before)
+	var shown := Consequence.show("A test decision.", shown_before)
 	var card: Control = null
 	for n in (Engine.get_main_loop() as SceneTree).root.find_children("ConsequenceCard", "", true, false):
 		card = n as Control
+	var found := card != null
 	var blocks := card == null or card.mouse_filter != Control.MOUSE_FILTER_IGNORE
 	if card:
 		for n in card.find_children("*", "Control", true, false):
 			blocks = blocks or (n as Control).mouse_filter != Control.MOUSE_FILTER_IGNORE
 		card.free()
-	check(card != null and not blocks, "the consequence card never takes a click")
+	check(found and not blocks, "the consequence card never takes a click (shown %d, card %s)" % [shown.size(), found])
 
 
 func _hints() -> void:

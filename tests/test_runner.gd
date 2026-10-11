@@ -474,8 +474,10 @@ func _e2e() -> void:
 	get_viewport().push_input(mb, true)
 	await _frames(4)
 	check(Controls.get_slots("inspect")[1] == Controls.mouse(MOUSE_BUTTON_XBUTTON1) or not Controls.conflicts_for("inspect", Controls.mouse(MOUSE_BUTTON_XBUTTON1)).is_empty(), "mouse button rebinding via the UI")
-	if _find_visible("BindKeep"):
-		await _click_named("BindKeep")
+	# MOUSE 4 is "previous tool" by default: the conflict dialog offers SWAP.
+	if _find_visible("BindSwap"):
+		await _click_named("BindSwap")
+		await _frames(4)
 	await _click_named("ResetBindings")
 	await _frames(4)
 	check(_find_visible("ConfirmYes") != null, "RESET ALL CONTROLS asks first")
