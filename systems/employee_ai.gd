@@ -35,7 +35,7 @@ static func job_pay(c: CustomerData) -> int:
 	if item == null or s == null:
 		return 0
 	var mult := c.pay_multiplier * ModifierManager.mult(&"pay")
-	return int(round(s.base_pay * mult + item.price * GameConfig.IMPLANT_PRICE_MARKUP * minf(mult, 1.0)))
+	return int(round(SurgeryScoring.service_pay(s.base_pay, mult, item.install_difficulty, 0.5) + SurgeryScoring.part_pay(item.price, mult)))
 
 
 ## "" if they'll do it, otherwise why not (in their words).

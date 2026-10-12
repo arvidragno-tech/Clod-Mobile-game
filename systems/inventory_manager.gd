@@ -280,6 +280,147 @@ func add_tokens(n: int) -> void:
 	EventBus.resources_changed.emit()
 
 
+# --- Selling from storage (3.10) -------------------------------------------------
+## Unwanted stock goes back for the black market's own resale share
+## (black_market.json sell_ratio) of the list price, x its condition, and
+## never more than 80% of what you'd pay for it today: no buy-low /
+## sell-high loop, whatever discounts stack up. Implant units use the black
+## market's sell_value as is. Not sellable here: unidentified devices (they
+## have their own routes), basic kit (no resale value), salvaged parts (the
+## scrap stalls) and tokens (black-market currency), nor anything the job
+## you're planning needs.
+
+func resale_ratio() -> float:
+	return float(BlackMarketManager.config.get("sell_ratio", 0.45))
+
+
+## What one unit fetches (0 = no resale value).
+func sell_value(kind: StringName, key: String) -> int:
+	match kind:
+		&"implant":
+			var inst := get_instance(key)
+			if inst == null or not inst.identified:
+				return 0
+			var v := BlackMarketManager.sell_value(inst)
+			var data := inst.get_data()
+			# Black-market units sell exactly as the market buys them back
+			# (BlackMarketManager.sell); stock units also stay under 80% of
+			# today's supply price.
+			if data and inst.source != &"black_market" and not data.black_market:
+				v = mini(v, int(implant_price(data) * 0.8))
+			return maxi(0, v)
+		&"tool":
+			var t := get_tool(StringName(key))
+			if t == null or t.starter or t.price <= 0:
+				return 0
+			var v := int(round(t.price * resale_ratio() * get_tool_condition(t.id) / 100.0))
+			return maxi(0, mini(v, int(tool_price(t) * 0.8)))
+		&"supplies":
+			var unit := GameManager.supply_unit_cost()
+			var v := int(round(unit * resale_ratio()))
+			return maxi(1, mini(v, int(unit * ModifierManager.mult(&"price.buy") * 0.8)))
+	return 0
+
+
+## What the operation being planned needs from storage (empty when no job is
+## planned or under way): {implant: uid, tools: {category: min tier}, supplies}.
+func reserved_for_job() -> Dictionary:
+	var out := {"implant": "", "tools": {}, "supplies": 0}
+	var planning := GameManager.chosen_diagnosis_id != &"" or SurgeryManager.is_active
+	var surgery := GameManager.get_current_surgery()
+	var item := GameManager.get_requested_item()
+	if not planning or surgery == null:
+		return out
+	var inst := GameManager.get_selected_implant()
+	if inst:
+		out["implant"] = inst.uid
+	var tools: Dictionary = out["tools"]
+	for cat in surgery.get_required_tool_categories():
+		tools[cat] = maxi(int(tools.get(cat, 1)), 1)
+	if item:
+		for req in item.get_tool_requirements():
+			tools[req["category"]] = maxi(int(tools.get(req["category"], 1)), int(req["tier"]))
+	out["supplies"] = surgery.supplies
+	return out
+
+
+## Supplies you can sell without leaving the planned job short.
+func spare_supplies() -> int:
+	return maxi(0, supplies - int(reserved_for_job()["supplies"]))
+
+
+## "" if it can be sold, else why not (player-facing).
+func sell_block_reason(kind: StringName, key: String, qty: int = 1) -> String:
+	var held := reserved_for_job()
+	match kind:
+		&"implant":
+			var inst := get_instance(key)
+			if inst == null:
+				return "It's no longer in storage."
+			if not inst.identified:
+				return "Nobody knows what it is yet: analyse it or take it to the Undermarket first."
+			if str(held["implant"]) == inst.uid:
+				return "It's the unit for the operation you're planning."
+		&"tool":
+			var t := get_tool(StringName(key))
+			if t == null or not owns_tool(t.id):
+				return "It's no longer in storage."
+			if t.starter or t.price <= 0:
+				return "Basic kit has no resale value."
+			var need: Dictionary = held["tools"]
+			if need.has(t.category) and get_best_tool(t.category) == t:
+				# Would what's left still do the planned job?
+				var left := 0
+				for id in owned_tools:
+					var o := get_tool(id)
+					if o and o != t and o.category == t.category:
+						left = maxi(left, o.tier)
+				if left < int(need[t.category]):
+					return "The operation you're planning needs it."
+		&"supplies":
+			if qty < 1:
+				return "Pick how many to sell."
+			if qty > spare_supplies():
+				return "You have %d spare (%d set aside for the operation you're planning)." % [spare_supplies(), int(held["supplies"])] if int(held["supplies"]) > 0 else "You only have %d." % supplies
+		_:
+			return "This can't be sold from storage."
+	if sell_value(kind, key) <= 0:
+		return "Nobody would pay for it."
+	return ""
+
+
+## Sells `qty` of an item from storage. Returns the credits received (0 if
+## nothing was sold: the reason is sell_block_reason). One call is one sale,
+## so a second click on a stale button finds nothing left to sell.
+func sell(kind: StringName, key: String, qty: int = 1) -> int:
+	if sell_block_reason(kind, key, qty) != "":
+		return 0
+	var each := sell_value(kind, key)
+	var total := 0
+	match kind:
+		&"implant":
+			var inst := get_instance(key)
+			if inst.source == &"black_market":
+				return BlackMarketManager.sell(key)  # tokens and the market's memory, as it always did
+			total = each
+			remove_instance(key)
+			EconomyManager.add_money(total, &"cyberware")
+		&"tool":
+			var id := StringName(key)
+			total = each
+			owned_tools.erase(id)
+			tool_condition.erase(id)
+			EconomyManager.add_money(total, &"tools")
+			EventBus.inventory_changed.emit()
+			EventBus.modifiers_changed.emit()
+		&"supplies":
+			total = each * qty
+			supplies -= qty
+			EconomyManager.add_money(total, &"supplies")
+			EventBus.resources_changed.emit()
+	return total
+
+
 # --- Save ----------------------------------------------------------------------
 
 func get_save_data() -> Dictionary:

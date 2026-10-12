@@ -109,7 +109,7 @@ func _add_money(r: SurgeryResult) -> void:
 	line.call("IMPLANT", -int(f.get("implant_cost", 0)), str(note))
 	if int(f.get("supplies_used", 0)) > 0:
 		line.call("SUPPLIES", -int(f.get("supplies_cost", 0)), "%d used" % int(f["supplies_used"]))
-	line.call("NET", int(f.get("net", 0)), "this job, est.", true)
+	line.call("NET", int(f.get("net", 0)), "cash this job" + (" (instalments on top)" if int(f.get("owed", 0)) > 0 else ""), true)
 	var hint := UIKit.label("Cash in now: %s. Rent and wages are paid at closing." % EconomyManager.format_money(r.pay), &"DimLabel", true, null, 13)
 	v.add_child(hint)
 

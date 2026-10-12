@@ -29,6 +29,19 @@ static func compute_score(stage_quality: float, health: float, neural: float, im
 	return clampf(score, 0.0, 1.0)
 
 
+## Your service fee: the procedure's base pay x the patient's means, x the
+## install's difficulty (DIFFICULTY_PAY_STEP) and x how well it went
+## (0.5 + score; estimates use an average score of 0.6).
+static func service_pay(base_pay: float, pay_mult: float, difficulty: int, score: float) -> float:
+	return base_pay * pay_mult * (1.0 + GameConfig.DIFFICULTY_PAY_STEP * maxi(0, difficulty - 1)) * (0.5 + score)
+
+
+## The part: what the patient pays for the implant at its list price, at
+## their means (not scaled by your score).
+static func part_pay(price: float, pay_mult: float) -> float:
+	return price * GameConfig.IMPLANT_PRICE_MARKUP * minf(pay_mult, 1.0)
+
+
 ## Fills grade, pay, xp and reputation on `result` from its raw fields.
 static func apply_rewards(result: SurgeryResult, surgery: SurgeryData, customer: CustomerData) -> void:
 	var pay_mult := customer.pay_multiplier if customer else 1.0
@@ -47,8 +60,8 @@ static func apply_rewards(result: SurgeryResult, surgery: SurgeryData, customer:
 	pay_mult *= result.implant_pay_mult * ModifierManager.mult(&"pay")
 	# Your service (scaled by how well it went) plus the part, which the
 	# patient pays for at their means (not scaled by your score).
-	var service := surgery.base_pay * pay_mult * (0.5 + result.score)
-	var part := result.implant_price * GameConfig.IMPLANT_PRICE_MARKUP * minf(pay_mult, 1.0)
+	var service := service_pay(surgery.base_pay, pay_mult, result.install_difficulty, result.score)
+	var part := part_pay(result.implant_price, pay_mult)
 	if result.black_market_implant:
 		part *= GameConfig.BLACK_MARKET_PART_SHARE
 	result.pay = int(round(service + part))

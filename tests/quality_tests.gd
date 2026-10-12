@@ -56,12 +56,12 @@ func _economy() -> void:
 		var mult := c.pay_multiplier * ModifierManager.mult(&"pay")
 		var part := item.price * GameConfig.IMPLANT_PRICE_MARKUP * minf(mult, 1.0)
 		check(res.pay >= int(part), "a clean job pays at least the part share (%d >= %d)" % [res.pay, int(part)])
-		check(float(res.pay) <= s.base_pay * mult * 1.5 + item.price + 1.0, "and never more than service x1.5 plus the implant")
+		check(float(res.pay) <= SurgeryScoring.service_pay(s.base_pay, mult, item.install_difficulty, 1.0) + item.price + 1.0, "and never more than the best service fee for its difficulty plus the implant")
 	# Job estimate: one source of truth.
 	c.budget = 0
 	var est := JobEstimate.for_customer(c)
 	check(int(est["fee"]) == CustomerGenerator.estimate_fee(c), "the estimate's fee is the generator's estimate")
-	check(int(est["net"]) == int(est["can_pay"]) - int(est["implant_cost"]) - int(est["supplies_cost"]), "net = what they can pay - implant - supplies")
+	check(int(est["net"]) == int(est["fee"]) - int(est["implant_cost"]) - int(est["supplies_cost"]), "net (direct margin) = the fee (now + instalments) - implant - supplies")
 	c.budget = 50
 	est = JobEstimate.for_customer(c)
 	check(int(est["can_pay"]) == mini(50, int(est["fee"])) and int(est["owed"]) == int(est["fee"]) - int(est["can_pay"]), "the estimate respects what the patient can pay today")

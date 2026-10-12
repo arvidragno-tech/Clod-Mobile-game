@@ -1,7 +1,8 @@
 class_name JobEstimate
 extends RefCounted
 ## What a job is likely to earn, from real game data: the expected fee, what
-## the patient can actually pay today (their budget), and what the job uses
+## the patient can actually pay today (their budget; the rest is owed on an
+## instalment plan), and what the job uses
 ## up (the implant: bought for it or its replacement value from stock; the
 ## medical supplies). One source for the customer file, the surgery
 ## preview, the door card and the economy simulator.
@@ -38,7 +39,10 @@ static func for_customer(c: CustomerData, readiness: Dictionary = {}) -> Diction
 	var sup := s.supplies if s else 1
 	out["supplies"] = sup
 	out["supplies_cost"] = int(round(sup * GameManager.supply_unit_cost()))
-	out["net"] = can_pay - int(out["implant_cost"]) - int(out["supplies_cost"])
+	# Direct margin: the whole fee (what they can't pay today goes on an
+	# instalment plan, PeopleManager.settle) minus what the job uses up.
+	# Rent and wages are not per job, so they're not in here.
+	out["net"] = fee - int(out["implant_cost"]) - int(out["supplies_cost"])
 	# Cash today: a unit from stock is already paid for.
 	out["cash_net"] = can_pay - (int(out["implant_cost"]) if src == "buy" else 0) - int(out["supplies_cost"])
 	out["covers_implant"] = can_pay >= int(out["implant_cost"])

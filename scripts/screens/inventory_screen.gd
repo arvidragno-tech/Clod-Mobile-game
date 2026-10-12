@@ -33,6 +33,11 @@ var _compare_a: ItemSlot
 var _compare_b: ItemSlot
 var _selected_key: String = ""
 var _panels: Array[Control] = []
+## How many units of a stack to sell (reset when the selection changes).
+var _sell_qty: int = 1
+var _sell_for: String = ""
+## One confirmed sale per dialog: a repeated press finds the ticket used.
+var _sell_ticket: int = 0
 
 
 func on_enter(params: Dictionary) -> void:
@@ -474,6 +479,7 @@ func _show(kind: StringName, key: String) -> void:
 			actions.add_child(UIKit.button("INSPECT  [F]", &"Button", func() -> void:
 				UIManager.go_to(UIManager.SCREEN_DATABASE, {"id": d.id, "return_to": UIManager.SCREEN_INVENTORY}), "InspectButton"))
 			actions.add_child(UIKit.button("SET AS CURRENT", &"GhostButton", func() -> void: _set_compare(_compare_a, kind, key), "CompareSet"))
+			_add_sell(kind, key, d.display_name)
 		&"tool":
 			var t := InventoryManager.get_tool(StringName(key))
 			if t == null:
@@ -499,10 +505,12 @@ func _show(kind: StringName, key: String) -> void:
 			if not t.modifiers.is_empty():
 				_detail.add_child(UIKit.label(UIKit.describe_modifiers(t.modifiers), &"", true, Palette.ACCENT))
 			_detail.add_child(UIKit.label("Service worn instruments at SUPPLY.", &"DimLabel", true))
+			_add_sell(kind, key, t.display_name)
 		&"supplies":
 			_detail.add_child(UIKit.label("MEDICAL SUPPLIES", &"HeaderLabel"))
 			_detail.add_child(UIKit.label("%d / %d units" % [InventoryManager.supplies, ClinicManager.get_supplies_capacity()], &"BigMonoLabel"))
 			_detail.add_child(UIKit.label("Gauze, clamps, synth-plasma. Every operation uses 1-2 units; without them bleeding and complications rise. Buy packs at SUPPLY.", &"DimLabel", true))
+			_add_sell(kind, key, "medical supplies")
 		&"parts":
 			_detail.add_child(UIKit.label("SALVAGED PARTS", &"HeaderLabel"))
 			_detail.add_child(UIKit.label("x%d" % InventoryManager.parts, &"BigMonoLabel"))
@@ -511,3 +519,99 @@ func _show(kind: StringName, key: String) -> void:
 			_detail.add_child(UIKit.label("BLACK-MARKET TOKENS", &"HeaderLabel", false, Palette.BRAND))
 			_detail.add_child(UIKit.label("x%d" % InventoryManager.tokens, &"BigMonoLabel"))
 			_detail.add_child(UIKit.label("Untraceable credit chits. Mystery cases cost tokens; selling black-market chrome earns them.", &"DimLabel", true))
+
+
+# --- Selling (3.10) ---------------------------------------------------------------
+## SELL under the selected item: what one unit fetches, how many (stacks),
+## the total, and one button that asks before it sells. Values and rules
+## are InventoryManager's (sell_value / sell_block_reason / sell).
+
+func _add_sell(kind: StringName, key: String, item_name: String) -> void:
+	var each := InventoryManager.sell_value(kind, key)
+	var why := InventoryManager.sell_block_reason(kind, key, 1)
+	if each <= 0:
+		# Basic kit and the like: say so in one line, no controls.
+		if kind == &"tool":
+			_detail.add_child(UIKit.label("Basic kit: no resale value.", &"DimLabel", true, null, 14))
+		return
+	var box := UIKit.vbox(6)
+	box.name = "SellBox"
+	_detail.add_child(box)
+	box.add_child(UIKit.section_head("SELL", "unwanted stock back to the street"))
+	var stack := kind == &"supplies"
+	var most := InventoryManager.spare_supplies() if stack else 1
+	if _sell_for != "%s/%s" % [kind, key]:
+		_sell_for = "%s/%s" % [kind, key]
+		_sell_qty = 1
+	_sell_qty = clampi(_sell_qty, 1, maxi(1, most))
+	var have := InventoryManager.supplies if stack else 1
+	var info := UIKit.label("%s · you have %d · %s each" % [item_name.to_upper(), have, EconomyManager.format_money(each)], &"MonoLabel", true, null, 15)
+	info.name = "SellInfo"
+	box.add_child(info)
+	if stack and most > 0:
+		var row := UIKit.hbox(8)
+		row.name = "SellQty"
+		box.add_child(row)
+		row.add_child(UIKit.caption("QUANTITY"))
+		row.add_child(UIKit.button("-", &"GhostButton", _set_sell_qty.bind(_sell_qty - 1, kind, key), "SellLess", 36))
+		var q := UIKit.label(str(_sell_qty), &"MonoLabel", false, null, 18)
+		q.name = "SellQtyValue"
+		q.custom_minimum_size.x = 40
+		q.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		row.add_child(q)
+		row.add_child(UIKit.button("+", &"GhostButton", _set_sell_qty.bind(_sell_qty + 1, kind, key), "SellMore", 36))
+		row.add_child(UIKit.button("ALL %d" % most, &"GhostButton", _set_sell_qty.bind(most, kind, key), "SellAll", 36))
+	if stack:
+		why = InventoryManager.sell_block_reason(kind, key, _sell_qty)
+	var total := each * (_sell_qty if stack else 1)
+	var b := UIKit.button("SELL%s · +%s" % [(" %d" % _sell_qty) if stack else "", EconomyManager.format_money(total)], &"AccentButton",
+		_confirm_sell.bind(kind, key, _sell_qty if stack else 1, item_name), "SellButton", 44)
+	b.disabled = why != ""
+	box.add_child(b)
+	if why != "":
+		var w := UIKit.label(why, &"DimLabel", true, Palette.WARN, 14)
+		w.name = "SellBlocked"
+		box.add_child(w)
+	elif kind == &"tool":
+		# Selling your only instrument of a kind blocks jobs that need one.
+		var t := InventoryManager.get_tool(StringName(key))
+		var others := InventoryManager.owned_tools.filter(func(id: StringName) -> bool:
+			var o := InventoryManager.get_tool(id)
+			return o != null and o != t and o.category == t.category)
+		if others.is_empty():
+			box.add_child(UIKit.label("Your only %s: jobs that need one can't start without it." % String(t.category), &"DimLabel", true, Palette.WARN, 14))
+
+
+func _set_sell_qty(n: int, kind: StringName, key: String) -> void:
+	_sell_qty = n
+	_show(kind, key)
+
+
+func _confirm_sell(kind: StringName, key: String, qty: int, item_name: String) -> void:
+	var each := InventoryManager.sell_value(kind, key)
+	var what := ("%d %s" % [qty, item_name]) if kind == &"supplies" else item_name
+	_sell_ticket += 1
+	UIManager.confirm("SELL", "Sell %s for %s?\nCash: %s → %s" % [what, EconomyManager.format_money(each * qty),
+		EconomyManager.format_money(EconomyManager.money), EconomyManager.format_money(EconomyManager.money + each * qty)],
+		"SELL", _do_sell.bind(kind, key, qty, what, _sell_ticket))
+
+
+func _do_sell(kind: StringName, key: String, qty: int, what: String, ticket: int) -> void:
+	if ticket != _sell_ticket:
+		return
+	_sell_ticket += 1  # spent: a second press of the same dialog does nothing
+	# Re-checked here: the dialog may outlive what it was about.
+	var why := InventoryManager.sell_block_reason(kind, key, qty)
+	if why != "":
+		UIManager.show_toast(why, &"warn")
+		return
+	var got := InventoryManager.sell(kind, key, qty)
+	if got <= 0:
+		UIManager.show_toast("Nothing was sold.", &"warn")
+		return
+	AudioManager.play_sfx(&"cash", 0.0)
+	UIManager.show_toast("Sold %s for %s." % [what, EconomyManager.format_money(got)], &"success")
+	_sell_qty = 1
+	if kind != &"supplies":
+		_selected_key = ""
+	_rebuild()

@@ -102,7 +102,7 @@ func _essentials(col: VBoxContainer) -> void:
 	if int(f["owed"]) > 0:
 		pays += " (%s now)" % EconomyManager.format_money(int(f["pays_now"]))
 	var money := _line(col, "SummaryMargin", "MONEY", "pays %s · you keep ≈ %+d cr before rent" % [pays, margin], Palette.OK if margin > 0 else Palette.DANGER)
-	money.tooltip_text = "Estimated direct margin: what they pay minus the implant and supplies. DETAILS has the breakdown."
+	money.tooltip_text = "Estimated direct margin: the whole fee (what they pay now plus any instalments) minus the implant and supplies. Rent and wages come out at closing. DETAILS has the breakdown."
 
 
 func _actions(col: VBoxContainer) -> void:
@@ -161,8 +161,9 @@ func _build_details() -> void:
 	_line(box, "SummaryCosts", "COSTS", "implant %s (%s) + supplies %s" % [EconomyManager.format_money(int(f["implant_cost"])), src_text, EconomyManager.format_money(int(f["supplies_cost"]))], Palette.TEXT_DIM)
 	if int(f["owed"]) > 0:
 		_line(box, "SummaryOwed", "LATER", "%s in instalments" % EconomyManager.format_money(int(f["owed"])), Palette.TEXT_DIM)
-	if src in ["stock", "substitute"]:
-		_line(box, "SummaryCash", "CASH TODAY", "%+d cr (the implant is already yours)" % int(f["cash_today"]), Palette.TEXT_DIM)
+	if src in ["stock", "substitute"] or int(f["owed"]) > 0:
+		var why := "the implant is already yours" if src in ["stock", "substitute"] else "the rest comes in instalments"
+		_line(box, "SummaryCash", "CASH TODAY", "%+d cr (%s)" % [int(f["cash_today"]), why], Palette.TEXT_DIM)
 	var rec: Dictionary = _brief["recommendation"]
 	var adv := UIKit.label(str(rec["text"]), &"", true, JobVerdict.color(rec["level"]), 15)
 	adv.name = "SummaryAdvice"
