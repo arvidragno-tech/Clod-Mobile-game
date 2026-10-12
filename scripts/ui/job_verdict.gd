@@ -143,4 +143,7 @@ static func build(parent: Control, c: CustomerData, compact: bool = false) -> vo
 		row.add_child(v)
 		if not compact:
 			row.add_child(UIKit.info(str(x["term"])))
+		else:
+			row.tooltip_text = Glossary.short(str(x["term"]))
+			row.mouse_filter = Control.MOUSE_FILTER_PASS
 		parent.add_child(row)

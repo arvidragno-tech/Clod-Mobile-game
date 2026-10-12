@@ -66,10 +66,10 @@ func _build_upgrades() -> void:
 	var sv := UIKit.vbox(6)
 	stats.add_child(sv)
 	var t := ClinicManager.get_tier_data()
-	sv.add_child(UIKit.label(ClinicManager.get_tier_name().to_upper(), &"HeaderLabel"))
-	sv.add_child(UIKit.label("%s · %s" % [WorldManager.district_name(), str(WorldManager.current_district().get("label", ""))], &"SubHeaderLabel", false, Palette.ACCENT))
+	sv.add_child(UIKit.label(ClinicManager.get_tier_name().to_upper(), &"HeaderLabel", true))
+	sv.add_child(UIKit.label("%s · %s" % [WorldManager.district_name(), str(WorldManager.current_district().get("label", ""))], &"SubHeaderLabel", true, Palette.ACCENT))
 	sv.add_child(UIKit.label(str(t.get("description", "")), &"DimLabel", true))
-	sv.add_child(UIKit.label("Upgrade slots  %d / %d" % [ClinicManager.used_slots(), ClinicManager.slots()], &"MonoLabel", false, Palette.TEXT))
+	sv.add_child(UIKit.label("Upgrade slots  %d / %d" % [ClinicManager.used_slots(), ClinicManager.slots()], &"MonoLabel", true, Palette.TEXT))
 	sv.add_child(UIKit.meter(float(ClinicManager.used_slots()) / maxf(1.0, ClinicManager.slots()), Palette.ACCENT))
 	sv.add_child(UIKit.label("Security %d · Staff %d · Jobs/day %d" % [ClinicManager.security_rating(), ClinicManager.staff_capacity(), ClinicManager.surgery_capacity()], &"MonoLabel", true, Palette.TEXT_DIM, 17))
 	var c := ClinicManager.daily_costs()
@@ -81,8 +81,13 @@ func _build_upgrades() -> void:
 	grid.columns = 3
 	grid.add_theme_constant_override(&"h_separation", 12)
 	grid.add_theme_constant_override(&"v_separation", 12)
-	UIKit.expand(grid, true, true)
-	_body.add_child(grid)
+	UIKit.expand(grid, true, false)
+	# The cards scroll when text is large, instead of falling off-screen.
+	var gsc := UIKit.scroll()
+	gsc.name = "UpgradeScroll"
+	UIKit.expand(gsc, true, true)
+	_body.add_child(gsc)
+	gsc.add_child(grid)
 	for cat in ClinicManager.CATEGORIES:
 		var card := _category_card(cat)
 		grid.add_child(card)
@@ -105,9 +110,11 @@ func _category_card(cat: StringName) -> Control:
 		v.add_child(UIKit.label("Installed: %s" % str(ClinicManager.upgrade_def(cat, lv).get("name", "")), &"DimLabel", true, Palette.OK, 13))
 	if lv < ClinicManager.MAX_UPGRADE_LEVEL:
 		var d := ClinicManager.upgrade_def(cat, lv + 1)
-		v.add_child(UIKit.label("NEXT  %s  · upkeep %d/day" % [str(d.get("name", "")).to_upper(), int(d.get("upkeep", 0))], &"", false, Palette.TEXT, 15))
+		v.add_child(UIKit.label("NEXT  %s  · upkeep %d/day" % [str(d.get("name", "")).to_upper(), int(d.get("upkeep", 0))], &"", true, Palette.TEXT, 15))
 		v.add_child(UIKit.label(str(d.get("text", "")), &"DimLabel", true, null, 13))
 		var reason := ClinicManager.install_block_reason(cat)
+		if reason == "":
+			DecisionPreview.build(v, int(d.get("cost", 0)), {"recurring": int(d.get("upkeep", 0))})
 		var b := UIKit.button(("INSTALL · %s" % EconomyManager.format_money(int(d.get("cost", 0)))) if reason == "" else reason.to_upper(),
 			&"AccentButton" if reason == "" else &"GhostButton", _install.bind(cat), "Install_%s" % cat, 44)
 		b.disabled = reason != ""
@@ -177,6 +184,8 @@ func _clinic_row(i: int, is_next: bool) -> Control:
 		var label := ("BUY & MOVE · %s" % EconomyManager.format_money(ClinicManager.price(i))) if reason == "" else reason.to_upper()
 		var b := UIKit.button(label, &"BrandButton" if reason == "" else &"GhostButton", _buy_and_move.bind(i), "UpgradeClinic" if is_next else "BuyClinic_%d" % i, 52)
 		b.disabled = reason != ""
+		if reason == "":
+			b.tooltip_text = DecisionPreview.summary(ClinicManager.price(i)) + "\n" + _move_effect(i)
 		btns.add_child(b)
 		if reason == "":
 			btns.add_child(UIKit.button("BUY ONLY (STAFF IT)", &"GhostButton", _buy.bind(i), "BuyOnly_%d" % i, 40))
@@ -184,7 +193,24 @@ func _clinic_row(i: int, is_next: bool) -> Control:
 	return card
 
 
+## What moving changes every night (rent + running), from the clinic data.
+func _move_effect(i: int) -> String:
+	var t := ClinicManager.get_tier_data(i)
+	var cur := ClinicManager.get_tier_data(ClinicManager.tier)
+	var now_cost := int(cur.get("rent", 0)) + int(cur.get("operating_cost", 0))
+	var new_cost := int(t.get("rent", 0)) + int(t.get("operating_cost", 0))
+	return "Nightly rent + running: %s → %s (%+d). %d jobs a day (now %d). Your old clinic stays yours at half rent while empty." % [
+		EconomyManager.format_money(now_cost), EconomyManager.format_money(new_cost), new_cost - now_cost, int(t.get("surgery_capacity", 0)), int(cur.get("surgery_capacity", 0))]
+
+
 func _buy_and_move(i: int) -> void:
+	# A big, lasting commitment: say what it costs and changes first.
+	UIManager.guard("BUY THE %s?" % str(ClinicManager.get_tier_data(i)["name"]).to_upper(),
+		"%s\n\n%s\n\nMore jobs and richer patients are a chance, not a promise." % [DecisionPreview.summary(ClinicManager.price(i)), _move_effect(i)],
+		"BUY & MOVE", _do_buy_and_move.bind(i))
+
+
+func _do_buy_and_move(i: int) -> void:
 	if ClinicManager.buy(i):
 		ClinicManager.move_to(i)
 		UIManager.celebrate(&"upgrade", "Welcome to the %s" % ClinicManager.get_tier_name())

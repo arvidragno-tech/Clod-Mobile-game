@@ -2,6 +2,10 @@ extends Node
 ## The Undermarket: rotating stock of illegal / stolen / experimental chrome
 ## with hidden traits, plus STUDY, MODIFY, SELL and mystery cases.
 
+## What every purchase does to your standing (shown before you buy).
+const BUY_STANDING := 2
+const BUY_HEAT := 3.0
+
 var config: Dictionary = {}
 var traits: Dictionary = {}  # StringName -> Dictionary
 ## Array of {"instance": ImplantInstance, "price": int}
@@ -94,7 +98,24 @@ func modify_cost_parts() -> int:
 	return maxi(1, int(round(int(config.get("modify_cost_parts", 3)) * ModifierManager.mult(&"bm.modify"))))
 
 
+## Position of the offer whose implant has this uid (-1 if it's gone).
+func index_of(uid: String) -> int:
+	for i in stock.size():
+		var inst: ImplantInstance = stock[i]["instance"]
+		if inst and inst.uid == uid:
+			return i
+	return -1
+
+
+## Records why standing changes in here (ChangeLog standing history).
 func buy(index: int) -> bool:
+	ChangeLog.push_cause("Black-market purchase")
+	var r: bool = _buy_impl(index)
+	ChangeLog.pop_cause()
+	return r
+
+
+func _buy_impl(index: int) -> bool:
 	if not is_unlocked() or index < 0 or index >= stock.size():
 		return false
 	var offer: Dictionary = stock[index]
@@ -102,8 +123,8 @@ func buy(index: int) -> bool:
 		return false
 	stock.remove_at(index)
 	InventoryManager.add_instance(offer["instance"])
-	FactionManager.change(&"black_market", 2)
-	FactionManager.add_heat(3.0)
+	FactionManager.change(&"black_market", BUY_STANDING)
+	FactionManager.add_heat(BUY_HEAT)
 	EventBus.black_market_changed.emit()
 	return true
 

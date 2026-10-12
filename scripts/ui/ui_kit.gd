@@ -182,6 +182,21 @@ static func label(text: String, variation: StringName = &"", wrap: bool = false,
 	return l
 
 
+## Atmosphere (a patient's words, a rumour, lore): quoted, dim and italic,
+## so it never reads like a requirement or a warning.
+static func flavor(text: String, size: int = 15) -> Label:
+	var l := label("\u201c%s\u201d" % text.strip_edges().trim_prefix("\"").trim_suffix("\""), &"DimLabel", true, Palette.TEXT_DIM, size)
+	l.name = "Flavor"
+	# Slanted (the pixel font has no italic of its own).
+	var base: Font = l.get_theme_font(&"font")
+	if base:
+		var v := FontVariation.new()
+		v.base_font = base
+		v.variation_transform = Transform2D(Vector2(1, 0), Vector2(0.18, 1), Vector2.ZERO)
+		l.add_theme_font_override(&"font", v)
+	return l
+
+
 static func button(text: String, variation: StringName = &"", on_press: Callable = Callable(), node_name: String = "", min_h: float = GameConfig.MIN_CONTROL) -> Button:
 	var b := Button.new()
 	b.text = text
@@ -230,6 +245,21 @@ static func header(step: String, title: String, on_back: Callable) -> HBoxContai
 	titles.add_child(t)
 	h.add_child(titles)
 	return h
+
+
+## Purchase / action guard: true the first time `key` fires, false again
+## until `sec` has passed. A double-click (two presses ~0.1 s apart) on a BUY
+## button is one purchase; a deliberate second click a moment later is not
+## blocked.
+static var _last_action: Dictionary = {}
+
+
+static func debounce(key: String, sec: float = 0.4) -> bool:
+	var now := Time.get_ticks_msec()
+	if now - int(_last_action.get(key, -100000)) < int(sec * 1000.0):
+		return false
+	_last_action[key] = now
+	return true
 
 
 static func scroll() -> ScrollContainer:

@@ -78,7 +78,14 @@ func check(id: StringName) -> void:
 		fail(id)
 
 
+## Records why standing changes in here (ChangeLog standing history).
 func complete(id: StringName) -> void:
+	ChangeLog.push_cause("Quest: %s" % str(get_quest(id).get("title", id)))
+	_complete_impl(id)
+	ChangeLog.pop_cause()
+
+
+func _complete_impl(id: StringName) -> void:
 	states[id]["state"] = "completed"
 	states[id]["ended_day"] = BusinessManager.day
 	var r: Dictionary = get_quest(id).get("reward", {})

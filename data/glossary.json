@@ -3,11 +3,11 @@
  "topics": [
   {
    "id": "basics",
-   "label": "THE BASICS"
+   "label": "GETTING STARTED"
   },
   {
    "id": "patients",
-   "label": "PATIENTS"
+   "label": "PATIENTS & IMPLANTS"
   },
   {
    "id": "surgery",
@@ -15,19 +15,19 @@
   },
   {
    "id": "money",
-   "label": "MONEY & BUSINESS"
+   "label": "BUSINESS"
   },
   {
    "id": "street",
-   "label": "STREET & FACTIONS"
+   "label": "REPUTATION & RELATIONSHIPS"
   },
   {
    "id": "city",
-   "label": "THE CITY"
+   "label": "CITY & LOCATIONS"
   },
   {
    "id": "staff",
-   "label": "STAFF"
+   "label": "CLINIC & STAFF"
   }
  ],
  "terms": {
@@ -35,7 +35,13 @@
    "topic": "basics",
    "title": "A shift, step by step",
    "short": "See the customer, scan them, plan, operate, get paid.",
-   "text": "1. Someone knocks: open their file (C).\n2. Decide: operate yourself, hand them to staff, defer, or refuse.\n3. Scan the body and pick a diagnosis (hidden problems make surgery harder).\n4. Check the operation plan: the implant, your tools, the odds.\n5. Operate: follow the steps with your instruments, watch the vitals.\n6. Get paid, earn XP and reputation. Repeat until the day's jobs are done, then CLOSE FOR THE NIGHT to settle rent and salaries."
+   "text": "1. Someone knocks: open their file (C).\n2. Decide: operate yourself, hand them to staff, defer, or refuse.\n3. Scan the body and pick a diagnosis (hidden problems make surgery harder).\n4. Check the operation plan: the implant, your tools, the odds.\n5. Operate: follow the steps with your instruments, watch the vitals.\n6. Get paid, earn XP and reputation. Repeat until the day's jobs are done, then CLOSE FOR THE NIGHT to settle rent and salaries.",
+   "why": "It's the whole game: every shift repeats it with harder patients and better chrome.",
+   "where": "The clinic: SEE PATIENT, then follow the steps.",
+   "see": [
+    "next",
+    "priorities"
+   ]
   },
   "next": {
    "topic": "basics",
@@ -59,37 +65,57 @@
    "topic": "street",
    "title": "Reputation (REP)",
    "short": "What the street thinks of your work. Higher brings better customers.",
-   "text": "Reputation goes up with good operations and fair treatment and down with failures, deaths and refusals. It unlocks the black market (at 25, or sooner through a fixer), better clinics and better-paying customers. Under it you'll see your street identity: what people call you based on what you've actually done."
+   "text": "Reputation goes up with good operations and fair treatment and down with failures, deaths and refusals. It unlocks the black market (at 25, or sooner through a fixer), better clinics and better-paying customers. Under it you'll see your street identity: what people call you based on what you've actually done.",
+   "why": "Better reputation brings richer patients and better jobs.",
+   "where": "The status bar and the journal's STANDING tab.",
+   "see": [
+    "standing",
+    "factions"
+   ]
   },
   "identity": {
    "topic": "street",
    "title": "Street identity",
    "short": "What people call you, from how you've behaved.",
-   "text": "Nobody, the Saint, the Butcher, the Gang Doc, the Fence, the Contractor, the Shark, the Surgeon. It comes from your five reputations (civilian, criminal, medical, corporate, black market) and changes who walks in and how conversations go."
+   "text": "Nobody, the Saint, the Butcher, the Gang Doc, the Fence, the Contractor, the Shark, the Surgeon. It comes from your five reputations (civilian, criminal, medical, corporate, black market) and changes who walks in and how conversations go.",
+   "feature": "dossier"
   },
   "heat": {
    "topic": "street",
    "title": "Heat",
    "short": "How much attention the law is paying you. High heat brings trouble.",
-   "text": "Illegal chrome, black-market deals, deaths and scenes raise heat. Clean, quiet operations cool it a little each time. High heat means inspections, surveillance, police in the city, confiscations and worse. Bribes, certified stock and clean work bring it down."
+   "text": "Illegal chrome, black-market deals, deaths and scenes raise heat. Clean, quiet operations cool it a little each time. High heat means inspections, surveillance, police in the city, confiscations and worse. Bribes, certified stock and clean work bring it down.",
+   "why": "High heat brings inspections and raids.",
+   "where": "The status bar, CLINIC STATUS and the journal's STANDING tab.",
+   "see": [
+    "standing",
+    "black_market"
+   ]
   },
   "supplies": {
    "topic": "money",
    "title": "Medical supplies",
    "short": "Used up by every operation. Buy more in SUPPLY.",
-   "text": "Each operation uses supplies (bandages, sealant, sedatives). Run out and you can't operate. Restock at the SUPPLY terminal, the night market, or from black-market contacts."
+   "text": "Each operation uses supplies (bandages, sealant, sedatives). Run out and you can't operate. Restock at the SUPPLY terminal, the night market, or from black-market contacts.",
+   "why": "No supplies, no operation.",
+   "where": "SUPPLY sells packs; the TODAY card shows how many you have.",
+   "see": [
+    "credits"
+   ]
   },
   "parts": {
    "topic": "money",
    "title": "Parts",
    "short": "Spare components for modding chrome and emergency fixes.",
-   "text": "Parts are used to modify black-market implants, repair things in a hurry and in some events. Salvage them at the Furnace Line Works or buy them from dealers."
+   "text": "Parts are used to modify black-market implants, repair things in a hurry and in some events. Salvage them at the Furnace Line Works or buy them from dealers.",
+   "feature": "inventory"
   },
   "tokens": {
    "topic": "money",
    "title": "Tokens",
    "short": "Rare favours and data chips: used for special deals.",
-   "text": "Tokens are rare. A few events and contacts ask for them instead of credits."
+   "text": "Tokens are rare. A few events and contacts ask for them instead of credits.",
+   "feature": "blackmarket"
   },
   "jobs": {
    "topic": "money",
@@ -101,7 +127,9 @@
    "topic": "surgery",
    "title": "Neural load",
    "short": "How much chrome their nervous system is carrying. Over 100% = breakdown.",
-   "text": "Every implant adds load. The bar shows load now and after this operation. STABLE is safe; STRAINED raises complications; CRITICAL risks a neural break during surgery. Hidden conditions can add more: scan before you cut."
+   "text": "Every implant adds load. The bar shows load now and after this operation. STABLE is safe; STRAINED raises complications; CRITICAL risks a neural break during surgery. Hidden conditions can add more: scan before you cut.",
+   "why": "Past 80% the patient's nerves can break during or after surgery.",
+   "where": "The patient summary, the file and the operation plan."
   },
   "risk": {
    "topic": "patients",
@@ -131,7 +159,12 @@
    "topic": "surgery",
    "title": "Difficulty",
    "short": "1 to 5. Harder procedures take longer, pay more and need better tools.",
-   "text": "Difficulty sets how many steps, how fast the vitals move, and how long the operation takes on the clock (20 minutes to two hours)."
+   "text": "Difficulty sets how many steps, how fast the vitals move, and how long the operation takes on the clock (20 minutes to two hours).",
+   "why": "Harder procedures have tighter tolerances and lower your odds.",
+   "where": "The patient summary and the plan.",
+   "see": [
+    "success_estimate"
+   ]
   },
   "tier": {
    "topic": "surgery",
@@ -185,85 +218,105 @@
    "topic": "money",
    "title": "Debt",
    "short": "What you owe. Interest grows every night.",
-   "text": "Unpaid bills and loans become debt with nightly interest. Pay it down in BUSINESS. Patients' debts to you are listed there too: demand, set a plan, write off, send a collector or take a favour."
+   "text": "Unpaid bills and loans become debt with nightly interest. Pay it down in BUSINESS. Patients' debts to you are listed there too: demand, set a plan, write off, send a collector or take a favour.",
+   "feature": "business",
+   "why": "Unpaid bills grow with interest and scare suppliers.",
+   "where": "BUSINESS: pay it down or take a plan."
   },
   "rent": {
    "topic": "money",
    "title": "Tonight's bill",
    "short": "Rent, running costs, upkeep and salaries, paid when you close.",
-   "text": "Every night you pay rent and running costs for every clinic you own, upgrade upkeep and staff salaries. The business screen shows it before you close."
+   "text": "Every night you pay rent and running costs for every clinic you own, upgrade upkeep and staff salaries. The business screen shows it before you close.",
+   "feature": "business"
   },
   "factions": {
    "topic": "street",
    "title": "Factions",
    "short": "Gangs, corps, mercs, the market, the medical board, Lyra. Each likes you or doesn't.",
-   "text": "Treating a faction's people well raises your standing with them; failing them or helping their enemies lowers it. Standing changes prices, who walks in, what conversations offer and whether you're welcome in their places in the city."
+   "text": "Treating a faction's people well raises your standing with them; failing them or helping their enemies lowers it. Standing changes prices, who walks in, what conversations offer and whether you're welcome in their places in the city.",
+   "feature": "dossier"
   },
   "influence": {
    "topic": "city",
    "title": "Influence",
    "short": "How much of your work happened in this district.",
-   "text": "Working in a district builds influence there: more of its people come to you."
+   "text": "Working in a district builds influence there: more of its people come to you.",
+   "feature": "map"
   },
   "place_state": {
    "topic": "city",
    "title": "What a place is like now",
    "short": "Activity, danger and police change with the hour, factions and the news.",
-   "text": "BUSY, QUIET, DANGEROUS, POLICE PRESENCE, MONITORED, someone's TURF, UNWELCOME (you're hostile to whoever runs it), BLACK MARKET ACTIVE, CLOSED, SOMETHING'S HAPPENING (an event to deal with), A LEAD (a missing patient's trail)."
+   "text": "BUSY, QUIET, DANGEROUS, POLICE PRESENCE, MONITORED, someone's TURF, UNWELCOME (you're hostile to whoever runs it), BLACK MARKET ACTIVE, CLOSED, SOMETHING'S HAPPENING (an event to deal with), A LEAD (a missing patient's trail).",
+   "feature": "map"
   },
   "travel": {
    "topic": "city",
    "title": "Getting around",
    "short": "Walk (free, risky after dark), metro (cheap, until 01:00) or cab (fast, pricey).",
-   "text": "Every trip moves the clock. Walking is free but slow and the lower city is dangerous at night. The metro runs 06:00-01:00 (not in a blackout, never into the Exclusion Zone). Cabs are fastest and cost more at night. While you're out nobody new walks into the clinic; whoever was waiting sits on the bench if there's room."
+   "text": "Every trip moves the clock. Walking is free but slow and the lower city is dangerous at night. The metro runs 06:00-01:00 (not in a blackout, never into the Exclusion Zone). Cabs are fastest and cost more at night. While you're out nobody new walks into the clinic; whoever was waiting sits on the bench if there's room.",
+   "feature": "map",
+   "why": "Leaving the clinic costs time; patients wait or leave.",
+   "where": "The CITY MAP: the panel shows time and cost before you go."
   },
   "danger": {
    "topic": "city",
    "title": "Danger",
    "short": "How likely trouble finds you here (or on the way).",
-   "text": "Danger rises at night and with gang wars. It makes walking riskier and break-ins likelier."
+   "text": "Danger rises at night and with gang wars. It makes walking riskier and break-ins likelier.",
+   "feature": "map"
   },
   "police": {
    "topic": "city",
    "title": "Police presence",
    "short": "How many eyes are on the street. Rises with your heat.",
-   "text": "Police make illegal work riskier: checkpoints, stings and questions."
+   "text": "Police make illegal work riskier: checkpoints, stings and questions.",
+   "feature": "map"
   },
   "services": {
    "topic": "city",
    "title": "Things to do at places",
    "short": "Most can be done once a day per place.",
-   "text": "Hand out cards to bring patients in, recruit staff, listen for rumours, salvage parts, buy supplies cheaper, take courier jobs and licensed shifts, and visit patients at home. Each takes time on the clock."
+   "text": "Hand out cards to bring patients in, recruit staff, listen for rumours, salvage parts, buy supplies cheaper, take courier jobs and licensed shifts, and visit patients at home. Each takes time on the clock.",
+   "feature": "map"
   },
   "missing": {
    "topic": "city",
    "title": "Missing patients",
    "short": "Their family asks for help: start at their home.",
-   "text": "Patients with risky chrome can disappear. Visit their home to find a clue, then go where it points. You have a few days."
+   "text": "Patients with risky chrome can disappear. Visit their home to find a clue, then go where it points. You have a few days.",
+   "feature": "map"
   },
   "black_market": {
    "topic": "money",
    "title": "The black market",
    "short": "Cheaper and rarer chrome, with unknown properties and risk.",
-   "text": "Unlocked by a fixer's card or reputation 25. Stock can carry hidden traits (study to reveal them), unidentified devices, and contacts who trust or suspect you. Six suppliers each have their own goods, credit and favours."
+   "text": "Unlocked by a fixer's card or reputation 25. Stock can carry hidden traits (study to reveal them), unidentified devices, and contacts who trust or suspect you. Six suppliers each have their own goods, credit and favours.",
+   "feature": "blackmarket"
   },
   "loyalty": {
    "topic": "staff",
    "title": "Loyalty",
    "short": "How much your staff stick with you. Low loyalty: thefts, quitting.",
-   "text": "Fair pay, good outcomes, raises and time together raise loyalty; forcing them against their ethics and deaths lower it."
+   "text": "Fair pay, good outcomes, raises and time together raise loyalty; forcing them against their ethics and deaths lower it.",
+   "feature": "staff"
   },
   "stress": {
    "topic": "staff",
    "title": "Stress",
    "short": "High stress makes staff slower and more error-prone.",
-   "text": "Hard jobs and long nights stress your staff. Breaks, a drink at their bar and easier jobs bring it down."
+   "text": "Hard jobs and long nights stress your staff. Breaks, a drink at their bar and easier jobs bring it down.",
+   "feature": "staff",
+   "why": "Stressed staff make mistakes and quit.",
+   "where": "STAFF: lighter work or a day off."
   },
   "ethics": {
    "topic": "staff",
    "title": "Ethics",
    "short": "What a ripperdoc refuses to do (unless you insist).",
-   "text": "Some staff refuse black-market chrome, corporate work or minors. You can insist; it costs loyalty."
+   "text": "Some staff refuse black-market chrome, corporate work or minors. You can insist; it costs loyalty.",
+   "feature": "staff"
   },
   "odds": {
    "topic": "surgery",
@@ -275,7 +328,8 @@
    "topic": "basics",
    "title": "The Clinic Wall",
    "short": "Pins for your milestones, losses, regulars and warnings.",
-   "text": "Click the wall in the clinic (or JOURNAL > WALL) to read it."
+   "text": "Click the wall in the clinic (or JOURNAL > WALL) to read it.",
+   "feature": "dossier"
   },
   "time": {
    "topic": "basics",
@@ -287,13 +341,15 @@
    "topic": "staff",
    "title": "Skill, speed, precision, reliability",
    "short": "How good a ripperdoc (or a tool) is at the work.",
-   "text": "SKILL: how difficult a job they can take on. SPEED: how fast they work (less time on the clock). PRECISION: fewer mistakes, less bleeding. RELIABILITY: how consistent they are from job to job. On tools, PRECISION and SPEED are multipliers on your own hands; RISK is how much a tool adds to complications."
+   "text": "SKILL: how difficult a job they can take on. SPEED: how fast they work (less time on the clock). PRECISION: fewer mistakes, less bleeding. RELIABILITY: how consistent they are from job to job. On tools, PRECISION and SPEED are multipliers on your own hands; RISK is how much a tool adds to complications.",
+   "feature": "staff"
   },
   "salary": {
    "topic": "staff",
    "title": "Salary",
    "short": "Paid every night, whether they worked or not.",
-   "text": "Salaries are part of tonight's bill. Raises improve loyalty."
+   "text": "Salaries are part of tonight's bill. Raises improve loyalty.",
+   "feature": "staff"
   },
   "reading": {
    "topic": "basics",
@@ -311,7 +367,8 @@
    "topic": "basics",
    "title": "Follow",
    "short": "Keep a quest, person, patient or place on your MAIN page with where and when.",
-   "text": "Use ☆ FOLLOW on a quest, a cast member, a patient or a place. The journal's MAIN page then shows where they are right now (people keep their own hours), how many days are left, or what's happening there, and the clinic's priorities remind you when it's time. Followed places get a ★ on the city map. Finished things drop off by themselves."
+   "text": "Use ☆ FOLLOW on a quest, a cast member, a patient or a place. The journal's MAIN page then shows where they are right now (people keep their own hours), how many days are left, or what's happening there, and the clinic's priorities remind you when it's time. Followed places get a ★ on the city map. Finished things drop off by themselves.",
+   "feature": "dossier"
   },
   "changes": {
    "topic": "basics",
@@ -330,6 +387,74 @@
    "title": "Controls",
    "short": "Every key can be changed in SETTINGS > CONTROLS: presets, search, two keys per action.",
    "text": "SETTINGS > CONTROLS lists every action with a primary and a secondary key. Click a key and press the new one (CTRL, SHIFT and ALT combinations work; DEL unassigns). If the key is taken you choose: REPLACE (the other action loses it), SWAP or CANCEL. Presets: DEFAULT, WASD, LEFT-HANDED. RESET puts one action, a category or everything back. Help texts always show your current keys."
+  },
+  "doors": {
+   "topic": "basics",
+   "title": "Closing the doors",
+   "short": "CLOSE DOORS stops walk-ins so you can read, shop and plan.",
+   "text": "CLOSE DOORS (TODAY card in the clinic) stops new customers walking in and keeps the waiting room empty. Nobody already in the chair is sent away, and the clock, rent and story keep running as normal.\nUse it to read messages, compare implants, spend skill points or restock without someone waiting at the door. OPEN DOORS lets the next customer in. The doors open again on their own every morning.",
+   "why": "It buys time to read and shop without anyone waiting.",
+   "where": "The TODAY card on the clinic screen."
+  },
+  "standing": {
+   "topic": "street",
+   "title": "Standing: reputation, relationships, trust, heat",
+   "short": "Who thinks what of you, why it changed, and what the next step does.",
+   "text": "Four different things, kept apart:\n- REPUTATION: what the street thinks of your clinic (one number, plus five sides: skill, care, discretion, reliability, ethics). It brings richer customers and better jobs.\n- FACTION STANDING: what each group thinks of you. It opens or closes their jobs, prices and protection.\n- RELATIONSHIP and TRUST: what one person thinks of you. Separate from their faction: a gang member can like you while their gang doesn't.\n- AUTHORITY HEAT: how much attention the law is paying. It goes up with black-market and messy work, down with clean work and time.\nThe journal's STANDING tab shows each value with its trend, what it does now, the next threshold, and the history of what changed it and why.",
+   "feature": "dossier",
+   "see": [
+    "rep",
+    "heat",
+    "factions"
+   ]
+  },
+  "outlook": {
+   "topic": "money",
+   "title": "Business outlook",
+   "short": "What the next few days should earn and cost, and why you're losing money if you are.",
+   "text": "The OUTLOOK card in BUSINESS projects the next three days from your recent days: expected job income, what jobs use up (implants, supplies), the fixed bills (rent, salaries, upkeep, interest) and anything due. If the projection is a loss it names the biggest cause and what to do about it. It is an estimate from your own history, not a promise.",
+   "feature": "business"
+  },
+  "the_money": {
+   "topic": "money",
+   "title": "The money on a job",
+   "short": "Fee, what the patient paid, what they still owe, and what the job used up.",
+   "text": "Before an operation the file and the plan show PAYMENT (the expected fee and what the patient can pay today), USES UP (the implant and medical supplies) and YOU KEEP (what's left). After it, THE MONEY on the results screen shows the real numbers: the fee, any cut for waiting, what was paid now, what is owed (it becomes an instalment plan automatically) and the net.",
+   "see": [
+    "direct_margin"
+   ]
+  },
+  "guidance": {
+   "topic": "basics",
+   "title": "Guidance level",
+   "short": "MINIMAL, STANDARD or DETAILED: how much the screens explain.",
+   "text": "Settings > Gameplay > GUIDANCE changes only what is shown, never the rules.\nMINIMAL: WHAT MATTERS shows only critical and important lines, CLINIC STATUS only what isn't fine, no first-time cards.\nSTANDARD: the default.\nDETAILED: more lines, the numbers behind every status line, and a short notice for important changes (never during surgery or a conversation)."
+  },
+  "success_estimate": {
+   "topic": "surgery",
+   "title": "Your odds (success estimate)",
+   "short": "An estimate of how likely the operation goes well for you.",
+   "text": "The patient summary and the plan show YOUR ODDS as an estimate, never a promise. It comes from the same rules the game uses:\n- your record on this procedure (smoothed toward a cautious start);\n- the job's difficulty against your level;\n- the chance of an extra complication (patient risk, neural load, the implant, your tools);\n- neural load past 80.\nIt assumes your diagnosis is right. Hidden conditions and how steady your hands are aren't known in advance, so a real result can be better or worse.\nDIFFICULTY is something else: how demanding the procedure is (1 to 5), the same for everyone.",
+   "why": "It tells you whether to take a job yourself, hand it over or turn it down.",
+   "where": "The patient summary (YOUR ODDS) and the operation plan.",
+   "see": [
+    "difficulty",
+    "odds",
+    "neural_load"
+   ]
+  },
+  "direct_margin": {
+   "topic": "money",
+   "title": "Direct margin",
+   "short": "What the patient pays minus what the job uses up (before rent and wages).",
+   "text": "DIRECT MARGIN = what the patient pays − the implant − the medical supplies.\nIt is an estimate: the real fee depends on how the operation goes, and a patient who can't pay everything now pays the rest in instalments.\nIt is not your profit for the day: rent, running costs and wages are paid when you close for the night (BUSINESS shows them).\nAn implant from stock counts at what it would cost to replace.",
+   "why": "Payment isn't profit: this is what's left after the job's own costs.",
+   "where": "The patient summary (FINANCES) and THE MONEY on the results screen.",
+   "see": [
+    "the_money",
+    "outlook",
+    "terms_payment"
+   ]
   }
  }
 }

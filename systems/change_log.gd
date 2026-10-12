@@ -8,7 +8,8 @@ extends Node
 ##
 ## Repeated changes to the same thing within an hour of game time merge into
 ## one line ("Medical supplies -3" instead of three "-1"s). Only CRITICAL
-## entries interrupt with a toast; the rest wait in the panel (G).
+## entries interrupt with a toast (DETAILED guidance adds IMPORTANT ones
+## outside surgery and dialogue); the rest wait in the panel (G).
 
 signal added(entry: Dictionary)
 signal read_changed()
@@ -22,6 +23,19 @@ const INFO := &"info"
 const LEVEL_MARKS := {&"critical": "■", &"important": "▲", &"info": "·"}
 
 var entries: Array[Dictionary] = []  # oldest first
+
+## STANDING HISTORY (3.6): every change to street reputation, the five
+## reputation dimensions, faction standing, authority heat and personal
+## relationships, with the cause that was recorded when it happened (never
+## reconstructed later). Minor repeats (same thing, same cause, same hour)
+## are batched; the list is bounded and saved.
+## {day, minute, group, label, delta, value, reason}
+const MAX_STANDING := 200
+const NO_CAUSE := "No recorded cause"
+var standing: Array[Dictionary] = []
+## Causes pushed by whatever is happening (an operation, an event, a
+## conversation...): a change without an explicit reason uses the newest.
+var _causes: Array[String] = []
 var seen_seq: int = 0
 var _seq: int = 0
 var _supplies: int = -1
@@ -64,6 +78,64 @@ func _ready() -> void:
 		add("patient", who, "Died waiting at your door" if died else "Crashed while waiting", CRITICAL))
 
 
+# --- Standing history ----------------------------------------------------------------------
+
+func push_cause(text: String) -> void:
+	_causes.append(text)
+
+
+func pop_cause() -> void:
+	if not _causes.is_empty():
+		_causes.pop_back()
+
+
+func current_cause() -> String:
+	return _causes[_causes.size() - 1] if not _causes.is_empty() else ""
+
+
+## Records one standing change. group: "rep", "dim:<d>", "faction:<id>",
+## "heat", "person:<id>". `reason` overrides the current cause.
+func record_standing(group: String, label: String, delta: float, value: float, reason: String = "") -> void:
+	if muted or not GameManager.is_running or absf(delta) < 0.01:
+		return
+	var why := reason if reason != "" else current_cause()
+	if why == "":
+		why = NO_CAUSE
+	var day := BusinessManager.day
+	var minute := TimeManager.minute
+	if not standing.is_empty():
+		var last: Dictionary = standing[standing.size() - 1]
+		if str(last["group"]) == group and str(last["reason"]) == why and int(last["day"]) == day and absi(minute - int(last["minute"])) <= MERGE_MINUTES:
+			last["delta"] = float(last["delta"]) + delta
+			last["value"] = value
+			return
+	standing.append({"day": day, "minute": minute, "group": group, "label": label, "delta": delta, "value": value, "reason": why})
+	while standing.size() > MAX_STANDING:
+		standing.pop_front()
+
+
+## Newest first; `prefix` filters by group ("faction:", "rep", ...).
+func standing_history(prefix: String = "", n: int = 50) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	for i in range(standing.size() - 1, -1, -1):
+		var e: Dictionary = standing[i]
+		if prefix == "" or str(e["group"]).begins_with(prefix):
+			out.append(e)
+			if out.size() >= n:
+				break
+	return out
+
+
+## Net change of one group over the last `days` days (trend arrows).
+func standing_trend(group: String, days: int = 3) -> float:
+	var since := BusinessManager.day - days + 1
+	var t := 0.0
+	for e in standing:
+		if str(e["group"]) == group and int(e["day"]) >= since:
+			t += float(e["delta"])
+	return t
+
+
 # --- Entries -----------------------------------------------------------------------------
 
 ## Adds (or merges into) an entry. `delta` merges numerically when the same
@@ -99,6 +171,15 @@ func add(cat: String, subject: String, text: String, level: StringName = INFO, l
 	read_changed.emit()
 	if level == CRITICAL:
 		UIManager.show_toast("%s %s: %s" % [LEVEL_MARKS[level], subject, text], &"danger")
+	elif level == IMPORTANT and Settings.is_detailed() and not _busy():
+		# DETAILED guidance also announces important changes, but never over
+		# an operation or a conversation (they wait in CHANGES).
+		UIManager.show_toast("%s %s: %s" % [LEVEL_MARKS[level], subject, text], &"warn")
+
+
+## The player is operating or talking: only critical news interrupts.
+static func _busy() -> bool:
+	return SurgeryManager.is_active or DialogueManager.is_active()
 
 
 func _now() -> int:
@@ -157,6 +238,8 @@ func recent(n: int = MAX_ENTRIES) -> Array[Dictionary]:
 
 func clear() -> void:
 	entries.clear()
+	standing.clear()
+	_causes.clear()
 	seen_seq = _seq
 	_supplies = -1
 
@@ -171,8 +254,8 @@ func _on_faction(id: StringName, value: int, delta: int) -> void:
 	var now := _standing(value)
 	if was != now:
 		add("faction_standing", FactionManager.get_name_of(id), "Now %s (was %s)" % [now, was], IMPORTANT,
-			{"screen": &"dossier", "params": {"tab_name": "FACTIONS"}})
-	add("faction", FactionManager.get_name_of(id), "", lv, {"screen": &"dossier", "params": {"tab_name": "FACTIONS"}},
+			{"screen": &"dossier", "params": {"tab_name": "STANDING"}})
+	add("faction", FactionManager.get_name_of(id), "", lv, {"screen": &"dossier", "params": {"tab_name": "STANDING"}},
 		float(delta), "faction:%s" % id, "Standing %+.0f · now " + str(value))
 
 
@@ -188,10 +271,10 @@ func _on_heat(value: float, delta: float) -> void:
 		return
 	if delta > 0.0:
 		(func() -> void: Hints.first("heat")).call_deferred()
-	var lv := IMPORTANT if value >= 60.0 and delta > 0.0 else INFO
-	if value >= 85.0 and delta > 0.0:
+	var lv := IMPORTANT if value >= 50.0 and delta > 0.0 else INFO
+	if value >= 75.0 and delta > 0.0:
 		lv = CRITICAL
-	add("heat", "Authority heat", "", lv, {"screen": &"dossier", "params": {"tab_name": "FACTIONS"}},
+	add("heat", "Authority heat", "", lv, {"screen": &"dossier", "params": {"tab_name": "STANDING"}},
 		delta, "heat", "%+.0f · now " + str(roundi(value)))
 
 
@@ -221,7 +304,7 @@ func _on_resources() -> void:
 # --- Save --------------------------------------------------------------------------------
 
 func get_save_data() -> Dictionary:
-	return {"entries": entries.duplicate(true), "seen": seen_seq, "seq": _seq}
+	return {"entries": entries.duplicate(true), "seen": seen_seq, "seq": _seq, "standing": standing.duplicate(true)}
 
 
 func load_save_data(d: Dictionary) -> void:
@@ -231,6 +314,12 @@ func load_save_data(d: Dictionary) -> void:
 			var x: Dictionary = e
 			x["level"] = StringName(str(x.get("level", "info")))
 			entries.append(x)
+	standing.clear()
+	for e: Variant in d.get("standing", []):
+		if e is Dictionary and (e as Dictionary).has("group"):
+			standing.append(e)
+	while standing.size() > MAX_STANDING:
+		standing.pop_front()
 	_seq = int(d.get("seq", entries.size()))
 	seen_seq = int(d.get("seen", _seq))
 	_supplies = InventoryManager.supplies
@@ -238,6 +327,8 @@ func load_save_data(d: Dictionary) -> void:
 
 func reset_state() -> void:
 	entries.clear()
+	standing.clear()
+	_causes.clear()
 	_seq = 0
 	seen_seq = 0
 	_supplies = -1

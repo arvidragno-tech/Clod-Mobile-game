@@ -8,7 +8,7 @@ extends BaseScreen
 ## FOLLOW (on quests, people, patients and places) puts a thing on MAIN and
 ## the clinic's priorities, so the player never has to remember it.
 
-const TABS := ["MAIN", "MESSAGES", "PEOPLE", "PATIENTS", "FACTIONS", "BUSINESS", "DISCOVERIES"]
+const TABS := ["MAIN", "MESSAGES", "PEOPLE", "PATIENTS", "STANDING", "BUSINESS", "DISCOVERIES"]
 enum Tab { MAIN, MESSAGES, PEOPLE, PATIENTS, FACTIONS, BUSINESS, DISCOVERIES }
 const DISCOVERY_VIEWS := ["STORY", "NEWS", "PLACES", "WALL"]
 ## Old tab numbers (saves, links, tests) -> [tab, discoveries view].
@@ -26,12 +26,13 @@ var _selected_msg: int = -1
 
 
 func on_enter(params: Dictionary) -> void:
-	(func() -> void: Hints.first("journal")).call_deferred()
 	_tab = Tab.MAIN
 	if params.has("tab_name"):
 		var n := str(params["tab_name"]).to_upper()
 		if n == "COMMS":
 			n = "MESSAGES"
+		if n == "FACTIONS":
+			n = "STANDING"
 		if TABS.has(n):
 			_tab = TABS.find(n)
 	elif params.has("tab"):
@@ -79,13 +80,7 @@ func _rebuild() -> void:
 		Tab.PATIENTS:
 			_patients()
 		Tab.FACTIONS:
-			_list.columns = 3
-			var heat := UIKit.panel(&"DangerPanel" if FactionManager.heat >= 35 else &"HudPanel")
-			UIKit.expand(heat)
-			heat.add_child(UIKit.label("HEAT %d / 100\nInspections start around 35. Black-market work and failed jobs raise it." % roundi(FactionManager.heat), &"MonoLabel", true, Palette.DANGER if FactionManager.heat >= 35 else Palette.TEXT_DIM))
-			_list.add_child(heat)
-			for id in FactionManager.order:
-				_list.add_child(_faction_card(id))
+			_standing()
 		Tab.BUSINESS:
 			_records()
 			_list.add_child(UIKit.button("OPEN THE LEDGER  [%s]" % Controls.key_name("business"), &"AccentButton", func() -> void: UIManager.go_to(UIManager.SCREEN_BUSINESS), "OpenLedger", 48))
@@ -181,6 +176,117 @@ func _main() -> void:
 		mv.add_child(UIKit.label("Nothing waiting for an answer.", &"DimLabel"))
 	# Objectives: active quests first, the rest after.
 	_quests()
+
+
+# --- STANDING (3.6) ----------------------------------------------------------------------
+
+var _standing_all: bool = false
+var _standing_open: String = ""
+
+
+## YOUR STANDING: reputation (groups), attention (heat), relationships
+## (people) and trust (suppliers), each with what it means now, which way
+## it's going, what it affects, the next threshold and why it changed.
+func _standing() -> void:
+	_list.columns = 2
+	# Left: the groups.
+	var left := UIKit.vbox(10)
+	UIKit.expand(left, true, false)
+	_list.add_child(left)
+	var head := UIKit.hbox(10)
+	left.add_child(head)
+	var t := UIKit.label("YOUR STANDING", &"SectionLabel")
+	UIKit.expand(t)
+	head.add_child(t)
+	head.add_child(UIKit.button("SHOW FEWER" if _standing_all else "ALL FACTIONS", &"GhostButton", func() -> void:
+		_standing_all = not _standing_all
+		_rebuild(), "StandingAll", 36))
+	left.add_child(UIKit.label("Reputation is how a group sees you; heat is how closely the authorities watch. Click a row for its history.", &"DimLabel", true, null, 14))
+	for row: Dictionary in Standing.overview(_standing_all):
+		left.add_child(_standing_card(row))
+	# Identity: who the street thinks you are.
+	var id_card := UIKit.panel(&"CardPanel")
+	left.add_child(id_card)
+	var iv := UIKit.vbox(4)
+	id_card.add_child(iv)
+	var ident := ReputationManager.identity()
+	iv.add_child(UIKit.section_head("WHO THE STREET THINKS YOU ARE", "", "identity"))
+	iv.add_child(UIKit.label("%s · %s" % [str(ident.get("title", "")), str(ident.get("text", ""))], &"", true, Palette.ACCENT, 15))
+	for d: Dictionary in Standing.identity_rows():
+		iv.add_child(UIKit.label("%s %s  %+d  %s" % [Standing.mark(d["level"]), str(d["name"]), int(d["value"]), str(d["trend_text"])], &"MonoLabel", true, Standing.color(d["level"]), 15))
+	# Right: people and suppliers, then the history.
+	var right := UIKit.vbox(10)
+	UIKit.expand(right, true, false)
+	_list.add_child(right)
+	var pc := UIKit.panel(&"CardPanel")
+	right.add_child(pc)
+	var pv := UIKit.vbox(4)
+	pc.add_child(pv)
+	pv.add_child(UIKit.section_head("PEOPLE YOU DEAL WITH", "personal relationships, separate from their group", "loyalty"))
+	var ppl := Standing.people()
+	if ppl.is_empty():
+		pv.add_child(UIKit.label("Nobody yet.", &"DimLabel"))
+	for p: Dictionary in ppl:
+		var line := "%s · %s %+d" % [str(p["name"]), str(p["personal"]).capitalize(), int(p["rel"])]
+		if str(p["faction"]) != "":
+			line += "   (their group, %s: %s)" % [str(p["faction"]), str(p["faction_standing"])]
+		var l := UIKit.label(line, &"", true, Palette.TEXT, 15)
+		l.name = "Person_%s" % p["id"]
+		pv.add_child(l)
+	var sups := Standing.suppliers()
+	if not sups.is_empty():
+		pv.add_child(UIKit.label("SUPPLIERS (trust)", &"SubHeaderLabel"))
+		for s: Dictionary in sups:
+			var txt := "%s · %s (trust %d)" % [str(s["name"]), str(s["standing"]), int(s["trust"])]
+			if int(s["debt"]) > 0:
+				txt += " · you owe %s" % EconomyManager.format_money(int(s["debt"]))
+			if str(s["next"]) != "":
+				txt += " · next: %s" % str(s["next"])
+			pv.add_child(UIKit.label(txt, &"DimLabel", true, null, 14))
+	var hc := UIKit.panel(&"CardPanel")
+	hc.name = "StandingHistory"
+	right.add_child(hc)
+	var hv := UIKit.vbox(2)
+	hc.add_child(hv)
+	hv.add_child(UIKit.section_head("HISTORY", "every change and what caused it", "changes"))
+	var hist := ChangeLog.standing_history("", 30)
+	if hist.is_empty():
+		hv.add_child(UIKit.label("No changes recorded yet.", &"DimLabel"))
+	for e: Dictionary in hist:
+		var d := float(e["delta"])
+		var group := str(e["group"])
+		var good := (d > 0.0) != (group == "heat")
+		hv.add_child(UIKit.label(Standing.history_line(e), &"DimLabel", true, Palette.OK if good else Palette.WARN, 14))
+
+
+func _standing_card(row: Dictionary) -> Control:
+	var card := UIKit.panel(&"DangerPanel" if row["level"] == Standing.BAD else &"CardPanel")
+	card.name = "Standing_%s" % str(row["group"]).replace(":", "_")
+	var v := UIKit.vbox(3)
+	card.add_child(v)
+	var top := UIKit.hbox(10)
+	v.add_child(top)
+	var name_l := UIKit.label("%s %s" % [Standing.mark(row["level"]), str(row["name"]).to_upper()], &"SubHeaderLabel", true, Standing.color(row["level"]))
+	UIKit.expand(name_l)
+	top.add_child(name_l)
+	top.add_child(UIKit.label("%s  %d" % [str(row["category"]), int(row["value"])], &"MonoLabel", false, Standing.color(row["level"]), 18))
+	v.add_child(UIKit.label(str(row["trend_text"]) + ("   · attention, not reputation: lower is better" if str(row["kind"]) == "attention" else ""), &"DimLabel", true, null, 14))
+	v.add_child(UIKit.label("Affects: " + "; ".join(row["affects"]), &"", true, Palette.TEXT, 14))
+	v.add_child(UIKit.label("Next: " + str(row["next"]), &"DimLabel", true, Palette.ACCENT, 14))
+	var group := str(row["group"])
+	var open := _standing_open == group
+	var b := UIKit.button(("HIDE HISTORY" if open else "HISTORY"), &"GhostButton", func() -> void:
+		_standing_open = "" if _standing_open == group else group
+		_rebuild(), "StandingHist_%s" % group.replace(":", "_"), 32)
+	b.size_flags_horizontal = Control.SIZE_SHRINK_END
+	v.add_child(b)
+	if open:
+		var hist := ChangeLog.standing_history(group, 10)
+		if hist.is_empty():
+			v.add_child(UIKit.label("No changes recorded yet.", &"DimLabel"))
+		for e: Dictionary in hist:
+			v.add_child(UIKit.label(Standing.history_line(e), &"DimLabel", true, null, 14))
+	return card
 
 
 func _faction_card(id: StringName) -> Control:

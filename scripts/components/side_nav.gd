@@ -6,19 +6,27 @@ extends PanelContainer
 
 signal nav_pressed(id: StringName)
 
+## Four places (3.6): CLINIC (patients, surgery, staff), BUSINESS (money,
+## stock, buying), CITY (map, people, places), MESSAGES & JOURNAL. Then the
+## always-there tools. A header row is ["#", "TITLE"].
 ## id, label, icon, hotkey action ("" = none)
 const ITEMS := [
+	["#", "CLINIC"],
 	[&"clinic", "CLINIC", "res://assets/sprites/ui/icons/menu.png", ""],
-	[&"inventory", "INVENTORY", "res://assets/sprites/ui/icons/supplies.png", "inventory"],
-	[&"database", "CYBERWARE DB", "res://assets/sprites/ui/icons/neural.png", "database"],
-	[&"supply", "SUPPLY", "res://assets/sprites/ui/icons/supply.png", ""],
+	[&"staff", "STAFF", "res://assets/sprites/ui/icons/skills.png", "staff"],
 	[&"skills", "SKILLS", "res://assets/sprites/ui/icons/skills.png", ""],
 	[&"upgrades", "FACILITY", "res://assets/sprites/ui/icons/upgrade.png", "facility"],
-	[&"staff", "STAFF", "res://assets/sprites/ui/icons/skills.png", "staff"],
+	["#", "BUSINESS"],
 	[&"business", "BUSINESS", "res://assets/sprites/ui/icons/money.png", "business"],
-	[&"map", "CITY MAP", "res://assets/sprites/ui/icons/rep.png", "map"],
-	[&"dossier", "JOURNAL", "res://assets/sprites/ui/icons/dossier.png", "journal"],
+	[&"inventory", "INVENTORY", "res://assets/sprites/ui/icons/supplies.png", "inventory"],
+	[&"supply", "SUPPLY", "res://assets/sprites/ui/icons/supply.png", ""],
+	[&"database", "CYBERWARE DB", "res://assets/sprites/ui/icons/neural.png", "database"],
 	[&"blackmarket", "BLACK MARKET", "res://assets/sprites/ui/icons/blackmarket.png", ""],
+	["#", "CITY"],
+	[&"map", "CITY MAP", "res://assets/sprites/ui/icons/rep.png", "map"],
+	["#", "MESSAGES & JOURNAL"],
+	[&"dossier", "JOURNAL", "res://assets/sprites/ui/icons/dossier.png", "journal"],
+	["#", ""],
 	[&"settings", "SETTINGS", "res://assets/sprites/ui/icons/lock.png", ""],
 	[&"help", "FIELD GUIDE", "res://assets/sprites/ui/icons/dossier.png", "help"],
 ]
@@ -41,14 +49,31 @@ const TIPS := {
 
 var active: StringName = &""
 var _buttons: Dictionary = {}
+## Group header -> the ids under it (a header hides when all of them are).
+var _groups: Array = []
 
 
 func _ready() -> void:
 	theme_type_variation = &"HudPanel"
 	custom_minimum_size.x = 250
+	# The list scrolls instead of growing: at big text sizes it must never
+	# push the screen beside it taller than the window.
+	var scroll := ScrollContainer.new()
+	scroll.name = "NavScroll"
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	add_child(scroll)
 	var col := UIKit.vbox(4)
-	add_child(col)
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	col.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.add_child(col)
 	for item: Array in ITEMS:
+		if str(item[0]) == "#":
+			var h := UIKit.label(str(item[1]), &"SubHeaderLabel", false, Palette.TEXT_DIM, 13)
+			h.custom_minimum_size.y = 18 if str(item[1]) != "" else 6
+			col.add_child(h)
+			_groups.append([h, []])
+			continue
 		var b := Button.new()
 		b.name = "Nav_%s" % item[0]
 		var hk: String = item[3]
@@ -56,15 +81,21 @@ func _ready() -> void:
 		b.icon = PixelArt.scaled(item[2])
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		b.theme_type_variation = &"NavButton"
-		b.custom_minimum_size = Vector2(0, 46)
+		b.custom_minimum_size = Vector2(0, 42)
+		# A long label (a hotkey, "· NEW") trims instead of widening the side bar.
+		b.clip_text = true
+		b.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		b.toggle_mode = true
 		b.tooltip_text = TIPS.get(item[0], "")
 		b.pressed.connect(func() -> void: nav_pressed.emit(item[0]))
 		col.add_child(b)
 		_buttons[item[0]] = b
+		if not _groups.is_empty():
+			(_groups[-1][1] as Array).append(item[0])
 	col.add_child(UIKit.expand(Control.new(), false, true))
 	var hint := UIKit.label("[%s] pause   [%s] cycle panels" % [Controls.key_name("pause"), Controls.key_name("cycle_panel")], &"SubHeaderLabel", true)
 	col.add_child(hint)
+	EventBus.resources_changed.connect(refresh)
 	refresh()
 
 
@@ -74,18 +105,32 @@ func set_active(id: StringName) -> void:
 
 
 func refresh() -> void:
+	if not is_inside_tree():
+		return
+	# Sections appear when they become relevant (Features): no padlocks.
 	for id: StringName in _buttons:
 		var b: Button = _buttons[id]
 		b.set_pressed_no_signal(id == active)
-	var locked := not BlackMarketManager.is_unlocked()
-	var bm: Button = _buttons.get(&"blackmarket")
-	if bm:
-		bm.modulate = Color(1, 1, 1, 0.45) if locked else Color.WHITE
-		bm.tooltip_text = "No contact yet. Build street rep (%d) or meet a fixer." % GameConfig.BLACK_MARKET_REPUTATION if locked else "The Undermarket"
+		b.visible = Features.is_on(id)
+		var label := str(_label_of(id))
+		b.text = label + ("  · NEW" if Features.is_new(id) and Features.progressive() else "")
+	for g: Array in _groups:
+		var any := false
+		for id: StringName in g[1]:
+			any = any or Features.is_on(id)
+		(g[0] as Control).visible = any or (g[1] as Array).is_empty()
 	_badge(&"skills", SkillManager.points > 0, "%d skill point(s) to spend" % SkillManager.points)
 	_badge(&"dossier", CommsManager.unread_count() > 0, "%d unread message(s)" % CommsManager.unread_count())
 	_badge(&"upgrades", ClinicManager.get_upgrade_block_reason() == "", "A new clinic is within reach")
 	_badge(&"business", BusinessManager.debt > 0 or BusinessManager.is_day_full(), "Debt %d" % BusinessManager.debt if BusinessManager.debt > 0 else "Day's work done: close for the night")
+
+
+func _label_of(id: StringName) -> String:
+	for item: Array in ITEMS:
+		if str(item[0]) != "#" and item[0] == id:
+			var hk: String = item[3]
+			return str(item[1]) + (("  [%s]" % Controls.key_name(hk)) if hk != "" else "")
+	return String(id)
 
 
 func _badge(id: StringName, on: bool, tip: String) -> void:

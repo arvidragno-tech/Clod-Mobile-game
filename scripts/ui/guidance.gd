@@ -30,7 +30,7 @@ static func items(n: int = MAX_ITEMS) -> Array[Dictionary]:
 		add.call("incident", CRITICAL, "!", "Someone is waiting: deal with the incident", {"screen": &"clinic"})
 	if InventoryManager.supplies <= 0:
 		add.call("supplies_out", CRITICAL, "✚", "No medical supplies: you can't operate. Restock in SUPPLY", {"screen": &"shop"})
-	if FactionManager.heat >= 85.0:
+	if FactionManager.heat >= 75.0:
 		add.call("heat", CRITICAL, "!", "Authority heat %d: a raid is close. Lie low, do clean work" % roundi(FactionManager.heat), {"term": "heat"})
 	if BusinessManager.debt >= BusinessManager.DEBT_WARNING:
 		add.call("debt", CRITICAL if BusinessManager.days_in_debt > 1 else IMPORTANT, "¤",
@@ -82,7 +82,7 @@ static func items(n: int = MAX_ITEMS) -> Array[Dictionary]:
 		add.call("security", IMPORTANT, "!", "%d open security case%s: something went missing" % [cases, "" if cases == 1 else "s"], {"screen": &"clinic"})
 	if InventoryManager.supplies > 0 and InventoryManager.supplies < 2:
 		add.call("supplies_low", IMPORTANT, "✚", "Supplies low (%d): restock in SUPPLY" % InventoryManager.supplies, {"screen": &"shop"})
-	if FactionManager.heat >= 60.0 and FactionManager.heat < 85.0:
+	if FactionManager.heat >= 50.0 and FactionManager.heat < 75.0:
 		add.call("heat_high", IMPORTANT, "!", "Authority heat %d and rising: careful with black-market work" % roundi(FactionManager.heat), {"term": "heat"})
 	# --- Info ----------------------------------------------------------------------------
 	if SkillManager.points > 0:
@@ -91,6 +91,8 @@ static func items(n: int = MAX_ITEMS) -> Array[Dictionary]:
 		if WorldSimulationManager.has_flag(loc, &"lead") or WorldSimulationManager.has_flag(loc, &"event"):
 			add.call("lead:%s" % loc, INFO, "◆", "Something is happening at %s" % LocationManager.location_name(loc), {"location": loc})
 			break
+	if not BusinessManager.doors_open:
+		add.call("doors", INFO, "▮", "Doors closed: no walk-ins. Open them when you're ready", {"doors": "open"})
 	if c == null and waiting == 0 and BusinessManager.is_day_full():
 		add.call("day_done", INFO, "☾", "Day's work done: close for the night", {"screen": &"clinic"})
 	elif c == null and waiting == 0 and out.is_empty():
@@ -102,6 +104,33 @@ static func items(n: int = MAX_ITEMS) -> Array[Dictionary]:
 			if it["level"] == lv:
 				ranked.append(it)
 	return ranked.slice(0, n)
+
+
+## What the clinic's WHAT MATTERS card shows at the player's GUIDANCE
+## setting: MINIMAL only critical and important lines (3), STANDARD 4,
+## DETAILED 6 including information.
+static func for_player() -> Array[Dictionary]:
+	# The clinic dashboard already shows the clinic's own state (supplies,
+	# money, heat, doors, staff): this list keeps to people and tasks.
+	# Lines that lead into a section the player hasn't been introduced to
+	# yet (a lead in the city, skill points before the first job) wait too.
+	var all := items().filter(func(it: Dictionary) -> bool:
+		var id := str(it["id"])
+		return not ClinicStatus.DASHBOARD_IDS.has(id) and not id.begins_with("stress:") and not id.begins_with("raise:") and _link_on(it["link"]))
+	match Settings.guidance_level:
+		0:
+			return all.filter(func(it: Dictionary) -> bool: return it["level"] != INFO).slice(0, 3)
+		2:
+			return all.slice(0, 6)
+	return all.slice(0, 4)
+
+
+static func _link_on(link: Dictionary) -> bool:
+	if link.has("location"):
+		return Features.is_on(&"map")
+	if link.has("screen"):
+		return Features.screen_on(StringName(str(link["screen"])))
+	return true
 
 
 ## The single most important line (the clinic's NEXT strip).

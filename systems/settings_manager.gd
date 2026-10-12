@@ -25,6 +25,12 @@ const PIXEL_SCALING: Array[String] = ["fit", "integer"]
 const PIXEL_SCALING_NAMES: Array[String] = ["FIT (FILL WINDOW)", "INTEGER (PIXEL PERFECT)"]
 const DIFFICULTY_NAMES: Array[String] = ["STORY", "STANDARD", "BRUTAL"]
 const AUTOSAVE_NAMES: Array[String] = ["OFF", "EVERY JOB", "EVERY NIGHT"]
+## How much the game explains (presentation only; never changes the rules).
+const GUIDANCE_NAMES: Array[String] = ["MINIMAL", "STANDARD", "DETAILED"]
+## The one player-facing guidance choice (3.9), stored in the existing keys:
+## GUIDED = tutorial + gradual sections + cards; BRIEF = gradual sections
+## with one-line notices, no tutorial; OFF = everything, no tutorial.
+const GUIDANCE_MODE_NAMES: Array[String] = ["GUIDED", "BRIEF", "OFF"]
 ## Emergency triage countdown multiplier (index = time_pressure; 0 = no countdown).
 const TIME_PRESSURE: Array[float] = [1.0, 2.0, 0.0]
 const TIME_PRESSURE_NAMES: Array[String] = ["NORMAL", "RELAXED (x2)", "OFF"]
@@ -67,6 +73,8 @@ const DEFAULTS := {
 	"auto_advance": false,
 	"confirm_dangerous": true,
 	"tutorial_hints": true,
+	"guidance_level": 1,
+	"progressive_features": true,
 	"controls_setup_done": false,
 	"seen_hints": [],
 	"tooltips": true,
@@ -118,6 +126,12 @@ var ui_volume: float = 0.7
 var auto_advance: bool = false
 var confirm_dangerous: bool = true
 var tutorial_hints: bool = true
+## 0 MINIMAL (only what needs you), 1 STANDARD, 2 DETAILED (numbers and
+## reasons everywhere). Changes what is shown, never the game rules.
+var guidance_level: int = 1
+## New games introduce clinic sections as they become relevant (Features);
+## off shows every section from the start.
+var progressive_features: bool = true
 ## First launch: the main menu offers DEFAULT / CUSTOMIZE controls once.
 var controls_setup_done: bool = false
 ## Learn-as-you-go hints already shown (ids); player knowledge, so it
@@ -178,8 +192,14 @@ func load_settings() -> void:
 	dialogue_volume = clampf(dialogue_volume, 0.0, 1.0)
 	ui_volume = clampf(ui_volume, 0.0, 1.0)
 	difficulty = clampi(difficulty, 0, 2)
+	guidance_level = clampi(guidance_level, 0, GUIDANCE_NAMES.size() - 1)
 	autosave = clampi(autosave, 0, 2)
-	ui_scale = clampi(ui_scale, 0, UI_SCALES.size() - 1)
+	# 3.6: the window stretch is the only UI scale (one authority). The old
+	# UI SCALE shrank the logical canvas below the 1920x1080 layouts and
+	# pushed buttons off-screen; LARGE carries over as bigger text.
+	if ui_scale == 2:
+		text_scale = maxf(text_scale, 1.1)
+	ui_scale = 1
 	text_scale = clampf(text_scale, 0.85, 1.4)
 	changed.emit()
 
@@ -232,9 +252,20 @@ static func parse_resolution(text: String) -> Vector2i:
 ## Applies window mode, windowed size, vsync and texture filtering. The
 ## logical canvas stays 1920x1080 (canvas_items stretch, keep aspect), so
 ## other 16:9 sizes scale uniformly and other aspects letterbox.
-func apply_display() -> void:
+## The window mode / size last put on the window: other settings re-apply
+## without snapping a resized window back (vsync, filtering...).
+var _applied_window: String = ""
+
+
+func apply_display(force: bool = false) -> void:
 	if DisplayServer.get_name() == "headless":
 		return
+	var key := "%s|%s" % [window_mode, resolution]
+	if not force and key == _applied_window:
+		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED if vsync else DisplayServer.VSYNC_DISABLED)
+		apply_runtime()
+		return
+	_applied_window = key
 	match window_mode:
 		"fullscreen":
 			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN)
@@ -262,9 +293,29 @@ func apply_runtime() -> void:
 	var tree := Engine.get_main_loop() as SceneTree
 	if tree:
 		var root := tree.root
-		root.content_scale_stretch = Window.CONTENT_SCALE_STRETCH_INTEGER if pixel_scaling == "integer" else Window.CONTENT_SCALE_STRETCH_FRACTIONAL
-		# Integer stretch floors the factor, so UI scale only applies in FIT.
-		root.content_scale_factor = UI_SCALES[ui_scale] if pixel_scaling == "fit" else 1.0
+		_apply_stretch(root)
+		if not root.size_changed.is_connected(_on_window_resized):
+			root.size_changed.connect(_on_window_resized)
+
+
+## One scaling authority: the 1920x1080 canvas stretched to the window
+## (keep aspect). INTEGER only when the window holds a whole multiple of the
+## canvas; below that it would crop the screen, so it falls back to FIT.
+## No extra content scale factor: every layout is built for the canvas.
+func _apply_stretch(root: Window) -> void:
+	var win := root.size
+	var whole := win.x >= GameConfig.VIEWPORT_WIDTH and win.y >= GameConfig.VIEWPORT_HEIGHT
+	var mode := Window.CONTENT_SCALE_STRETCH_INTEGER if pixel_scaling == "integer" and whole else Window.CONTENT_SCALE_STRETCH_FRACTIONAL
+	if root.content_scale_stretch != mode:
+		root.content_scale_stretch = mode
+	if not is_equal_approx(root.content_scale_factor, 1.0):
+		root.content_scale_factor = 1.0
+
+
+func _on_window_resized() -> void:
+	var tree := Engine.get_main_loop() as SceneTree
+	if tree:
+		_apply_stretch(tree.root)
 
 
 func apply_filter() -> void:
@@ -314,3 +365,35 @@ func font_scale() -> float:
 ## Multiplier for real-time emergency countdowns (0 = no countdown).
 func time_pressure_mult() -> float:
 	return TIME_PRESSURE[clampi(time_pressure, 0, TIME_PRESSURE.size() - 1)]
+
+
+func is_minimal() -> bool:
+	return guidance_level == 0
+
+
+func is_detailed() -> bool:
+	return guidance_level >= 2
+
+
+func guidance_mode() -> int:
+	if not progressive_features:
+		return 2
+	if not tutorial_hints or guidance_level == 0:
+		return 1
+	return 0
+
+
+func set_guidance_mode(mode: int) -> void:
+	match mode:
+		0:
+			set_value("tutorial_hints", true)
+			set_value("progressive_features", true)
+			set_value("guidance_level", 1)
+		1:
+			set_value("tutorial_hints", false)
+			set_value("progressive_features", true)
+			set_value("guidance_level", 0)
+		_:
+			set_value("tutorial_hints", false)
+			set_value("progressive_features", false)
+			set_value("guidance_level", 0)

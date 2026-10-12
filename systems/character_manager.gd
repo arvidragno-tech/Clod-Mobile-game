@@ -83,11 +83,15 @@ func state_color(st: String) -> Color:
 	return Color(str(STATE_COLORS.get(st, "8e9aa8")))
 
 
-func change_relationship(id: StringName, delta: int, fear_delta: int = 0) -> void:
+func change_relationship(id: StringName, delta: int, fear_delta: int = 0, reason: String = "") -> void:
 	if not state.has(id):
 		return
 	var s: Dictionary = state[id]
+	var old := int(s["rel"])
 	s["rel"] = clampi(int(s["rel"]) + delta, -100, 100)
+	if int(s["rel"]) != old:
+		var c := get_character(id)
+		ChangeLog.record_standing("person:%s" % id, c.display_name if c else String(id), int(s["rel"]) - old, int(s["rel"]), reason)
 	s["fear"] = clampi(int(s.get("fear", 0)) + fear_delta, 0, 100)
 	relationship_changed.emit(id, int(s["rel"]), relationship_state(id))
 

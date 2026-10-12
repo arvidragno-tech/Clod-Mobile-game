@@ -4,6 +4,180 @@ All notable changes to *UNDERCITY: RIPPER*. Versions follow
 `application/config/version` in `project.godot` and the Windows file version
 in `export_presets.cfg`.
 
+## 3.9.1 — The file, the scan, and why it went wrong
+
+- **The patient's full file** shows the essentials open and the rest
+  folded. Measured over the whole page (same seeded patient, before → after):
+  labels 98 → 46, buttons 29 → 22. It now nearly fits one screen.
+  - **Shown:** who they are (faction, traits, money), the procedure,
+    difficulty and where the implant comes from, the fee, what they can pay,
+    and the terms.
+  - **Only when they apply:** missing tools, a backer, an existing debt.
+  - **Folded:** standing, temper, street rep, risk, medical history,
+    previous operations (hidden when there are none).
+  - **In tooltips:** implant class and maker, implant value, the pay bonus.
+  - **Removed duplicates:** AT A GLANCE lists only what needs attention plus
+    the pay. The neural-load card is the meter, plus a line only when the
+    job changes the band.
+- **The scan:** one instruction instead of two, and plain rows instead of
+  five cards (panels 10 → 5). A scanned region's SCAN button gives way to
+  its finding, marked SCANNED or CONDITION FOUND. Diagnosis descriptions
+  appear when the scans unlock the choice.
+- **Surgery feedback:**
+  - The first time a kind of mistake happens in an operation, a toast says
+    what it cost (from the game's own effects) and what to do differently.
+  - OK / ROUGH stages say how many mistakes they had.
+  - A complication handled too late names the button that counters it.
+- **Fixed: a mistake that took neural sync to 0 could fail to collapse the
+  link.** The frame applied recovery before checking for failure, so a calm
+  patient was lifted back to 0.03. The failure check now also runs before
+  recovery, so the existing rule (neural ≤ 0 → collapse) always holds. This
+  is the one gameplay-visible change. It surfaced as an end-to-end failure
+  on a slower machine, and failed identically on 3.9.0.
+- **Audit probe:** seeded, so before and after compare the same patients. It
+  also counts the whole page, scrolled or not, since a shorter page can show
+  more on screen at once.
+
+## 3.9.0 — Less on screen
+
+Every element now has to earn its place. Measured on the core loop
+(`tests/audit_probe`): labels 542 → 248 (−54%), buttons 138 → 97 (−30%),
+panels 79 → 60 (−24%). Details: `docs/UI_SIMPLIFICATION_3.9.md`.
+
+- **The patient** opens on four things: what they want, one risk sentence,
+  the money (pays ≈ X, you keep ≈ ±Y before rent) and ACCEPT JOB / DETAILS /
+  DECLINE. DETAILS adds the odds, costs and every risk factor. The intake
+  form and the full file sit one click further.
+- **The clinic** keeps one objective (NEXT), SEE PATIENT and one status line.
+  WHAT MATTERS NOW and the CLINIC STATUS card are merged into that line.
+- **Status bar:** level, rep, jobs, heat and black-market currencies appear
+  only once they mean something.
+- **Plan, surgery and supply** show what you need to decide now. Specs and
+  breakdowns are under DETAILS or in tooltips.
+- **Results:** at most two new items in AFTERMATH, so CONTINUE always fits.
+- **Tutorial:**
+  - one short step at a time, on the real control: clinic → patient → scan
+    → plan → sedate / cut / install / close → result → skills;
+  - new sections are introduced the same way, "NEW · SECTION" on their
+    button. The intro cards are gone; the field guide can replay any of them.
+- **Sections appear when they matter:** SKILLS after the first job; SUPPLY
+  when you're short (or the second job); INVENTORY and JOURNAL at the second
+  job; BUSINESS on day 2; DATABASE, STAFF and FACILITY at the third job; the
+  CITY at the fourth (or when a lead points there). Hidden sections can't be
+  opened by hotkey or link early. Old saves keep everything they had.
+- **One setting:** TUTORIAL & GUIDANCE (GUIDED / BRIEF / OFF) replaces
+  three.
+- No changes to generation, surgery, odds, economy, reputation,
+  progression or the save format.
+
+## 3.8.0 — The intake form
+
+- **Patient intake form.** The patient summary now shows each patient's record as an in-world document: SUMP CLINIC // PATIENT INTAKE, with a document number, a timestamp and a RECEIVED stamp. It has four sections:
+  - **1 · Patient:** who they are, affiliation, debts, patience.
+  - **2 · Requested procedure:** implant, procedure, difficulty, instruments, added load, chrome already in the slot.
+  - **3 · Complications & risk factors:** each with what it is, why it matters and what it affects.
+  - **4 · History & disclosures:** statement, history, installed chrome, past jobs, findings, and what is still unknown.
+- Every line says where it comes from: **REPORTED**, **ON FILE**, **CONFIRMED**, **SUSPECTED** or **UNKNOWN**. Emphasis comes from the game's existing bands, with a mark and a word.
+- Presentation only: no new attributes, rolls, checks or calculations. Conditions the scan hasn't found are never named or counted, and scan findings stay on the scan table.
+- Fixed: the summary and the odds estimate could hint that a patient had a hidden condition (via the true neural load and the complication risk). They now use what the doctor can see. The surgery's real roll is unchanged.
+- The side bar's long labels trim instead of widening the bar.
+- Details: `docs/INTAKE_FORM.md`.
+
+## 3.7.0 — Easy to learn, still deep
+
+The clinic now grows with you: new sections appear when they become useful,
+every patient opens on a one-screen summary, and the clinic says in one line
+what needs you. Audit, plan and results: `docs/UX_OVERHAUL_3.7.md`.
+
+### The patient summary
+- Clicking a patient (the room, SEE PATIENT, or the customer key) opens a **PATIENT SUMMARY**, not the full file. It has four blocks:
+  - **REQUEST:** the implant, what it does, the procedure and known conditions.
+  - **OPERATION:** difficulty in words, **your odds** as an estimate with what it's based on, what can go wrong, and anything missing, with a button to fix it.
+  - **FINANCES:** what the patient pays, the implant and supplies, and the **direct margin** (labelled as before rent and wages). It adds cash in hand when the implant comes from stock.
+  - **DECISION:** ACCEPT JOB, DECLINE (its real cost shown) and MORE DETAILS (the full file).
+- Every number comes from the game's own rules (`JobEstimate`, `Recommend`, the operation's readiness checks). ACCEPT JOB waits while tools or supplies are missing.
+- The patient's own words are shown as flavor: quoted, slanted and dim.
+
+### Clinic status
+- CLINIC STATUS is one headline (READY FOR PATIENTS, DOORS CLOSED, CAN'T OPERATE: NO SUPPLIES, PATIENT WAITING: MISSING TOOLS, FINANCIAL CONCERN, ACTION REQUIRED, DAY'S WORK DONE) with why it matters, plus up to three issues that need you. Each line is clickable.
+- During the first patient it shows only the headline. WHAT MATTERS NOW no longer repeats the dashboard (supplies, money, heat, doors, staff).
+- The NEXT line says why each step matters, and marks optional steps "WHEN YOU'RE READY".
+- The door card is short: who, what, roughly what it pays and one line of advice.
+
+### Sections appear when they're useful
+- A new game starts with the clinic, settings and the field guide.
+- After the first job: SKILLS, SUPPLY, INVENTORY, BUSINESS and the JOURNAL (a message can bring the journal sooner).
+- After the second job: CYBERWARE DB.
+- Three jobs in: STAFF and FACILITY.
+- Four jobs in, or when a lead points into the city: the CITY MAP.
+- The black market keeps its own rule.
+- There are no padlocks. Each new section arrives with a card (WHAT / WHY / HOW / COST, OPEN, MORE) and is marked NEW in the side bar for a day. A hidden section's key says when it opens.
+- Saves from before 3.7 keep every section. **INTRODUCE FEATURES GRADUALLY** (Settings > Gameplay) turns this off.
+
+### Before you pay
+- **BEFORE YOU PAY** in SUPPLY (implants and tools) shows:
+  - the cost and your cash now → after;
+  - the stock you'd have;
+  - what it's for and its limits;
+  - a warning when it leaves less than tonight's bill.
+- FACILITY upgrades show the same, plus the new nightly upkeep.
+- Buying a clinic asks first, with the cost, cash after and how the nightly rent and jobs change.
+- Hiring shows cash after and the nightly wage.
+- Black-market and supplier buys show the same facts, plus the heat and standing they cost.
+- Conversation choices show their **known** public consequences (faction standing, street rep, heat, money). How a person feels about it stays hidden.
+
+### The field guide
+- Categories match the game: GETTING STARTED, PATIENTS & IMPLANTS, SURGERY, BUSINESS, REPUTATION & RELATIONSHIPS, CITY & LOCATIONS, CLINIC & STAFF, TUTORIALS, CONTROLS.
+- Entries for sections you haven't met yet wait (with a count). Newly opened ones are marked NEW.
+- Core entries add WHY IT MATTERS and WHERE. SEE ALSO links related entries, and BACK returns.
+- **TUTORIALS** lists every card you've seen, with SHOW AGAIN.
+- New entries: your odds (success estimate) and direct margin.
+
+### Consistency
+- One word per action: SEE PATIENT, ACCEPT JOB, DECLINE, MORE DETAILS.
+- Declining's costs (`DECLINE_FACTION_PENALTY`) and black-market purchase effects (`BUY_HEAT`, `BUY_STANDING`) are shared constants, used by both the rule and its preview.
+
+## 3.6.0 — Steadier, fairer, clearer
+
+A quality pass. The game has the same systems; what changed is how they hold
+together. Root causes and the numbers behind each fix are in
+`docs/QUALITY_PASS_3.6.md`.
+
+### Close the doors
+- **CLOSE DOORS / OPEN DOORS** in the clinic's TODAY card stops walk-ins and keeps the waiting room empty. You get time to read, shop, level up and plan. Whoever is already in the chair stays. The clock and the bills keep running, and the doors open again every morning. WHAT MATTERS NOW reminds you while they're shut.
+
+### Menus, clicks and scaling
+- Shop and black-market BUY buttons no longer move under the cursor. The detail panel has a fixed width and keeps the item you were looking at across refreshes.
+- A double-click buys once. Black-market buys find the offer by its id, not its place in the list.
+- A click during a screen fade is queued, not dropped. The field guide closes on an outside click without eating it.
+- There is one source of scaling, the window. UI SCALE is folded into TEXT SCALE. The text slider applies on release. Settings writes no longer re-theme the screen. Window changes keep your window size.
+- Layouts fit at TEXT SCALE 1.4 with LARGE TEXT: the status bar, clinic, facility, inventory, map, database compare and diagnosis plan scroll or wrap instead of pushing buttons off-screen.
+
+### Surgery
+- The stage's instrument is picked for you. Near misses, wrong order, a wire dropped off a terminal, SEAT before PLACE and quick actions on cooldown all say what happened instead of doing nothing.
+- Keyboard rotation steps fit the implant's tolerance, and dragging rotates 1:1. Anesthesia can be topped up (at a small quality cost). The cautery ring shows its real reach.
+- Each procedure family has its own instructions and feel: eyes are fine and precise, dermal is forgiving, limbs are heavy, spine needs a careful drill, neural has more calibration rounds. A correct clean-site diagnosis skips the duplicate debridement step.
+- Shorter waits between stages and before the results. The results count-up can be skipped. **THE MONEY** shows the fee, the patience cut, what was paid and what is owed, the implant and supplies used, and the net.
+
+### Economy
+- Parts are paid back at 90 % of their price (capped by the district's pay), so jobs with a bought implant no longer lose money by design.
+- A black-market part has no paperwork, so patients pay 80 % of the usual part price for it. Cheap off-the-books chrome is a saving, not free money.
+- A patient's shortfall becomes an instalment plan automatically. Staff jobs use the implant and supplies they need. Mothballed clinics pay half rent and no running costs. Your own debt's interest is 4 %/day (was 8 %).
+- Before a job, the customer file and the plan show **PAYMENT**, **USES UP** and **YOU KEEP**. BUSINESS has an **OUTLOOK** for the next three days. If it projects a loss it says why and what to do.
+- `tests/economy_sim.tscn` plays five strategies (conservative, specialist, black market, investment, mixed) on the real systems. Each seed gives exactly the same run, and the sim checks progression targets.
+
+### Standing
+- The journal's **STANDING** tab (was FACTIONS) keeps reputation, faction standing, personal relationships, trust and authority heat apart. Each shows its value, trend, what it does now, the next threshold and its own history.
+- Every change records its real cause, written down when it happens (an operation and its grade, "Turned away <name>", "Bought from <supplier>", "Closing for the night", "Event: <title>"). Repeats with the same cause batch, and the history is bounded (200 entries) and saved.
+- Choices in events show exactly what they'll change in standing, or "Risky (x%)" when it depends on a roll.
+- Heat uses one set of thresholds everywhere (MEDIUM 25, HIGH 50, CRITICAL 75). The reputation ladder gains "Distrusted" before "Butcher".
+
+### Less to read
+- The side bar is grouped into four places: **CLINIC**, **BUSINESS**, **CITY**, **MESSAGES & JOURNAL**.
+- **GUIDANCE** (Settings > Gameplay): MINIMAL shows only critical and important lines, only the status rows that aren't fine, and no first-time cards. STANDARD is the default. DETAILED shows more lines, the numbers behind each status row, and a notice for important changes. Presentation only: the rules don't change.
+- First-time cards wait until you're not operating or talking. Only critical changes interrupt, and the same notice never stacks twice.
+- New field-guide entries: closing the doors, standing, the outlook, the money on a job, guidance.
+
 ## 3.5.0 — The game tells you what matters
 
 ### What should I do?

@@ -139,8 +139,28 @@ func options() -> Array[Dictionary]:
 		var cost: int = int(o.get("cost", {}).get("money", 0))
 		if cost > 0:
 			tag = ("%s · %d cr" % [tag, cost]) if tag != "" else "%d cr" % cost
-		out.append({"index": i, "text": str(o["text"]), "kind": kind, "label": tag, "chance": ch, "locked": locked})
+		out.append({"index": i, "text": str(o["text"]), "kind": kind, "label": tag, "chance": ch, "locked": locked, "known": known_effects(o)})
 	return out
+
+
+## The public consequences of a line you could foresee (faction standing,
+## street rep, heat, money), via Standing.preview. How a person feels about
+## it (relationship, fear) stays hidden: you find out by saying it.
+static func known_effects(o: Dictionary) -> String:
+	var e: Dictionary = o.get("effects", {})
+	var out := {}
+	if e.has("rep"):
+		out["reputation"] = int(e["rep"])
+	if e.has("faction"):
+		out["faction"] = e["faction"]
+	if e.has("heat"):
+		out["heat"] = float(e["heat"])
+	var s := Standing.preview(out)
+	if e.has("money") and int(e["money"]) != 0:
+		s = ((s + ", ") if s != "" else "") + "%+d cr" % int(e["money"])
+	if s != "" and is_check(str(o.get("kind", "plain"))):
+		s = "if it works: " + s
+	return s
 
 
 static func is_check(kind: String) -> bool:
@@ -231,7 +251,15 @@ func reputation_mod(kind: String) -> float:
 
 ## Picks visible option `index` (the original option index from options()).
 ## Returns {success, summary[]} or {} if not allowed.
+## Records why standing changes in here (ChangeLog standing history).
 func choose(index: int) -> Dictionary:
+	ChangeLog.push_cause("Talking with %s" % (CharacterManager.get_character(character_id()).display_name if CharacterManager.has_character(character_id()) else "someone"))
+	var r: Dictionary = _choose_impl(index)
+	ChangeLog.pop_cause()
+	return r
+
+
+func _choose_impl(index: int) -> Dictionary:
 	var opts: Array = current_node().get("options", [])
 	if index < 0 or index >= opts.size():
 		return {}

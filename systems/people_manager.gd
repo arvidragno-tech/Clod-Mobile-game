@@ -172,7 +172,14 @@ func link(a: StringName, b: StringName, kind: String) -> void:
 ## After you dealt with them. outcome: success, failed, death, refused,
 ## deferred, left. paid: credits received now. Records memories, shifts the
 ## relationship and decides whether (and when) they'll be back.
+## Records why standing changes in here (ChangeLog standing history).
 func after_visit(c: CustomerData, outcome: String, paid: int = 0) -> void:
+	ChangeLog.push_cause("%s (%s)" % [c.display_name if c else "A patient", outcome])
+	_after_visit_impl(c, outcome, paid)
+	ChangeLog.pop_cause()
+
+
+func _after_visit_impl(c: CustomerData, outcome: String, paid: int = 0) -> void:
 	var p := register(c)
 	if p.is_empty():
 		return
@@ -356,9 +363,10 @@ func settle(c: CustomerData, fee: int) -> Dictionary:
 	if int(out["debt"]) > 0 and not cast:
 		register(c)
 		var d := add_debt(c.id, int(out["debt"]), "payment plan" if t == &"plan" else "couldn't cover the fee")
-		if t == &"plan":
-			set_plan(int(d["id"]))
-		lines.append("%s owes you %d cr." % [c.display_name, int(out["debt"])])
+		# Whatever they can't pay today goes on instalments automatically
+		# (an unpaid tab used to sit there until you chased it).
+		set_plan(int(d["id"]))
+		lines.append("%s owes you %d cr, paid off in instalments of %d a night." % [c.display_name, int(out["debt"]), int(d.get("plan", 0))])
 	elif cast:
 		out["paid"] = price
 		out["debt"] = 0
@@ -618,7 +626,15 @@ func write_off(id: int) -> void:
 
 
 ## A fixer collects: you get 60%, they get hurt, the street hears about it.
+## Records why standing changes in here (ChangeLog standing history).
 func send_collector(id: int) -> int:
+	ChangeLog.push_cause("Sent a debt collector")
+	var r: int = _send_collector_impl(id)
+	ChangeLog.pop_cause()
+	return r
+
+
+func _send_collector_impl(id: int) -> int:
 	var d := get_debt(id)
 	if d.is_empty() or not str(d["status"]) in ["open", "plan"]:
 		return 0

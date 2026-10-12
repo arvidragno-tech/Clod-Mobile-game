@@ -55,7 +55,7 @@ func _glossary() -> void:
 			missing.append("caption %s" % k)
 	check(missing.is_empty(), "every term the UI links to exists %s" % str(missing))
 	check(Controls.ACTIONS.has("help") and Controls.get_slots("help")[0] == KEY_F1, "F1 opens the field guide (rebindable)")
-	check(SideNav.TIPS.size() == SideNav.ITEMS.size(), "every sidebar section explains itself on hover")
+	check(SideNav.TIPS.size() == SideNav.ITEMS.filter(func(it: Array) -> bool: return str(it[0]) != "#").size(), "every sidebar section explains itself on hover")
 
 
 func _captions() -> void:

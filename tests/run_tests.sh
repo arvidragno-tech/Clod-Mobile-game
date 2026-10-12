@@ -33,6 +33,8 @@ for args in "--seed=1" "--seed=2" "--seed=3" "--seed=4 --skill=-0.3"; do
   # shellcheck disable=SC2086
   run_step "balance simulation $args" "BALANCE|FAIL" res://tests/balance_sim.tscn -- --ops=40 $args
 done
+run_step "economy simulation (5 strategies x 3 seeds x 20 days, real systems)" "ECONOMY|MISS|== [A-Z]" \
+  res://tests/economy_sim.tscn -- --days=20 --seeds=3 --check
 run_step "stability (soak, monkey, save fuzz, leaks)" "STABILITY|FAIL|completed|visited" \
   res://tests/stability_test.tscn -- --shifts=20 --monkey=1500
 # The E2E bot needs real font metrics (headless Godot measures text taller
@@ -73,9 +75,21 @@ if command -v xvfb-run >/dev/null 2>&1; then
   code=$?
   grep -E "FAIL|PASSED|SCRIPT ERROR" "$LOG"
   if [ $code -ne 0 ] || grep -q "SCRIPT ERROR" "$LOG"; then status=1; echo "    -> FAILED (exit $code)"; fi
+  echo "=== UI stability probe (shop accuracy, double clicks, navigation, rapid switching, big text; 4 resolutions, 3 window modes) ==="
+  xvfb-run -a -s "-screen 0 1920x1080x24" "$GODOT" --path . --rendering-driver opengl3 --resolution 1920x1080 \
+    res://tests/ui_stability_probe.tscn >"$LOG" 2>&1
+  code=$?
+  grep -E "FAIL|PASSED|SCRIPT ERROR" "$LOG"
+  if [ $code -ne 0 ] || grep -q "SCRIPT ERROR" "$LOG"; then status=1; echo "    -> FAILED (exit $code)"; fi
   echo "=== UX probe (early game: controls, priorities, preview, follow, journal, changes; 4 resolutions, 3 window modes) ==="
   xvfb-run -a -s "-screen 0 1920x1080x24" "$GODOT" --path . --rendering-driver opengl3 --resolution 1920x1080 \
     res://tests/ux_probe.tscn >"$LOG" 2>&1
+  code=$?
+  grep -E "FAIL|PASSED|SCRIPT ERROR" "$LOG"
+  if [ $code -ne 0 ] || grep -q "SCRIPT ERROR" "$LOG"; then status=1; echo "    -> FAILED (exit $code)"; fi
+  echo "=== onboarding probe (new player: sections by stage, patient summary, dashboard, previews, field guide; 4 resolutions, 3 window modes) ==="
+  xvfb-run -a -s "-screen 0 1920x1080x24" "$GODOT" --path . --rendering-driver opengl3 --resolution 1920x1080 \
+    res://tests/onboarding_probe.tscn >"$LOG" 2>&1
   code=$?
   grep -E "FAIL|PASSED|SCRIPT ERROR" "$LOG"
   if [ $code -ne 0 ] || grep -q "SCRIPT ERROR" "$LOG"; then status=1; echo "    -> FAILED (exit $code)"; fi

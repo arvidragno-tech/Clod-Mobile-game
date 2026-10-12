@@ -18,13 +18,26 @@ var _values: Dictionary = {}
 var _location: Label
 ## Stat boxes by glossary term (hover = live explanation, click = more).
 var _boxes: Dictionary = {}
+var _seps: Dictionary = {}
 
 
 func _ready() -> void:
 	theme_type_variation = &"HudPanel"
 	custom_minimum_size.y = 72
+	# Two parts: the stats (which may be clipped at the right edge with big
+	# text) and MENU, which is always on screen.
+	var outer := UIKit.hbox(18)
+	add_child(outer)
+	var clip := ScrollContainer.new()
+	clip.name = "StatsClip"
+	clip.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
+	clip.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	clip.mouse_filter = Control.MOUSE_FILTER_PASS
+	UIKit.expand(clip)
+	outer.add_child(clip)
 	var row := UIKit.hbox(18)
-	add_child(row)
+	row.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	clip.add_child(row)
 	# Clinic mark + location
 	var brand := UIKit.vbox(0)
 	brand.custom_minimum_size.x = 230
@@ -60,7 +73,8 @@ func _ready() -> void:
 	lv.add_child(_xp)
 	_explain(lv, "level")
 	row.add_child(lv)
-	row.add_child(_sep())
+	_seps["level"] = _sep()
+	row.add_child(_seps["level"])
 	var rep := UIKit.vbox(0)
 	rep.custom_minimum_size.x = 150
 	var rep_row := UIKit.hbox(8)
@@ -72,17 +86,17 @@ func _ready() -> void:
 	rep.add_child(_tier)
 	_explain(rep, "rep")
 	row.add_child(rep)
-	row.add_child(_sep())
+	_seps["rep"] = _sep()
+	row.add_child(_seps["rep"])
 	_values[&"heat"] = _stat(row, "HEAT", "res://assets/sprites/ui/icons/heat.png", Palette.TEXT, 90, "heat")
 	_values[&"supplies"] = _stat(row, "SUPPLIES", "res://assets/sprites/ui/icons/supplies.png", Palette.TEXT, 110, "supplies")
 	_values[&"parts"] = _stat(row, "PARTS", "res://assets/sprites/ui/icons/parts.png", Palette.TEXT, 80, "parts")
 	_values[&"tokens"] = _stat(row, "TOKENS", "res://assets/sprites/ui/icons/tokens.png", Palette.BRAND, 80, "tokens")
 	_values[&"ops"] = _stat(row, "TODAY", "res://assets/sprites/ui/icons/dossier.png", Palette.TEXT, 90, "jobs")
-	row.add_child(UIKit.expand(Control.new()))
 	var menu := UIKit.button("MENU  [%s]" % Controls.key_name("pause"), &"GhostButton", menu_pressed.emit, "MenuButton")
 	menu.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	menu.tooltip_text = "Pause menu: save, load, settings, quit"
-	row.add_child(menu)
+	outer.add_child(menu)
 	EventBus.money_changed.connect(_on_money)
 	EventBus.xp_changed.connect(func(_a: int, _b: int) -> void: _refresh())
 	EventBus.reputation_changed.connect(func(_a: int, _b: int) -> void: _refresh())
@@ -156,19 +170,39 @@ func _refresh() -> void:
 	_rep.text = "REP %d" % ReputationManager.reputation
 	_tier.text = ReputationManager.get_tier_name().to_upper()
 	_values[&"heat"].text = "%d" % roundi(FactionManager.heat)
-	_values[&"heat"].add_theme_color_override(&"font_color", Palette.DANGER if FactionManager.heat >= 35.0 else Palette.TEXT)
+	_values[&"heat"].add_theme_color_override(&"font_color", Palette.DANGER if FactionManager.heat >= 50.0 else (Palette.WARN if FactionManager.heat >= 25.0 else Palette.TEXT))
 	_values[&"supplies"].text = "%d/%d" % [InventoryManager.supplies, ClinicManager.get_supplies_capacity()]
 	_values[&"supplies"].add_theme_color_override(&"font_color", Palette.WARN if InventoryManager.supplies < 2 else Palette.TEXT)
 	_values[&"parts"].text = str(InventoryManager.parts)
 	_values[&"tokens"].text = str(InventoryManager.tokens)
 	_values[&"ops"].text = "%d/%d" % [BusinessManager.jobs_today, BusinessManager.capacity()]
 	_values[&"ops"].add_theme_color_override(&"font_color", Palette.OK if BusinessManager.is_day_full() else Palette.TEXT)
+	# Stats appear with the part of the game that gives them meaning:
+	# credits and supplies from the start; level with SKILLS; reputation and
+	# today's jobs after the first job; heat once there is any (or the black
+	# market is open); parts and tokens with the black market.
+	var all := not Features.progressive()
+	var first := Difficulty.ops() >= 1
+	_show("level", all or Features.is_on(&"skills"))
+	_show("rep", all or first)
+	_show("jobs", all or first)
+	_show("heat", all or FactionManager.heat > 0.0 or Features.is_on(&"blackmarket"))
+	_show("parts", all or Features.is_on(&"blackmarket"))
+	_show("tokens", all or Features.is_on(&"blackmarket"))
 	_tip("credits", "%s. Tonight's bill: about %s." % [EconomyManager.format_money(EconomyManager.money), EconomyManager.format_money(BusinessManager.projected_total())])
 	_tip("level", "Level %d: %d XP to the next. %s" % [ProgressionManager.level, maxi(0, need - ProgressionManager.total_xp), "%d skill point(s) to spend." % SkillManager.points if SkillManager.points > 0 else ""])
 	_tip("rep", "Reputation %d. The street calls you: %s." % [ReputationManager.reputation, str(ReputationManager.identity().get("title", "nobody")).to_lower()])
 	_tip("heat", "Heat %d (%s)." % [roundi(FactionManager.heat), SecurityManager.level_label()])
 	_tip("supplies", "%d of %d. Each operation uses some." % [InventoryManager.supplies, ClinicManager.get_supplies_capacity()])
 	_tip("jobs", "%d of %d jobs done today%s." % [BusinessManager.jobs_today, BusinessManager.capacity(), ": close for the night" if BusinessManager.is_day_full() else ""])
+
+
+func _show(term: String, on: bool) -> void:
+	var b: Control = _boxes.get(term)
+	if b:
+		b.visible = on
+	if _seps.has(term):
+		(_seps[term] as Control).visible = on
 
 
 func _tip(term: String, live: String) -> void:

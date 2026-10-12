@@ -206,6 +206,14 @@ func _build_options() -> void:
 			b.disabled = true
 			b.tooltip_text = str(o["locked"])
 		_options.add_child(b)
+		var known := str(o.get("known", ""))
+		if known != "" and str(o["locked"]) == "":
+			b.tooltip_text += "\nKnown consequences: " + known
+			var k := UIKit.label("   Known: " + known, &"DimLabel", false, Palette.TEXT_DIM, 13)
+			k.name = "DialogueEffect_%d" % i
+			k.clip_text = true
+			k.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+			_options.add_child(k)
 		if i == 0:
 			b.grab_focus.call_deferred()
 		i += 1

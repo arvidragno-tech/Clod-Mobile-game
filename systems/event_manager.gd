@@ -158,7 +158,15 @@ func get_choice_block_reason(choice: Dictionary) -> String:
 
 
 ## Applies a choice of the pending event; returns the result text.
+## Records why standing changes in here (ChangeLog standing history).
 func resolve(choice_index: int) -> String:
+	ChangeLog.push_cause("Event: %s" % str(get_event(pending_event).get("title", String(pending_event).capitalize())))
+	var r: String = _resolve_impl(choice_index)
+	ChangeLog.pop_cause()
+	return r
+
+
+func _resolve_impl(choice_index: int) -> String:
 	var id := pending_event
 	var e := get_event(id)
 	var choices: Array = e.get("choices", [])

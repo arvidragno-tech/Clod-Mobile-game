@@ -68,20 +68,10 @@ func _row_content(category: StringName, tool: ToolData, index: int) -> Control:
 	name_l.clip_text = true
 	text.add_child(name_l)
 	if tool:
+		# Only what changes how it handles: wear. Specs are in the tooltip.
 		var cond := InventoryManager.get_tool_condition(tool.id)
-		var cc := Palette.OK if cond >= 60.0 else (Palette.WARN if cond >= 25.0 else Palette.DANGER)
-		var stats := UIKit.label("T%d · PREC %.2f · SPD %.2f" % [tool.tier, tool.precision * InventoryManager.tool_condition_factor(tool.id), tool.speed], &"SubHeaderLabel")
-		text.add_child(stats)
-		var cond_row := UIKit.hbox(8)
-		cond_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		cond_row.add_child(UIKit.label("COND", &"SubHeaderLabel"))
-		var bar := UIKit.meter(cond / 100.0, cc, 6)
-		bar.custom_minimum_size.x = 120
-		bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		cond_row.add_child(bar)
-		cond_row.add_child(UIKit.label("%d%%" % roundi(cond), &"SubHeaderLabel", false, cc))
-		text.add_child(cond_row)
+		if cond < 60.0:
+			text.add_child(UIKit.label("worn: %d%%" % roundi(cond), &"SubHeaderLabel", false, Palette.WARN if cond >= 25.0 else Palette.DANGER))
 	if index < 9:
 		var key := UIKit.label("[%s]" % Controls.key_name("tool_%d" % (index + 1)), &"MonoLabel", false, Palette.ACCENT)
 		key.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -92,7 +82,8 @@ func _row_content(category: StringName, tool: ToolData, index: int) -> Control:
 func _tooltip(category: StringName, tool: ToolData, index: int) -> String:
 	if tool == null:
 		return "No %s owned. Buy one at SUPPLY." % String(category).to_upper()
-	return "%s  [%s]\n%s" % [tool.display_name, Controls.key_name("tool_%d" % (index + 1)) if index < 9 else "-", tool.description]
+	return "%s  [%s]\nT%d · precision %.2f · speed %.2f · condition %d%%\n%s" % [tool.display_name, Controls.key_name("tool_%d" % (index + 1)) if index < 9 else "-",
+		tool.tier, tool.precision * InventoryManager.tool_condition_factor(tool.id), tool.speed, roundi(InventoryManager.get_tool_condition(tool.id)), tool.description]
 
 
 func get_button(category: StringName) -> Button:
@@ -135,7 +126,26 @@ func set_hint(category: StringName) -> void:
 	_hint_category = category
 
 
+## Puts the instrument for `category` in hand (the stage's tool, at stage
+## start). Returns false if it isn't owned / usable.
+func select_category(category: StringName) -> bool:
+	var b := get_button(category)
+	if b == null or b.disabled:
+		return false
+	if selected == category and b.button_pressed:
+		return true
+	b.button_pressed = true
+	return true
+
+
 func _on_toggled(pressed: bool, category: StringName) -> void:
+	# Clicking the tool you're holding keeps it in hand (right-click puts it
+	# down); a toggle-off click on the active tool felt like a dead click.
+	# (Only a click on the held tool itself: when you switch tools the group
+	# un-presses the old one first, and that must go through.)
+	if not pressed and selected == category and _group.get_pressed_button() == null:
+		get_button(category).set_pressed_no_signal(true)
+		return
 	if pressed:
 		selected = category
 		AudioManager.play_sfx(&"tool")

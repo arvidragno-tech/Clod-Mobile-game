@@ -93,7 +93,11 @@ func on_enter(params: Dictionary) -> void:
 	cp.custom_minimum_size.x = 560
 	row.add_child(cp)
 	_panels.append(cp)
+	cp.clip_contents = true
 	var csc := UIKit.scroll()
+	# Wide comparisons scroll sideways inside the panel instead of widening
+	# the screen past the canvas.
+	csc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	cp.add_child(csc)
 	_compare = UIKit.vbox(10)
 	_compare.name = "Compare"

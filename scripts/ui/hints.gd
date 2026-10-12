@@ -36,9 +36,19 @@ static func first(id: String) -> bool:
 		return false
 	if TutorialManager.is_active():
 		return false  # the first operation has its own coach marks
+	if Settings.is_minimal():
+		return false
+	if SurgeryManager.is_active or DialogueManager.is_active():
+		return false  # never over an operation or a conversation; it shows next time
 	_mark(id)
 	_show(id)
 	return true
+
+
+## The field guide's TUTORIALS: a card you've seen, shown again on request.
+static func show_again(id: String) -> void:
+	if HINTS.has(id):
+		_show(id)
 
 
 static func seen(id: String) -> bool:

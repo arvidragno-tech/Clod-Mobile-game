@@ -11,6 +11,9 @@ var _detail: VBoxContainer
 var _balance: Label
 var _tab: int = 0
 var _panels: Array[Control] = []
+## The implant / tool the detail panel shows (kept across rebuilds).
+var _shown: StringName = &""
+var _rebuild_queued: bool = false
 
 
 func on_enter(params: Dictionary) -> void:
@@ -40,19 +43,25 @@ func on_enter(params: Dictionary) -> void:
 	_list.add_theme_constant_override(&"v_separation", 12)
 	UIKit.expand(_list)
 	sc.add_child(_list)
+	# A fixed-width detail panel: its content must never resize the card grid
+	# (a reflow on hover would move BUY buttons under the cursor).
 	var dp := UIKit.panel(&"AccentPanel")
-	dp.custom_minimum_size.x = 520
+	dp.custom_minimum_size.x = 540
+	dp.size_flags_horizontal = Control.SIZE_SHRINK_END
+	dp.clip_contents = true
 	row.add_child(dp)
 	_panels.append(dp)
 	var dsc := UIKit.scroll()
+	dsc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	dp.add_child(dsc)
 	_detail = UIKit.vbox(10)
 	_detail.name = "Detail"
 	UIKit.expand(_detail)
 	dsc.add_child(_detail)
-	EventBus.money_changed.connect(func(_a: int, _d: int) -> void: _rebuild())
-	EventBus.inventory_changed.connect(_rebuild)
-	EventBus.resources_changed.connect(_rebuild)
+	# One purchase emits several signals: rebuild once, after them all.
+	EventBus.money_changed.connect(func(_a: int, _d: int) -> void: _queue_rebuild())
+	EventBus.inventory_changed.connect(_queue_rebuild)
+	EventBus.resources_changed.connect(_queue_rebuild)
 	_rebuild()
 
 
@@ -62,32 +71,54 @@ func get_panels() -> Array[Control]:
 
 func _on_tab(i: int) -> void:
 	_tab = i
+	_shown = &""
 	_rebuild()
 
 
+func _queue_rebuild() -> void:
+	if _rebuild_queued:
+		return
+	_rebuild_queued = true
+	_rebuild.call_deferred()
+
+
 func _rebuild() -> void:
+	_rebuild_queued = false
 	if not is_inside_tree():
 		return
-	_balance.text = "BALANCE %s  ·  TIER T%d ACCESS" % [EconomyManager.format_money(EconomyManager.money), CyberwareManager.get_available_tier()]
+	var scroll := _list.get_parent() as ScrollContainer
+	var keep_scroll := scroll.scroll_vertical if scroll else 0
+	_balance.text = ""  # your cash is in the status bar (and in BEFORE YOU PAY)
 	UIKit.clear(_list)
 	UIKit.clear(_detail)
 	_list.columns = COLUMNS
 	match _tab:
 		0:
-			var items := CyberwareManager.get_supply_catalog(true)
+			var items := CyberwareManager.get_supply_catalog()  # what you can buy now
+			var shown: CyberwareData = items[0] if not items.is_empty() else null
 			for item in items:
 				_list.add_child(_implant_card(item))
-			if not items.is_empty():
-				_show_implant(items[0])
+				if item.id == _shown:
+					shown = item
+			if shown:
+				_show_implant(shown)
 		1:
-			var tools := InventoryManager.get_purchasable_tools(true)
+			var tools := InventoryManager.get_purchasable_tools()
+			var shown_tool: ToolData = null
 			for t in tools:
 				_list.add_child(_tool_card(t))
-			_show_owned_tools()
+				if t.id == _shown:
+					shown_tool = t
+			if shown_tool:
+				_show_tool(shown_tool)
+			else:
+				_show_owned_tools()
 		2:
 			_list.columns = 1
 			_list.add_child(_supplies_card())
 			_show_owned_tools()
+	if scroll:
+		scroll.set_deferred(&"scroll_vertical", keep_scroll)
 
 
 ## Card behaviour: hover or click shows the item in the detail panel.
@@ -102,6 +133,7 @@ func _inspectable(card: Control, show: Callable) -> void:
 
 
 func _show_implant(item: CyberwareData) -> void:
+	_shown = item.id
 	UIKit.clear(_detail)
 	var row := UIKit.hbox(14)
 	_detail.add_child(row)
@@ -111,14 +143,22 @@ func _show_implant(item: CyberwareData) -> void:
 	row.add_child(v)
 	v.add_child(UIKit.label(item.display_name, &"HeaderLabel", true, item.get_rarity_color()))
 	v.add_child(UIKit.label("%s · %s · %s" % [item.manufacturer, String(item.category).to_upper(), item.rarity.to_upper()], &"SubHeaderLabel", true))
-	_detail.add_child(UIKit.label(item.description, &"DimLabel", true))
 	if not item.benefits.is_empty():
 		_detail.add_child(UIKit.label("EFFECTS: " + ", ".join(item.benefits), &"", true, Palette.ACCENT))
-	# Compare against the customer's installed chrome in that slot, else the
-	# best unit in stock of the same category.
-	var current := _current_for(item)
-	Compare.build_cyberware_table(_detail, current, item)
-	_detail.add_child(UIKit.label("[B] full cyberware database", &"SubHeaderLabel"))
+	# Before you pay: the real price and what it leaves you (DecisionPreview).
+	var have := InventoryManager.get_implant_count(item.id)
+	var limits: Array[String] = []
+	if not CyberwareManager.is_tier_available(item.tier):
+		limits.append("Locked: needs LV %d and a clinic rated for T%d." % [GameConfig.CYBERWARE_TIER_LEVEL.get(item.tier, 99), item.tier])
+	if not item.required_tools.is_empty():
+		limits.append("Fitting it needs: %s." % ", ".join(item.required_tools).to_lower())
+	DecisionPreview.build(_detail, InventoryManager.implant_price(item), {"stock": "%d → %d" % [have, have + 1],
+		"purpose": "A patient who asks for it pays for the part when you fit it.", "limits": limits})
+	# Specs and the comparison: one click away.
+	var more := UIKit.collapsible(_detail, "SPECS & COMPARE", false, &"CardPanel")
+	more.add_child(UIKit.label(item.description, &"DimLabel", true, null, 14))
+	more.add_child(UIKit.label("T%d %s · %s · load +%d%% · difficulty %d/5" % [item.tier, item.get_tier_name(), String(item.category).to_upper(), roundi(item.neural_load), item.install_difficulty], &"MonoLabel", true, Palette.TEXT_DIM, 15))
+	Compare.build_cyberware_table(more, _current_for(item), item)
 
 
 func _current_for(item: CyberwareData) -> CyberwareData:
@@ -136,6 +176,7 @@ func _current_for(item: CyberwareData) -> CyberwareData:
 
 
 func _show_tool(t: ToolData) -> void:
+	_shown = t.id
 	UIKit.clear(_detail)
 	var row := UIKit.hbox(14)
 	_detail.add_child(row)
@@ -145,10 +186,18 @@ func _show_tool(t: ToolData) -> void:
 	row.add_child(v)
 	v.add_child(UIKit.label(t.display_name, &"HeaderLabel", true))
 	v.add_child(UIKit.label("%s · T%d" % [String(t.category).to_upper(), t.tier], &"SubHeaderLabel"))
-	_detail.add_child(UIKit.label(t.description, &"DimLabel", true))
 	if not t.modifiers.is_empty():
 		_detail.add_child(UIKit.label(UIKit.describe_modifiers(t.modifiers), &"", true, Palette.ACCENT))
-	Compare.build_tool_table(_detail, InventoryManager.get_best_tool(t.category), t)
+	var best := InventoryManager.get_best_tool(t.category)
+	var tl: Array[String] = []
+	if t.unlock_level > ProgressionManager.level:
+		tl.append("Unlocks at LV %d." % t.unlock_level)
+	DecisionPreview.build(_detail, InventoryManager.tool_price(t), {"stock": "best %s now: %s" % [String(t.category).to_lower(), best.display_name if best else "none"],
+		"purpose": "Used whenever a step needs a %s. Better instruments lower the risk; they wear %d%% per operation." % [String(t.category).to_lower(), roundi(InventoryManager.WEAR_PER_OP)],
+		"limits": tl})
+	var more := UIKit.collapsible(_detail, "SPECS & COMPARE", false, &"CardPanel")
+	more.add_child(UIKit.label(t.description, &"DimLabel", true, null, 14))
+	Compare.build_tool_table(more, InventoryManager.get_best_tool(t.category), t)
 
 
 ## Owned instruments with condition, plus SERVICE (restores 100%).
@@ -175,6 +224,8 @@ func _show_owned_tools() -> void:
 
 
 func _service() -> void:
+	if not UIKit.debounce("service_tools"):
+		return
 	if InventoryManager.service_tools():
 		UIManager.celebrate(&"tool", "Instruments serviced")
 		SaveManager.save_game()
@@ -187,15 +238,22 @@ func _implant_card(item: CyberwareData) -> Control:
 	var row := UIKit.hbox(12)
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card.add_child(row)
-	row.add_child(CyberwareIcon.make(item))
+	var icon := CyberwareIcon.make(item)
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE  # the whole card inspects
+	row.add_child(icon)
 	var info := UIKit.vbox(2)
 	UIKit.expand(info)
 	row.add_child(info)
+	# Name, what it does, and why it matters now; specs are in the detail panel.
 	info.add_child(UIKit.label(item.display_name, &"", true))
-	info.add_child(UIKit.label("T%d %s · %s" % [item.tier, item.get_tier_name(), item.category.to_upper()], &"SubHeaderLabel", true, item.get_rarity_color()))
-	info.add_child(UIKit.label("LOAD +%d%%  ·  DIFF %d/5  ·  IN STOCK %d" % [roundi(item.neural_load), item.install_difficulty, InventoryManager.get_implant_count(item.id)], &"MonoLabel", true, Palette.TEXT_DIM, 17))
-	if not item.required_tools.is_empty():
-		info.add_child(UIKit.label("Needs: " + ", ".join(item.required_tools).to_upper(), &"DimLabel", true, Palette.WARN, 13))
+	if not item.benefits.is_empty():
+		info.add_child(UIKit.label(item.benefits[0], &"DimLabel", true, null, 14))
+	var c := CustomerManager.current_customer
+	if c and c.requested_cyberware_id == item.id:
+		info.add_child(UIKit.label("★ for the patient at the door", &"", true, Palette.ACCENT, 14))
+	var have := InventoryManager.get_implant_count(item.id)
+	if have > 0:
+		info.add_child(UIKit.label("%d in stock" % have, &"DimLabel", false, Palette.OK, 14))
 	var price := InventoryManager.implant_price(item)
 	var b := UIKit.button(EconomyManager.format_money(price), &"AccentButton", func() -> void: _buy_implant(item.id), "BuyImplant_%s" % item.id)
 	b.custom_minimum_size.x = 130
@@ -210,6 +268,20 @@ func _implant_card(item: CyberwareData) -> Control:
 	return card
 
 
+## The instrument the patient at the door is missing (or &"").
+func _needed_tool_category() -> StringName:
+	var c := CustomerManager.current_customer
+	if c == null:
+		return &""
+	var item := CyberwareManager.get_cyberware(c.requested_cyberware_id)
+	if item == null:
+		return &""
+	for req in item.get_tool_requirements():
+		if not InventoryManager.has_tool_category(StringName(str(req["category"])), int(req["tier"])):
+			return StringName(str(req["category"]))
+	return &""
+
+
 func _tool_card(t: ToolData) -> Control:
 	var card := UIKit.panel(&"CardPanel")
 	UIKit.expand(card)
@@ -222,7 +294,9 @@ func _tool_card(t: ToolData) -> Control:
 	UIKit.expand(info)
 	row.add_child(info)
 	info.add_child(UIKit.label(t.display_name, &"", true))
-	info.add_child(UIKit.label("%s T%d · PREC x%.1f · SPEED x%.1f" % [String(t.category).to_upper(), t.tier, t.precision, t.speed], &"SubHeaderLabel", true))
+	info.add_child(UIKit.label("%s, tier %d" % [String(t.category).capitalize(), t.tier], &"DimLabel", true, null, 14))
+	if _needed_tool_category() == t.category:
+		info.add_child(UIKit.label("★ the patient at the door needs one", &"", true, Palette.ACCENT, 14))
 	var price := InventoryManager.tool_price(t)
 	var b := UIKit.button(EconomyManager.format_money(price), &"AccentButton", func() -> void: _buy_tool(t.id), "BuyTool_%s" % t.id)
 	b.custom_minimum_size.x = 130
@@ -247,6 +321,7 @@ func _supplies_card() -> Control:
 	v.add_child(UIKit.label("Every operation uses 1-2 units. Operating without supplies raises bleeding and complications.", &"DimLabel", true))
 	var price := int(round(GameConfig.SUPPLY_PACK_PRICE * ModifierManager.mult(&"price.buy")))
 	var b := UIKit.button("BUY %d FOR %s" % [GameConfig.SUPPLY_PACK_SIZE, EconomyManager.format_money(price)], &"AccentButton", _buy_supplies, "BuySupplies")
+	b.tooltip_text = DecisionPreview.summary(price) + " · supplies %d → %d" % [InventoryManager.supplies, mini(InventoryManager.supplies + GameConfig.SUPPLY_PACK_SIZE, ClinicManager.get_supplies_capacity())]
 	b.disabled = not EconomyManager.can_afford(price) or InventoryManager.supplies >= ClinicManager.get_supplies_capacity()
 	v.add_child(b)
 	v.add_child(UIKit.label("PARTS %d  ·  TOKENS %d" % [InventoryManager.parts, InventoryManager.tokens], &"MonoLabel", false, Palette.TEXT_DIM))
@@ -255,6 +330,9 @@ func _supplies_card() -> Control:
 
 
 func _buy_implant(id: StringName) -> void:
+	if not UIKit.debounce("buy_implant_%s" % id):
+		return  # a double-click is one purchase
+	_shown = id
 	if InventoryManager.buy_implant(id):
 		UIManager.celebrate(&"purchase", "%s stocked" % CyberwareManager.get_cyberware(id).display_name)
 		SaveManager.save_game()
@@ -264,6 +342,9 @@ func _buy_implant(id: StringName) -> void:
 
 
 func _buy_tool(id: StringName) -> void:
+	if not UIKit.debounce("buy_tool_%s" % id):
+		return
+	_shown = id
 	if InventoryManager.buy_tool(id):
 		UIManager.celebrate(&"tool", "%s acquired" % InventoryManager.get_tool(id).display_name)
 		SaveManager.save_game()
@@ -272,6 +353,8 @@ func _buy_tool(id: StringName) -> void:
 
 
 func _buy_supplies() -> void:
+	if not UIKit.debounce("buy_supplies"):
+		return
 	if InventoryManager.buy_supply_pack():
 		UIManager.celebrate(&"purchase")
 		SaveManager.save_game()

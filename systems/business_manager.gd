@@ -7,10 +7,13 @@ extends Node
 ## (EventBus.transaction) lands in today's ledger so the business screen can
 ## show revenue, costs and profit per category and per day.
 ##
-## Unpaid bills become debt (8% a day). The Landlord notices.
+## Unpaid bills become debt (4% a day). The Landlord notices.
+## A clinic you've moved out of with nobody working there is mothballed:
+## half rent, no running costs.
 
 const HISTORY_DAYS := 30
-const DEBT_INTEREST := 0.08
+const DEBT_INTEREST := 0.04
+const MOTHBALL_RENT := 0.5
 const DEBT_WARNING := 500
 
 const INCOME := [&"revenue", &"staff_revenue", &"black_market", &"events", &"city", &"other"]
@@ -30,6 +33,13 @@ var history: Array[Dictionary] = []  # newest last: {day, ledger, profit, debt, 
 var totals: Dictionary = {}  # category -> delta (lifetime)
 var debt: int = 0
 var days_in_debt: int = 0
+## CLOSE DOORS: no new walk-ins (the door and the waiting bench) while you
+## read, shop, level up or plan. Time only moves when you act, so a closed
+## clinic is a real pause. Someone already at the door stays; story visits
+## still happen. The doors open again every morning.
+var doors_open: bool = true
+
+signal doors_changed(open: bool)
 
 
 func _ready() -> void:
@@ -45,6 +55,16 @@ func reset_state() -> void:
 	totals.clear()
 	debt = 0
 	days_in_debt = 0
+	doors_open = true
+
+
+func set_doors_open(open: bool) -> void:
+	if open == doors_open:
+		return
+	doors_open = open
+	doors_changed.emit(open)
+	if open:
+		CustomerManager.request_next_customer()
 
 
 func _on_transaction(category: StringName, delta: int) -> void:
@@ -82,8 +102,11 @@ func projected_costs() -> Array[Dictionary]:
 	for i in ClinicManager.owned:
 		var c := ClinicManager.daily_costs(i)
 		var nm := str(ClinicManager.get_tier_data(i).get("name", ""))
-		out.append({"category": &"rent", "amount": _scaled(int(c["rent"])), "note": nm})
-		out.append({"category": &"operating", "amount": _scaled(int(c["operating"])), "note": nm})
+		if is_mothballed(i):
+			out.append({"category": &"rent", "amount": _scaled(int(round(int(c["rent"]) * MOTHBALL_RENT))), "note": nm + " (mothballed: half rent)"})
+		else:
+			out.append({"category": &"rent", "amount": _scaled(int(c["rent"])), "note": nm})
+			out.append({"category": &"operating", "amount": _scaled(int(c["operating"])), "note": nm})
 		var sec := 0
 		for lv in range(1, ClinicManager.upgrade_level(&"security", i) + 1):
 			sec += int(ClinicManager.upgrade_def(&"security", lv).get("upkeep", 0))
@@ -101,6 +124,14 @@ func projected_costs() -> Array[Dictionary]:
 	return out
 
 
+## An owned clinic that isn't your practice and has nobody working there.
+func is_mothballed(i: int) -> bool:
+	if i == ClinicManager.tier:
+		return false
+	var staff := _staff()
+	return staff == null or (staff.call("at_clinic", i) as Array).is_empty()
+
+
 func projected_total() -> int:
 	var n := 0
 	for c in projected_costs():
@@ -113,7 +144,15 @@ static func _scaled(v: int) -> int:
 
 
 ## Closes the clinic for the night and settles the books. Returns the report.
+## Records why standing changes in here (ChangeLog standing history).
 func end_day() -> Dictionary:
+	ChangeLog.push_cause("Closing for the night (%s)" % ClinicManager.get_tier_name())
+	var r: Dictionary = _end_day_impl()
+	ChangeLog.pop_cause()
+	return r
+
+
+func _end_day_impl() -> Dictionary:
 	var notes: Array[String] = []
 	var staff := _staff()
 	if staff:
@@ -148,6 +187,9 @@ func end_day() -> Dictionary:
 	day += 1
 	jobs_today = 0
 	today.clear()
+	if not doors_open:
+		doors_open = true
+		doors_changed.emit(true)
 	EventBus.day_started.emit(day)
 	return report
 
@@ -203,6 +245,56 @@ func category_over(category: StringName, n: int = 7) -> int:
 	return total
 
 
+const DIRECT := [&"cyberware", &"supplies", &"tools"]
+const RECURRING := [&"rent", &"operating", &"upkeep", &"salaries", &"security", &"interest"]
+
+
+## The business at a glance over the last `days` days (from the real
+## ledger): {revenue, direct, recurring, other, profit, upcoming, verdict,
+## level, cause, advice}. If the clinic is losing money, `cause` names the
+## biggest drain and `advice` what usually helps.
+func outlook(days: int = 3) -> Dictionary:
+	var revenue := 0
+	for k: StringName in INCOME:
+		revenue += maxi(0, category_over(k, days - 1))
+	var direct := 0
+	for k: StringName in DIRECT:
+		direct -= mini(0, category_over(k, days - 1))
+	var recurring := 0
+	for k: StringName in RECURRING:
+		recurring -= mini(0, category_over(k, days - 1))
+	var profit := revenue - direct - recurring
+	var upcoming := projected_total()
+	var out := {"revenue": revenue, "direct": direct, "recurring": recurring, "profit": profit, "upcoming": upcoming,
+		"verdict": "Healthy", "level": &"good", "cause": "", "advice": ""}
+	if profit < 0:
+		out["verdict"] = "Losing money"
+		out["level"] = &"bad"
+	elif profit < upcoming:
+		out["verdict"] = "Tight"
+		out["level"] = &"warn"
+	if profit < upcoming:
+		if revenue == 0:
+			out["cause"] = "No jobs done lately"
+			out["advice"] = "Take jobs (or let staff take them): nothing comes in otherwise."
+		elif direct >= recurring:
+			out["cause"] = "Implants and supplies cost %d of %d earned" % [direct, revenue]
+			out["advice"] = "Pick jobs whose THE MONEY line is positive, use stock you already own, and buy chrome cheaper (black market, suppliers)."
+		else:
+			var worst: StringName = &"rent"
+			var worst_v := 0
+			for k: StringName in RECURRING:
+				var v := -mini(0, category_over(k, days - 1))
+				if v > worst_v:
+					worst_v = v
+					worst = k
+			out["cause"] = "%s: %d over %d days" % [LABELS.get(worst, String(worst)), worst_v, days]
+			out["advice"] = {&"rent": "Move to a cheaper address or sell a clinic you don't use.", &"operating": "Move to a cheaper address or sell a clinic you don't use.",
+				&"salaries": "Give staff more jobs, or let go of one who doesn't earn their wage.", &"upkeep": "Some upgrades cost more to run than they bring in.",
+				&"interest": "Pay the debt down first: interest grows every night.", &"security": "Security upkeep is high for the threat you face."}.get(worst, "")
+	return out
+
+
 func income_and_costs(ledger: Dictionary) -> Dictionary:
 	var inc := 0
 	var cost := 0
@@ -238,7 +330,7 @@ func get_save_data() -> Dictionary:
 		var hh := h.duplicate()
 		hh["ledger"] = l
 		hist.append(hh)
-	return {"day": day, "jobs_today": jobs_today, "today": td, "totals": tt, "history": hist, "debt": debt, "days_in_debt": days_in_debt}
+	return {"day": day, "jobs_today": jobs_today, "today": td, "totals": tt, "history": hist, "debt": debt, "days_in_debt": days_in_debt, "doors_open": doors_open}
 
 
 func load_save_data(data: Dictionary) -> void:
@@ -247,6 +339,7 @@ func load_save_data(data: Dictionary) -> void:
 	jobs_today = int(data.get("jobs_today", 0))
 	debt = maxi(0, int(data.get("debt", 0)))
 	days_in_debt = int(data.get("days_in_debt", 0))
+	doors_open = bool(data.get("doors_open", true))
 	var td: Dictionary = data.get("today", {})
 	for k: Variant in td:
 		today[StringName(str(k))] = int(td[k])

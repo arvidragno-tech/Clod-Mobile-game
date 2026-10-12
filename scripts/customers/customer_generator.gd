@@ -298,8 +298,18 @@ static func estimate_fee(c: CustomerData) -> int:
 	var s := SurgeryManager.get_surgery(c.requested_surgery_id)
 	if item == null or s == null:
 		return 0
-	var base := s.base_pay + InventoryManager.implant_price(item) * GameConfig.IMPLANT_PRICE_MARKUP
-	return int(round(base * c.pay_multiplier * 1.1 * ModifierManager.mult(&"pay")))
+	var mult := c.pay_multiplier * ModifierManager.mult(&"pay")
+	var service := s.base_pay * 1.1 * mult
+	return int(round(service + estimate_part(c)))
+
+
+## The part's share of the estimate (what the patient pays for the implant).
+static func estimate_part(c: CustomerData) -> float:
+	var item := CyberwareManager.get_cyberware(c.requested_cyberware_id)
+	if item == null:
+		return 0.0
+	var mult := c.pay_multiplier * ModifierManager.mult(&"pay")
+	return InventoryManager.implant_price(item) * GameConfig.IMPLANT_PRICE_MARKUP * minf(mult, 1.0)
 
 
 func _build_dialogue(c: CustomerData, context: Dictionary) -> String:

@@ -17,6 +17,9 @@ const LivingWorldTests := preload("res://tests/living_world_tests.gd")
 const LivingCityTests := preload("res://tests/living_city_tests.gd")
 const UiOverhaulTests := preload("res://tests/ui_overhaul_tests.gd")
 const UxTests := preload("res://tests/ux_tests.gd")
+const QualityTests := preload("res://tests/quality_tests.gd")
+const OnboardingTests := preload("res://tests/onboarding_tests.gd")
+const IntakeTests := preload("res://tests/intake_tests.gd")
 
 var _failures: Array[String] = []
 var _dilemmas_seen: bool = false
@@ -59,6 +62,9 @@ func _run_all() -> void:
 	LivingCityTests.new().run(self)
 	UiOverhaulTests.new().run(self)
 	UxTests.new().run(self)
+	QualityTests.new().run(self)
+	OnboardingTests.new().run(self)
+	IntakeTests.new().run(self)
 	if OS.get_cmdline_user_args().has("--unit-only"):
 		_finish()
 		return
@@ -285,6 +291,9 @@ func _e2e() -> void:
 	await _frames(3)
 	await _checkpoint("property")
 	await _click_named("UpgradeClinic")
+	# 3.7: a new clinic is a big commitment: the preview dialog (when confirms are on).
+	if get_tree().root.find_child("ConfirmYes", true, false):
+		await _click_named("ConfirmYes")
 	check(ClinicManager.tier == tier + 1, "upgraded the clinic via the UI")
 	# Facility upgrade (visible overlay in the room).
 	await _click_named("FacilityTab_0")
@@ -604,6 +613,12 @@ func _to_plan(dx: StringName) -> void:
 	await _frames(20)
 	await _checkpoint("clinic")
 	await _click_named("SeeButton")
+	# 3.7: the patient summary first; MORE DETAILS opens the full file.
+	await _wait_until(func() -> bool: return _find_visible("PatientSummary") != null, 5.0)
+	check(_find_visible("PatientSummary") != null, "SEE PATIENT opens the patient summary")
+	await _checkpoint("summary")
+	await _click_named("SummaryDetails")
+	await _click_named("SummaryFile")
 	await _wait_screen(UIManager.SCREEN_CUSTOMER)
 	await _frames(30)
 	await _checkpoint("customer")
@@ -724,14 +739,14 @@ func _play_stage(stage: SurgeryStage, sloppy: bool) -> void:
 			await _release(_fs(p))
 	elif stage is AnchorDrillStage:
 		var drill := stage as AnchorDrillStage
-		while not drill.is_finished:
+		while is_instance_valid(drill) and not drill.is_finished:
 			var h := drill.get_autoplay_hints()
 			var targets: Array = h["targets"]
 			if targets.is_empty():
 				break
 			var mid := (float(h["zone_min"]) + float(h["zone_max"])) / 2.0
 			await _press(_fs(targets[0]))
-			await _wait_until(func() -> bool: return drill.current_depth() >= mid or drill.is_finished, 5.0)
+			await _wait_until(func() -> bool: return not is_instance_valid(drill) or drill.is_finished or drill.current_depth() >= mid, 5.0)
 			await _release(_fs(targets[0]))
 			await _frames(3)
 	elif stage is InstallImplantStage:
@@ -739,7 +754,7 @@ func _play_stage(stage: SurgeryStage, sloppy: bool) -> void:
 		await _drag([_fs(h["implant"]), _fs(h["socket"])])
 		await _frames(3)
 		var error: float = stage.get_autoplay_hints()["angle_error_deg"]
-		var steps := roundi(absf(error) / InstallImplantStage.ROTATE_STEP_DEG)
+		var steps := roundi(absf(error) / (stage as InstallImplantStage).rotate_step_deg())
 		var button_name := "RotateLeft" if error > 0.0 else "RotateRight"
 		if sloppy:
 			steps = maxi(steps - 3, 0)
@@ -750,7 +765,7 @@ func _play_stage(stage: SurgeryStage, sloppy: bool) -> void:
 		if sloppy:
 			var wrong: Array = stage.get_autoplay_hints()["wrong"]
 			await _drag([_fs(wrong[0]), _fs(wrong[1])])
-		while not stage.is_finished:
+		while is_instance_valid(stage) and not stage.is_finished:
 			var pairs: Array = stage.get_autoplay_hints()["pairs"]
 			if pairs.is_empty():
 				break
@@ -758,7 +773,7 @@ func _play_stage(stage: SurgeryStage, sloppy: bool) -> void:
 			await _frames(2)
 	elif stage is CalibrateStage:
 		var cal := stage as CalibrateStage
-		while not cal.is_finished:
+		while is_instance_valid(cal) and not cal.is_finished:
 			var h := cal.get_autoplay_hints()
 			var slider: TouchSlider = h["slider"]
 			var value: float = 0.02 if sloppy else float(h["target"])
@@ -984,6 +999,11 @@ func _click_named(node_name: String, timeout: float = STEP_TIMEOUT) -> void:
 	# on the clinic between scripted steps: resolve them first.
 	if not (node_name.begins_with("Choice_") or node_name == "EventContinue") and _find_visible("EventPanel") != null:
 		await _resolve_incident()
+	# Back on the clinic with the day's jobs done (and nobody at the door),
+	# the night closes by itself and its report covers the screen: read it.
+	if node_name != "DayReportClose" and _find_visible("DayReportClose") != null:
+		await _click(_find_visible("DayReportClose"))
+		await _frames(4)
 	var found := await _wait_until(func() -> bool:
 		var n := _find_visible(node_name)
 		return n != null and not (n is BaseButton and (n as BaseButton).disabled) and not UIManager.is_transitioning(), timeout)

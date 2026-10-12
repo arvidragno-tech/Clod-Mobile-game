@@ -3,7 +3,7 @@ extends Node
 ## real mouse clicks and key presses, the way a new player would:
 ##  1 launch (first-launch control setup)    2 configure controls (search,
 ##  REPLACE conflict, CTRL combo, critical key, ESC cancels)
-##  3 new game    4 the first patient from WHAT MATTERS NOW    5 the file
+##  3 new game    4 the first patient (SEE PATIENT)    5 the file
 ##  (recommendation)    6 diagnose    7 surgery preview    8 the recommended
 ##  ripperdoc    9 operate    10 results    11 the new lead    12 the map by
 ##  the player's own key    13 travel    14 meet someone    15 follow
@@ -142,7 +142,7 @@ func _flow() -> void:
 	e["traits"] = []
 	e["ethics"] = []
 	StaffManager.employees.append(e)
-	# 4. The first patient, found through WHAT MATTERS NOW.
+	# 4. The first patient, through SEE PATIENT.
 	var c := CustomerManager.generator.generate({"archetype": "civilian"})
 	CustomerManager.debug_set_customer(c)
 	InventoryManager.add_implant(c.requested_cyberware_id)
@@ -150,14 +150,20 @@ func _flow() -> void:
 	await _settle()
 	UIManager.close_modal()
 	await _frames(10)
-	var door := _find_matter("at the door")
-	_check(door != null, "4: WHAT MATTERS NOW lists the patient at the door")
-	_check(_find_visible("ClinicStatus") != null and _find_visible("Status_heat") != null, "4: CLINIC STATUS summarises the clinic")
+	var door := _find_visible_button("SeeButton")
+	_check(door != null, "4: the clinic offers SEE PATIENT for the patient at the door")
+	_check(_find_visible("StatusHeadline") != null, "4: the clinic sums itself up in one status line")
+	_check(_find_visible("ClinicStatus") == null, "4: no separate status panel")
 	await _shot("05_clinic_priorities")
 	if door:
 		await _press(door)
-		await _settle()
-	_check(UIManager.current_screen_id == UIManager.SCREEN_CUSTOMER, "4: clicking the line opens the patient")
+		await _frames(10)
+	_check(_find_visible("PatientSummary") != null, "4: SEE PATIENT opens the patient summary")
+	await _press_named("SummaryDetails")
+	await _frames(6)
+	await _press_named("SummaryFile")
+	await _settle()
+	_check(UIManager.current_screen_id == UIManager.SCREEN_CUSTOMER, "4: DETAILS -> FULL FILE opens the patient's file")
 	# 5. The file: the recommendation and the decision.
 	var rec := _find_visible("Recommendation") as Label
 	_check(rec != null and rec.text.begins_with("RECOMMENDED"), "5: the file recommends who should operate")
@@ -384,14 +390,6 @@ func _layout_round(label: String) -> void:
 
 
 # --- helpers ---------------------------------------------------------------------------------
-
-func _find_matter(text: String) -> Button:
-	for i in 6:
-		var b := _find_visible_button("Matter_%d" % i)
-		if b and b.text.to_lower().contains(text):
-			return b
-	return null
-
 
 func _find_visible(n: String) -> Node:
 	for x in get_tree().root.find_children(n, "", true, false):

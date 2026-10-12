@@ -6,7 +6,9 @@ extends SurgeryStage
 const COMPLETE_FRACTION := 0.97
 ## How far ahead of the current cut the finger may jump (art px).
 const MAX_ADVANCE_ART := 10.0
-const DEVIATION_COOLDOWN := 0.35
+## One mistake per stretch off the line (was every 0.35 s, which turned one
+## wobble into a string of mistakes).
+const DEVIATION_COOLDOWN := 1.0
 const CUT_FEEDBACK_EVERY_ART := 4.0
 
 var path_local: Array[Vector2] = []
@@ -94,11 +96,10 @@ func _project(pos: Vector2) -> Array[float]:
 
 func _pointer_down(pos: Vector2) -> void:
 	_sync_path()
-	if pos.distance_to(_cut_head()) > _ui(GameConfig.CLICK_SLOP) + _tolerance_art * _px():
-		if _progress_len <= 0.0:
-			hint.emit("Start the cut at the marker")
-		return
 	if not _check_tool(pos):
+		return
+	if pos.distance_to(_cut_head()) > _ui(GameConfig.CLICK_SLOP) + _tolerance_art * _px():
+		_hint_limited("Start the cut at the marker" if _progress_len <= 0.0 else "Pick up the cut where it ends (the bright marker)")
 		return
 	_cutting = true
 	if site.cut_points.is_empty():
@@ -111,7 +112,10 @@ func _pointer_move(pos: Vector2) -> void:
 	var proj := _project(pos)
 	var along := proj[0]
 	var dist_art := proj[1] / _px()
-	if along <= _progress_len or along > _progress_len + MAX_ADVANCE_ART * _px():
+	if along <= _progress_len:
+		return
+	if along > _progress_len + MAX_ADVANCE_ART * _px():
+		_hint_limited("Slower: the blade has to follow the guide, not jump along it")
 		return
 	_since_feedback += (along - _progress_len) / _px()
 	_progress_len = along

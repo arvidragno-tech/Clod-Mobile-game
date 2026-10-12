@@ -132,7 +132,14 @@ func _check_rivals() -> void:
 					return
 
 
+## Records why standing changes in here (ChangeLog standing history).
 func _scene(i: int, j: int) -> void:
+	ChangeLog.push_cause("In the waiting room")
+	_scene_impl(i, j)
+	ChangeLog.pop_cause()
+
+
+func _scene_impl(i: int, j: int) -> void:
 	var a: CustomerData = waiting[i]["customer"]
 	var b: CustomerData = waiting[j]["customer"]
 	var leaver := j if b.patience <= a.patience else i
@@ -172,7 +179,7 @@ func _on_time_changed(minute: int, _period: StringName) -> void:
 	_patience_check()
 	var w: Dictionary = data.get("waiting", {})
 	# Walk-ins while you're busy with someone.
-	if CustomerManager.has_customer() or SurgeryManager.is_active or LocationManager.is_away():
+	if BusinessManager.doors_open and (CustomerManager.has_customer() or SurgeryManager.is_active or LocationManager.is_away()):
 		var p := 1.0 - pow(1.0 - float(w.get("walk_in_per_hour", 0.35)), hours)
 		if _rng.randf() < p and can_seat():
 			seat(CustomerManager.generator.generate())
@@ -215,7 +222,14 @@ func vignette() -> String:
 	return str(v["id"])
 
 
+## Records why standing changes in here (ChangeLog standing history).
 func _apply(fx: Dictionary) -> void:
+	ChangeLog.push_cause("In the waiting room")
+	_apply_impl(fx)
+	ChangeLog.pop_cause()
+
+
+func _apply_impl(fx: Dictionary) -> void:
 	if fx.has("supplies"):
 		InventoryManager.add_supplies(int(fx["supplies"]))
 	if fx.has("parts"):

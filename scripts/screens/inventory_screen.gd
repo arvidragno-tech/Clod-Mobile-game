@@ -18,7 +18,7 @@ const ICONS := {
 var _tab: int = 0
 var _sort: int = 0
 var _filter: String = ""
-var _chips: HBoxContainer
+var _chips: HFlowContainer
 var _chips_tab: int = -1
 ## Smart filter state: category ("" = all) and toggles.
 var _cat: String = ""
@@ -81,7 +81,11 @@ func on_enter(params: Dictionary) -> void:
 	UIKit.expand(hint)
 	bar.add_child(hint)
 	# Smart filters: only the ones that make sense for this tab.
-	_chips = UIKit.hbox(6)
+	# A flow row: with big text the chips wrap onto a second line instead of
+	# widening the screen past the canvas.
+	_chips = HFlowContainer.new()
+	_chips.add_theme_constant_override(&"h_separation", 6)
+	_chips.add_theme_constant_override(&"v_separation", 6)
 	_chips.name = "SmartFilters"
 	col.add_child(_chips)
 	# Body

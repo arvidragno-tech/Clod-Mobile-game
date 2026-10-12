@@ -18,6 +18,7 @@ func run(runner: Node) -> void:
 	_learning_curve()
 	_settings()
 	_neural_load()
+	_zero_vital_ends_now()
 	_invalid_cyberware()
 	_modifiers_and_skills()
 	_factions_and_heat()
@@ -347,11 +348,16 @@ func _settings() -> void:
 	check(Engine.max_fps == 60, "frame rate limit applies (60)")
 	Settings.set_value("pixel_scaling", "integer")
 	Settings.apply_runtime()
-	check((Engine.get_main_loop() as SceneTree).root.content_scale_stretch == Window.CONTENT_SCALE_STRETCH_INTEGER, "integer pixel scaling applies")
+	var win := (Engine.get_main_loop() as SceneTree).root.size
+	var whole := win.x >= 1920 and win.y >= 1080
+	check((Engine.get_main_loop() as SceneTree).root.content_scale_stretch == (Window.CONTENT_SCALE_STRETCH_INTEGER if whole else Window.CONTENT_SCALE_STRETCH_FRACTIONAL), "integer pixel scaling applies (falls back to FIT on a window smaller than the canvas)")
 	Settings.set_value("pixel_scaling", "fit")
+	# 3.6: one scale authority. The old UI SCALE (a content scale factor that
+	# shrank the canvas under the layouts) is folded into TEXT SCALE.
 	Settings.set_value("ui_scale", 2)
 	Settings.apply_runtime()
-	check(is_equal_approx((Engine.get_main_loop() as SceneTree).root.content_scale_factor, 1.1), "UI scale applies")
+	check(is_equal_approx((Engine.get_main_loop() as SceneTree).root.content_scale_factor, 1.0), "the canvas stretch is the only UI scale (no content scale factor)")
+	Settings.set_value("ui_scale", 1)
 	# Tooltips off: a tooltip panel (built the way Godot builds one) is blanked
 	# the moment it enters the tree.
 	Settings.set_value("tooltips", false)
@@ -472,6 +478,28 @@ func _neural_load() -> void:
 	check(not bool(GameManager.get_surgery_readiness()["accepts"]) and not bool(GameManager.get_surgery_readiness()["ok"]), "excessive load: cautious customer refuses consent")
 	c.risk_tolerance = 0.9
 	check(bool(GameManager.get_surgery_readiness()["accepts"]), "excessive load: reckless customer still consents")
+	CustomerManager.reset_state()
+
+
+## A mistake that takes neural to 0 collapses the link, even on a calm
+## patient whose neural would otherwise recover a little in the same frame.
+func _zero_vital_ends_now() -> void:
+	SaveManager.reset_all()
+	var c := CustomerManager.get_customer(&"mara_quill")
+	SurgeryManager.start_session(SurgeryManager.get_surgery(&"install_basic_neural_implant"), c, true, 1.0, -1, ImplantInstance.create(&"nx1_neural_bridge"))
+	SurgeryManager.resume()
+	SurgeryManager.vitals.pain = 0.0
+	SurgeryManager.vitals.neural = 3.0
+	var got: Array[StringName] = []
+	var on_done := func(r: SurgeryResult) -> void: got.append(r.failure_reason)
+	SurgeryManager.session_finished.connect(on_done)
+	SurgeryManager.report_mistake(&"wrong_connection", 1.0)
+	check(SurgeryManager.vitals.neural <= 0.0, "a bad splice takes neural from 3 to 0")
+	SurgeryManager._process(0.1)
+	SurgeryManager.session_finished.disconnect(on_done)
+	check(not SurgeryManager.is_active and got == [&"neural_collapse"], "neural at 0 collapses the link before recovery can lift it (%s)" % [got])
+	if SurgeryManager.is_active:
+		SurgeryManager.abort()
 	CustomerManager.reset_state()
 
 

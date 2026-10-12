@@ -83,6 +83,8 @@ func _pointer_down(pos: Vector2) -> void:
 		_active_pin = best
 		_drag_pos = pos
 		feedback.emit(&"spark", pin_local(best))
+	elif best >= 0 and best_d <= _touch_radius(MARK_RADIUS_ART + 2.0) * 2.0:
+		_hint_limited("Grab a wire right at its coloured pin")
 
 
 func _pointer_move(pos: Vector2) -> void:
@@ -102,6 +104,7 @@ func _pointer_up(pos: Vector2) -> void:
 			best_d = d
 			target = i
 	if target < 0 or best_d > _touch_radius(MARK_RADIUS_ART + 3.0):
+		_hint_limited("Drop the wire on the terminal of the same colour")
 		return
 	if endpoint_color_index[target] == pin and not connected[pin]:
 		connected[pin] = true

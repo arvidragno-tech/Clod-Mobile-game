@@ -362,7 +362,15 @@ func price_for(id: String, index: int, mode: String = "cash") -> int:
 
 
 ## Buys an offer. Returns what you got (text) or "" on failure.
+## Records why standing changes in here (ChangeLog standing history).
 func buy(id: String, index: int, mode: String = "cash") -> String:
+	ChangeLog.push_cause("Bought from %s" % str(supplier(id).get("name", id)))
+	var r: String = _buy_impl(id, index, mode)
+	ChangeLog.pop_cause()
+	return r
+
+
+func _buy_impl(id: String, index: int, mode: String = "cash") -> String:
 	if buy_block_reason(id, index, mode) != "":
 		return ""
 	var s := st(id)
@@ -542,7 +550,14 @@ func ask_favor(id: String, favor_id: String) -> int:
 
 
 ## A favour answered from COMMS.
+## Records why standing changes in here (ChangeLog standing history).
 func apply_favor(spec: Dictionary) -> void:
+	ChangeLog.push_cause("A supplier favour")
+	_apply_favor_impl(spec)
+	ChangeLog.pop_cause()
+
+
+func _apply_favor_impl(spec: Dictionary) -> void:
 	var id := str(spec.get("id", ""))
 	var fx: Dictionary = spec.get("fx", {})
 	if fx.has("parts") and InventoryManager.parts < -int(fx["parts"]):

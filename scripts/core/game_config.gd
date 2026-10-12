@@ -79,6 +79,8 @@ const CYBERWARE_TIER_LEVEL := {1: 1, 2: 3, 3: 5, 4: 8, 5: 99}
 # --- Clinic ------------------------------------------------------------------
 const CUSTOMER_ARRIVAL_DELAY_SEC := 1.2
 const DECLINE_REPUTATION_PENALTY := -1
+## ...and standing with the patient's faction (both shown before you decline).
+const DECLINE_FACTION_PENALTY := -1
 ## Used when the clinic has no implant in stock and cannot afford one: the
 ## customer brings a salvaged unit, which performs worse.
 const SALVAGED_IMPLANT_QUALITY := 0.8
@@ -123,8 +125,13 @@ const CONSENT_RISK_CRITICAL := 0.75
 const DIFFICULTY_TOLERANCE_STEP := 0.12
 ## Extra complication risk for a fully worn (0% condition) implant.
 const WORN_IMPLANT_RISK := 0.15
-## Install pay markup on the implant's price.
-const IMPLANT_PRICE_MARKUP := 0.45
+## The part: patients pay up to this share of the implant's price (less if
+## they're poor: x their pay multiplier, capped at 1). Your service fee on
+## top is what scales with how well you work, and where profit comes from.
+const IMPLANT_PRICE_MARKUP := 0.9
+## A black-market part has no paperwork: patients pay this share of the
+## usual part price for it (so buying cheap off the books is not free money).
+const BLACK_MARKET_PART_SHARE := 0.8
 
 # --- Surgery: vitals (all vitals are 0..100) --------------------------------
 const VITAL_MAX := 100.0
@@ -215,9 +222,9 @@ const COMPLICATION_FINAL_STAGE_SEC := 0.2
 
 # --- Surgery: pacing ---------------------------------------------------------
 ## Pause after a stage is cleared before the next one starts.
-const STAGE_CLEAR_DELAY_SEC := 0.6
+const STAGE_CLEAR_DELAY_SEC := 0.35
 ## Pause on the success / failure stamp before the results screen.
-const RESULTS_DELAY_SEC := 1.8
+const RESULTS_DELAY_SEC := 1.1
 
 # --- Surgery: scoring --------------------------------------------------------
 const SCORE_WEIGHT_STAGES := 0.4
@@ -245,6 +252,9 @@ const ART_SCALE := 2
 ## Body sprites are authored at this width (art px) for ART_SCALE; older,
 ## narrower bodies are scaled up to match.
 const BODY_ART_W := 60.0
+## The logical canvas every layout is built for (project.godot viewport).
+const VIEWPORT_WIDTH := 1920
+const VIEWPORT_HEIGHT := 1080
 ## Minimum height of a clickable control at the 1920x1080 design size.
 const MIN_CONTROL := 40.0
 ## Extra forgiveness (UI units) around small click targets.

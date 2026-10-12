@@ -11,7 +11,6 @@ var _panels: Array[Control] = []
 
 
 func on_enter(params: Dictionary) -> void:
-	(func() -> void: Hints.first("staff")).call_deferred()
 	var col := UIKit.workstation(self, &"staff")
 	col.add_child(UIKit.header("CLINIC · %d / %d STAFF" % [StaffManager.count(), StaffManager.capacity_total()], "STAFF", GameManager.go_to_clinic))
 	col.add_child(UIKit.tabs(["TEAM", "HIRING BOARD"], _select, "StaffTab"))
@@ -202,7 +201,15 @@ func _person(e: Dictionary, candidate: bool, index: int) -> Control:
 			_hire.bind(index), "Hire_%d" % index, 48)
 		hb.disabled = why != ""
 		btns.add_child(hb)
-		btns.add_child(UIKit.label("signing fee = 2 days' pay", &"DimLabel", true, null, 12))
+		# Before you pay: the fee now and the wage every night after.
+		var fee := StaffManager.signing_fee(e)
+		var f := DecisionPreview.facts(fee, int(e["salary"]))
+		var pl := UIKit.label("cash %s → %s · then %s/night" % [EconomyManager.format_money(int(f["now"])), EconomyManager.format_money(int(f["after"])), EconomyManager.format_money(int(e["salary"]))],
+			&"DimLabel", true, Palette.WARN if bool(f["below_bill"]) or bool(f["short"]) else null, 12)
+		pl.name = "HirePreview_%d" % index
+		pl.tooltip_text = DecisionPreview.summary(fee, int(e["salary"])) + "\nSigning fee = 2 days' pay. How well they work is an estimate (skill, stress)."
+		pl.mouse_filter = Control.MOUSE_FILTER_PASS
+		btns.add_child(pl)
 	else:
 		if bool(e.get("raise_pending", false)):
 			btns.add_child(UIKit.label("Wants a raise.", &"SubHeaderLabel", false, Palette.WARN))

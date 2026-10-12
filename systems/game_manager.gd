@@ -81,6 +81,10 @@ func quick_load() -> void:
 
 ## Sidebar / hotkey navigation between workstation sections.
 func navigate(id: StringName) -> void:
+	# Sections that haven't been introduced yet (Features) say when they open.
+	if Features.LIST.has(id) and not Features.is_on(id):
+		Features.not_yet(id)
+		return
 	match id:
 		&"clinic":
 			# Out in the city, the CLINIC button takes you home (the trip takes its time).
@@ -169,6 +173,7 @@ func _begin_play() -> void:
 	if BlackMarketManager.is_unlocked() and BlackMarketManager.stock.is_empty():
 		BlackMarketManager.refresh_stock()
 	StoryManager.check()
+	Features.refresh()
 
 
 # --- Navigation helpers -------------------------------------------------------
@@ -196,28 +201,31 @@ func close_for_the_night() -> void:
 
 ## The single most useful next step for the player (clinic "NEXT" line).
 ## Returns {"text": String, "kind": &"info"|&"warn"}.
+## The one clear next step: {text, why, kind, optional}. `why` says why it
+## matters; `optional` marks a suggestion rather than something that needs you.
 func get_next_objective() -> Dictionary:
 	if LocationManager.is_away():
-		return {"text": "You're at %s: RETURN TO CLINIC when you're done" % LocationManager.location_name(LocationManager.player_location), "kind": &"info"}
+		return {"text": "You're at %s: RETURN TO CLINIC when you're done" % LocationManager.location_name(LocationManager.player_location), "why": "Patients only come while you're there.", "kind": &"info", "optional": false}
 	if EventManager.has_pending():
-		return {"text": "Someone is waiting: deal with the incident", "kind": &"warn"}
+		return {"text": "Someone is waiting: deal with the incident", "why": "Nothing else moves until you answer.", "kind": &"warn", "optional": false}
 	if StoryManager.has_talk():
 		var who := CharacterManager.get_character(StringName(str(DialogueManager.get_dialogue(StoryManager.peek_talk()).get("character", ""))))
-		return {"text": "%s wants to talk" % (who.display_name if who else "Someone"), "kind": &"warn"}
+		return {"text": "%s wants to talk" % (who.display_name if who else "Someone"), "why": "The story moves through the people you meet.", "kind": &"warn", "optional": false}
 	var c := get_current_customer()
 	if c:
-		return {"text": "See %s at the door%s" % [c.display_name, " (EMERGENCY)" if c.is_emergency else ""], "kind": &"warn" if c.is_emergency else &"info"}
-	if SkillManager.points > 0:
-		return {"text": "Spend %d skill point%s in SKILLS" % [SkillManager.points, "s" if SkillManager.points > 1 else ""], "kind": &"info"}
+		return {"text": "See %s at the door%s" % [c.display_name, " (EMERGENCY)" if c.is_emergency else ""],
+			"why": "They're bleeding out: decide fast." if c.is_emergency else "Jobs are how you earn: check what they want and what you'd keep.", "kind": &"warn" if c.is_emergency else &"info", "optional": false}
+	if SkillManager.points > 0 and Features.is_on(&"skills"):
+		return {"text": "Spend %d skill point%s in SKILLS" % [SkillManager.points, "s" if SkillManager.points > 1 else ""], "why": "Steadier hands raise your odds on every job.", "kind": &"info", "optional": true}
 	if BusinessManager.is_day_full():
-		return {"text": "Day's work done: CLOSE FOR THE NIGHT", "kind": &"info"}
+		return {"text": "Day's work done: CLOSE FOR THE NIGHT", "why": "Rent and wages are paid at closing; tomorrow brings new patients.", "kind": &"info", "optional": false}
 	if BusinessManager.debt >= BusinessManager.DEBT_WARNING:
-		return {"text": "You owe %d: pay it down in BUSINESS" % BusinessManager.debt, "kind": &"warn"}
-	if ClinicManager.get_upgrade_block_reason() == "":
-		return {"text": "A new clinic is within reach: open PROPERTY", "kind": &"info"}
+		return {"text": "You owe %d: pay it down in BUSINESS" % BusinessManager.debt, "why": "Debt grows with interest every night.", "kind": &"warn", "optional": false}
+	if ClinicManager.get_upgrade_block_reason() == "" and Features.is_on(&"upgrades"):
+		return {"text": "A new clinic is within reach: open PROPERTY", "why": "More jobs a day and richer patients. Check the cost and the new rent first.", "kind": &"info", "optional": true}
 	if InventoryManager.supplies < 2:
-		return {"text": "Supplies low: restock in SUPPLY", "kind": &"warn"}
-	return {"text": "Waiting for the next customer", "kind": &"info"}
+		return {"text": "Supplies low: restock in SUPPLY", "why": "Every operation uses supplies.", "kind": &"warn", "optional": false}
+	return {"text": "Waiting for the next patient", "why": "A good moment to restock, read the journal or plan.", "kind": &"info", "optional": true}
 
 
 func open_screen(screen_id: StringName) -> void:
@@ -249,11 +257,29 @@ func open_customer() -> void:
 		UIManager.go_to(UIManager.SCREEN_CUSTOMER)
 
 
+## Clicking a patient: the compact PATIENT SUMMARY first (request, odds,
+## money, decision); MORE DETAILS opens the full file (open_customer).
+func show_patient_summary() -> void:
+	if not CustomerManager.has_customer():
+		return
+	if UIManager.current_screen_id != UIManager.SCREEN_CLINIC:
+		open_customer()
+		return
+	UIManager.show_modal(PatientSummary.new())
+
+
+## Records why standing changes in here (ChangeLog standing history).
 func decline_customer() -> void:
+	ChangeLog.push_cause("Turned away %s" % (get_current_customer().display_name if get_current_customer() else "a patient"))
+	_decline_customer_impl()
+	ChangeLog.pop_cause()
+
+
+func _decline_customer_impl() -> void:
 	var c := get_current_customer()
 	ReputationManager.change(GameConfig.DECLINE_REPUTATION_PENALTY)
 	if c:
-		FactionManager.change(c.faction_id, -1)
+		FactionManager.change(c.faction_id, GameConfig.DECLINE_FACTION_PENALTY)
 		PeopleManager.after_visit(c, "refused")
 	TimeManager.on_talk()
 	CustomerManager.dismiss_current()
@@ -263,13 +289,34 @@ func decline_customer() -> void:
 
 ## ASSIGN RIPPERDOC: an employee at this clinic takes the job.
 ## Returns the result dictionary (see StaffManager.assign).
+## Records why standing changes in here (ChangeLog standing history).
 func assign_customer(employee_id: StringName, insist: bool = false) -> Dictionary:
+	ChangeLog.push_cause("%s, operated by your staff" % (get_current_customer().display_name if get_current_customer() else "A patient"))
+	var r: Dictionary = _assign_customer_impl(employee_id, insist)
+	ChangeLog.pop_cause()
+	return r
+
+
+func _assign_customer_impl(employee_id: StringName, insist: bool = false) -> Dictionary:
 	var c := get_current_customer()
 	if c == null:
 		return {"refused": true, "text": "Nobody is waiting."}
+	# Staff use real chrome and supplies too (they used to cost nothing).
+	var req_item := CyberwareManager.get_cyberware(c.requested_cyberware_id)
+	var surgery := get_current_surgery()
+	var sup := surgery.supplies if surgery else 1
+	if req_item and InventoryManager.get_implant_count(req_item.id) <= 0 and not EconomyManager.can_afford(InventoryManager.implant_price(req_item)):
+		return {"refused": true, "text": "No %s in stock and not enough credits to buy one." % req_item.display_name}
+	if InventoryManager.supplies < sup:
+		return {"refused": true, "text": "Out of medical supplies: restock in SUPPLY first."}
 	var r := StaffManager.assign(employee_id, c, insist)
 	if bool(r.get("refused", true)):
 		return r
+	if req_item:
+		if InventoryManager.get_implant_count(req_item.id) <= 0:
+			InventoryManager.buy_implant(req_item.id)
+		InventoryManager.consume_implant(req_item.id)
+	InventoryManager.use_supplies(sup)
 	var e := StaffManager.get_employee(employee_id)
 	if bool(r["success"]):
 		var settled := PeopleManager.settle(c, int(r["pay"]))
@@ -310,7 +357,15 @@ func assign_customer(employee_id: StringName, insist: bool = false) -> Dictionar
 
 
 ## DEFER: ask them to come back tomorrow. Some don't.
+## Records why standing changes in here (ChangeLog standing history).
 func defer_customer() -> bool:
+	ChangeLog.push_cause("Deferred %s" % (get_current_customer().display_name if get_current_customer() else "a patient"))
+	var r: bool = _defer_customer_impl()
+	ChangeLog.pop_cause()
+	return r
+
+
+func _defer_customer_impl() -> bool:
 	var c := get_current_customer()
 	if c == null:
 		return false
@@ -343,7 +398,15 @@ const RIG_PARTS := 3
 
 ## STABILIZE: stop the bleeding, send them on. A small fee now; they'll be
 ## back for the real job.
+## Records why standing changes in here (ChangeLog standing history).
 func triage_stabilize() -> Dictionary:
+	ChangeLog.push_cause("Emergency: stabilised at the door")
+	var r: Dictionary = _triage_stabilize_impl()
+	ChangeLog.pop_cause()
+	return r
+
+
+func _triage_stabilize_impl() -> Dictionary:
 	var c := get_current_customer()
 	if c == null or not c.is_emergency or InventoryManager.supplies < STABILIZE_SUPPLIES:
 		return {}
@@ -366,7 +429,15 @@ func specialist_cost(c: CustomerData) -> int:
 
 ## CALL A SPECIALIST: someone better takes over. They take a big cut; odds
 ## are good, not certain.
+## Records why standing changes in here (ChangeLog standing history).
 func triage_specialist() -> Dictionary:
+	ChangeLog.push_cause("Emergency: sent to a specialist")
+	var r: Dictionary = _triage_specialist_impl()
+	ChangeLog.pop_cause()
+	return r
+
+
+func _triage_specialist_impl() -> Dictionary:
 	var c := get_current_customer()
 	if c == null or not c.is_emergency or not EconomyManager.can_afford(specialist_cost(c)):
 		return {}
@@ -434,7 +505,15 @@ func triage_premium() -> bool:
 
 
 ## Nobody decided in time. First they crash; then they die on the floor.
+## Records why standing changes in here (ChangeLog standing history).
 func emergency_crash() -> bool:
+	ChangeLog.push_cause("Emergency at the door")
+	var r: bool = _emergency_crash_impl()
+	ChangeLog.pop_cause()
+	return r
+
+
+func _emergency_crash_impl() -> bool:
 	var c := get_current_customer()
 	if c == null or not c.is_emergency:
 		return false
@@ -505,7 +584,15 @@ func set_care(care: StringName) -> bool:
 
 
 ## STABILISE (dependency): talk them down, flush the stims, no new chrome.
+## Records why standing changes in here (ChangeLog standing history).
 func dependency_stabilize() -> Dictionary:
+	ChangeLog.push_cause("Dependency care")
+	var r: Dictionary = _dependency_stabilize_impl()
+	ChangeLog.pop_cause()
+	return r
+
+
+func _dependency_stabilize_impl() -> Dictionary:
 	var c := get_current_customer()
 	if c == null or c.dependency <= 0 or InventoryManager.supplies < STABILIZE_SUPPLIES:
 		return {}
@@ -643,6 +730,17 @@ func begin_surgery() -> void:
 		return
 	var implant_quality := 1.0
 	var inst: ImplantInstance = readiness["implant"]
+	# What this job really costs, for the money breakdown on the results.
+	var req := get_requested_item()
+	_job_costs = {"implant_source": String(readiness["implant_source"]), "implant_cost": 0, "supplies_used": 0, "supplies_cost": 0}
+	match readiness["implant_source"]:
+		&"buy":
+			_job_costs["implant_cost"] = InventoryManager.implant_price(req) if req else 0
+		&"salvaged":
+			pass
+		_:
+			# A unit from the shelf: what it would cost to replace.
+			_job_costs["implant_cost"] = InventoryManager.implant_price(CyberwareManager.get_cyberware(inst.cyberware_id)) if inst else 0
 	match readiness["implant_source"]:
 		&"buy":
 			InventoryManager.buy_implant(get_requested_item().id)
@@ -658,7 +756,10 @@ func begin_surgery() -> void:
 	var session_mods := {}
 	if not InventoryManager.use_supplies(surgery.supplies):
 		session_mods = GameConfig.NO_SUPPLIES_MODIFIERS.duplicate()
-	SurgeryManager.start_session(surgery, get_current_customer(), diagnosis_correct, implant_quality, -1, inst, session_mods)
+	else:
+		_job_costs["supplies_used"] = surgery.supplies
+		_job_costs["supplies_cost"] = int(round(surgery.supplies * supply_unit_cost()))
+	SurgeryManager.start_session(surgery.for_diagnosis(chosen_diagnosis_id, diagnosis_correct), get_current_customer(), diagnosis_correct, implant_quality, -1, inst, session_mods)
 	UIManager.go_to(UIManager.SCREEN_SURGERY)
 
 
@@ -668,9 +769,22 @@ func abort_surgery() -> void:
 
 # --- Results -----------------------------------------------------------------
 
+## Per-unit cost of medical supplies (a pack's price / its size).
+static func supply_unit_cost() -> float:
+	return float(GameConfig.SUPPLY_PACK_PRICE) / maxf(1.0, float(GameConfig.SUPPLY_PACK_SIZE))
+
+
+var _job_costs: Dictionary = {}
+
+
 func _on_surgery_finished(result: SurgeryResult) -> void:
 	var c := SurgeryManager.customer
+	# Everything this operation does to your standing is recorded with it.
+	ChangeLog.push_cause(("Operation on %s (grade %s)" % [c.display_name if c else "a patient", result.grade]) if result.success
+		else ("%s died on your table" % (c.display_name if c else "A patient") if result.failure_reason == &"flatline" else "Failed operation on %s" % (c.display_name if c else "a patient")))
+	var fee_before := result.pay
 	_apply_patience(result, c)
+	var patience_cut := fee_before - result.pay
 	if result.failure_reason == &"aborted" and not SurgeryManager.implant_installed and _implant_returnable and SurgeryManager.implant:
 		InventoryManager.add_instance(SurgeryManager.implant)
 		result.dilemma_notes.append("You stopped before the implant went in: it's back in stock.")
@@ -679,6 +793,18 @@ func _on_surgery_finished(result: SurgeryResult) -> void:
 		result.settlement = PeopleManager.settle(c, result.pay)
 		result.pay = int(result.settlement["paid"])
 	EconomyManager.add_money(result.pay, &"revenue")
+	# The money, line by line (all real amounts; "owed" may come in later).
+	var st: Dictionary = result.settlement
+	var price := int(st.get("price", fee_before - patience_cut))
+	result.finance = {
+		"fee": fee_before, "patience_cut": patience_cut,
+		"terms_adjust": price - (fee_before - patience_cut) if result.success else 0,
+		"paid": result.pay, "owed": int(st.get("debt", 0)),
+		"implant_cost": int(_job_costs.get("implant_cost", 0)), "implant_source": str(_job_costs.get("implant_source", "")),
+		"supplies_used": int(_job_costs.get("supplies_used", 0)), "supplies_cost": int(_job_costs.get("supplies_cost", 0)),
+	}
+	result.finance["net"] = result.pay - int(result.finance["implant_cost"]) - int(result.finance["supplies_cost"])
+	_job_costs = {}
 	var tier_before := CyberwareManager.get_available_tier()
 	result.levels_gained = ProgressionManager.add_xp(result.xp)
 	if CyberwareManager.get_available_tier() > tier_before:
@@ -713,6 +839,7 @@ func _on_surgery_finished(result: SurgeryResult) -> void:
 	StoryManager.update_rumors()
 	StoryManager.check()
 	last_result = result
+	ChangeLog.pop_cause()
 	SaveManager.save_game()
 	EventBus.surgery_rewarded.emit(result)
 	# Let the surgery screen play its success/failure moment first.

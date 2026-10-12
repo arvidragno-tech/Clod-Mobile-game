@@ -48,7 +48,9 @@ func setup(p_step: Dictionary, number: int, total: int) -> void:
 	var t := UIKit.label("> " + str(step.get("title", "")), &"HeaderLabel")
 	UIKit.expand(t)
 	head.add_child(t)
-	head.add_child(UIKit.label("%d/%d" % [number, total], &"MonoLabel", false, Palette.TEXT_DIM, 18))
+	# A feature introduction (total 0) has no step counter: it's one card.
+	if total > 0:
+		head.add_child(UIKit.label("%d/%d" % [number, total], &"MonoLabel", false, Palette.TEXT_DIM, 18))
 	v.add_child(head)
 	var body := TypewriterLabel.new()
 	body.text = Controls.fill(str(step.get("text", "")))
@@ -87,6 +89,12 @@ func _process(delta: float) -> void:
 func _find_target() -> Control:
 	if _target_name.is_empty() or UIManager.current_screen == null:
 		return null
+	# A dialog on top (the patient summary) comes first.
+	var m := UIManager.top_modal()
+	if m:
+		var in_modal := m.find_child(_target_name, true, false) as Control
+		if in_modal:
+			return in_modal
 	return UIManager.current_screen.find_child(_target_name, true, false) as Control
 
 

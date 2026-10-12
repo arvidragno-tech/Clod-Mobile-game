@@ -12,6 +12,10 @@ var zone_max: float = 72.0
 var fill_rate: float = 38.0
 var _holding: bool = false
 var _button: Button
+## Releasing below the band lets you top up (hold again) instead of ending
+## the stage as an underdose; each top-up costs a little quality.
+var _top_ups: int = 0
+const MAX_TOP_UPS := 3
 
 
 func begin() -> void:
@@ -62,6 +66,10 @@ func _on_hold_end() -> void:
 	if not _holding or is_finished:
 		return
 	_holding = false
+	if dose < zone_min and _top_ups < MAX_TOP_UPS:
+		_top_ups += 1
+		hint.emit("Not enough yet (%d%%, the green starts at %d%%): hold again to top up." % [roundi(dose), roundi(zone_min)])
+		return
 	_evaluate()
 
 
@@ -86,7 +94,7 @@ func _evaluate() -> void:
 		mistake.emit(&"overdose", clampf((dose - zone_max) / 15.0, 0.4, 1.5), pos)
 		quality = 0.3
 	else:
-		quality = 1.0 - 0.3 * absf(dose - center) / half
+		quality = 1.0 - 0.3 * absf(dose - center) / half - 0.08 * _top_ups
 		feedback.emit(&"good", pos)
 	if _button:
 		_button.disabled = true

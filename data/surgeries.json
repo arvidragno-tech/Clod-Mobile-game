@@ -53,7 +53,7 @@
           "id": "prepare",
           "type": "anesthesia",
           "title": "PREPARE PATIENT",
-          "instruction": "HOLD to infuse sedative. Release inside the green band.",
+          "instruction": "Neural patients can't twitch. HOLD to sedate deep enough; release in the green band.",
           "tool": "",
           "params": {
             "fill_rate": 38.0,
@@ -65,7 +65,7 @@
           "id": "incision",
           "type": "incision",
           "title": "INCISION",
-          "instruction": "Select SCALPEL. Drag along the guide from the marker.",
+          "instruction": "Open the cervical port along the guide. Stay on the line: nerves run close.",
           "tool": "scalpel",
           "params": {
             "path": [[0.47, 0.18],[0.5, 0.5],[0.53, 0.82]],
@@ -76,7 +76,7 @@
           "id": "expose",
           "type": "expose",
           "title": "EXPOSE INTERFACE",
-          "instruction": "Select RETRACTOR. Click each clamp point to open the site.",
+          "instruction": "Click each clamp point to hold the site open.",
           "tool": "retractor",
           "params": {
             "clamps": [[0.33, 0.3],[0.67, 0.3],[0.33, 0.7],[0.67, 0.7]],
@@ -88,12 +88,12 @@
           "id": "debride",
           "type": "remove_tissue",
           "title": "REMOVE DAMAGED TISSUE",
-          "instruction": "Select CAUTERY. Hold on dark tissue to burn it. Avoid yellow nerves.",
+          "instruction": "Burn away the scarred tissue around the port. The nerves here are very sensitive: keep clear of yellow.",
           "tool": "cautery",
           "params": {
             "nodes": 4,
             "burn_time": 0.35,
-            "nerve_radius_px": 1.6
+            "nerve_radius_px": 2.2
           },
           "complication_window": true
         },
@@ -101,7 +101,7 @@
           "id": "install",
           "type": "install_implant",
           "title": "INSTALL IMPLANT",
-          "instruction": "Select FORCEPS. Drag the implant into the socket, rotate to align, then SEAT.",
+          "instruction": "Seat the bridge in the port and line up the contact notch. Then SEAT.",
           "tool": "forceps",
           "params": {
             "socket": [0.5, 0.5],
@@ -114,7 +114,7 @@
           "id": "connect",
           "type": "connect_interface",
           "title": "CONNECT NEURAL INTERFACE",
-          "instruction": "Select SPLICER. Drag each implant pin to the nerve with the same mark.",
+          "instruction": "Splice each lead to its matching nerve. Wrong pairings scramble the signal.",
           "tool": "splicer",
           "params": {
             "endpoints": [[0.41, 0.3],[0.59, 0.3],[0.5, 0.74]]
@@ -125,11 +125,11 @@
           "id": "calibrate",
           "type": "calibrate",
           "title": "CALIBRATE IMPLANT",
-          "instruction": "Slide to match the waves, then LOCK. 3 bands.",
+          "instruction": "Neural stability: match each wave closely, then LOCK. Four bands, strict sync.",
           "tool": "",
           "params": {
-            "rounds": 3,
-            "good_sync": 0.8,
+            "rounds": 4,
+            "good_sync": 0.84,
             "poor_sync": 0.55
           },
           "complication_window": true
@@ -138,7 +138,7 @@
           "id": "close",
           "type": "close_incision",
           "title": "CLOSE INCISION",
-          "instruction": "Select SUTURE. Click the stitch points in numbered order.",
+          "instruction": "Click the stitch points in numbered order to close up.",
           "tool": "suture",
           "params": {
             "stitches": 6
@@ -202,7 +202,7 @@
           "id": "prepare",
           "type": "anesthesia",
           "title": "PREPARE PATIENT",
-          "instruction": "HOLD to infuse sedative. Release inside the green band.",
+          "instruction": "HOLD to infuse sedative; release inside the green band. Released early? Hold again to top up.",
           "tool": "",
           "params": {
             "fill_rate": 38.0,
@@ -214,7 +214,7 @@
           "id": "incision",
           "type": "incision",
           "title": "INCISION",
-          "instruction": "Select SCALPEL. Drag along the guide from the marker.",
+          "instruction": "Midline cut over the vertebrae. Drag straight along the guide.",
           "tool": "scalpel",
           "params": {
             "path": [[0.5, 0.3],[0.5, 0.55],[0.5, 0.8]],
@@ -225,7 +225,7 @@
           "id": "expose",
           "type": "expose",
           "title": "EXPOSE SITE",
-          "instruction": "Select RETRACTOR. Click each clamp point to open the site.",
+          "instruction": "Click each clamp point to hold the site open.",
           "tool": "retractor",
           "params": {
             "clamps": [[0.34, 0.42],[0.66, 0.42],[0.34, 0.7],[0.66, 0.7]],
@@ -237,13 +237,13 @@
           "id": "anchor",
           "type": "anchor_drill",
           "title": "DRILL ANCHORS",
-          "instruction": "Select DRILL. Hold on each anchor; release with depth in the green.",
+          "instruction": "Vertebral anchors: the drill is slow and the green band narrow. Release in the green.",
           "tool": "drill",
           "params": {
             "anchors": [[0.44, 0.47],[0.56, 0.47],[0.44, 0.66],[0.56, 0.66]],
-            "depth_rate": 55.0,
-            "zone_min": 58.0,
-            "zone_max": 78.0
+            "depth_rate": 44.0,
+            "zone_min": 60.0,
+            "zone_max": 76.0
           },
           "complication_window": true
         },
@@ -251,7 +251,7 @@
           "id": "install",
           "type": "install_implant",
           "title": "INSTALL IMPLANT",
-          "instruction": "Select FORCEPS. Drag the implant into the socket, rotate to align, then SEAT.",
+          "instruction": "Drag the implant into the socket, turn it until the notch lines up, then SEAT.",
           "tool": "forceps",
           "params": {
             "socket": [0.5, 0.56],
@@ -264,7 +264,7 @@
           "id": "connect",
           "type": "connect_interface",
           "title": "CONNECT INTERFACE",
-          "instruction": "Select SPLICER. Drag each implant pin to the nerve with the same mark.",
+          "instruction": "Drag each implant pin to the nerve with the same mark.",
           "tool": "splicer",
           "params": {
             "endpoints": [[0.41, 0.36],[0.59, 0.36],[0.5, 0.76]]
@@ -275,7 +275,7 @@
           "id": "calibrate",
           "type": "calibrate",
           "title": "SYNC SPINAL RELAY",
-          "instruction": "Slide to match the waves, then LOCK. 3 bands.",
+          "instruction": "Sync the spinal relay: match each wave, then LOCK.",
           "tool": "",
           "params": {
             "rounds": 3,
@@ -288,7 +288,7 @@
           "id": "close",
           "type": "close_incision",
           "title": "CLOSE INCISION",
-          "instruction": "Select SUTURE. Click the stitch points in numbered order.",
+          "instruction": "Click the stitch points in numbered order to close up.",
           "tool": "suture",
           "params": {
             "stitches": 7
@@ -352,7 +352,7 @@
           "id": "prepare",
           "type": "anesthesia",
           "title": "PREPARE PATIENT",
-          "instruction": "HOLD to infuse sedative. Release inside the green band.",
+          "instruction": "HOLD to infuse sedative; release inside the green band. Released early? Hold again to top up.",
           "tool": "",
           "params": {
             "fill_rate": 38.0,
@@ -364,7 +364,7 @@
           "id": "incision",
           "type": "incision",
           "title": "INCISION",
-          "instruction": "Select SCALPEL. Drag along the guide from the marker.",
+          "instruction": "Open the forearm along the guide for the mount.",
           "tool": "scalpel",
           "params": {
             "path": [[0.5, 0.24],[0.5, 0.5],[0.5, 0.76]],
@@ -375,7 +375,7 @@
           "id": "expose",
           "type": "expose",
           "title": "EXPOSE SITE",
-          "instruction": "Select RETRACTOR. Click each clamp point to open the site.",
+          "instruction": "Click each clamp point to hold the site open.",
           "tool": "retractor",
           "params": {
             "clamps": [[0.37, 0.36],[0.63, 0.36],[0.37, 0.64],[0.63, 0.64]],
@@ -387,7 +387,7 @@
           "id": "debride",
           "type": "remove_tissue",
           "title": "REMOVE DAMAGED TISSUE",
-          "instruction": "Select CAUTERY. Hold on dark tissue to burn it. Avoid yellow nerves.",
+          "instruction": "Hold the cautery on the dark tissue to burn it away. Avoid the yellow nerves.",
           "tool": "cautery",
           "params": {
             "nodes": 2,
@@ -400,7 +400,7 @@
           "id": "anchor",
           "type": "anchor_drill",
           "title": "DRILL ANCHORS",
-          "instruction": "Select DRILL. Hold on each anchor; release with depth in the green.",
+          "instruction": "Bolt the mount to the bone: hold on each anchor, release with depth in the green.",
           "tool": "drill",
           "params": {
             "anchors": [[0.5, 0.37],[0.5, 0.65]],
@@ -414,12 +414,12 @@
           "id": "install",
           "type": "install_implant",
           "title": "INSTALL IMPLANT",
-          "instruction": "Select FORCEPS. Drag the implant into the socket, rotate to align, then SEAT.",
+          "instruction": "Fit the limb module onto the mount and turn it until the coupling locks in line. Then SEAT.",
           "tool": "forceps",
           "params": {
             "socket": [0.5, 0.51],
-            "snap_px": 9.0,
-            "align_tolerance_deg": 12.0
+            "snap_px": 10.0,
+            "align_tolerance_deg": 15.0
           },
           "complication_window": true
         },
@@ -427,7 +427,7 @@
           "id": "connect",
           "type": "connect_interface",
           "title": "CONNECT INTERFACE",
-          "instruction": "Select SPLICER. Drag each implant pin to the nerve with the same mark.",
+          "instruction": "Wire the motor leads to the matching nerves.",
           "tool": "splicer",
           "params": {
             "endpoints": [[0.43, 0.31],[0.57, 0.31],[0.5, 0.71]]
@@ -438,11 +438,11 @@
           "id": "calibrate",
           "type": "calibrate",
           "title": "MOTOR SYNC",
-          "instruction": "Slide to match the waves, then LOCK. 3 bands.",
+          "instruction": "Functional test: match the motor response, then LOCK. Two bands.",
           "tool": "",
           "params": {
-            "rounds": 3,
-            "good_sync": 0.8,
+            "rounds": 2,
+            "good_sync": 0.75,
             "poor_sync": 0.55
           },
           "complication_window": true
@@ -451,7 +451,7 @@
           "id": "close",
           "type": "close_incision",
           "title": "CLOSE INCISION",
-          "instruction": "Select SUTURE. Click the stitch points in numbered order.",
+          "instruction": "Click the stitch points in numbered order to close up.",
           "tool": "suture",
           "params": {
             "stitches": 6
@@ -515,7 +515,7 @@
           "id": "prepare",
           "type": "anesthesia",
           "title": "PREPARE PATIENT",
-          "instruction": "HOLD to infuse sedative. Release inside the green band.",
+          "instruction": "HOLD to infuse sedative; release inside the green band. Released early? Hold again to top up.",
           "tool": "",
           "params": {
             "fill_rate": 38.0,
@@ -527,7 +527,7 @@
           "id": "incision",
           "type": "incision",
           "title": "INCISION",
-          "instruction": "Select SCALPEL. Drag along the guide from the marker.",
+          "instruction": "Open the thigh along the guide for the mount.",
           "tool": "scalpel",
           "params": {
             "path": [[0.5, 0.22],[0.5, 0.5],[0.5, 0.78]],
@@ -538,7 +538,7 @@
           "id": "expose",
           "type": "expose",
           "title": "EXPOSE SITE",
-          "instruction": "Select RETRACTOR. Click each clamp point to open the site.",
+          "instruction": "Click each clamp point to hold the site open.",
           "tool": "retractor",
           "params": {
             "clamps": [[0.34, 0.34],[0.66, 0.34],[0.34, 0.66],[0.66, 0.66]],
@@ -550,11 +550,11 @@
           "id": "anchor",
           "type": "anchor_drill",
           "title": "DRILL ANCHORS",
-          "instruction": "Select DRILL. Hold on each anchor; release with depth in the green.",
+          "instruction": "Heavy load-bearing mount: hold on each anchor, release with depth in the green.",
           "tool": "drill",
           "params": {
             "anchors": [[0.5, 0.33],[0.44, 0.62],[0.56, 0.62]],
-            "depth_rate": 55.0,
+            "depth_rate": 62.0,
             "zone_min": 58.0,
             "zone_max": 78.0
           },
@@ -564,12 +564,12 @@
           "id": "install",
           "type": "install_implant",
           "title": "INSTALL IMPLANT",
-          "instruction": "Select FORCEPS. Drag the implant into the socket, rotate to align, then SEAT.",
+          "instruction": "Fit the limb module onto the mount and turn it until the coupling locks in line. Then SEAT.",
           "tool": "forceps",
           "params": {
             "socket": [0.5, 0.49],
-            "snap_px": 9.0,
-            "align_tolerance_deg": 12.0
+            "snap_px": 10.0,
+            "align_tolerance_deg": 15.0
           },
           "complication_window": true
         },
@@ -577,7 +577,7 @@
           "id": "connect",
           "type": "connect_interface",
           "title": "CONNECT INTERFACE",
-          "instruction": "Select SPLICER. Drag each implant pin to the nerve with the same mark.",
+          "instruction": "Wire the motor leads to the matching nerves.",
           "tool": "splicer",
           "params": {
             "endpoints": [[0.42, 0.3],[0.58, 0.3],[0.5, 0.74]]
@@ -588,7 +588,7 @@
           "id": "close",
           "type": "close_incision",
           "title": "CLOSE INCISION",
-          "instruction": "Select SUTURE. Click the stitch points in numbered order.",
+          "instruction": "Click the stitch points in numbered order to close up.",
           "tool": "suture",
           "params": {
             "stitches": 7
@@ -652,7 +652,7 @@
           "id": "prepare",
           "type": "anesthesia",
           "title": "PREPARE PATIENT",
-          "instruction": "HOLD to infuse sedative. Release inside the green band.",
+          "instruction": "HOLD to infuse sedative; release inside the green band. Released early? Hold again to top up.",
           "tool": "",
           "params": {
             "fill_rate": 38.0,
@@ -664,18 +664,18 @@
           "id": "incision",
           "type": "incision",
           "title": "INCISION",
-          "instruction": "Select SCALPEL. Drag along the guide from the marker.",
+          "instruction": "A fine curve under the orbit. Follow the guide slowly: the tolerance is tight.",
           "tool": "scalpel",
           "params": {
             "path": [[0.3, 0.62],[0.5, 0.66],[0.7, 0.62]],
-            "tolerance_px": 3.0
+            "tolerance_px": 2.6
           }
         },
         {
           "id": "expose",
           "type": "expose",
           "title": "EXPOSE SITE",
-          "instruction": "Select RETRACTOR. Click each clamp point to open the site.",
+          "instruction": "Retract the lids and orbital tissue: click each clamp point.",
           "tool": "retractor",
           "params": {
             "clamps": [[0.34, 0.5],[0.66, 0.5],[0.5, 0.76]],
@@ -687,7 +687,7 @@
           "id": "debride",
           "type": "remove_tissue",
           "title": "REMOVE DAMAGED TISSUE",
-          "instruction": "Select CAUTERY. Hold on dark tissue to burn it. Avoid yellow nerves.",
+          "instruction": "Clear the dead tissue behind the socket. Small, careful burns.",
           "tool": "cautery",
           "params": {
             "nodes": 2,
@@ -700,12 +700,12 @@
           "id": "install",
           "type": "install_implant",
           "title": "INSTALL IMPLANT",
-          "instruction": "Select FORCEPS. Drag the implant into the socket, rotate to align, then SEAT.",
+          "instruction": "Seat the optic and turn it until the focal notch lines up exactly; optical alignment is tight.",
           "tool": "forceps",
           "params": {
             "socket": [0.52, 0.6],
-            "snap_px": 9.0,
-            "align_tolerance_deg": 12.0
+            "snap_px": 7.5,
+            "align_tolerance_deg": 9.0
           },
           "complication_window": true
         },
@@ -713,7 +713,7 @@
           "id": "connect",
           "type": "connect_interface",
           "title": "CONNECT INTERFACE",
-          "instruction": "Select SPLICER. Drag each implant pin to the nerve with the same mark.",
+          "instruction": "Connect the optic leads to the matching optic nerve bundles.",
           "tool": "splicer",
           "params": {
             "endpoints": [[0.36, 0.58],[0.68, 0.58],[0.52, 0.74]]
@@ -724,11 +724,11 @@
           "id": "calibrate",
           "type": "calibrate",
           "title": "FOCUS CALIBRATION",
-          "instruction": "Slide to match the waves, then LOCK. 3 bands.",
+          "instruction": "Optical focus: bring each band into line, then LOCK.",
           "tool": "",
           "params": {
             "rounds": 3,
-            "good_sync": 0.8,
+            "good_sync": 0.84,
             "poor_sync": 0.55
           },
           "complication_window": true
@@ -737,7 +737,7 @@
           "id": "close",
           "type": "close_incision",
           "title": "CLOSE INCISION",
-          "instruction": "Select SUTURE. Click the stitch points in numbered order.",
+          "instruction": "Click the stitch points in numbered order to close up.",
           "tool": "suture",
           "params": {
             "stitches": 5
@@ -801,7 +801,7 @@
           "id": "prepare",
           "type": "anesthesia",
           "title": "PREPARE PATIENT",
-          "instruction": "HOLD to infuse sedative. Release inside the green band.",
+          "instruction": "HOLD to infuse sedative; release inside the green band. Released early? Hold again to top up.",
           "tool": "",
           "params": {
             "fill_rate": 38.0,
@@ -813,18 +813,18 @@
           "id": "incision",
           "type": "incision",
           "title": "INCISION",
-          "instruction": "Select SCALPEL. Drag along the guide from the marker.",
+          "instruction": "A shallow pocket cut for the plate. Drag along the guide.",
           "tool": "scalpel",
           "params": {
             "path": [[0.5, 0.32],[0.5, 0.5],[0.5, 0.68]],
-            "tolerance_px": 3.2
+            "tolerance_px": 3.6
           }
         },
         {
           "id": "expose",
           "type": "expose",
           "title": "EXPOSE SITE",
-          "instruction": "Select RETRACTOR. Click each clamp point to open the site.",
+          "instruction": "Two clamps lift the skin flap: click each point.",
           "tool": "retractor",
           "params": {
             "clamps": [[0.38, 0.42],[0.62, 0.58]],
@@ -836,12 +836,12 @@
           "id": "install",
           "type": "install_implant",
           "title": "INSTALL IMPLANT",
-          "instruction": "Select FORCEPS. Drag the implant into the socket, rotate to align, then SEAT.",
+          "instruction": "Lay the plate in the pocket: placement matters more than rotation. Then SEAT.",
           "tool": "forceps",
           "params": {
             "socket": [0.5, 0.5],
-            "snap_px": 9.0,
-            "align_tolerance_deg": 12.0
+            "snap_px": 8.0,
+            "align_tolerance_deg": 20.0
           },
           "complication_window": true
         },
@@ -849,7 +849,7 @@
           "id": "close",
           "type": "close_incision",
           "title": "CLOSE INCISION",
-          "instruction": "Select SUTURE. Click the stitch points in numbered order.",
+          "instruction": "Click the stitch points in numbered order to close up.",
           "tool": "suture",
           "params": {
             "stitches": 4
@@ -913,10 +913,10 @@
           "id": "prepare",
           "type": "anesthesia",
           "title": "PREPARE PATIENT",
-          "instruction": "HOLD to infuse sedative. Release inside the green band.",
+          "instruction": "Shallow breathing slows the sedative. HOLD and release inside the green band.",
           "tool": "",
           "params": {
-            "fill_rate": 38.0,
+            "fill_rate": 32.0,
             "zone_min": 55.0,
             "zone_max": 72.0
           }
@@ -925,7 +925,7 @@
           "id": "incision",
           "type": "incision",
           "title": "INCISION",
-          "instruction": "Select SCALPEL. Drag along the guide from the marker.",
+          "instruction": "Drag along the guide from the marker. Slow and steady: straying bleeds.",
           "tool": "scalpel",
           "params": {
             "path": [[0.5, 0.24],[0.5, 0.5],[0.5, 0.76]],
@@ -936,7 +936,7 @@
           "id": "expose",
           "type": "expose",
           "title": "EXPOSE SITE",
-          "instruction": "Select RETRACTOR. Click each clamp point to open the site.",
+          "instruction": "Click each clamp point to hold the site open.",
           "tool": "retractor",
           "params": {
             "clamps": [[0.35, 0.36],[0.65, 0.36],[0.35, 0.64],[0.65, 0.64]],
@@ -948,7 +948,7 @@
           "id": "debride",
           "type": "remove_tissue",
           "title": "REMOVE DAMAGED TISSUE",
-          "instruction": "Select CAUTERY. Hold on dark tissue to burn it. Avoid yellow nerves.",
+          "instruction": "Hold the cautery on the dark tissue to burn it away. Avoid the yellow nerves.",
           "tool": "cautery",
           "params": {
             "nodes": 3,
@@ -961,7 +961,7 @@
           "id": "install",
           "type": "install_implant",
           "title": "INSTALL IMPLANT",
-          "instruction": "Select FORCEPS. Drag the implant into the socket, rotate to align, then SEAT.",
+          "instruction": "Drag the implant into the socket, turn it until the notch lines up, then SEAT.",
           "tool": "forceps",
           "params": {
             "socket": [0.5, 0.5],
@@ -974,7 +974,7 @@
           "id": "connect",
           "type": "connect_interface",
           "title": "CONNECT INTERFACE",
-          "instruction": "Select SPLICER. Drag each implant pin to the nerve with the same mark.",
+          "instruction": "Drag each implant pin to the nerve with the same mark.",
           "tool": "splicer",
           "params": {
             "endpoints": [[0.42, 0.3],[0.58, 0.3],[0.5, 0.72]]
@@ -985,7 +985,7 @@
           "id": "close",
           "type": "close_incision",
           "title": "CLOSE INCISION",
-          "instruction": "Select SUTURE. Click the stitch points in numbered order.",
+          "instruction": "Click the stitch points in numbered order to close up.",
           "tool": "suture",
           "params": {
             "stitches": 6
@@ -1049,19 +1049,19 @@
           "id": "prepare",
           "type": "anesthesia",
           "title": "PREPARE PATIENT",
-          "instruction": "HOLD to infuse sedative. Release inside the green band.",
+          "instruction": "Internal work: the patient must stay stable. HOLD to sedate and release in the (narrow) green band.",
           "tool": "",
           "params": {
             "fill_rate": 38.0,
-            "zone_min": 55.0,
-            "zone_max": 72.0
+            "zone_min": 57.0,
+            "zone_max": 71.0
           }
         },
         {
           "id": "incision",
           "type": "incision",
           "title": "INCISION",
-          "instruction": "Select SCALPEL. Drag along the guide from the marker.",
+          "instruction": "Open the chest wall along the guide. Watch the vitals as you go.",
           "tool": "scalpel",
           "params": {
             "path": [[0.56, 0.26],[0.58, 0.5],[0.6, 0.76]],
@@ -1072,7 +1072,7 @@
           "id": "expose",
           "type": "expose",
           "title": "EXPOSE SITE",
-          "instruction": "Select RETRACTOR. Click each clamp point to open the site.",
+          "instruction": "Click each clamp point to hold the site open.",
           "tool": "retractor",
           "params": {
             "clamps": [[0.42, 0.36],[0.72, 0.36],[0.44, 0.66],[0.74, 0.66]],
@@ -1084,7 +1084,7 @@
           "id": "debride",
           "type": "remove_tissue",
           "title": "REMOVE DAMAGED TISSUE",
-          "instruction": "Select CAUTERY. Hold on dark tissue to burn it. Avoid yellow nerves.",
+          "instruction": "Clear the damaged tissue from the cavity. Hold on dark tissue, avoid yellow nerves.",
           "tool": "cautery",
           "params": {
             "nodes": 4,
@@ -1097,11 +1097,11 @@
           "id": "install",
           "type": "install_implant",
           "title": "INSTALL IMPLANT",
-          "instruction": "Select FORCEPS. Drag the implant into the socket, rotate to align, then SEAT.",
+          "instruction": "Place the module precisely in the cavity and line up its port. Then SEAT.",
           "tool": "forceps",
           "params": {
             "socket": [0.58, 0.52],
-            "snap_px": 9.0,
+            "snap_px": 8.0,
             "align_tolerance_deg": 12.0
           },
           "complication_window": true
@@ -1110,7 +1110,7 @@
           "id": "connect",
           "type": "connect_interface",
           "title": "CONNECT INTERFACE",
-          "instruction": "Select SPLICER. Drag each implant pin to the nerve with the same mark.",
+          "instruction": "Drag each implant pin to the nerve with the same mark.",
           "tool": "splicer",
           "params": {
             "endpoints": [[0.48, 0.32],[0.68, 0.32],[0.58, 0.74]]
@@ -1121,7 +1121,7 @@
           "id": "calibrate",
           "type": "calibrate",
           "title": "BIO-SYNC",
-          "instruction": "Slide to match the waves, then LOCK. 3 bands.",
+          "instruction": "Bio-sync the module to the body's rhythm, then LOCK.",
           "tool": "",
           "params": {
             "rounds": 3,
@@ -1134,7 +1134,7 @@
           "id": "close",
           "type": "close_incision",
           "title": "CLOSE INCISION",
-          "instruction": "Select SUTURE. Click the stitch points in numbered order.",
+          "instruction": "Click the stitch points in numbered order to close up.",
           "tool": "suture",
           "params": {
             "stitches": 7

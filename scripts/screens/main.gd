@@ -117,9 +117,22 @@ func _apply_cursors() -> void:
 
 
 ## Text size / contrast on the shared theme; calmer CRT for accessibility.
+var _theme_key: String = ""
+var _runtime_key: String = ""
+
+
 func _apply_settings() -> void:
-	Accessibility.apply(theme if theme else ThemeDB.get_project_theme())
-	Settings.apply_runtime()
+	# Only re-apply what actually changed: every settings write (even
+	# remembering a seen hint) emits `changed`, and re-setting the theme's
+	# font sizes relayouts every control on screen.
+	var tk := "%s|%s|%s" % [Settings.text_scale, Settings.large_text, Settings.high_contrast]
+	if tk != _theme_key:
+		_theme_key = tk
+		Accessibility.apply(theme if theme else ThemeDB.get_project_theme())
+	var rk := "%s|%s|%s" % [Settings.fps_limit, Settings.texture_filter, Settings.pixel_scaling]
+	if rk != _runtime_key:
+		_runtime_key = rk
+		Settings.apply_runtime()
 	var crt := get_node_or_null("CrtLayer/CrtOverlay") as ColorRect
 	if crt and crt.material is ShaderMaterial:
 		var m := crt.material as ShaderMaterial

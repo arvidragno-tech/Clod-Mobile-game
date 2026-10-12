@@ -7,7 +7,40 @@ almost nothing, take customers, install cyberware at a surgical workstation,
 hire staff, buy clinics across the city, and decide what you become while a
 corporate conspiracy spreads through your patients' nerves.
 
-**Status: 3.5.0**: the game now tells you what matters. WHAT MATTERS NOW
+**Status: 3.9.1**: the patient's full file and the scan show essentials
+first, with the rest folded. In surgery, each mistake says once what it
+cost and what to do differently.
+
+**3.9.0**: less on screen. A patient opens on what they want, one
+risk sentence, the money and ACCEPT JOB, with DETAILS one click away. The
+clinic keeps one objective and one status line. The tutorial is one short
+step at a time on the real controls, and sections appear only when they
+matter, each introduced on its own button. One TUTORIAL & GUIDANCE setting
+(GUIDED / BRIEF / OFF).
+
+**3.8.0**: every patient arrives with a **PATIENT INTAKE FORM**, an
+in-world document of their request, risk factors and history, each line
+marked REPORTED, ON FILE, CONFIRMED, SUSPECTED or UNKNOWN. Hidden conditions
+stay hidden until you scan.
+
+**3.7.0**: easy to learn, still deep. Click a patient for a
+one-screen **PATIENT SUMMARY**: what they want, how hard it is, your
+estimated odds, what you'd keep, and ACCEPT JOB / DECLINE / MORE DETAILS.
+**CLINIC STATUS** says in one line what needs you. The side bar starts small
+and grows: sections appear when they become useful, each with a short card.
+Purchases show **BEFORE YOU PAY** (cash now → after). The field guide holds
+back what you haven't met yet and lets you see every tutorial card again.
+
+**3.6.0**: a quality pass. You can **CLOSE THE DOORS** to stop
+walk-ins while you read, shop or level up. Clicks, purchases and scaling
+hold steady at every window size. Every job shows **PAYMENT / USES UP /
+YOU KEEP** before you cut and **THE MONEY** after. BUSINESS has an
+**OUTLOOK**. The journal's **STANDING** tab says what each reputation,
+relationship, trust and heat value does, where it's heading and what
+changed it. A **GUIDANCE** setting (minimal / standard / detailed) sets
+how much the screens explain.
+
+**3.5.0**: the game now tells you what matters. WHAT MATTERS NOW
 on the clinic screen ranks what needs you (■ critical, ▲ important) and
 takes you there in one click; CLINIC STATUS sums up money, standing, staff,
 supplies, heat and the black market with ✓ / ! / ✕; a SURGERY PREVIEW shows
@@ -154,14 +187,15 @@ step (click it to go there), **WHAT MATTERS NOW** lists the rest by urgency,
 and **CLINIC STATUS** says how the clinic is doing and what to do about the
 worst of it. The **JOURNAL** (J) opens on **MAIN**: what you follow (with
 where and when), messages waiting for an answer and your objectives; then
-MESSAGES, PEOPLE, PATIENTS (with filters), FACTIONS, BUSINESS and
+MESSAGES, PEOPLE, PATIENTS (with filters), STANDING (reputation, factions, people, trust, heat, each with its trend, effects, next threshold and history), BUSINESS and
 DISCOVERIES (story, news, places, the wall). Reading screens, the field
 guide and dialogs stop an emergency's countdown. The clinic room is interactive: the diagnostics terminal, operating
 table, storage bench, supply cabinet and records server open their screens;
 wheel or double-click zooms into the room.
 
+0. **The doors.** **CLOSE DOORS** (TODAY card) stops walk-ins so you can read, shop, restock or spend skill points without someone waiting; **OPEN DOORS** lets the next one in. They open again every morning.
 0. **The day.** Each clinic takes a number of jobs per day. When they're done (or whenever you like), **CLOSE FOR THE NIGHT**: rent, running costs, upkeep and salaries are paid, unpaid bills become debt, and the night report shows the ledger. People from the story come to the clinic to talk between jobs; those conversations open by themselves.
-1. **Clinic.** A customer shows up at the door, drawn with their own face, outfit and installed chrome. Click them, **SEE CUSTOMER** or press **C**. The left nav opens **INVENTORY**, **CYBERWARE DB**, **SUPPLY**, **SKILLS**, **FACILITY**, **JOURNAL** and, once you have the contacts, the **BLACK MARKET**.
+1. **Clinic.** A patient shows up at the door, drawn with their own face, outfit and installed chrome. Click them, **SEE PATIENT** or press **C** for the **patient summary** (request, odds, money, decision); **MORE DETAILS** opens the full file. New sections join the side bar as they become useful (after the first job: SKILLS, SUPPLY, INVENTORY, BUSINESS, JOURNAL; three jobs in: STAFF, FACILITY; then the city). The left nav opens **INVENTORY**, **CYBERWARE DB**, **SUPPLY**, **SKILLS**, **FACILITY**, **JOURNAL** and, once you have the contacts, the **BLACK MARKET**.
 2. **Customer file.** A three-column dossier: identity and faction on the left; expandable **REQUEST**, **PAYMENT**, **RISK**, **MEDICAL HISTORY** and **PREVIOUS OPERATIONS** in the centre; neural load now vs after and the decision on the right. **PERFORM SURGERY YOURSELF** (ENTER), **ASSIGN RIPPERDOC** (one of your staff does it off-screen, with their odds and their ethics), **DEFER TO TOMORROW** (they may not come back) or **REFUSE** (a little rep and faction standing).
 3. **Diagnosis.** Scan body regions (at least 2). Scans can reveal **hidden conditions** (rejection-prone, clotting disorder, neural scarring...), which change how the operation behaves. Then pick a diagnosis.
 4. **Plan.** Choose which implant unit to install: stock, buy now, a black-market unit, or a salvaged one. Review the checks:
@@ -208,9 +242,9 @@ Settings are stored in `%APPDATA%\UndercityRipper\settings.cfg`, separately from
 - **Graphics:** window mode (windowed / borderless / fullscreen), windowed resolution (1920×1080, 1600×900, 1366×768, 1280×720), VSync, frame-rate limit (30 / 60 / 120 / 144 / unlimited), pixel scaling (fit, or integer = pixel perfect), texture filtering, CRT filter, scanlines, screen-shake intensity, lighting quality, particle quality, glow, environment effects (dust, steam, sparks, drips, rain)
 - **Audio:** master, music, sound effects, ambient, dialogue and interface; each slider drives its own audio bus
 - **Controls:** ten categories (movement, interaction, surgery, tools, inventory, map, journal, dialogue, camera, general), two slots per action, keyboard keys or mouse buttons (middle, side buttons, right, wheel); clashes are detected per context (surgery keys can reuse dialogue keys) and offered as SWAP / KEEP BOTH; reset one action or all; mouse sensitivity
-- **Gameplay:** text speed, auto-advance dialogue, pause during dialogue, difficulty (story / standard / brutal), autosave (off / every job / every night; quick save, the pause menu and quitting always save), pause on focus loss, confirm dangerous actions, tutorial hints, tooltips, damage feedback
+- **Gameplay:** text speed, auto-advance dialogue, pause during dialogue, difficulty (story / standard / brutal), autosave (off / every job / every night; quick save, the pause menu and quitting always save), pause on focus loss, confirm dangerous actions, guidance (minimal / standard / detailed: how much the screens explain, never the rules), introduce features gradually (on by default; off shows every section from the start), tutorial hints, tooltips, damage feedback
 - **Accessibility:**
-  - UI scale (with fit scaling) and text scale, large text
+  - text scale and large text (the window is the only scale: the 1920×1080 canvas fits it; integer scaling falls back to fit below 1920×1080)
   - high contrast: brighter secondary text and a lighter CRT overlay
   - colour-blind indicators: `[+]` `[~]` `[!]` markers on colour-coded odds and ledgers
   - reduced shake, reduced flashing (no strobing, glitch bursts or cyberware flicker), reduced effects, reduce motion

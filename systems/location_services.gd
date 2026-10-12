@@ -145,7 +145,15 @@ static func _done(loc: StringName, sid: String) -> void:
 
 
 ## Does it. {ok, text, screen} (screen: a screen to open, "" = stay).
+## Records why standing changes in here (ChangeLog standing history).
 static func perform(loc: StringName, sid: String, option: int = 0) -> Dictionary:
+	ChangeLog.push_cause("%s at %s" % [sid.replace("_", " ").capitalize(), LocationManager.location_name(loc)])
+	var r: Dictionary = _perform_impl(loc, sid, option)
+	ChangeLog.pop_cause()
+	return r
+
+
+static func _perform_impl(loc: StringName, sid: String, option: int = 0) -> Dictionary:
 	var b := block(loc, sid)
 	if b != "":
 		return {"ok": false, "text": b, "screen": ""}

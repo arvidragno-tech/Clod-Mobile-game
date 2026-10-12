@@ -370,6 +370,13 @@ func _process(delta: float) -> void:
 		return
 	if Glossary.is_open():
 		return  # reading the field guide never costs blood
+	# A mistake that took a vital to zero ends it now: checking only after
+	# tick() let a calm patient's recovery lift neural back above 0 first,
+	# so the collapse the rules define never happened.
+	var pre := vitals.get_failure_reason()
+	if pre != &"":
+		_finish(false, pre)
+		return
 	elapsed += delta
 	vitals.tick(delta)
 	_tick_cooldowns(delta)

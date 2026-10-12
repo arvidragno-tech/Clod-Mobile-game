@@ -29,7 +29,14 @@ func reset_state() -> void:
 
 ## Records a memory and applies its relationship / reputation effect.
 ## about: who/what it concerns (another person's id, an item...).
+## Records why standing changes in here (ChangeLog standing history).
 func remember(owner: StringName, tag: StringName, about: String = "", note: String = "") -> void:
+	ChangeLog.push_cause("Remembered: %s" % String(tag).replace("_", " ").to_lower())
+	_remember_impl(owner, tag, about, note)
+	ChangeLog.pop_cause()
+
+
+func _remember_impl(owner: StringName, tag: StringName, about: String = "", note: String = "") -> void:
 	if owner == &"" or not defs.has(String(tag)):
 		return
 	var key := String(owner)

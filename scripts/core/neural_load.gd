@@ -47,6 +47,13 @@ static func projected(customer: CustomerData, implant: ImplantInstance) -> float
 	return compute(customer) + added * maxf(0.2, ModifierManager.mult(&"neural.load"))
 
 
+## The same projection from what the doctor can see (installed chrome and
+## revealed conditions): what the patient's file and intake form show.
+static func projected_visible(customer: CustomerData, implant: ImplantInstance) -> float:
+	var added := implant.get_neural_load() if implant else 0.0
+	return compute_visible(customer) + added * maxf(0.2, ModifierManager.mult(&"neural.load"))
+
+
 static func band(load: float) -> Dictionary:
 	for b: Dictionary in BANDS:
 		if load < float(b["max"]):
