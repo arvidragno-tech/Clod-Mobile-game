@@ -17,6 +17,23 @@ const QUICK_ICONS := {
 	&"stabilize": "res://assets/sprites/ui/icons/stabilize.png",
 }
 const BLEEDING_MISTAKES: Array[StringName] = [&"cut_deviation", &"tissue_tear", &"bad_stitch"]
+## What to do differently, per mistake (the first time it happens in an
+## operation; what it cost comes from GameConfig.MISTAKE_EFFECTS).
+## wrong_tool is left out: its own hint already names the right tool.
+const MISTAKE_TIPS := {
+	&"cut_deviation": "Keep the blade on the guide line, and slower.",
+	&"tissue_tear": "Clamp right on the bracket markers.",
+	&"nerve_burn": "Keep the burner off the nerve lines.",
+	&"implant_drop": "Drop the implant inside the socket ring.",
+	&"misalignment": "Line up the notch before you seat it.",
+	&"wrong_connection": "Each wire goes to the terminal of its own colour.",
+	&"poor_calibration": "Match the slider to the target, then lock.",
+	&"bad_stitch": "Stitch the points in order: the next one is numbered.",
+	&"underdose": "Hold longer: let go inside the green zone.",
+	&"overdose": "Let go sooner: inside the green zone.",
+	&"bone_crack": "Too deep: release inside the depth zone.",
+	&"loose_anchor": "Too shallow: hold until the depth is inside the zone.",
+}
 const BURN_SFX_INTERVAL := 0.15
 const MISTAKE_SHAKE := 5.0
 ## Operating-field magnification (integer, art px -> screen px).
@@ -68,6 +85,10 @@ var current_stage: SurgeryStage = null
 var _quick_buttons: Dictionary = {}  # StringName -> QuickActionButton
 var _burn_sfx_cooldown: float = 0.0
 var _ended: bool = false
+## Presentation only: mistake kinds already explained this operation, and
+## mistakes in the current stage (for its CLEAN / OK / ROUGH line).
+var _explained: Dictionary = {}
+var _stage_mistakes: int = 0
 
 
 func on_enter(_params: Dictionary) -> void:
@@ -174,6 +195,7 @@ func _build_quick_actions() -> void:
 # --- Stage lifecycle ---------------------------------------------------------
 
 func _on_stage_started(index: int, stage: SurgeryStageData) -> void:
+	_stage_mistakes = 0
 	_load_stage(index, stage)
 
 
@@ -231,6 +253,8 @@ func _load_stage(index: int, stage_data: SurgeryStageData) -> void:
 func _on_stage_finished(quality: float, data: Dictionary) -> void:
 	AudioManager.play_sfx(&"stage", 0.0)
 	var label := "CLEAN" if quality >= 0.85 else ("OK" if quality >= 0.55 else "ROUGH")
+	if quality < 0.85 and _stage_mistakes > 0:
+		label += " · %d MISTAKE%s" % [_stage_mistakes, "" if _stage_mistakes == 1 else "S"]
 	var color := Palette.OK if quality >= 0.85 else (Palette.ACCENT if quality >= 0.55 else Palette.WARN)
 	_fx_text.float_text(field_to_area(_site.get_visible_field_rect().get_center()), label, color, true)
 	await get_tree().create_timer(GameConfig.STAGE_CLEAR_DELAY_SEC).timeout
@@ -421,6 +445,8 @@ static func is_major_mistake(kind: StringName, severity: float) -> bool:
 
 func _on_stage_mistake(kind: StringName, severity: float, local_pos: Vector2) -> void:
 	SurgeryManager.report_mistake(kind, severity)
+	_stage_mistakes += 1
+	_explain_mistake(kind)
 	var major := is_major_mistake(kind, severity)
 	var color := Palette.DANGER if major else Palette.WARN
 	var label: String = GameConfig.MISTAKE_LABELS.get(kind, "MISTAKE")
@@ -430,6 +456,34 @@ func _on_stage_mistake(kind: StringName, severity: float, local_pos: Vector2) ->
 		_fx.burst(local_pos, Palette.BLOOD, 14 if major else 6, 110.0, 3.0)
 	else:
 		_fx.burst(local_pos, color, 8 if major else 4, 70.0, 2.0, 60.0)
+
+
+## The first time a kind of mistake happens in this operation: what it cost
+## and what to do differently, in one toast. Later ones only flash.
+func _explain_mistake(kind: StringName) -> void:
+	if _explained.has(kind) or not MISTAKE_TIPS.has(kind):
+		return
+	_explained[kind] = true
+	var label: String = GameConfig.MISTAKE_LABELS.get(kind, "MISTAKE")
+	UIManager.show_toast("%s%s. %s" % [label, mistake_cost(kind), MISTAKE_TIPS[kind]], &"warn")
+
+
+## "costs bleeding and pain", from the mistake's real effects.
+static func mistake_cost(kind: StringName) -> String:
+	var fx: Dictionary = GameConfig.MISTAKE_EFFECTS.get(kind, {})
+	var parts: Array[String] = []
+	if fx.has("bleed_rate") or fx.has("blood"):
+		parts.append("bleeding")
+	if fx.has("neural"):
+		parts.append("neural sync")
+	if fx.has("health"):
+		parts.append("health")
+	if fx.has("pain") or fx.has("pain_baseline"):
+		parts.append("pain")
+	if parts.is_empty():
+		return ""
+	var tail := parts.pop_back() as String
+	return ": costs %s" % ((", ".join(parts) + " and " + tail) if not parts.is_empty() else tail)
 
 
 func _on_mistake_made(kind: StringName, severity: float) -> void:
@@ -532,7 +586,8 @@ func _on_complication_resolved(c: ComplicationData, handled: bool) -> void:
 		UIManager.show_toast("%s contained" % c.title, &"success")
 		_fx_text.float_text(field_to_area(_site.get_visible_field_rect().get_center()), "CONTAINED", Palette.OK, true)
 	else:
-		UIManager.show_toast("%s: too slow!" % c.title, &"danger")
+		var counter: String = str(GameConfig.QUICK_ACTIONS.get(c.counter_action, {}).get("label", ""))
+		UIManager.show_toast(("%s: too slow. %s counters it." % [c.title, counter]) if counter != "" else "%s: too slow!" % c.title, &"danger")
 		AudioManager.play_sfx(&"mistake")
 		UIManager.shake(6.0)
 		UIManager.flash(Palette.DANGER, 0.3)

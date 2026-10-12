@@ -4,6 +4,40 @@ All notable changes to *UNDERCITY: RIPPER*. Versions follow
 `application/config/version` in `project.godot` and the Windows file version
 in `export_presets.cfg`.
 
+## 3.9.1 — The file, the scan, and why it went wrong
+
+- **The patient's full file** shows the essentials open and the rest
+  folded. Measured over the whole page (same seeded patient, before → after):
+  labels 98 → 46, buttons 29 → 22. It now nearly fits one screen.
+  - **Shown:** who they are (faction, traits, money), the procedure,
+    difficulty and where the implant comes from, the fee, what they can pay,
+    and the terms.
+  - **Only when they apply:** missing tools, a backer, an existing debt.
+  - **Folded:** standing, temper, street rep, risk, medical history,
+    previous operations (hidden when there are none).
+  - **In tooltips:** implant class and maker, implant value, the pay bonus.
+  - **Removed duplicates:** AT A GLANCE lists only what needs attention plus
+    the pay. The neural-load card is the meter, plus a line only when the
+    job changes the band.
+- **The scan:** one instruction instead of two, and plain rows instead of
+  five cards (panels 10 → 5). A scanned region's SCAN button gives way to
+  its finding, marked SCANNED or CONDITION FOUND. Diagnosis descriptions
+  appear when the scans unlock the choice.
+- **Surgery feedback:**
+  - The first time a kind of mistake happens in an operation, a toast says
+    what it cost (from the game's own effects) and what to do differently.
+  - OK / ROUGH stages say how many mistakes they had.
+  - A complication handled too late names the button that counters it.
+- **Fixed: a mistake that took neural sync to 0 could fail to collapse the
+  link.** The frame applied recovery before checking for failure, so a calm
+  patient was lifted back to 0.03. The failure check now also runs before
+  recovery, so the existing rule (neural ≤ 0 → collapse) always holds. This
+  is the one gameplay-visible change. It surfaced as an end-to-end failure
+  on a slower machine, and failed identically on 3.9.0.
+- **Audit probe:** seeded, so before and after compare the same patients. It
+  also counts the whole page, scrolled or not, since a shorter page can show
+  more on screen at once.
+
 ## 3.9.0 — Less on screen
 
 Every element now has to earn its place. Measured on the core loop

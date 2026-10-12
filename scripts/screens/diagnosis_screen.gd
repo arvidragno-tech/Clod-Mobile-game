@@ -80,19 +80,18 @@ func _build_diagnose(col: VBoxContainer, customer: CustomerData, surgery: Surger
 	UIKit.expand(_findings)
 	sc.add_child(_findings)
 	_findings.add_child(UIKit.section_head("FINDINGS", "", "diagnosis"))
-	_findings.add_child(UIKit.label("Scan at least %d regions: click them on the body or press SCAN. Start with the surgical site (%s, pink)." % [
-		MIN_SCANS_TO_DIAGNOSE, ScanView.REGION_LABELS.get(surgery.scan_region, "?")], &"DimLabel", true))
-	# One row per region: status, what the scan found, a SCAN button.
+	# The one instruction (the DIAGNOSIS side only counts what's left).
+	_findings.add_child(UIKit.label("Click the body or press SCAN. Start with the surgical site (%s, pink)." % ScanView.REGION_LABELS.get(surgery.scan_region, "?"), &"DimLabel", true))
+	# One line per region: its name and SCAN; once scanned, what it found.
 	for region: StringName in ScanView.REGIONS:
-		var card := UIKit.panel(&"CardPanel")
-		card.name = "Region_%s" % region
-		_findings.add_child(card)
 		var rv := UIKit.vbox(4)
-		card.add_child(rv)
+		rv.name = "Region_%s" % region
+		_findings.add_child(rv)
 		var head := UIKit.hbox(10)
 		rv.add_child(head)
 		var site := region == surgery.scan_region
 		var t := UIKit.label(str(ScanView.REGION_LABELS[region]) + ("  · SURGICAL SITE" if site else ""), &"SubHeaderLabel", false, Palette.BRAND if site else Palette.TEXT)
+		t.name = "RegionName_%s" % region
 		UIKit.expand(t)
 		head.add_child(t)
 		var b := UIKit.button("SCAN", &"GhostButton", _scan_region.bind(region), "Scan_%s" % region, 36)
@@ -130,7 +129,10 @@ func _build_diagnose(col: VBoxContainer, customer: CustomerData, surgery: Surger
 		_option_buttons[id] = b
 		var desc := str(option.get("description", option.get("hint", "")))
 		if desc != "":
-			_options.add_child(UIKit.label(desc, &"DimLabel", true, null, 15))
+			var dl := UIKit.label(desc, &"DimLabel", true, null, 15)
+			dl.name = "OptionDesc_%s" % id
+			dl.visible = false  # shown when the scans unlock the choice
+			_options.add_child(dl)
 	_confirm = UIKit.button("CONFIRM DIAGNOSIS   [ENTER]", &"AccentButton", _on_confirm, "ConfirmButton", 64)
 	_confirm.disabled = true
 	sv.add_child(_confirm)
@@ -237,8 +239,12 @@ func _on_region_scanned(region: StringName) -> void:
 		AudioManager.play_sfx(&"warning", 0.0)
 	var b: Button = _region_buttons.get(region)
 	if b:
-		b.disabled = true
-		b.text = "FOUND" if found else "SCANNED"
+		b.visible = false  # the finding below replaces it
+	var name_label := _findings.find_child("RegionName_%s" % region, true, false) as Label
+	if name_label:
+		name_label.text += "  · CONDITION FOUND" if found else "  · SCANNED"
+		if found:
+			name_label.add_theme_color_override(&"font_color", Palette.DANGER)
 	AudioManager.play_sfx(&"stage", 0.0)
 	_update_hint()
 
@@ -248,8 +254,12 @@ func _update_hint() -> void:
 	var unlocked := count >= MIN_SCANS_TO_DIAGNOSE
 	for b: Button in _option_buttons.values():
 		b.disabled = not unlocked
+	for n in _options.get_children():
+		if n.name.begins_with("OptionDesc_"):
+			(n as Control).visible = unlocked
 	if not unlocked:
-		_hint.text = "Scan at least %d regions first (%d done). Start with the surgical site (pink)." % [MIN_SCANS_TO_DIAGNOSE, count]
+		var left := MIN_SCANS_TO_DIAGNOSE - count
+		_hint.text = "Scan %d more region%s to choose." % [left, "" if left == 1 else "s"]
 	elif _selected == &"":
 		_hint.text = "Pick the diagnosis the findings point to."
 	else:

@@ -18,6 +18,7 @@ func run(runner: Node) -> void:
 	_learning_curve()
 	_settings()
 	_neural_load()
+	_zero_vital_ends_now()
 	_invalid_cyberware()
 	_modifiers_and_skills()
 	_factions_and_heat()
@@ -477,6 +478,28 @@ func _neural_load() -> void:
 	check(not bool(GameManager.get_surgery_readiness()["accepts"]) and not bool(GameManager.get_surgery_readiness()["ok"]), "excessive load: cautious customer refuses consent")
 	c.risk_tolerance = 0.9
 	check(bool(GameManager.get_surgery_readiness()["accepts"]), "excessive load: reckless customer still consents")
+	CustomerManager.reset_state()
+
+
+## A mistake that takes neural to 0 collapses the link, even on a calm
+## patient whose neural would otherwise recover a little in the same frame.
+func _zero_vital_ends_now() -> void:
+	SaveManager.reset_all()
+	var c := CustomerManager.get_customer(&"mara_quill")
+	SurgeryManager.start_session(SurgeryManager.get_surgery(&"install_basic_neural_implant"), c, true, 1.0, -1, ImplantInstance.create(&"nx1_neural_bridge"))
+	SurgeryManager.resume()
+	SurgeryManager.vitals.pain = 0.0
+	SurgeryManager.vitals.neural = 3.0
+	var got: Array[StringName] = []
+	var on_done := func(r: SurgeryResult) -> void: got.append(r.failure_reason)
+	SurgeryManager.session_finished.connect(on_done)
+	SurgeryManager.report_mistake(&"wrong_connection", 1.0)
+	check(SurgeryManager.vitals.neural <= 0.0, "a bad splice takes neural from 3 to 0")
+	SurgeryManager._process(0.1)
+	SurgeryManager.session_finished.disconnect(on_done)
+	check(not SurgeryManager.is_active and got == [&"neural_collapse"], "neural at 0 collapses the link before recovery can lift it (%s)" % [got])
+	if SurgeryManager.is_active:
+		SurgeryManager.abort()
 	CustomerManager.reset_state()
 
 

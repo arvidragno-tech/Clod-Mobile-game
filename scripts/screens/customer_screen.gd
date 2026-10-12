@@ -1,8 +1,10 @@
 extends BaseScreen
 ## Customer intake (PC dossier layout). Left: who they are and what they
-## said. Centre: expandable REQUEST / PAYMENT / RISK / MEDICAL HISTORY /
-## PREVIOUS OPERATIONS sections. Right: neural load now vs after the job and
-## the decision (ACCEPT [ENTER] / DECLINE).
+## said. Centre: REQUEST and PAYMENT open (what the job is, what it pays and
+## the terms); RISK / MEDICAL HISTORY / PREVIOUS OPERATIONS folded, one
+## click away. Right: neural load now vs after the job and the decision
+## (ACCEPT [ENTER] / DECLINE). The same three levels as the patient summary:
+## essentials open, details folded, specs in tooltips.
 
 const RISK_LABELS := ["", "LOW", "MEDIUM", "HIGH"]
 const RISK_COLORS: Array[Color] = [Palette.TEXT, Palette.OK, Palette.WARN, Palette.DANGER]
@@ -104,13 +106,15 @@ func on_enter(params: Dictionary) -> void:
 	meter.set_load(now, after)
 	var band_now: Dictionary = NeuralLoad.band(now)
 	var band_after: Dictionary = NeuralLoad.band(after)
-	load_box.add_child(UIKit.label("NOW %d%%  %s" % [roundi(now), band_now["name"]], &"MonoLabel", false, band_now["color"]))
-	load_box.add_child(UIKit.label("AFTER ≈ %d%%  %s" % [roundi(after), band_after["name"]], &"MonoLabel", false, band_after["color"]))
-	load_box.add_child(UIKit.label("Hidden conditions can add more. Scan before you cut.", &"DimLabel", true))
+	# The meter reads "now > after BAND"; a line only when the job changes the band.
+	meter.tooltip_text = "Now %d%% %s, after ≈ %d%% %s. Hidden conditions can add more: scan before you cut." % [roundi(now), band_now["name"], roundi(after), band_after["name"]]
+	if str(band_now["name"]) != str(band_after["name"]):
+		load_box.add_child(UIKit.label("This job takes them from %s to %s." % [band_now["name"], band_after["name"]], &"MonoLabel", true, band_after["color"]))
 	# At a glance: can you do it, what's in the way, one line of advice.
 	var glance := UIKit.section(rtop, "AT A GLANCE", &"CardPanel", "", "loop")
 	glance.get_parent().name = "AtAGlance"
-	JobVerdict.build(glance, c)
+	# Only what needs attention, plus the pay: the rest is already on the file.
+	JobVerdict.build(glance, c, true)
 	var decide := UIKit.section(right, "DECISION", &"AccentPanel", "", "loop")
 	# Recommendation: who should operate, and why (the player decides).
 	var rec := Recommend.surgeon(c)
@@ -119,11 +123,7 @@ func on_enter(params: Dictionary) -> void:
 	rl.tooltip_text = "An estimate from the same rules the game uses. You decide."
 	rl.mouse_filter = Control.MOUSE_FILTER_PASS
 	decide.add_child(rl)
-	# The money lives in the PATIENT SUMMARY (FINANCES); one line here for reference.
-	var est := JobEstimate.for_customer(c, GameManager.get_surgery_readiness())
-	var ml := UIKit.label("Estimated direct margin %+d cr (patient summary: FINANCES)." % int(est["net"]), &"DimLabel", true, Palette.TEXT_DIM, 14)
-	ml.name = "MoneyEstimate"
-	decide.add_child(ml)
+	# The money: PAYMENT (centre), the patient summary and the plan.
 	var accept := UIKit.button("ACCEPT JOB: OPERATE YOURSELF  [ENTER]", &"AccentButton", GameManager.accept_customer, "AcceptButton", 60)
 	accept.set_meta(&"default", true)
 	decide.add_child(accept)
@@ -204,23 +204,36 @@ func _profile_card(c: CustomerData) -> Control:
 	UIKit.expand(fl)
 	fac_row.add_child(fl)
 	UIKit.expand(fac_row)
-	for pair: Array in [
+	fac_row.tooltip_text = "Standing with them: %s." % FactionManager.get_standing(c.faction_id)
+	_profile_rows(g, [
 		["FACTION", fac_row],
-		["STANDING", FactionManager.get_standing(c.faction_id)],
-		["TEMPER", String(c.personality).to_upper()],
 		["TRAITS", ", ".join(c.traits.map(func(t: StringName) -> String: return PeopleManager.trait_label(t))).to_upper() if not c.traits.is_empty() else "—"],
 		["MONEY", "%s · %s" % [WEALTH[clampi(c.wealth, 0, 3)], PeopleManager.finance_label(c.finance).to_upper()]],
+	])
+	var more := UIKit.collapsible(v, "MORE ABOUT THEM", false)
+	var g2 := GridContainer.new()
+	g2.columns = 2
+	g2.add_theme_constant_override(&"h_separation", 14)
+	g2.add_theme_constant_override(&"v_separation", 8)
+	more.add_child(g2)
+	_profile_rows(g2, [
+		["STANDING", FactionManager.get_standing(c.faction_id)],
+		["TEMPER", String(c.personality).to_upper()],
 		["STREET REP", str(c.street_rep)],
-	]:
+	])
+	if c.visits > 0 or c.referred_by != "":
+		v.add_child(UIKit.label(("RETURNING · VISIT %d" % (c.visits + 1)) if c.visits > 0 else "REFERRED BY " + c.referred_by.to_upper(), &"SubHeaderLabel", true, Palette.OK))
+	_history_block(v, c)
+	return card
+
+
+func _profile_rows(g: GridContainer, rows: Array) -> void:
+	for pair: Array in rows:
 		g.add_child(UIKit.label(pair[0], &"SubHeaderLabel"))
 		if pair[1] is Control:
 			g.add_child(pair[1])
 		else:
 			g.add_child(UIKit.expand(UIKit.label(str(pair[1]), &"", true)))
-	if c.visits > 0 or c.referred_by != "":
-		v.add_child(UIKit.label(("RETURNING · VISIT %d" % (c.visits + 1)) if c.visits > 0 else "REFERRED BY " + c.referred_by.to_upper(), &"SubHeaderLabel", true, Palette.OK))
-	_history_block(v, c)
-	return card
 
 
 ## Who they are to you: relationship, what changed since last time, what
@@ -275,20 +288,29 @@ func _request_section(parent: Control, item: CyberwareData, surgery: SurgeryData
 	var v := UIKit.vbox(4)
 	UIKit.expand(v)
 	row.add_child(v)
-	v.add_child(UIKit.label(item.display_name, &"HeaderLabel", true, item.get_rarity_color()))
+	var nm := UIKit.label(item.display_name, &"HeaderLabel", true, item.get_rarity_color())
+	nm.tooltip_text = "T%d %s · %s · made by %s" % [item.tier, item.get_tier_name(), item.rarity.to_upper(), item.manufacturer if item.manufacturer != "" else "unknown"]
+	nm.mouse_filter = Control.MOUSE_FILTER_PASS
+	v.add_child(nm)
 	v.add_child(UIKit.label(item.description, &"DimLabel", true))
-	var tools: Array[String] = []
+	var missing: Array[String] = []
 	for req in item.get_tool_requirements():
-		var have := InventoryManager.has_tool_category(StringName(str(req["category"])), int(req["tier"]))
-		tools.append("%s T%d%s" % [String(req["category"]).to_upper(), int(req["tier"]), "" if have else " (MISSING)"])
-	_grid(body, [
-		["CLASS", "T%d %s · %s" % [item.tier, item.get_tier_name(), item.rarity.to_upper()], item.get_rarity_color()],
-		["MAKER", item.manufacturer if item.manufacturer != "" else "unknown"],
-		["PROCEDURE", "%s · %d steps · ≈ %s" % [surgery.display_name, surgery.stages.size(), TimeManager.duration_text(TimeManager.procedure_minutes(item.install_difficulty, GameManager.get_current_customer() != null and GameManager.get_current_customer().is_emergency))]],
+		if not InventoryManager.has_tool_category(StringName(str(req["category"])), int(req["tier"])):
+			missing.append("%s T%d" % [String(req["category"]).to_upper(), int(req["tier"])])
+	var stock := InventoryManager.get_implant_count(item.id)
+	# Where the implant comes from: the same answer as the patient summary.
+	var cust := GameManager.get_current_customer()
+	var src := str(JobEstimate.for_customer(cust, GameManager.get_surgery_readiness())["implant_source"]) if cust else ""
+	var src_text: String = {"stock": "%d in stock" % stock, "buy": "none in stock: bought when you begin", "substitute": "substitute from stock", "salvaged": "salvaged"}.get(src, "%d in stock" % stock)
+	var rows: Array = [
+		["PROCEDURE", "%s · ≈ %s" % [surgery.display_name, TimeManager.duration_text(TimeManager.procedure_minutes(item.install_difficulty, GameManager.get_current_customer() != null and GameManager.get_current_customer().is_emergency))]],
 		["DIFFICULTY", "%s  %d/5" % [UIKit.pips(item.install_difficulty, 5), item.install_difficulty], Palette.WARN if item.install_difficulty >= 3 else null],
-		["TOOLS", ", ".join(tools) if not tools.is_empty() else "standard kit", Palette.DANGER if tools.any(func(t: String) -> bool: return t.ends_with("(MISSING)")) else null],
-		["IN STOCK", "%d unit(s)" % InventoryManager.get_implant_count(item.id), Palette.DANGER if InventoryManager.get_implant_count(item.id) == 0 else Palette.OK],
-	])
+		["IMPLANT", src_text, Palette.WARN if src == "buy" else Palette.OK],
+	]
+	# Instruments: a line only when something is missing.
+	if not missing.is_empty():
+		rows.append(["MISSING TOOLS", ", ".join(missing), Palette.DANGER])
+	_grid(body, rows)
 
 
 func _payment_section(parent: Control, c: CustomerData, item: CyberwareData, _surgery: SurgeryData) -> void:
@@ -296,14 +318,16 @@ func _payment_section(parent: Control, c: CustomerData, item: CyberwareData, _su
 	var fee := CustomerGenerator.estimate_fee(c)
 	var cast := c.character_id != &"" and CharacterManager.has_character(c.character_id)
 	var owed := PeopleManager.owed_by(c.id)
-	_grid(body, [
+	var rows: Array = [
 		["EXPECTED FEE", "≈ %s for clean work" % EconomyManager.format_money(fee), Palette.WARN],
-		["IMPLANT VALUE", EconomyManager.format_money(item.price)],
 		["CAN PAY NOW", "whatever you ask" if cast else EconomyManager.format_money(c.budget), Palette.OK if cast or c.budget >= fee else Palette.WARN],
-		["BACKED BY", FactionManager.get_name_of(c.backer) if c.backer != &"" else "nobody"],
-		["ALREADY OWES", EconomyManager.format_money(owed) if owed > 0 else "nothing", Palette.DANGER if owed > 0 else null],
-		["BONUS", "Clean work, speed and a stable patient raise the final pay."],
-	])
+	]
+	if c.backer != &"":
+		rows.append(["BACKED BY", FactionManager.get_name_of(c.backer)])
+	if owed > 0:
+		rows.append(["ALREADY OWES", EconomyManager.format_money(owed), Palette.DANGER])
+	_grid(body, rows)
+	body.tooltip_text = "Implant value %s. Clean work, speed and a stable patient raise the final pay." % EconomyManager.format_money(item.price)
 	body.add_child(UIKit.section_head("TERMS", "", "terms_payment"))
 	var flow := HFlowContainer.new()
 	flow.name = "TermsRow"
@@ -367,7 +391,7 @@ func _update_terms_preview() -> void:
 
 func _risk_section(parent: Control, c: CustomerData) -> void:
 	var risk := c.get_risk_level()
-	var body := UIKit.collapsible(parent, "RISK", true, &"CardPanel", RISK_LABELS[risk])
+	var body := UIKit.collapsible(parent, "RISK", false, &"CardPanel", RISK_LABELS[risk])
 	_grid(body, [
 		["OVERALL", RISK_LABELS[risk], RISK_COLORS[risk]],
 		["NEURAL STABILITY", "%d%%" % roundi(c.neural_stability), Palette.OK if c.neural_stability >= 70.0 else Palette.WARN],
@@ -378,7 +402,7 @@ func _risk_section(parent: Control, c: CustomerData) -> void:
 
 
 func _medical_section(parent: Control, c: CustomerData) -> void:
-	var body := UIKit.collapsible(parent, "MEDICAL HISTORY", true, &"CardPanel", "%d implant(s)" % c.existing_cyberware.size())
+	var body := UIKit.collapsible(parent, "MEDICAL HISTORY", false, &"CardPanel", "%d implant(s)" % c.existing_cyberware.size())
 	if c.existing_cyberware.is_empty():
 		body.add_child(UIKit.label("No installed chrome.", &"DimLabel"))
 	var chrome := HFlowContainer.new()
@@ -403,10 +427,9 @@ func _medical_section(parent: Control, c: CustomerData) -> void:
 
 func _previous_section(parent: Control, c: CustomerData) -> void:
 	var ops := CustomerManager.get_previous_operations(c)
-	var body := UIKit.collapsible(parent, "PREVIOUS OPERATIONS", not ops.is_empty(), &"CardPanel", "%d on file" % ops.size())
 	if ops.is_empty():
-		body.add_child(UIKit.label("No operations at this clinic yet.", &"DimLabel"))
-		return
+		return  # nothing to show: no empty section
+	var body := UIKit.collapsible(parent, "PREVIOUS OPERATIONS", false, &"CardPanel", "%d on file" % ops.size())
 	for h in ops.slice(0, 6):
 		var ok := str(h.get("outcome", "")) == "success"
 		var what := str(h.get("surgery", "Operation"))

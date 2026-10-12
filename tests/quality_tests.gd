@@ -19,6 +19,7 @@ func run(runner: Node) -> void:
 	_doors()
 	_guidance_levels()
 	_surgery_rules()
+	_mistake_explanations()
 	GameManager.is_running = was
 
 
@@ -239,3 +240,17 @@ func _surgery_rules() -> void:
 	for sd: SurgeryData in SurgeryManager.surgeries.values():
 		for st in (sd as SurgeryData).stages:
 			check(not st.instruction.begins_with("Select "), "%s / %s: no 'Select the tool' busywork (the tool is put in your hand)" % [sd.id, st.id])
+
+
+## Each mistake explains itself once: what it cost (from its real effects)
+## and what to do differently. Presentation only.
+func _mistake_explanations() -> void:
+	var missing: Array[String] = []
+	for k: StringName in GameConfig.MISTAKE_LABELS:
+		if k != &"wrong_tool" and not SurgeryScreen.MISTAKE_TIPS.has(k):
+			missing.append(String(k))
+	check(missing.is_empty(), "every mistake has a what-to-do line (%s)" % [missing])
+	check(SurgeryScreen.mistake_cost(&"tissue_tear") == ": costs bleeding and pain", "a tear costs bleeding and pain (%s)" % SurgeryScreen.mistake_cost(&"tissue_tear"))
+	check(SurgeryScreen.mistake_cost(&"overdose") == ": costs neural sync and health", "an overdose costs neural sync and health (%s)" % SurgeryScreen.mistake_cost(&"overdose"))
+	check(SurgeryScreen.mistake_cost(&"poor_calibration") == ": costs neural sync", "poor sync costs neural sync")
+	check(SurgeryScreen.mistake_cost(&"implant_drop") == ": costs pain", "a drop costs pain")

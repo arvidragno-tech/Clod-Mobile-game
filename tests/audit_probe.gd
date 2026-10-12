@@ -8,6 +8,8 @@ extends Node
 ##   xvfb-run -a -s "-screen 0 1920x1080x24" godot --path . --rendering-driver opengl3 \
 ##       --resolution 1920x1080 res://tests/audit_probe.tscn -- --shots=/abs/dir
 
+const AUDIT_SEED := 39
+
 var _shots: String = ""
 var _rows: Array[String] = []
 
@@ -35,7 +37,9 @@ func _ready() -> void:
 	await _flow()
 	print("")
 	print("UI AUDIT (visible, on-screen)")
-	print("%-22s %7s %7s %8s" % ["screen", "panels", "labels", "buttons"])
+	# On screen: what you see without scrolling. Page: everything shown,
+	# scrolled out of view or not (a shorter page can show MORE on screen).
+	print("%-22s %7s %7s %8s | %11s %12s" % ["screen", "panels", "labels", "buttons", "page labels", "page buttons"])
 	for r in _rows:
 		print(r)
 	SaveManager.delete_save()
@@ -44,6 +48,12 @@ func _ready() -> void:
 
 
 func _flow() -> void:
+	# Same patients every run, so before / after compare the same screens
+	# (a random patient can bring whole extra sections, e.g. a dependency).
+	seed(AUDIT_SEED)
+	GameManager._rng.seed = AUDIT_SEED
+	CustomerManager._rng.seed = AUDIT_SEED
+	CustomerManager.generator.rng.seed = AUDIT_SEED
 	GameManager.start_new_game()
 	await _settle()
 	var t := 0
@@ -108,10 +118,16 @@ func _measure(label: String) -> void:
 	var panels := 0
 	var labels := 0
 	var buttons := 0
+	var page_labels := 0
+	var page_buttons := 0
 	for n in get_tree().root.find_children("*", "Control", true, false):
 		var c := n as Control
 		if not c.is_visible_in_tree() or c.get_window() != get_tree().root:
 			continue
+		if c is BaseButton:
+			page_buttons += 1
+		elif c is Label and (c as Label).text.strip_edges() != "":
+			page_labels += 1
 		var r := c.get_global_rect()
 		if r.size.x < 2 or r.size.y < 2 or not view.intersects(r):
 			continue
@@ -123,7 +139,7 @@ func _measure(label: String) -> void:
 			labels += 1
 		elif c is PanelContainer:
 			panels += 1
-	_rows.append("%-22s %7d %7d %8d" % [label, panels, labels, buttons])
+	_rows.append("%-22s %7d %7d %8d | %11d %12d" % [label, panels, labels, buttons, page_labels, page_buttons])
 	if not _shots.is_empty():
 		await RenderingServer.frame_post_draw
 		var img := get_viewport().get_texture().get_image()
