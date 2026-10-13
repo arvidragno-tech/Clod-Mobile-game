@@ -232,10 +232,19 @@ func _on_region_scanned(region: StringName) -> void:
 	for cid in CustomerManager.try_reveal_conditions(customer, region):
 		var cond := CustomerManager.get_condition(cid)
 		found = true
-		var warn := UIKit.label("! %s: %s" % [str(cond.get("name", cid)).to_upper(), str(cond.get("hint", ""))], &"", true, Palette.DANGER, 16)
+		# What was found, then what it means for this operation and what to
+		# do about it (IntakeRecord.condition_effects: the condition's own
+		# modifiers and the systems that read them). The scan's evidence
+		# (the hint) is in the tooltip.
+		var warn := UIKit.label("! %s: %s" % [str(cond.get("name", cid)).to_upper(), str(cond.get("description", ""))], &"", true, Palette.DANGER, 16)
 		warn.name = "Condition_%s" % cid
+		warn.tooltip_text = str(cond.get("hint", ""))
+		warn.mouse_filter = Control.MOUSE_FILTER_PASS
+		var why := UIKit.label(str(IntakeRecord.condition_effects(cid)["text"]), &"DimLabel", true, Palette.TEXT, 15)
+		why.name = "ConditionWhy_%s" % cid
 		if body:
 			body.get_parent().add_child(warn)
+			body.get_parent().add_child(why)
 		AudioManager.play_sfx(&"warning", 0.0)
 	var b: Button = _region_buttons.get(region)
 	if b:
@@ -321,8 +330,14 @@ func _build_plan_contents() -> void:
 	_check("SUPPLIES", "%d / need %d" % [InventoryManager.supplies, surgery.supplies], bool(r["supplies_ok"]))
 	var refusal := "REFUSES: LOAD TOO HIGH" if GameManager.consent_risk_needed(float(r["neural_after"])) > 0.0 else "REFUSES THIS UNIT"
 	_check("CONSENT", "AGREES" if bool(r["accepts"]) else refusal, bool(r["accepts"]))
+	# What the scan found, by name and what it affects (the scan table and
+	# the patient's risks say how); a caution, not a blocker.
 	if not customer.revealed_conditions.is_empty():
-		_check("FOUND", "%d condition(s): see the patient's risks" % customer.revealed_conditions.size(), false)
+		var found: Array[String] = []
+		for cid in customer.revealed_conditions:
+			var fx := IntakeRecord.condition_effects(cid)
+			found.append("%s (%s)" % [str(CustomerManager.get_condition(cid).get("name", cid)), ", ".join(fx["affects"])])
+		_check("FOUND", "; ".join(found), false, "! ")
 	_begin.disabled = not bool(r["ok"])
 	_fill_preview(customer, item, surgery, r)
 	# Say why BEGIN is blocked (or that you're good to go).
@@ -424,13 +439,13 @@ func _implant_option(i: int, inst: ImplantInstance, selected: bool, requested: C
 	return b
 
 
-func _check(caption: String, value: String, good: bool) -> void:
+func _check(caption: String, value: String, good: bool, mark: String = "") -> void:
 	var row := UIKit.hbox(8)
 	var c := UIKit.caption(caption)
 	c.custom_minimum_size.x = 150
 	row.add_child(c)
-	# Symbol + colour: "+" ready, "x" blocked (readable without colour).
-	var v := UIKit.label(("+ " if good else "x ") + value, &"MonoLabel", true, Palette.OK if good else Palette.WARN, 19)
+	# Symbol + colour: "+" ready, "x" blocked, "!" worth knowing (readable without colour).
+	var v := UIKit.label((mark if mark != "" else ("+ " if good else "x ")) + value, &"MonoLabel", true, Palette.OK if good else Palette.WARN, 19)
 	UIKit.expand(v)
 	row.add_child(v)
 	_plan_info.add_child(row)

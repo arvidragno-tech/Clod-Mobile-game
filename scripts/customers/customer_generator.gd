@@ -143,7 +143,12 @@ func _roll_conditions(c: CustomerData) -> void:
 func _roll_request(c: CustomerData, arch: Dictionary, context: Dictionary) -> void:
 	var avail := CyberwareManager.get_available_tier()
 	var cat := StringName(str(context.get("category", pick_weighted(arch["categories"]))))
-	var wanted_tier := clampi(rng.randi_range(1, avail) + (1 if c.wealth >= 2 and rng.randf() < 0.4 else 0), 1, avail)
+	# What people ask for follows what they can afford: poorer patients
+	# mostly want chrome within their means (a few still reach above it).
+	var top := avail
+	if c.wealth <= 1 and rng.randf() >= GameConfig.REACH_REQUEST_SHARE:
+		top = mini(avail, c.wealth + 2)
+	var wanted_tier := clampi(rng.randi_range(1, top) + (1 if c.wealth >= 2 and rng.randf() < 0.4 else 0), 1, avail)
 	var pool := CyberwareManager.get_by_category(cat, wanted_tier)
 	if pool.is_empty():
 		pool = CyberwareManager.get_by_category(&"neural", 1)
@@ -299,17 +304,19 @@ static func estimate_fee(c: CustomerData) -> int:
 	if item == null or s == null:
 		return 0
 	var mult := c.pay_multiplier * ModifierManager.mult(&"pay")
-	var service := s.base_pay * 1.1 * mult
+	var service := SurgeryScoring.service_pay(s.base_pay, mult, item.install_difficulty, 0.6)
 	return int(round(service + estimate_part(c)))
 
 
-## The part's share of the estimate (what the patient pays for the implant).
+## The part's share of the estimate (what the patient pays for the implant):
+## its list price, as the payout bills it (SurgeryScoring.apply_rewards),
+## not today's shop price.
 static func estimate_part(c: CustomerData) -> float:
 	var item := CyberwareManager.get_cyberware(c.requested_cyberware_id)
 	if item == null:
 		return 0.0
 	var mult := c.pay_multiplier * ModifierManager.mult(&"pay")
-	return InventoryManager.implant_price(item) * GameConfig.IMPLANT_PRICE_MARKUP * minf(mult, 1.0)
+	return SurgeryScoring.part_pay(item.price, mult)
 
 
 func _build_dialogue(c: CustomerData, context: Dictionary) -> String:

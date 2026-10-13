@@ -131,7 +131,14 @@ func _run(strat: String, seed_value: int, days: int) -> Dictionary:
 			recovered = day - loss_day
 		curve.append(EconomyManager.money - BusinessManager.debt)
 	tot["bm_buys"] = _bm_buys
+	# What the clinics you moved out of would fetch (ClinicManager.sell):
+	# money an investing strategy has parked, not lost.
+	var resale := 0
+	for i in ClinicManager.owned:
+		if i != ClinicManager.tier:
+			resale += int(ClinicManager.price(i) * ClinicManager.SELL_BACK)
 	return {"seed": seed_value, "curve": curve, "tot": tot, "first_upgrade": first_upgrade, "first_clinic": first_clinic,
+		"resale": resale,
 		"bankrupt_days": bankrupt_days, "recovered": recovered, "final": EconomyManager.money - BusinessManager.debt,
 		"debt": BusinessManager.debt, "tier": ClinicManager.tier, "staff": StaffManager.count(), "upgrades": _upgrades(), "heat": roundi(FactionManager.heat)}
 
@@ -374,7 +381,13 @@ func _print_targets(summary: Dictionary, days: int) -> void:
 		finals.sort()
 		tiers.sort()
 		var med := finals[n / 2]
-		_target(med >= 1000, "%s: median money after %d days is at least 1000 cr (%d)" % [strat, days, med])
+		# Cash plus the resale value of clinics moved out of: a strategy that
+		# just bought its next clinic hasn't gone broke (3.10).
+		var worths: Array[int] = []
+		for r: Dictionary in runs:
+			worths.append(int(r["final"]) + int(r.get("resale", 0)))
+		worths.sort()
+		_target(worths[n / 2] >= 1000, "%s: median money (+ resale of clinics moved out of) after %d days is at least 1000 cr (%d)" % [strat, days, worths[n / 2]])
 		_target(med <= 40000, "%s: median money stays under 40000 cr: money keeps its meaning (%d)" % [strat, med])
 		_target(tiers[n / 2] < ClinicManager.tiers.size() - 1, "%s: the best clinic is still a goal after %d days (median tier %d)" % [strat, days, tiers[n / 2]])
 	if _failures.is_empty():

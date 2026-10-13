@@ -4,6 +4,72 @@ All notable changes to *UNDERCITY: RIPPER*. Versions follow
 `application/config/version` in `project.godot` and the Windows file version
 in `export_presets.cfg`.
 
+## 3.10.0 — What the scan found, fairer jobs, selling from storage
+
+- **CONDITION FOUND now says what it means.** The scan used to show the
+  condition's name and the scan's evidence ("Abnormal platelet count…"),
+  but not what it changes. Every condition already changes the operation
+  through its own modifiers (bleeding, sedation, neural sync, complications,
+  health drain, post-op risk, neural load), applied when the patient is
+  generated, found or not. A finding now reads, for example:
+  "! CLOTTING DISORDER: Bleeds heavily. Bleeds faster during surgery: keep
+  COAG ready." Rejection-prone patients also name the REJECTION SPASM only
+  they can get (counter: SEDATE). Conditions the odds estimate counts once
+  found (complication risk, neural load) say so. The evidence moved to the
+  tooltip.
+  - The operation plan's FOUND row names each condition and what it
+    affects ("Clotting disorder (bleeding)"), marked "!" as a caution,
+    instead of "x 1 condition(s): see the patient's risks", which read as a
+    blocker.
+  - The patient's risk factors show the same explanation (one helper,
+    `IntakeRecord.condition_effects`). OVERALL RISK stops saying the cause
+    is unidentified once the scan has found one.
+  - No new conditions or effects, no value changes: revealing still only
+    changes what the doctor sees. Unrevealed conditions stay unnamed.
+- **Fewer losing jobs.** Doable offers that cost more than they pay, from
+  2,000 generated offers per stage (`tests/offer_sim.gd`), before → after:
+  early 0% → 0%, street 12% → 5%, established 22% → 4%, late 7% → 1%.
+  If 15% of operations failed, the share that would lose money is 28/42/36%
+  → 19/22/11%. (Generation isn't fully seeded, so reruns vary by about a
+  point.) The causes were:
+  - Poor patients asked for top-tier chrome as often as rich ones, while
+    the part is billed at their means. Requests now follow means: wealth
+    0–1 patients mostly ask for tiers up to wealth + 2, and 25% still reach
+    above it. Those are the deliberate bad deals.
+  - The service fee ignored difficulty: an NX-1 and a Mnemos core billed the
+    same. It now grows 10% per difficulty step above 1, like XP does.
+  - The fee estimate billed the part at today's shop price while the payout
+    bills the list price, so price swings made the estimate wrong.
+  - "You keep" left out what the patient pays later on an instalment plan,
+    so many paying jobs looked like losses. It is now the direct margin: the
+    whole fee minus the implant and supplies. CASH TODAY in the details
+    shows what lands now when part of the fee is owed.
+  - Economy simulation, 14 seeds × 20 days: median profit a day is
+    specialist 1427 → 1788, black market 1905 → 2300, mixed 532 → 797,
+    investment 752 → 757, conservative 1467 → 1416. No run goes bankrupt,
+    and the best clinic is still a goal.
+- **Sell from storage.** Select an implant, tool or medical supplies in
+  INVENTORY. The detail panel shows SELL with the name, how many you have,
+  the price each, a quantity for supplies, and the total on the button.
+  A confirmation shows your cash before and after.
+  - Prices follow the black market's existing resale rule: 45% of the list
+    price × condition, and never more than 80% of today's buy price, so
+    there's no buy-and-sell loop. Implant units use the market's own
+    `sell_value`, and black-market units still earn their token.
+  - Not sellable: basic kit (no resale value), unidentified devices (they
+    have their own routes), parts (the scrap stalls) and tokens. Also
+    anything the operation you're planning needs: its implant unit,
+    instruments and supplies.
+  - Money goes through `EconomyManager` and is booked against the matching
+    spending in the ledger. Saves need no new fields.
+- **Tests:** `tests/clinic_310_tests.gd` (unit), `tests/clinic_310_probe.gd`
+  (real clicks: scan → plan, sell a tool, sell 3 supplies with a double
+  click on the confirm), `tests/offer_sim.gd` (offer distribution, in
+  `run_tests.sh` with targets). The economy simulation's money target now
+  also counts the resale value of clinics a strategy has moved out of: the
+  investment strategy had passed it by 52 cr on 3.9.1, and sometimes buys
+  its next clinic on the last night.
+
 ## 3.9.1 — The file, the scan, and why it went wrong
 
 - **The patient's full file** shows the essentials open and the rest

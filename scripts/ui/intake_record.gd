@@ -49,6 +49,18 @@ const MODIFIER_EFFECTS := {
 	"post_op": ["raises the chance of trouble after the operation", "post-op"],
 	"neural_load": ["adds neural load", "neural load"],
 }
+## What the player can do about each effect, with the existing controls.
+const MODIFIER_ADVICE := {
+	"bleed": "keep COAG ready",
+	"health_drain": "stop bleeding early with COAG",
+	"neural_sensitivity": "keep STABIL ready",
+	"start_neural": "keep STABIL ready",
+	"complication_risk": "expect an extra complication more often",
+	"post_op": "a clean grade doesn't remove it, so they may come back",
+	"neural_load": "check the load after the implant in the plan",
+}
+## Effects the odds estimate (Recommend) counts once a condition is found.
+const COUNTED_IN_ODDS := ["complication_risk", "neural_load"]
 
 
 ## {doc_id, stamp, patient: [...], request: [...], history: [...], risks: [...]}
@@ -68,6 +80,66 @@ static func build(c: CustomerData) -> Dictionary:
 
 static func _e(key: String, label: String, value: String, status: String, level: StringName = NONE, why: String = "", affects: String = "") -> Dictionary:
 	return {"key": key, "label": label, "value": value, "status": status, "level": level, "why": why, "affects": affects}
+
+
+# --- Conditions: what a found condition means ---------------------------------------
+
+## One modifier's effect in words (the player-facing half of MODIFIER_EFFECTS).
+static func _effect_text(k: String, v: float) -> String:
+	match k:
+		"pain_tolerance":
+			return "needs more sedation" if v < 0.0 else "tolerates pain better"
+		"neural_load":
+			return "adds %d%% neural load" % roundi(v)
+	return str(MODIFIER_EFFECTS[k][0])
+
+
+static func _advice_text(k: String, v: float) -> String:
+	if k == "pain_tolerance":
+		return "hold the infusion longer, the sedation band sits higher" if v < 0.0 else "the sedation band sits lower, don't overdose"
+	return str(MODIFIER_ADVICE.get(k, ""))
+
+
+static func _sentence(t: String) -> String:
+	return t if t == "" else t[0].to_upper() + t.substr(1)
+
+
+## What a condition does in the operation, from its own modifiers and the
+## systems that read them (nothing invented): {effects, affects,
+## complications, counted, text}. `text` is the short explanation the scan
+## and the intake form show: each effect with what to do about it, any
+## complication only this condition can cause, and whether the odds
+## estimate now counts it.
+static func condition_effects(cid: StringName) -> Dictionary:
+	var cond := CustomerManager.get_condition(cid)
+	var mods: Dictionary = cond.get("modifiers", {})
+	var effects: Array[String] = []
+	var affects: Array[String] = []
+	var lines: Array[String] = []
+	var counted := false
+	for k: String in mods:
+		if not MODIFIER_EFFECTS.has(k):
+			continue
+		var v := float(mods[k])
+		var e := _effect_text(k, v)
+		effects.append(e)
+		if not affects.has(str(MODIFIER_EFFECTS[k][1])):
+			affects.append(str(MODIFIER_EFFECTS[k][1]))
+		var a := _advice_text(k, v)
+		lines.append(_sentence(e + (": " + a if a != "" else "")) + ".")
+		if COUNTED_IN_ODDS.has(k):
+			counted = true
+	var comps: Array[String] = []
+	for comp: ComplicationData in SurgeryManager.complications.values():
+		if StringName(str(comp.conditions.get("requires_condition", ""))) == cid:
+			var act: Dictionary = GameConfig.QUICK_ACTIONS.get(comp.counter_action, {})
+			comps.append(comp.title)
+			lines.append("Can cause %s in surgery (counter: %s)." % [comp.title, str(act.get("label", String(comp.counter_action).to_upper()))])
+			if not affects.has("complications"):
+				affects.append("complications")
+	if counted:
+		lines.append("Your odds estimate now counts it.")
+	return {"effects": effects, "affects": affects, "complications": comps, "counted": counted, "text": " ".join(lines)}
 
 
 # --- A. Patient information ---------------------------------------------------------
@@ -167,21 +239,9 @@ static func risks(c: CustomerData) -> Array[Dictionary]:
 	# Confirmed conditions, with what they change (from the condition's own modifiers).
 	for cid in c.revealed_conditions:
 		var cond := CustomerManager.get_condition(cid)
-		var effects: Array[String] = []
-		var affects: Array[String] = []
-		for k: String in (cond.get("modifiers", {}) as Dictionary):
-			if MODIFIER_EFFECTS.has(k):
-				var m: Array = MODIFIER_EFFECTS[k]
-				if k == "pain_tolerance":
-					effects.append("needs more sedation" if float(cond["modifiers"][k]) < 0.0 else "tolerates pain better")
-				elif k == "neural_load":
-					effects.append("adds %d%% neural load" % roundi(float(cond["modifiers"][k])))
-				else:
-					effects.append(str(m[0]))
-				if not affects.has(str(m[1])):
-					affects.append(str(m[1]))
+		var fx := condition_effects(cid)
 		out.append(_e("cond_%s" % cid, str(cond.get("name", cid)).to_upper(), str(cond.get("description", "")), CONFIRMED, CAUTION,
-			"; ".join(effects).capitalize() + "." if not effects.is_empty() else "", ", ".join(affects)))
+			str(fx["text"]), ", ".join(fx["affects"])))
 	# Neural load after the implant (doctor-visible), by the existing bands.
 	if item:
 		var after := NeuralLoad.projected_visible(c, ImplantInstance.create(item.id))
@@ -206,8 +266,15 @@ static func risks(c: CustomerData) -> Array[Dictionary]:
 	# The existing coarse rating: something raises the risk, cause not identified.
 	var risk := c.get_risk_level()
 	if risk >= 2:
+		# Once the scan has found something, say so instead of "unidentified".
+		var cause := "the cause isn't identified. A scan can reveal conditions."
+		if not c.revealed_conditions.is_empty():
+			var names: Array[String] = []
+			for cid in c.revealed_conditions:
+				names.append(str(CustomerManager.get_condition(cid).get("name", cid)).to_lower())
+			cause = "the scan found %s, which accounts for some of it." % ", ".join(names)
 		out.append(_e("overall", "OVERALL RISK", ["", "low", "medium", "high"][risk], SUSPECTED, CAUTION if risk == 2 else SIGNIFICANT,
-			"The intake exam rates this patient's physiology as %s risk; the cause isn't identified. A scan can reveal conditions." % ["", "low", "medium", "high"][risk],
+			"The intake exam rates this patient's physiology as %s risk; %s" % [["", "low", "medium", "high"][risk], cause],
 			"bleeding, sedation, complications"))
 	# The implant's own failure risk (data), which feeds the complication chance.
 	if item and item.failure_risk > 0.0:

@@ -129,6 +129,12 @@ const WORN_IMPLANT_RISK := 0.15
 ## they're poor: x their pay multiplier, capped at 1). Your service fee on
 ## top is what scales with how well you work, and where profit comes from.
 const IMPLANT_PRICE_MARKUP := 0.9
+## The service fee grows with the install's difficulty, as XP does: harder
+## chrome takes longer and risks more, so it bills more. +x per step above 1.
+const DIFFICULTY_PAY_STEP := 0.1
+## Share of poorer patients (wealth 0-1) who still ask for chrome above
+## their means (a tier above wealth + 2): the deliberate bad deals.
+const REACH_REQUEST_SHARE := 0.25
 ## A black-market part has no paperwork: patients pay this share of the
 ## usual part price for it (so buying cheap off the books is not free money).
 const BLACK_MARKET_PART_SHARE := 0.8

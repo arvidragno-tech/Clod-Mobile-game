@@ -36,7 +36,7 @@ const LIST := {
 	&"inventory": {"intro": "Everything you own: implants in stock, tools, supplies. Stock you have is chrome you don't have to buy.", "title": "INVENTORY", "screen": &"inventory", "stage": 3, "term": "condition",
 		"what": "Everything you own: implants in stock, tools, supplies.",
 		"why": "A unit in stock is one you don't have to buy for the next job.",
-		"how": "Compare units, check condition and hidden traits, sell what you don't need.",
+		"how": "Compare units, check condition and hidden traits; select an item to SELL what you don't need.",
 		"cost": "None."},
 	&"business": {"intro": "Your money: tonight's bills, debts both ways and an outlook. Payment isn't profit.", "title": "BUSINESS", "screen": &"business", "stage": 3, "term": "outlook",
 		"what": "Today's money: income, bills, debts both ways and an outlook.",
