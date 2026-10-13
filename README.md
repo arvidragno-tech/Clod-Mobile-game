@@ -7,7 +7,11 @@ almost nothing, take customers, install cyberware at a surgical workstation,
 hire staff, buy clinics across the city, and decide what you become while a
 corporate conspiracy spreads through your patients' nerves.
 
-**Status: 3.9.1**: the patient's full file and the scan show essentials
+**Status: 3.10.0**: a scan that finds a condition says what it changes
+and what to do about it. Far fewer jobs lose money, and storage can sell
+unwanted implants, tools and supplies.
+
+**3.9.1**: the patient's full file and the scan show essentials
 first, with the rest folded. In surgery, each mistake says once what it
 cost and what to do differently.
 

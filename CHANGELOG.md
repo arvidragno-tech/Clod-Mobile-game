@@ -4,7 +4,7 @@ All notable changes to *UNDERCITY: RIPPER*. Versions follow
 `application/config/version` in `project.godot` and the Windows file version
 in `export_presets.cfg`.
 
-## Unreleased — what the scan found, fairer jobs, selling from storage
+## 3.10.0 — What the scan found, fairer jobs, selling from storage
 
 - **CONDITION FOUND now says what it means.** The scan used to show the
   condition's name and the scan's evidence ("Abnormal platelet count…"),
