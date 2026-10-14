@@ -13,6 +13,10 @@ var temp_modifiers: Array[Dictionary] = []
 var pending_event: StringName = &""
 var operations: int = 0
 var last_result_text: String = ""
+## Random incidents today (capped by time.json pacing.max_incidents_per_day,
+## so a day has room between them). Story and scheduled events don't count.
+var incident_day: int = -1
+var incidents_today: int = 0
 
 var _rng := RandomNumberGenerator.new()
 
@@ -31,6 +35,8 @@ func reset_state() -> void:
 	temp_modifiers.clear()
 	pending_event = &""
 	operations = 0
+	incident_day = -1
+	incidents_today = 0
 	EventBus.modifiers_changed.emit()
 
 
@@ -66,8 +72,14 @@ func roll_random_event(force: bool = false) -> StringName:
 		return pending_event
 	if not force and (not Difficulty.events_allowed() or _rng.randf() > GameConfig.EVENT_CHANCE):
 		return &""
+	if incident_day != BusinessManager.day:
+		incident_day = BusinessManager.day
+		incidents_today = 0
+	if not force and incidents_today >= int(TimeManager.data.get("pacing", {}).get("max_incidents_per_day", 99)):
+		return &""
 	var id := pick_event()
 	if id != &"":
+		incidents_today += 1
 		queue_event(id)
 	return id
 
@@ -233,6 +245,10 @@ func apply_outcomes(o: Dictionary) -> String:
 		var m: Dictionary = o["modifier"]
 		temp_modifiers.append({"key": str(m["key"]), "value": float(m["value"]), "ops": int(m.get("ops", 1)), "source": "event"})
 		EventBus.modifiers_changed.emit()
+	# Story effects (paths, flags, delayed consequences, the Wall, cutscenes):
+	# the same vocabulary as conversations (StoryManager.apply_effects).
+	if o.has("effects"):
+		StoryManager.apply_effects(o["effects"], StringName(str(o.get("character", ""))))
 	if o.has("customer"):
 		var c := str(o["customer"])
 		if c == "emergency":
@@ -273,7 +289,8 @@ func get_save_data() -> Dictionary:
 	var h := {}
 	for k: StringName in history:
 		h[String(k)] = history[k]
-	return {"history": h, "temp_modifiers": temp_modifiers, "pending": String(pending_event), "operations": operations}
+	return {"history": h, "temp_modifiers": temp_modifiers, "pending": String(pending_event), "operations": operations,
+		"incident_day": incident_day, "incidents_today": incidents_today}
 
 
 func load_save_data(data: Dictionary) -> void:
@@ -287,4 +304,6 @@ func load_save_data(data: Dictionary) -> void:
 	var p := StringName(str(data.get("pending", "")))
 	pending_event = p if events.has(p) else &""
 	operations = int(data.get("operations", 0))
+	incident_day = int(data.get("incident_day", -1))
+	incidents_today = int(data.get("incidents_today", 0))
 	EventBus.modifiers_changed.emit()

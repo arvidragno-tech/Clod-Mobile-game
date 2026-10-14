@@ -1,0 +1,84 @@
+{
+ "_doc": "Story cases (StoryManager + CustomerManager): the THREAD mystery walking in through the door as ordinary patients. Each case takes a routine patient's place in the day's schedule, in order, within its acts (act .. last_act), when `when` holds (StoryManager.cond), a few days apart (time.json pacing.story_case_gap_days). patient: who they are (archetype / faction / category steer the generator; looks, chrome, budget and the job come from the street like anyone else's; id keeps them the same person across visits). line, history and clue are what they say, what the file says and what the scan finds (each may have *_variants: [{if: cond, text}]). on_arrive / on_success / on_failed / on_declined: StoryManager effects. after / after_failed: the decision (an event in events.json) that follows the operation.",
+ "cases": [
+  {
+   "id": "case_crane_hands",
+   "act": 1, "last_act": 2,
+   "when": {"min_day": 2, "min_ops": 3},
+   "patient": {"id": "bram_okoye", "name": "Bram Okoye", "alias": "Crane", "age": 44, "occupation": "Crane operator, Pier 9", "archetype": "dock_worker", "category": "arms"},
+   "line": "Union wants a grip servo on my left arm. Funny thing, doc: my hands haven't shaken since the free clinic van. Nerve tonic, they called it. One shot, no charge. Steady as a crane.",
+   "history": "Free 'nerve tonic' injection from an outreach van on the Low Line, six weeks ago. No paperwork.",
+   "clue": "Under the old scar: silver filaments, finer than hair, running along the nerve. Not chrome. Not in any catalogue you own.",
+   "after": "case_crane_after",
+   "on_success": {"flag": "met_bram"},
+   "on_failed": {"flag": "met_bram"}
+  },
+  {
+   "id": "case_too_calm",
+   "act": 1, "last_act": 2,
+   "when": {"min_day": 4, "min_ops": 4},
+   "patient": {"id": "wren_adeyemi", "name": "Wren Adeyemi", "alias": "", "age": 17, "occupation": "Stall hand, night market", "archetype": "civilian", "category": "eyes"},
+   "line": "(Her mother does the talking.) She used to scream at me. Now it's 'yes, mama' to everything. The van gave her the tonic for her fits. Fix her eyes so she can read the price tags. And tell me why she's so quiet.",
+   "history": "Seizures since age nine. Seizure-free since a free 'tonic' from an outreach van, two months ago. Mother reports 'unusual calm'.",
+   "clue": "The same silver filaments along the optic nerve. Denser than Bram's. They branch toward the speech centres.",
+   "after": "case_too_calm_after"
+  },
+  {
+   "id": "case_dial_tone",
+   "act": 2, "last_act": 3,
+   "when": {"min_day_in_act": 1},
+   "patient": {"id": "pike_lindqvist", "name": "Pike Lindqvist", "alias": "Dial", "age": 29, "occupation": "Netrunner between contracts", "archetype": "netrunner", "faction": "independent_mercs", "category": "neural"},
+   "line": "There's a dial tone in my head between stations. Like someone's tuning me. Your scan's going to say I'm fine. Everybody's scan says I'm fine.",
+   "line_variants": [{"if": {"flag": "thread_sample"}, "text": "There's a dial tone in my head between stations, like someone's tuning me. A crane jockey in my block said you'd find the silver in him. Find it in me."}],
+   "history": "Paid 'sleep study' in Meridian Heights, three months ago. Tinnitus 'like a radio' since.",
+   "clue": "The port's handshake log: LYR-THREAD v0.9 asked for permission 3,112 times. It was granted 3,112 times. Nobody granted it.",
+   "after": "case_dial_tone_after"
+  },
+  {
+   "id": "case_rustline_runner",
+   "act": 2, "last_act": 3,
+   "when": {"min_day_in_act": 3},
+   "patient": {"id": "jory_vance", "name": "Jory Vance", "alias": "Spit", "age": 19, "occupation": "Rustline runner", "archetype": "gang_member", "faction": "street_gangs", "category": "dermal"},
+   "line": "Mother sent me for plating. Half the crew got the free shot when the van came through the Belt. Now they stand where they're told and they don't ask why. Mother likes it. I don't.",
+   "history": "Declined the outreach van's shot. 'Didn't trust anything free.'",
+   "clue": "No filaments in him. But the knife wounds on his back were stitched by someone who knows Lyra's closing pattern.",
+   "after": "case_rustline_after"
+  },
+  {
+   "id": "case_board_clerk",
+   "act": 2, "last_act": 4,
+   "when": {"min_day_in_act": 5},
+   "patient": {"id": "hester_quaye", "name": "Hester Quaye", "alias": "", "age": 52, "occupation": "Records clerk, Civic Medical Board", "archetype": "civilian", "faction": "medical_authorities", "category": "eyes"},
+   "line": "I file the Board's seizure reports. 'Unknown cause', every one, and every one closed by the same upstairs code before anyone reads it. I need new eyes. Mine are tired of reading them.",
+   "history": "Civil servant, 24 years. Paying cash 'so it doesn't show up on the Board's health plan'.",
+   "clue": "Eye strain, nothing more. Her badge has a records clearance you've only seen on inspectors.",
+   "after": "case_clerk_after"
+  },
+  {
+   "id": "case_lyra_runaway",
+   "act": 3, "last_act": 4,
+   "when": {"min_day_in_act": 1},
+   "patient": {"id": "sable_ndiaye", "name": "Sable Ndiaye", "alias": "Bed 14", "age": 24, "occupation": "Lyra trial volunteer (former)", "archetype": "civilian", "faction": "lyra_biocomp", "category": "neural"},
+   "line": "Bed 14, Meridian trial wing. I walked out in a laundry van. They put a lattice in me, doctor, and it's growing toward my voice. I want it out. I can't pay much. They'll come looking.",
+   "history": "Enrolled in Lyra Biocomp's 'Community Neural Wellness' trial. Wristband still on: a contact number, no name.",
+   "clue": "A woven lattice the width of a hand, rooted along the vagus nerve. Lyra part numbers etched into the anchors. This is THREAD, finished.",
+   "on_arrive": {"flag": "static_seen"},
+   "after": "case_runaway_after"
+  },
+  {
+   "id": "case_crane_returns",
+   "act": 4, "last_act": 5,
+   "when": {"flag": "met_bram", "min_day_in_act": 1},
+   "patient": {"id": "bram_okoye", "name": "Bram Okoye", "alias": "Crane", "age": 44, "occupation": "Crane operator, Pier 9 (on leave)", "archetype": "dock_worker", "category": "neural"},
+   "line": "Remember me? Steady hands. Steady everything. I can't stop being steady, doc. I sit where they put me. Help me get up.",
+   "line_variants": [
+    {"if": {"flag": "crane_told"}, "text": "You told me. I laughed. Now my hands are steady and my head's full of radio, and I sit where they put me. Get it out, doc. Please."},
+    {"if": {"flag": "thread_sample"}, "text": "They say you kept a piece of me in a jar. Good. Then you know what's in here. My head's full of radio, doc. Help me get up."}
+   ],
+   "history": "Returning patient. Left grip servo (your work). Absent from Pier 9 for three weeks: 'follows instructions, initiates nothing'.",
+   "clue": "The filaments have become a lattice. It has your servo's wiring wrapped in it like ivy on a fence.",
+   "after": "case_crane_end",
+   "on_failed": {"flag": "crane_lost"}
+  }
+ ]
+}

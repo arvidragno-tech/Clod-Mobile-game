@@ -104,8 +104,13 @@ func node_text(n: Dictionary) -> String:
 
 
 ## Living-world conditions: your street identity (id or list), a memory the
-## speaker holds (or doesn't), minimum reputation dimensions.
+## speaker holds (or doesn't), minimum reputation dimensions, story flags
+## (what you chose earlier, e.g. in a story case).
 func world_cond(w: Dictionary) -> bool:
+	if w.has("flag") and not StoryManager.has_flag(StringName(str(w["flag"]))):
+		return false
+	if w.has("not_flag") and StoryManager.has_flag(StringName(str(w["not_flag"]))):
+		return false
 	if w.has("identity"):
 		var ids: Array = w["identity"] if w["identity"] is Array else [w["identity"]]
 		if not ids.has(str(ReputationManager.identity()["id"])):

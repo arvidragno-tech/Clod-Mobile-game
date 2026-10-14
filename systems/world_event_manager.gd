@@ -38,8 +38,16 @@ func _ready() -> void:
 		data = d
 	EventBus.day_started.connect(_on_day_started)
 	EventBus.day_ended.connect(_on_day_ended)
+	EventBus.season_changed.connect(_on_season_changed)
 	PeopleManager.visit_recorded.connect(_on_visit)
 	reset_state()
+
+
+## The wire notices the weather turning (TimeManager calendar).
+func _on_season_changed(_season: StringName) -> void:
+	var line := str(TimeManager.season_def().get("start", ""))
+	if line != "":
+		post(line, "")
 
 
 func reset_state() -> void:
@@ -118,8 +126,11 @@ func _on_day_started(_day: int) -> void:
 	EventBus.modifiers_changed.emit()
 	if auto_roll and active.size() < int(data.get("max_active", 2)) and _rng.randf() < float(data.get("daily_chance", 0.4)):
 		roll()
-	# Something ordinary on the wire every day.
+	# Something ordinary on the wire every day (sometimes the season's).
 	var filler: Array = data.get("filler", [])
+	var seasonal: Array = TimeManager.season_def().get("news", [])
+	if not seasonal.is_empty() and _rng.randf() < 0.35:
+		filler = seasonal
 	if not filler.is_empty():
 		post(str(filler[_rng.randi() % filler.size()]), "")
 

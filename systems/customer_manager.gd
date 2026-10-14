@@ -16,6 +16,22 @@ var queue: Array[Dictionary] = []
 var history: Array[Dictionary] = []
 
 var _arrival_timer: Timer
+
+## THE DAY'S SCHEDULE (data/time.json "pacing"): how many people come to the
+## door today (jobs a day + a few spare, walk-ins on the bench included), the
+## visit after which a story case may replace a routine patient, and how long
+## the room stays quiet after each kind of case.
+var schedule_day: int = -1
+var visits_today: int = 0
+var story_slot: int = 1
+## What the last patient was: &"routine", &"character" (someone you know:
+## returning, referred, a regular) or &"story" (a story case). Sets the
+## breather before the next knock.
+var last_kind: StringName = &""
+## No walk-ins sit down before this clock minute (the quiet after a story case).
+var quiet_until: int = -1
+## Test harnesses set 0 so the next patient knocks at once.
+var breather_scale: float = 1.0
 ## Emergencies: real seconds before an untreated patient crashes, then dies.
 ## Counts down wherever you are (clinic, file, plan) but not during surgery,
 ## dialogs or pauses; Settings > Emergency countdown scales or disables it.
@@ -49,6 +65,7 @@ func _ready() -> void:
 	_arrival_timer.one_shot = true
 	_arrival_timer.timeout.connect(_on_arrival_timer_timeout)
 	add_child(_arrival_timer)
+	EventBus.day_started.connect(func(_d: int) -> void: _ensure_schedule())
 
 
 func reset_state() -> void:
@@ -56,6 +73,82 @@ func reset_state() -> void:
 	current_customer = null
 	queue.clear()
 	history.clear()
+	schedule_day = -1
+	visits_today = 0
+	story_slot = 1
+	last_kind = &""
+	quiet_until = -1
+
+
+# --- The day's schedule ----------------------------------------------------------------------
+
+func pacing() -> Dictionary:
+	return TimeManager.data.get("pacing", {})
+
+
+## People expected at the door today (jobs a day + spare).
+func visit_budget() -> int:
+	return BusinessManager.capacity() + int(pacing().get("spare_visits", 2))
+
+
+func visits_left() -> int:
+	_ensure_schedule()
+	return maxi(0, visit_budget() - visits_today)
+
+
+## A new business day gets a fresh schedule. Old saves (no schedule yet)
+## count today's finished jobs as visits already used.
+func _ensure_schedule() -> void:
+	if schedule_day == BusinessManager.day:
+		return
+	var fresh := schedule_day >= 0 or BusinessManager.jobs_today == 0
+	schedule_day = BusinessManager.day
+	visits_today = 0 if fresh else BusinessManager.jobs_today
+	quiet_until = -1
+	# A story case never opens the day: a routine patient or two come first.
+	story_slot = _rng.randi_range(1, maxi(1, visit_budget() - 2))
+
+
+## Someone took a place in today's schedule (at the door or on the bench).
+func count_visit() -> void:
+	_ensure_schedule()
+	visits_today += 1
+
+
+## Someone you sent for or who is due back (queue) still comes on a quiet day.
+func has_due_queue() -> bool:
+	for q in queue:
+		if int(q.get("due_day", 0)) <= BusinessManager.day and int(q["due_op"]) <= EventManager.operations:
+			return true
+	return false
+
+
+## Nobody else is expected today: no visits left, nobody due, nobody waiting.
+func day_is_quiet() -> bool:
+	return visits_left() <= 0 and not has_customer() and not has_due_queue() and ClinicLifeManager.waiting.is_empty()
+
+
+## Walk-ins may sit down (the schedule has room and it isn't a quiet stretch).
+func walk_ins_allowed() -> bool:
+	return visits_left() > 0 and TimeManager.minute >= quiet_until
+
+
+## What kind of visit this was: story case, someone you know, or routine.
+static func kind_of(c: CustomerData) -> StringName:
+	if c == null:
+		return &"routine"
+	if c.case_id != &"":
+		return &"story"
+	if c.character_id != &"" or c.visits > 0 or c.referred_by != "":
+		return &"character"
+	return &"routine"
+
+
+## Real seconds before the next knock: longer after a case that mattered.
+func breather() -> float:
+	var b: Dictionary = pacing().get("breather_sec", {})
+	var key := String(last_kind) if last_kind != &"" else "first"
+	return float(b.get(key, GameConfig.CUSTOMER_ARRIVAL_DELAY_SEC)) * breather_scale
 
 
 func get_condition(id: StringName) -> Dictionary:
@@ -95,12 +188,18 @@ func _finalize_character(c: CustomerData) -> void:
 		generator._build_history(c)
 
 
-func request_next_customer(delay: float = GameConfig.CUSTOMER_ARRIVAL_DELAY_SEC) -> void:
+## delay < 0: the schedule's breather (longer after a story case).
+func request_next_customer(delay: float = -1.0) -> void:
 	if has_customer() or is_customer_pending():
 		return
 	# Nobody new after closing time (the night's books come first).
 	if BusinessManager.is_day_full():
 		return
+	# Today's schedule is spent: only people already on the bench or due back.
+	if visits_left() <= 0 and ClinicLifeManager.waiting.is_empty() and not has_due_queue():
+		return
+	if delay < 0.0:
+		delay = breather()
 	# Nobody opens the door while you're out in the city.
 	if LocationManager.is_away():
 		return
@@ -138,6 +237,7 @@ func dismiss_current() -> void:
 	if current_customer == null:
 		return
 	var leaving := current_customer
+	last_kind = kind_of(leaving)
 	current_customer = null
 	EventBus.customer_left.emit(leaving)
 
@@ -147,7 +247,7 @@ func _on_arrival_timer_timeout() -> void:
 		return
 	# Whoever has been waiting on the bench goes first.
 	var seated := ClinicLifeManager.take_next()
-	current_customer = seated if seated else _next_customer()
+	current_customer = seated if seated else next_visit()
 	if current_customer:
 		if seated:
 			TimeManager.advance(2)
@@ -156,6 +256,12 @@ func _on_arrival_timer_timeout() -> void:
 		if current_customer.character_id != &"":
 			StoryManager.meet(current_customer.character_id)
 		EventBus.customer_arrived.emit(current_customer)
+
+
+## The next person at the door, counted against today's schedule.
+func next_visit() -> CustomerData:
+	count_visit()
+	return _next_customer()
 
 
 func _next_customer() -> CustomerData:
@@ -169,6 +275,13 @@ func _next_customer() -> CustomerData:
 			var entry: Dictionary = queue[i]
 			queue.remove_at(i)
 			return CustomerData.from_save_dict(entry["customer"])
+	# A story case takes a routine patient's place (one a day at most).
+	if visits_today >= story_slot and op > 0:
+		var sc := StoryManager.due_case()
+		if not sc.is_empty():
+			var cc := make_case_customer(sc)
+			if cc:
+				return cc
 	# People you've met before come back on their own schedule, changed.
 	var due := PeopleManager.due_people()
 	if not due.is_empty():
@@ -184,6 +297,44 @@ func _next_customer() -> CustomerData:
 		if not regulars.is_empty():
 			return get_customer(regulars[_rng.randi_range(0, regulars.size() - 1)])
 	return generator.generate()
+
+
+## A story case (data/cases.json) as a patient: generated like anyone else
+## (so they look and pay like the street), then given the case's identity,
+## words, history and the clue the scan can find. Someone you've treated
+## before keeps their face.
+func make_case_customer(sc: Dictionary) -> CustomerData:
+	var p: Dictionary = sc.get("patient", {})
+	var ctx := {}
+	for k: String in ["archetype", "faction", "category"]:
+		if p.has(k):
+			ctx[k] = str(p[k])
+	var c := generator.generate(ctx)
+	if c == null:
+		return null
+	c.id = StringName("case_%s" % str(p.get("id", sc["id"])))
+	c.case_id = StringName(str(sc["id"]))
+	c.display_name = str(p.get("name", c.display_name))
+	c.alias = str(p.get("alias", ""))
+	c.age = int(p.get("age", c.age))
+	c.occupation = str(p.get("occupation", c.occupation))
+	c.patience = maxi(c.patience, 70)
+	var person := PeopleManager.get_person(c.id)
+	if not person.is_empty():
+		c.visits = int(person.get("visits", 0))
+		if not (person.get("appearance", {}) as Dictionary).is_empty():
+			c.appearance = (person["appearance"] as Dictionary).duplicate(true)
+	c.dialogue = StoryManager.case_text(sc, "line", c.dialogue)
+	var hist := StoryManager.case_text(sc, "history", "")
+	if hist != "":
+		c.medical_history.push_front(hist)
+	var clue := StoryManager.case_text(sc, "clue", "")
+	var surgery := SurgeryManager.get_surgery(c.requested_surgery_id)
+	if clue != "" and surgery:
+		var region := String(surgery.scan_region)
+		c.scan_findings[region] = ("%s %s" % [str(c.scan_findings.get(region, "")), clue]).strip_edges()
+	StoryManager.case_arrived(sc)
+	return c
 
 
 ## The first patient: Mara, a simple NX-1 neural job with no surprises.
@@ -313,6 +464,7 @@ func get_save_data() -> Dictionary:
 		"current": current_customer.to_save_dict() if current_customer else {},
 		"queue": queue,
 		"history": history,
+		"schedule": {"day": schedule_day, "visits": visits_today, "story_slot": story_slot, "last_kind": String(last_kind), "quiet_until": quiet_until},
 	}
 
 
@@ -329,6 +481,14 @@ func load_save_data(data: Dictionary) -> void:
 	for h: Variant in data.get("history", []):
 		if typeof(h) == TYPE_DICTIONARY:
 			history.append(h)
+	# Saves from before 3.11 have no schedule: one is made for today on demand.
+	var sch: Variant = data.get("schedule", {})
+	if sch is Dictionary and not (sch as Dictionary).is_empty():
+		schedule_day = int(sch.get("day", -1))
+		visits_today = int(sch.get("visits", 0))
+		story_slot = int(sch.get("story_slot", 1))
+		last_kind = StringName(str(sch.get("last_kind", "")))
+		quiet_until = int(sch.get("quiet_until", -1))
 
 
 

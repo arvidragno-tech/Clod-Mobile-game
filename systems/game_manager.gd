@@ -26,6 +26,7 @@ func start_new_game() -> void:
 	SaveManager.reset_all()
 	StoryManager.unlock_rumor(&"welcome")
 	TutorialManager.start()
+	StoryManager.queue_cutscene(&"cs_opening")
 	_begin_play()
 	SaveManager.save_game(&"manual")
 	EventBus.new_game_started.emit()
@@ -184,7 +185,10 @@ func go_to_clinic() -> void:
 		UIManager.go_to(UIManager.SCREEN_LOCATION)
 		return
 	UIManager.go_to(UIManager.SCREEN_CLINIC)
-	if BusinessManager.is_day_full() and not CustomerManager.has_customer() and not EventManager.has_pending():
+	# A full day closes itself; a quiet one (nobody else expected) is the
+	# player's to spend before they close.
+	var full := BusinessManager.jobs_today >= BusinessManager.capacity() or TimeManager.is_closing_time()
+	if full and not CustomerManager.has_customer() and not EventManager.has_pending():
 		close_for_the_night()
 
 
@@ -217,6 +221,8 @@ func get_next_objective() -> Dictionary:
 			"why": "They're bleeding out: decide fast." if c.is_emergency else "Jobs are how you earn: check what they want and what you'd keep.", "kind": &"warn" if c.is_emergency else &"info", "optional": false}
 	if SkillManager.points > 0 and Features.is_on(&"skills"):
 		return {"text": "Spend %d skill point%s in SKILLS" % [SkillManager.points, "s" if SkillManager.points > 1 else ""], "why": "Steadier hands raise your odds on every job.", "kind": &"info", "optional": true}
+	if BusinessManager.is_day_full() and CustomerManager.day_is_quiet() and BusinessManager.jobs_today < BusinessManager.capacity():
+		return {"text": "Nobody else is expected today: CLOSE FOR THE NIGHT when you're ready", "why": "A quiet evening. Rent and wages are paid at closing; tomorrow brings new patients.", "kind": &"info", "optional": false}
 	if BusinessManager.is_day_full():
 		return {"text": "Day's work done: CLOSE FOR THE NIGHT", "why": "Rent and wages are paid at closing; tomorrow brings new patients.", "kind": &"info", "optional": false}
 	if BusinessManager.debt >= BusinessManager.DEBT_WARNING:
@@ -281,6 +287,7 @@ func _decline_customer_impl() -> void:
 	if c:
 		FactionManager.change(c.faction_id, GameConfig.DECLINE_FACTION_PENALTY)
 		PeopleManager.after_visit(c, "refused")
+		StoryManager.case_declined(c)
 	TimeManager.on_talk()
 	CustomerManager.dismiss_current()
 	SaveManager.save_game()
@@ -350,7 +357,10 @@ func _assign_customer_impl(employee_id: StringName, insist: bool = false) -> Dic
 	TimeManager.on_operation(item.install_difficulty if item else 2, c.is_emergency)
 	WorldManager.add_influence()
 	EventManager.on_operation_completed()
-	EventManager.roll_random_event()
+	if c.case_id != &"":
+		StoryManager.case_finished(c, "success" if r["success"] else ("death" if r["death"] else "failed"))
+	else:
+		EventManager.roll_random_event()
 	StoryManager.check()
 	SaveManager.save_game()
 	return r
@@ -831,11 +841,16 @@ func _on_surgery_finished(result: SurgeryResult) -> void:
 	WorldManager.add_influence()
 	EventManager.on_operation_completed()
 	BlackMarketManager.on_operation_completed()
+	var story_case := c != null and c.case_id != &""
 	if result.neural_break:
 		EventManager.queue_event(&"static_fever")
 		StoryManager.set_flag(&"static_seen")
-	else:
+	elif not story_case:
 		EventManager.roll_random_event()
+	# A story case is followed by its own decision and a quiet stretch, never
+	# a random incident on top.
+	if story_case:
+		StoryManager.case_finished(c, "success" if result.success else ("death" if result.failure_reason == &"flatline" else "failed"))
 	StoryManager.update_rumors()
 	StoryManager.check()
 	last_result = result

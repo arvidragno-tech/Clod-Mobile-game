@@ -46,6 +46,8 @@ extends Resource
 ## Part ids + palette choices consumed by CharacterArt.
 @export var appearance: Dictionary = {}
 @export var character_id: StringName = &""
+## A story case (data/cases.json) this patient carries, or empty.
+@export var case_id: StringName = &""
 @export var is_story: bool = false
 @export var is_emergency: bool = false
 @export var visits: int = 0

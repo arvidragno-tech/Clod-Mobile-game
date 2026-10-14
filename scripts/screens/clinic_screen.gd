@@ -61,6 +61,7 @@ func on_enter(_params: Dictionary) -> void:
 	else:
 		_show_waiting()
 	StoryManager.talk_queued.connect(func(_id: StringName) -> void: _show_talk.call_deferred())
+	StoryManager.cutscene_queued.connect(func(_id: StringName) -> void: _show_cutscene.call_deferred())
 	# Something scheduled for this hour (the supplier, a midnight deal...).
 	EventBus.event_queued.connect(func(_id: StringName) -> void:
 		if is_inside_tree():
@@ -68,6 +69,8 @@ func on_enter(_params: Dictionary) -> void:
 	EventBus.time_changed.connect(func(_m: int, _p: StringName) -> void: _refresh_status())
 	if EventManager.has_pending():
 		_show_event.call_deferred()
+	elif StoryManager.has_cutscene():
+		_show_cutscene.call_deferred()
 	elif StoryManager.has_talk():
 		_show_talk.call_deferred()
 	elif not CustomerManager.has_customer():
@@ -246,7 +249,9 @@ func _process(delta: float) -> void:
 		_refresh_objective()
 	if _waiting and _waiting.visible:
 		_waiting_dots += delta * 2.0
-		if BusinessManager.is_day_full():
+		if BusinessManager.is_day_full() and BusinessManager.jobs_today < BusinessManager.capacity() and not TimeManager.is_closing_time():
+			_waiting.text = "It's %s. Nobody else is expected today.\n\nThe room is yours: read, restock, walk the city. Press CLOSE FOR THE NIGHT (below the room) when you're ready." % TimeManager.clock_text()
+		elif BusinessManager.is_day_full():
 			_waiting.text = "It's %s. The day's work is done.\n\nPress CLOSE FOR THE NIGHT (below the room) to pay the bills and start tomorrow." % TimeManager.clock_text()
 		elif not BusinessManager.doors_open:
 			_waiting.text = "DOORS CLOSED\n\nNobody new comes in while the doors are shut. Take your time: restock in SUPPLY, spend skill points, read the JOURNAL. Press OPEN DOORS (below the room) when you're ready."
@@ -265,9 +270,25 @@ func _show_event() -> void:
 	panel.closed.connect(_after_event)
 
 
+## A short story scene (opening, a new chapter, a revelation). It plays
+## before any conversation it leads into; never over a decision or a patient
+## being worked on.
+func _show_cutscene() -> void:
+	if not is_inside_tree() or not StoryManager.has_cutscene() or UIManager.has_modal() or EventManager.has_pending():
+		return
+	var panel := CutscenePlayer.new()
+	panel.name = "CutscenePlayer"
+	panel.cutscene_id = StoryManager.pop_cutscene()
+	UIManager.show_modal(panel)
+	panel.closed.connect(_after_event)
+
+
 ## Someone from the story wants a word (conversation modal).
 func _show_talk() -> void:
 	if not is_inside_tree() or not StoryManager.has_talk() or UIManager.has_modal() or EventManager.has_pending():
+		return
+	if StoryManager.has_cutscene():
+		_show_cutscene()
 		return
 	var panel := DialoguePanel.new()
 	panel.name = "DialoguePanel"
@@ -288,6 +309,12 @@ func _after_event() -> void:
 		return
 	_refresh_status()
 	if not is_inside_tree():
+		return
+	if EventManager.has_pending():
+		_show_event.call_deferred()
+		return
+	if StoryManager.has_cutscene():
+		_show_cutscene.call_deferred()
 		return
 	if StoryManager.has_talk():
 		_show_talk.call_deferred()

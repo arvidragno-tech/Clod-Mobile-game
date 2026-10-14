@@ -62,6 +62,8 @@ const AMBIENCE_LAYERS := {
 	&"crt": "res://audio/ambient/crt.ogg",
 	&"city": "res://audio/ambient/city.ogg",
 	&"pump": "res://audio/ambient/pump.ogg",
+	## Rain on the grate; the season (TimeManager) and dry days scale it.
+	&"rain": "res://audio/ambient/rain.ogg",
 }
 
 const ONESHOTS := [
@@ -74,12 +76,12 @@ const ONESHOTS := [
 
 ## Per profile: music track and the linear gain of each ambience layer.
 const PROFILES := {
-	&"menu": {"music": &"clinic", "layers": {&"hum": 0.6, &"vent": 0.5, &"crt": 0.5, &"city": 0.9, &"pump": 0.4}, "oneshots": true},
-	&"clinic": {"music": &"clinic", "layers": {&"hum": 1.0, &"vent": 0.7, &"crt": 0.45, &"city": 0.55, &"pump": 0.8}, "oneshots": true},
-	&"surgery": {"music": &"surgery", "layers": {&"hum": 0.8, &"vent": 0.45, &"crt": 0.6, &"city": 0.15, &"pump": 0.3}, "oneshots": false},
-	&"market": {"music": &"market", "layers": {&"hum": 0.3, &"vent": 0.85, &"crt": 0.2, &"city": 0.85, &"pump": 0.2}, "oneshots": true},
-	&"dialogue": {"music": &"dialogue", "layers": {&"hum": 0.7, &"vent": 0.5, &"crt": 0.3, &"city": 0.4, &"pump": 0.6}, "oneshots": false},
-	&"city": {"music": &"clinic", "layers": {&"hum": 0.2, &"vent": 0.3, &"crt": 0.2, &"city": 1.0, &"pump": 0.3}, "oneshots": true},
+	&"menu": {"music": &"clinic", "layers": {&"hum": 0.6, &"vent": 0.5, &"crt": 0.5, &"city": 0.9, &"pump": 0.4, &"rain": 0.35}, "oneshots": true},
+	&"clinic": {"music": &"clinic", "layers": {&"hum": 1.0, &"vent": 0.7, &"crt": 0.45, &"city": 0.55, &"pump": 0.8, &"rain": 0.4}, "oneshots": true},
+	&"surgery": {"music": &"surgery", "layers": {&"hum": 0.8, &"vent": 0.45, &"crt": 0.6, &"city": 0.15, &"pump": 0.3, &"rain": 0.1}, "oneshots": false},
+	&"market": {"music": &"market", "layers": {&"hum": 0.3, &"vent": 0.85, &"crt": 0.2, &"city": 0.85, &"pump": 0.2, &"rain": 0.3}, "oneshots": true},
+	&"dialogue": {"music": &"dialogue", "layers": {&"hum": 0.7, &"vent": 0.5, &"crt": 0.3, &"city": 0.4, &"pump": 0.6, &"rain": 0.2}, "oneshots": false},
+	&"city": {"music": &"clinic", "layers": {&"hum": 0.2, &"vent": 0.3, &"crt": 0.2, &"city": 1.0, &"pump": 0.3, &"rain": 0.9}, "oneshots": true},
 }
 
 const BUS_MUSIC := &"Music"

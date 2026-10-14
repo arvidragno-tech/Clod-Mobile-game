@@ -35,6 +35,8 @@ signal reputation_dim_changed(dim: StringName, value: int, delta: int)
 signal memory_added(owner_id: StringName, tag: StringName)
 signal time_changed(minute: int, period: StringName)
 signal period_changed(period: StringName)
+## A new season began (TimeManager calendar: autumn, winter, spring, summer).
+signal season_changed(season: StringName)
 signal news_posted(item: Dictionary)
 signal world_event_started(id: StringName)
 signal clinic_life(event: Dictionary)

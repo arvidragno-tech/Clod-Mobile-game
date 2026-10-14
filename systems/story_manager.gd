@@ -9,10 +9,22 @@ extends Node
 ## investigator, creator, feared) and can schedule consequences that land
 ## days later. Also keeps rumours, met characters and counters
 ## (implants installed, black-market sales) that quests read.
+##
+## STORY CASES (data/cases.json): the mystery also walks in through the
+## door. A case is a patient with a name, words, a history line and a clue
+## the scan can find; it takes a routine patient's place in the day's
+## schedule (CustomerManager), at most one every few days. Its outcome sets
+## flags and queues a short decision (an event) whose effects echo later.
+##
+## CUTSCENES (data/cutscenes.json): a handful of short, skippable in-engine
+## scenes for the opening, chapter changes, key introductions and
+## revelations. Queued here, played by the clinic (CutscenePlayer), each at
+## most once per save.
 
 signal act_changed(act: int)
 signal talk_queued(dialogue_id: StringName)
 signal ending_reached(ending_id: StringName)
+signal cutscene_queued(cutscene_id: StringName)
 
 const PATHS: Array[StringName] = [&"respected", &"kingpin", &"corporate", &"network", &"investigator", &"creator", &"feared"]
 
@@ -37,6 +49,16 @@ var acts: Array = []
 var beats: Array = []
 var endings: Dictionary = {}
 
+## Story cases: data, and what happened to each (id -> "arrived" | "done" |
+## "failed" | "declined" | "missed").
+var cases: Array = []
+var case_state: Dictionary = {}
+var last_case_day: int = -99
+## Cutscenes: data (id -> scene), waiting to play, already played.
+var cutscenes: Dictionary = {}
+var cutscene_queue: Array[String] = []
+var seen_cutscenes: Array[String] = []
+
 
 func _ready() -> void:
 	for r: Variant in DataLoader.load_entries(GameConfig.DATA_RUMORS, "rumors"):
@@ -48,6 +70,9 @@ func _ready() -> void:
 		acts = s.get("acts", [])
 		beats = s.get("beats", [])
 		endings = s.get("endings", {})
+	cases = DataLoader.load_entries(GameConfig.DATA_CASES, "cases")
+	for cs: Variant in DataLoader.load_entries(GameConfig.DATA_CUTSCENES, "cutscenes"):
+		cutscenes[str(cs["id"])] = cs
 	EventBus.day_started.connect(_on_day_started)
 	reset_state()
 
@@ -64,6 +89,10 @@ func reset_state() -> void:
 	paths.clear()
 	counters.clear()
 	ending = &""
+	case_state.clear()
+	last_case_day = -99
+	cutscene_queue.clear()
+	seen_cutscenes.clear()
 
 
 # --- Flags, rumours, people ----------------------------------------------------------
@@ -141,6 +170,7 @@ func advance_act() -> void:
 		return
 	act += 1
 	act_started_day = BusinessManager.day
+	queue_cutscene(StringName("cs_act_%d" % act))
 	act_changed.emit(act)
 	check()
 
@@ -163,6 +193,7 @@ func take_due(day: int) -> Array[Dictionary]:
 
 
 func _on_day_started(day: int) -> void:
+	_drop_missed_cases()
 	for c in take_due(day):
 		var id := StringName(str(c["id"]))
 		if DialogueManager.has_dialogue(id):
@@ -220,6 +251,7 @@ func check() -> void:
 		if act < 5 and not adv.is_empty() and cond(adv):
 			act += 1
 			act_started_day = BusinessManager.day
+			queue_cutscene(StringName("cs_act_%d" % act))
 			act_changed.emit(act)
 			again = true
 	# Owing money is its own story.
@@ -237,6 +269,8 @@ func _do(a: Dictionary) -> void:
 		QuestManager.start(StringName(str(a["quest"])))
 	if a.has("flag"):
 		set_flag(StringName(str(a["flag"])))
+	if a.has("cutscene"):
+		queue_cutscene(StringName(str(a["cutscene"])))
 
 
 ## Story / quest condition dictionary.
@@ -351,9 +385,137 @@ func apply_effects(e: Dictionary, char_id: StringName = &"") -> Array[String]:
 	var cn: Dictionary = e.get("counters", {})
 	for k: Variant in cn:
 		bump(StringName(str(k)), int(cn[k]))
+	if e.has("wall"):
+		var w: Dictionary = e["wall"]
+		ClinicLifeManager.pin(str(w.get("kind", "clipping")), str(w.get("title", "")), str(w.get("text", "")), str(w.get("ref", "")))
+	if e.has("news"):
+		WorldEventManager.post(str(e["news"]), "")
+	if e.has("cutscene"):
+		queue_cutscene(StringName(str(e["cutscene"])))
 	if e.has("ending"):
 		choose_ending(StringName(str(e["ending"])))
 	return out
+
+
+# --- Story cases ----------------------------------------------------------------------------------
+
+func get_case(id: StringName) -> Dictionary:
+	for c: Dictionary in cases:
+		if str(c["id"]) == String(id):
+			return c
+	return {}
+
+
+## The next story case that may walk in now, or {}. Cases come in order,
+## within their acts, a few days apart.
+func due_case() -> Dictionary:
+	var gap := int(TimeManager.data.get("pacing", {}).get("story_case_gap_days", 2))
+	if BusinessManager.day - last_case_day < gap:
+		return {}
+	for c: Dictionary in cases:
+		var id := str(c["id"])
+		if case_state.has(id) or int(c.get("act", 1)) > act or act > int(c.get("last_act", 5)):
+			continue
+		if not cond(c.get("when", {})):
+			continue
+		# Someone who died can't come back.
+		if str(PeopleManager.get_person(StringName("case_%s" % str(c.get("patient", {}).get("id", id)))).get("status", "")) == "dead":
+			case_state[id] = "missed"
+			continue
+		return c
+	return {}
+
+
+## A case's text: the first variant whose condition holds ({if: cond, text}),
+## else the plain text.
+func case_text(c: Dictionary, key: String, fallback: String = "") -> String:
+	for v: Variant in c.get(key + "_variants", []):
+		if v is Dictionary and cond(v.get("if", {})):
+			return str(v.get("text", ""))
+	return str(c.get(key, fallback))
+
+
+func case_arrived(c: Dictionary) -> void:
+	case_state[str(c["id"])] = "arrived"
+	last_case_day = BusinessManager.day
+	apply_effects(c.get("on_arrive", {}))
+
+
+## The case's patient left your table. outcome: "success" | "failed" | "death".
+## The decision that follows (an event) is queued unless something else is
+## already waiting, in which case it comes tomorrow.
+func case_finished(c: CustomerData, outcome: String) -> void:
+	var sc := get_case(c.case_id) if c else {}
+	if sc.is_empty() or str(case_state.get(str(sc["id"]), "")) in ["done", "failed"]:
+		return
+	case_state[str(sc["id"])] = "done" if outcome == "success" else "failed"
+	apply_effects(sc.get("on_" + outcome, sc.get("on_failed", {}) if outcome == "death" else {}))
+	var after := StringName(str(sc.get("after" if outcome == "success" else "after_failed", "")))
+	if after != &"" and EventManager.events.has(after):
+		if EventManager.has_pending():
+			schedule_consequence(after, 1)
+		else:
+			EventManager.queue_event(after)
+	# The room stays quiet for a while after a case like that.
+	CustomerManager.quiet_until = TimeManager.minute + int(TimeManager.data.get("pacing", {}).get("quiet_minutes_after_story", 60))
+
+
+func case_declined(c: CustomerData) -> void:
+	var sc := get_case(c.case_id) if c else {}
+	if sc.is_empty():
+		return
+	case_state[str(sc["id"])] = "declined"
+	set_flag(StringName("%s_declined" % str(sc["id"])))
+	apply_effects(sc.get("on_declined", {}))
+
+
+## A case patient who never got seen (gone overnight) is a missed case.
+func _drop_missed_cases() -> void:
+	var present := {}
+	if CustomerManager.current_customer:
+		present[String(CustomerManager.current_customer.case_id)] = true
+	for q: Dictionary in CustomerManager.queue:
+		present[str(q.get("customer", {}).get("case_id", ""))] = true
+	for id: Variant in case_state.keys():
+		if str(case_state[id]) == "arrived" and not present.has(str(id)):
+			case_state[id] = "missed"
+
+
+func cases_seen() -> int:
+	return case_state.size()
+
+
+# --- Cutscenes ------------------------------------------------------------------------------------
+
+## Queues a scene to play in the clinic (once per save; never when the
+## player turned story cutscenes off).
+func queue_cutscene(id: StringName) -> void:
+	var key := String(id)
+	if not cutscenes.has(key) or seen_cutscenes.has(key) or cutscene_queue.has(key):
+		return
+	if not Settings.story_cutscenes or not CutscenePlayer.enabled:
+		seen_cutscenes.append(key)
+		return
+	cutscene_queue.append(key)
+	cutscene_queued.emit(id)
+
+
+func has_cutscene() -> bool:
+	return not cutscene_queue.is_empty()
+
+
+## The next scene to play (marked as seen, so a crash mid-scene can't loop it).
+func pop_cutscene() -> StringName:
+	if cutscene_queue.is_empty():
+		return &""
+	var id: String = cutscene_queue.pop_front()
+	if not seen_cutscenes.has(id):
+		seen_cutscenes.append(id)
+	return StringName(id)
+
+
+func get_cutscene(id: StringName) -> Dictionary:
+	return cutscenes.get(String(id), {})
 
 
 # --- Endings -----------------------------------------------------------------------------------
@@ -404,7 +566,9 @@ func get_save_data() -> Dictionary:
 	return {"flags": f, "rumors": unlocked_rumors.map(func(x: StringName) -> String: return String(x)),
 			"met": met_characters.map(func(x: StringName) -> String: return String(x)), "act": act,
 			"act_started_day": act_started_day, "pending": pending.duplicate(true), "talks": talk_queue.duplicate(),
-			"beats": fired_beats.duplicate(), "paths": p, "counters": c, "ending": String(ending)}
+			"beats": fired_beats.duplicate(), "paths": p, "counters": c, "ending": String(ending),
+			"cases": case_state.duplicate(), "last_case_day": last_case_day,
+			"cutscenes": cutscene_queue.duplicate(), "seen_cutscenes": seen_cutscenes.duplicate()}
 
 
 func load_save_data(data: Dictionary) -> void:
@@ -433,3 +597,14 @@ func load_save_data(data: Dictionary) -> void:
 	for k: Variant in c2:
 		counters[StringName(str(k))] = int(c2[k])
 	ending = StringName(str(data.get("ending", "")))
+	# 3.11: story cases and cutscenes (absent in older saves: nothing seen yet).
+	var cs: Variant = data.get("cases", {})
+	if cs is Dictionary:
+		for k: Variant in cs:
+			case_state[str(k)] = str(cs[k])
+	last_case_day = int(data.get("last_case_day", -99))
+	for q: Variant in data.get("cutscenes", []):
+		if cutscenes.has(str(q)):
+			cutscene_queue.append(str(q))
+	for q: Variant in data.get("seen_cutscenes", []):
+		seen_cutscenes.append(str(q))

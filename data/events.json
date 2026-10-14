@@ -704,6 +704,389 @@
      }
     }
    ]
+  },
+  {
+   "id": "case_crane_after",
+   "title": "THE FILAMENT",
+   "weight": 0,
+   "once": true,
+   "conditions": {},
+   "text": "Bram is still under. You lift one of the silver filaments out of the wound with the fine tweezers. It moves. Slowly, like it's feeling for the nerve it lost.",
+   "choices": [
+    {
+     "label": "KEEP A SAMPLE",
+     "outcomes": {
+      "flag": "thread_sample",
+      "effects": {
+       "path": {
+        "investigator": 1
+       },
+       "wall": {
+        "kind": "clipping",
+        "title": "Vial, cold box",
+        "text": "A silver filament from Bram Okoye. Label: ?",
+        "ref": "case_sample"
+       }
+      },
+      "text": "It goes in a vial at the back of the cold box. You write a question mark on the label and nothing else."
+     }
+    },
+    {
+     "label": "TELL BRAM WHEN HE WAKES",
+     "outcomes": {
+      "flag": "crane_told",
+      "effects": {
+       "dims": {
+        "civilian": 1
+       },
+       "consequence": {
+        "id": "c_crane_letter",
+        "days": 3
+       }
+      },
+      "text": "He laughs it off. 'Free medicine, doc. When does that ever happen down here?' Then he stops laughing."
+     }
+    },
+    {
+     "label": "LET IT GO",
+     "outcomes": {
+      "flag": "crane_silent",
+      "text": "Not your business. You close him up and wash your hands twice."
+     }
+    }
+   ]
+  },
+  {
+   "id": "case_too_calm_after",
+   "title": "THE MOTHER'S QUESTION",
+   "weight": 0,
+   "once": true,
+   "conditions": {},
+   "text": "Wren sits on the edge of the table, perfectly still, waiting to be told she can stand. Her mother holds your sleeve. 'Is it the tonic? Did they do something to her?'",
+   "choices": [
+    {
+     "label": "TELL HER THE TRUTH",
+     "outcomes": {
+      "flag": "wren_truth",
+      "effects": {
+       "path": {
+        "investigator": 1,
+        "respected": 1
+       },
+       "dims": {
+        "civilian": 2
+       },
+       "consequence": {
+        "id": "c_ama_van",
+        "days": 2
+       }
+      },
+      "text": "You tell her what you saw: silver, growing, and nobody's name on it. She doesn't cry. She asks where the van parks."
+     }
+    },
+    {
+     "label": "SAY YOU DON'T KNOW",
+     "outcomes": {
+      "flag": "wren_unsure",
+      "text": "'I don't know.' It's even true, mostly. She thanks you anyway, which is worse."
+     }
+    },
+    {
+     "label": "SELL HER A 'FLUSH' (+120 cr)",
+     "outcomes": {
+      "money": 120,
+      "flag": "wren_flush",
+      "effects": {
+       "path": {
+        "kingpin": 1
+       },
+       "dims": {
+        "civilian": -2
+       }
+      },
+      "text": "Saline and a vitamin patch, a hundred and twenty credits. She pays in coins. Wren says 'thank you, doctor' exactly the way she was told to."
+     }
+    }
+   ]
+  },
+  {
+   "id": "case_dial_tone_after",
+   "title": "THE HANDSHAKE LOG",
+   "weight": 0,
+   "once": true,
+   "conditions": {},
+   "text": "Pike's old port kept a log nobody was meant to read. Three thousand requests from LYR-THREAD v0.9, all granted, none by Pike. It's on your screen now. It could be on anybody's.",
+   "choices": [
+    {
+     "label": "COPY THE LOG",
+     "outcomes": {
+      "flag": "thread_log",
+      "heat": 3,
+      "effects": {
+       "path": {
+        "investigator": 1
+       },
+       "wall": {
+        "kind": "clipping",
+        "title": "Printout, folded",
+        "text": "LYR-THREAD v0.9. Permission granted x3112.",
+        "ref": "case_log"
+       }
+      },
+      "text": "You print it, fold it twice and pin it behind the wall where the damp can't reach."
+     }
+    },
+    {
+     "label": "WIPE IT CLEAN",
+     "outcomes": {
+      "flag": "thread_log_wiped",
+      "faction": {
+       "lyra_biocomp": 3
+      },
+      "effects": {
+       "path": {
+        "corporate": 1
+       }
+      },
+      "text": "Gone. Pike's port is clean, your hands are clean, and somewhere a server notices nothing."
+     }
+    },
+    {
+     "label": "SELL IT TO WIRE (+250 cr)",
+     "outcomes": {
+      "money": 250,
+      "flag": "thread_log_sold",
+      "effects": {
+       "rel_other": {
+        "vesna_kalo": 5
+       },
+       "path": {
+        "network": 1
+       }
+      },
+      "text": "Wire pays before you finish the sentence. That should worry you more than it does."
+     }
+    }
+   ]
+  },
+  {
+   "id": "case_rustline_after",
+   "title": "WHAT DO YOU TELL THE CREWS?",
+   "weight": 0,
+   "once": true,
+   "conditions": {},
+   "text": "Spit pulls his jacket back on over the new plating. 'Mother thinks the van's a gift. Quiet boys don't get shot. You gonna tell her what it really is?'",
+   "choices": [
+    {
+     "label": "WARN ROOK, QUIETLY",
+     "outcomes": {
+      "flag": "crews_warned",
+      "faction": {
+       "street_gangs": 4
+      },
+      "effects": {
+       "rel_other": {
+        "rook_varga": 6
+       },
+       "path": {
+        "investigator": 1
+       },
+       "consequence": {
+        "id": "c_rook_van",
+        "days": 2
+       }
+      },
+      "text": "You give Spit a message for Rook, not Mother. Rook will know what to do with it. Or he won't."
+     }
+    },
+    {
+     "label": "STAY OUT OF IT",
+     "outcomes": {
+      "flag": "crews_unwarned",
+      "text": "'Not my crew, not my business.' Spit nods like he expected it, and goes."
+     }
+    }
+   ]
+  },
+  {
+   "id": "case_clerk_after",
+   "title": "THE CLOSED FILES",
+   "weight": 0,
+   "once": true,
+   "conditions": {},
+   "text": "Hester blinks at the new focus, reads the far wall, then reads you. 'Forty files, doctor. All closed by the same code. If someone asked me for copies, I'd have to say no.' She doesn't say no.",
+   "choices": [
+    {
+     "label": "ASK FOR COPIES",
+     "outcomes": {
+      "flag": "board_files",
+      "heat": 4,
+      "effects": {
+       "path": {
+        "investigator": 1
+       },
+       "wall": {
+        "kind": "clipping",
+        "title": "Laundry bag",
+        "text": "Forty closed seizure files, Civic Medical Board.",
+        "ref": "case_files"
+       }
+      },
+      "text": "They arrive two nights later in a laundry bag, under the towels."
+     }
+    },
+    {
+     "label": "TELL HER TO STOP LOOKING",
+     "outcomes": {
+      "flag": "clerk_warned",
+      "effects": {
+       "dims": {
+        "civilian": 1
+       }
+      },
+      "text": "'People who read those files get transferred, Hester. Then they get forgotten.' She nods. She'll keep looking."
+     }
+    }
+   ]
+  },
+  {
+   "id": "case_runaway_after",
+   "title": "BED 14",
+   "weight": 0,
+   "once": true,
+   "conditions": {},
+   "text": "The job you were paid for is done. The lattice is still in her, woven into the nerve that carries her voice. Getting it out is hours of work nobody pays for, and Lyra will know whose hands did it. On her wrist, a number with no name.",
+   "choices": [
+    {
+     "label": "CUT THE LATTICE OUT",
+     "requires": {
+      "supplies": 2
+     },
+     "outcomes": {
+      "supplies": -2,
+      "flag": "runaway_freed",
+      "heat": 8,
+      "faction": {
+       "lyra_biocomp": -8
+      },
+      "effects": {
+       "path": {
+        "investigator": 2,
+        "respected": 1
+       },
+       "dims": {
+        "civilian": 2
+       },
+       "cutscene": "cs_runaway_freed",
+       "consequence": {
+        "id": "c_runaway_letter",
+        "days": 4
+       },
+       "wall": {
+        "kind": "milestone",
+        "title": "Bed 14",
+        "text": "Sable Ndiaye walked out singing. Lattice in a jar.",
+        "ref": "case_runaway"
+       }
+      },
+      "text": "Four hours. Two supplies. At the end there's a grey knot of wire in the tray, and Sable is saying her own name like she's tasting it."
+     }
+    },
+    {
+     "label": "LET HER GO AS SHE IS",
+     "outcomes": {
+      "flag": "runaway_sent",
+      "effects": {
+       "dims": {
+        "civilian": -1
+       }
+      },
+      "text": "You give her a coat and the back door. She doesn't look back. You're not sure she can."
+     }
+    },
+    {
+     "label": "CALL THE NUMBER (+600 cr)",
+     "outcomes": {
+      "money": 600,
+      "flag": "runaway_sold",
+      "heat": -5,
+      "faction": {
+       "lyra_biocomp": 10
+      },
+      "effects": {
+       "path": {
+        "corporate": 2
+       },
+       "dims": {
+        "civilian": -3
+       },
+       "cutscene": "cs_runaway_sold",
+       "consequence": {
+        "id": "c_runaway_gone",
+        "days": 2
+       }
+      },
+      "text": "A polite voice thanks you for your cooperation. The car is outside before you've hung up."
+     }
+    }
+   ]
+  },
+  {
+   "id": "case_crane_end",
+   "title": "STEADY",
+   "weight": 0,
+   "once": true,
+   "conditions": {},
+   "text": "Bram's hands lie on the sheet exactly where you put them. The lattice has your servo's wiring wrapped in it like ivy on a fence. Pulling it could give him back. It could also take the rest.",
+   "choices": [
+    {
+     "label": "PULL THE THREAD",
+     "outcomes": {
+      "risk": {
+       "chance": 0.55,
+       "success": {
+        "flag": "crane_saved",
+        "reputation": 3,
+        "effects": {
+         "dims": {
+          "civilian": 3
+         },
+         "path": {
+          "investigator": 1
+         },
+         "wall": {
+          "kind": "patient",
+          "title": "Bram Okoye",
+          "text": "Crane. Got up on his own.",
+          "ref": "case_crane"
+         }
+        },
+        "text": "It comes out in one long, horrible piece. An hour later Bram swears at you, unprompted. You've never been happier to be sworn at."
+       },
+       "fail": {
+        "flag": "crane_lost",
+        "reputation": -2,
+        "effects": {
+         "wall": {
+          "kind": "loss",
+          "title": "Bram Okoye",
+          "text": "Crane. The thread took him with it.",
+          "ref": "case_crane"
+         }
+        },
+        "text": "It doesn't let go. Neither does he, not for a long minute. Then he does."
+       }
+      }
+     }
+    },
+    {
+     "label": "MAKE HIM COMFORTABLE",
+     "outcomes": {
+      "flag": "crane_comfort",
+      "text": "You turn the light down and sit with him a while. He thanks you for the chair. He'd thank you for anything now."
+     }
+    }
+   ]
   }
  ]
 }

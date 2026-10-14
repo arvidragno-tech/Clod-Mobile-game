@@ -101,6 +101,12 @@ if command -v xvfb-run >/dev/null 2>&1; then
   code=$?
   grep -E "FAIL|PASSED|SCRIPT ERROR" "$LOG"
   if [ $code -ne 0 ] || grep -q "SCRIPT ERROR" "$LOG"; then status=1; echo "    -> FAILED (exit $code)"; fi
+  echo "=== 3.11 narrative probe (opening scene, chapter card, skip, story case and decision, breathers, seasons) ==="
+  xvfb-run -a -s "-screen 0 1920x1080x24" "$GODOT" --path . --rendering-driver opengl3 --resolution 1920x1080 \
+    res://tests/narrative_probe.tscn >"$LOG" 2>&1
+  code=$?
+  grep -E "FAIL|PASSED|SCRIPT ERROR" "$LOG"
+  if [ $code -ne 0 ] || grep -q "SCRIPT ERROR" "$LOG"; then status=1; echo "    -> FAILED (exit $code)"; fi
 else
   echo "=== display probe skipped (no xvfb-run) ==="
 fi

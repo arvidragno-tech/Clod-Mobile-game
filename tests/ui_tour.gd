@@ -13,6 +13,8 @@ var _n: int = 0
 
 func _ready() -> void:
 	Hints.enabled = false
+	CutscenePlayer.enabled = false  # scenes have their own tests (narrative_tests, narrative_probe)
+	CustomerManager.breather_scale = 0.0  # the next patient knocks at once
 	var res := "1920x1080"
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--shots="):

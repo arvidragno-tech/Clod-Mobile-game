@@ -4,6 +4,44 @@ All notable changes to *UNDERCITY: RIPPER*. Versions follow
 `application/config/version` in `project.godot` and the Windows file version
 in `export_presets.cfg`.
 
+## Unreleased — The slow burn: story cases, pacing and seasons
+
+Details, audit and numbers: `docs/NARRATIVE_PACING_3.11.md`.
+
+- **A calmer day.**
+  - Each day has a set number of visits (surgery capacity + 2). Declined
+    patients and walk-ins count.
+  - When they're used up the clinic goes quiet and you close when you're
+    ready.
+  - Patients knock after a short pause, longer after someone you know and
+    longest after a story patient.
+  - Nobody walks in for an hour after a story case.
+  - At most 2 random incidents a day.
+- **Story patients.** Seven cases from day 2 to act 4 bring the Lyra /
+  THREAD mystery onto the operating table, a clue at a time. Each one:
+  - takes the place of a routine patient, never adds one;
+  - ends in a decision whose effects come back days or acts later, in
+    letters, the Wall, the news and what the cast says.
+
+  Routine patients are unchanged and still pay the rent.
+- **Short cutscenes**: the opening, Mother's arrival, each new act and the
+  end of Bed 14's story.
+  - They are built from the key art, the clinic, the streets and the cast
+    portraits.
+  - Each plays once. ESC skips, and Settings → STORY CUTSCENES turns them
+    off.
+- **Seasons.** Every 7 days the season turns: autumn, winter, spring,
+  summer.
+  - Weather on every street: rain and leaves, sleet and snow, thaw rain,
+    heat haze.
+  - A seasonal tint and drips, steam and dust in the clinic.
+  - A rain bed in the ambience.
+  - The season in the status stamp, and a few seasonal news items and
+    greetings.
+  - Transitions blend over two days.
+- Saves from 3.10 load unchanged: the new state is optional, and weather
+  is worked out from the day.
+
 ## 3.10.0 — What the scan found, fairer jobs, selling from storage
 
 - **CONDITION FOUND now says what it means.** The scan used to show the

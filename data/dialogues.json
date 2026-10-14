@@ -1872,7 +1872,15 @@
      ],
      "effects": {
       "flag": "static_seen"
-     }
+     },
+     "variants": [
+      {
+       "if": {
+        "flag": "runaway_freed"
+       },
+       "text": "...Doctor? You're the one who cut Bed 14 loose. She told us. The patients from the Lyra kits: four of them. Fever, then the static, like a radio between stations. One stopped talking. I've had it for two years. I know what it sounds like."
+      }
+     ]
     },
     "noor": {
      "text": "Noor Sayeh. Lyra called me 'Patient Zero' when they thought I couldn't hear. I can hear everything. That's the problem.",
@@ -2353,7 +2361,15 @@
      ],
      "effects": {
       "flag": "ilse_truth_known"
-     }
+     },
+     "variants": [
+      {
+       "if": {
+        "flag": "thread_sample"
+       },
+       "text": "Sit. You kept a filament in your cold box. Of course you did. You've been looking at my work for weeks. THREAD was mine. A lattice that grows along the nerves and smooths the signal. It was meant for epilepsy. Lyra wanted obedience. When they got fevers instead, they buried the trial in the Sump."
+      }
+     ]
     },
     "expose": {
      "text": "A tribunal. Adaeze Moor is honest; that's rare enough to be dangerous. I'll testify. I'm dying anyway.",
@@ -2561,6 +2577,14 @@
          "corporate": 1
         }
        }
+      }
+     ],
+     "variants": [
+      {
+       "if": {
+        "flag": "board_files"
+       },
+       "text": "I've counted forty static cases, and a clerk of mine has been carrying laundry to your door. Don't look like that: I hired her. Forty closed files, your implants, your patients. Together it's a case. Will you give them to me?"
       }
      ]
     },

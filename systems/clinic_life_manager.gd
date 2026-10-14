@@ -181,8 +181,9 @@ func _on_time_changed(minute: int, _period: StringName) -> void:
 	# Walk-ins while you're busy with someone.
 	if BusinessManager.doors_open and (CustomerManager.has_customer() or SurgeryManager.is_active or LocationManager.is_away()):
 		var p := 1.0 - pow(1.0 - float(w.get("walk_in_per_hour", 0.35)), hours)
-		if _rng.randf() < p and can_seat():
-			seat(CustomerManager.generator.generate())
+		# New walk-ins come out of the day's visits, and not in a quiet spell.
+		if _rng.randf() < p and CustomerManager.walk_ins_allowed() and can_seat() and seat(CustomerManager.generator.generate()):
+			CustomerManager.count_visit()
 	var pv := 1.0 - pow(1.0 - float(data.get("chance_per_hour", 0.5)), hours)
 	if _rng.randf() < pv:
 		vignette()

@@ -55,6 +55,9 @@ var _puffs: Array[Vector4] = []  # x, y, age, life (steam)
 var _sparks: Array[Vector4] = []  # x, y, vy, life
 var _spark_timer: float = 3.0
 var _drip_t: float = 0.0
+## The season in the room (TimeManager calendar): drip period, steam and
+## dust multipliers, refreshed each morning.
+var _room_season := {"drip": 1.0, "steam": 1.0, "dust": 1.0}
 
 const FX_COLORS := {
 	"cyan": Color("2ee6c8"), "green": Color("6dff8a"), "amber": Color("ffb43d"), "red": Color("ff4d4d"),
@@ -103,7 +106,8 @@ func _ready() -> void:
 	# colour multiply on the room's own draw: no extra full-screen pass.
 	EventBus.period_changed.connect(func(_p: StringName) -> void: _apply_tint())
 	EventBus.time_changed.connect(func(_m: int, _p: StringName) -> void: _apply_tint())
-	_apply_tint()
+	EventBus.day_started.connect(func(_d: int) -> void: _apply_season())
+	_apply_season()
 	ClinicLifeManager.wall_changed.connect(func() -> void: _wall_tex = null)
 	_ticker_box = Control.new()
 	_ticker_box.name = "NewsTicker"
@@ -133,10 +137,19 @@ var _wall_tex_clinic: String = ""
 func _apply_tint() -> void:
 	var t := TimeManager.tint()
 	var m := Color.WHITE.lerp(Color(t.r, t.g, t.b), clampf(t.a * 1.6, 0.0, 0.6)).darkened(t.a * 0.5)
+	# The season sits under the hour, faintly: a basement only feels it.
+	var st := TimeManager.season_tint()
+	m *= Color.WHITE.lerp(Color(st.r, st.g, st.b), clampf(st.a * 1.2, 0.0, 0.2))
 	m.a = 1.0
 	if m != _tint_applied:
 		_tint_applied = m
 		self_modulate = m
+
+
+func _apply_season() -> void:
+	for k: String in _room_season:
+		_room_season[k] = TimeManager.season_value("room", k, 1.0)
+	_apply_tint()
 
 
 ## A line of clinic life at the bottom of the room, fading after a while.
@@ -321,7 +334,7 @@ func _draw() -> void:
 	var motes: int = 0 if not Settings.environment_effects else [6, 14, DUST_COUNT][Settings.effects_level()]
 	for di in mini(motes, _dust.size()):
 		var d := _dust[di]
-		var a := 0.25 + 0.2 * sin(_time * 2.0 + d.z)
+		var a := (0.25 + 0.2 * sin(_time * 2.0 + d.z)) * clampf(float(_room_season["dust"]), 0.5, 1.6)
 		draw_rect(Rect2((_offset + Vector2(floorf(d.x), floorf(d.y)) * _scale), Vector2.ONE * _scale), Color(1, 0.95, 0.85, a))
 	_draw_waiting()
 	if _has_customer and _customer_tex:
@@ -549,7 +562,7 @@ func _update_fx(delta: float) -> void:
 	_drip_t += delta
 	# Steam puffs drift up and fade.
 	for e: Dictionary in _fx:
-		if e["type"] == "steam" and not calm and randf() < delta * 2.5:
+		if e["type"] == "steam" and not calm and randf() < delta * 2.5 * float(_room_season["steam"]):
 			_puffs.append(Vector4(float(e["x"]) + randf_range(-1, 1), float(e["y"]), 0.0, randf_range(1.2, 2.2)))
 	for i in range(_puffs.size() - 1, -1, -1):
 		var p := _puffs[i]
@@ -624,7 +637,7 @@ func _draw_fx() -> void:
 					for t in range(1, int(rad) + 1):
 						_dot(ctr + Vector2(cos(a), sin(a)) * t, Color(0.32, 0.36, 0.42, 0.9))
 			"drip":
-				var period := 4.5
+				var period := 4.5 * float(_room_season["drip"])
 				var t2 := fmod(_drip_t + pos.x * 0.1, period)
 				if t2 < 0.9 and not calm:
 					var fall := pos.y + float(e["h"]) * pow(t2 / 0.9, 2.0)
