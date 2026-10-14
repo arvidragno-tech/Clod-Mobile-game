@@ -4,6 +4,35 @@ All notable changes to *UNDERCITY: RIPPER*. Versions follow
 `application/config/version` in `project.godot` and the Windows file version
 in `export_presets.cfg`.
 
+## Unreleased — A world that reacts
+
+Details, audit and numbers: `docs/REACTIVE_WORLD_3.12.md`.
+
+- **Taking a side has a price.** When a decision wins you standing with a
+  faction, its rivals lose some. The choice shows it before you pick.
+  Paid work stays neutral.
+- **Your standing and choices bring people to the door.**
+  - The Crews or Aegis: a well-paid job from whichever side trusts you,
+    then a request to sell out the other. You can't have both.
+  - An independent courier if you stay neutral, or turn down a
+    profitable side deal.
+  - Bed 14 returns as a friend or as Lyra's liaison.
+  - Pike returns for his grudge or offers a favour.
+  - The clerk tips you off, or disappears.
+
+  Favours, reprisals, audits and introductions to suppliers follow days
+  later. None of it blocks the story.
+- **A clearer clinic.**
+  - One clock.
+  - A waiting decision is named in NEXT, and a click brings it back.
+  - PAUSE ARRIVALS instead of CLOSE DOORS.
+  - One way back from the plan.
+  - Risk and advice in plain words.
+  - "DRILL T1" once.
+  - Story patients speak in the summary, with who sent them.
+  - Story decisions are headed DECISION.
+- Saves from 3.11 load unchanged.
+
 ## 3.11.0 — The slow burn: story cases, pacing and seasons
 
 Details, audit and numbers: `docs/NARRATIVE_PACING_3.11.md`.

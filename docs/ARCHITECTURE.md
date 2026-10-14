@@ -733,3 +733,20 @@ No new managers or screens. Audit, plan and results are in
     with Reduce Motion).
   - `AudioManager` has a `rain` layer; the season sets a `season` mix
     modifier.
+
+## 3.12: a world that reacts
+
+No new managers, screens or save keys. Audit, plan and results are in
+`docs/REACTIVE_WORLD_3.12.md`.
+
+- **Rivals**:
+  - `FactionManager.change_by_choice(id, delta)` is used by `EventManager.apply_outcomes` and `StoryManager.apply_effects`. It applies the change, and on a gain of `RIVAL_MIN_GAIN` or more, each faction in `factions.json` `rivals` loses `RIVAL_SHARE` of it (at least 1, at most `RIVAL_MAX_LOSS`).
+  - `rival_losses()` is pure; `Standing.preview` folds it into the totals it shows.
+  - Paid work and quest rewards use `change()` and stay neutral.
+- **Conditions**:
+  - `StoryManager.cond` adds `rel_min` / `rel_max` (cast trust), `dim_min`, `faction_max`, `max_heat`, `not_flag_any` and `any` (a list of conditions, any of which may hold).
+  - `EventManager.conditions_met` accepts `story: {cond}`.
+- **Effects**: `remember: {who: TAG}` (`MemoryManager`), `supplier: {id: trust}` (`SupplierManager.discover` + `change_trust`).
+- **Cases**: `patient.referred_by` (shown on the door card, in the summary and in the file) and `patient.pay` (fee multiplier; the budget covers the fee).
+- **Nav**: `{"answer": true}` brings back what's waiting (decision > scene > conversation) through `ClinicScreen.resume_story()`. The NEXT line and `Guidance` use it.
+- **Tests**: `tests/reactive_tests.gd` (unit run) and `tests/narrative_probe.gd` `_reactive_case`.
