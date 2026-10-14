@@ -4,7 +4,7 @@ layers and three music loops (OGG Vorbis via ffmpeg). Standard library only,
 plus the ffmpeg binary for OGG encoding (falls back to WAV if missing).
 
 Everything is deterministic (seeded), so re-running reproduces the same files.
-Run:  python3 tools/generate_audio.py [sfx|ambience|music ...]
+Run:  python3 tools/generate_audio.py [sfx|ambience|seasonal|music ...]
 """
 from __future__ import annotations
 
@@ -318,12 +318,47 @@ def layer_pump(dur=12.0):
     return normalize(seamless(out, 0.6, rate), 0.4)
 
 
+def layer_rain(dur=12.0):
+    """Rain on the grate above the clinic: a steady wash, close drops on metal,
+    a gutter running somewhere. Its level follows the season (AudioManager)."""
+    rng = random.Random(14)
+    rate = MUSIC_RATE
+    n = int(rate * (dur + 1.0))
+    hp, lp, body = OnePole(0.5), OnePole(0.85), OnePole(0.05)
+    out = [0.0] * n
+    for i in range(n):
+        w = rng.uniform(-1, 1)
+        t = i / rate
+        gust = 0.75 + 0.25 * math.sin(TAU * t / 4.0) ** 2
+        out[i] = ((lp(w) - hp(w)) * 0.25 + body(w) * 0.6) * gust
+    # Close drops on sheet metal: short bright ticks.
+    for _ in range(int(dur * 22)):
+        start = rng.randrange(n - int(0.03 * rate))
+        f = rng.uniform(2400, 4200)
+        v = rng.uniform(0.02, 0.06)
+        for i in range(int(0.02 * rate)):
+            out[start + i] += math.sin(TAU * f * i / rate) * v * math.exp(-i / (0.003 * rate))
+    # A gutter: low, slowly wobbling trickle.
+    ph = 0.0
+    for i in range(n):
+        t = i / rate
+        f = 180 + 40 * math.sin(TAU * t / 1.7) + 25 * math.sin(TAU * t / 0.43)
+        ph += f / rate
+        out[i] += sine(ph) * 0.015 * (0.5 + 0.5 * math.sin(TAU * t / 3.1))
+    return normalize(seamless(out, 1.0, rate), 0.35)
+
+
+def make_seasonal():
+    write_ogg("ambient/rain.ogg", layer_rain())
+
+
 def make_ambience():
     write_ogg("ambient/pump.ogg", layer_pump())
     write_ogg("ambient/hum.ogg", layer_hum())
     write_ogg("ambient/vent.ogg", layer_vent())
     write_ogg("ambient/crt.ogg", layer_crt())
     write_ogg("ambient/city.ogg", layer_city())
+    make_seasonal()
 
 
 # --- Music ------------------------------------------------------------------
@@ -503,6 +538,8 @@ def main(groups):
         make_sfx()
     if "ambience" in groups:
         make_ambience()
+    elif "seasonal" in groups:
+        make_seasonal()
     if "music" in groups:
         make_music()
     if "music" in groups or "music_reactive" in groups:

@@ -6,9 +6,10 @@ extends Control
 ## falls back to drawing from the district's palette and the place's kind: a skyline,
 ## the place's own shapes (stalls, tunnel, stacks, towers, fence...), lit
 ## windows by hour and activity, people walking past (more when it's busy),
-## police lights when the police are there, rain in the lower city, and the
-## hour's tint (TimeManager). Seeded by the place, so it's always the same
-## street.
+## police lights when the police are there, the season's weather (rain,
+## sleet, snow, falling leaves or heat haze; TimeManager.weather, heavier in
+## the lower city), and the hour's and the season's tint. Seeded by the place,
+## so it's always the same street.
 
 var location_id: StringName = &""
 var _time: float = 0.0
@@ -17,6 +18,11 @@ var _pal: Array[Color] = []
 var _buildings: Array[Rect2] = []
 var _walkers: Array[Vector3] = []  # x, speed, kind
 var _drops: Array[Vector2] = []
+## Particle kind per drop (index into WEATHER_KINDS), and today's weather.
+var _drop_kind: PackedByteArray = PackedByteArray()
+var _weather: Dictionary = {}
+const WEATHER_KINDS := ["rain", "sleet", "snow", "leaves"]
+const WEATHER_MAX_DROPS := 70
 ## Street-scene ground line (art px from the top of the scene texture).
 const SCENE_GROUND := 124
 
@@ -51,14 +57,40 @@ func setup(id: StringName) -> void:
 	for i in act * 4 + 1:
 		_walkers.append(Vector3(rng.randf_range(0, 600), rng.randf_range(6, 16) * (1 if rng.randf() < 0.5 else -1), rng.randi() % 3))
 	_drops.clear()
-	if _rainy():
-		for i in 70:
-			_drops.append(Vector2(rng.randf_range(0, 620), rng.randf_range(0, 170)))
+	_drop_kind.clear()
+	_weather = TimeManager.weather()
+	var n := int(round(WEATHER_MAX_DROPS * float(_weather["density"]) * (1.0 if _lower_city() else 0.6)))
+	for i in n:
+		var kind := str(_weather["kind"])
+		if rng.randf() < float(_weather["mix"]):
+			kind = str(_weather["next"])
+		elif str(_weather["second"]) != "" and rng.randf() < 0.2:
+			kind = str(_weather["second"])
+		var k := WEATHER_KINDS.find(kind)
+		if k < 0:
+			continue  # haze has no particles
+		if kind == "leaves" and rng.randf() < 0.6:
+			continue  # a few leaves, not a blizzard of them
+		_drops.append(Vector2(rng.randf_range(0, 620), rng.randf_range(0, 170)))
+		_drop_kind.append(k)
 	queue_redraw()
 
 
-func _rainy() -> bool:
+## The lower city gets the weather worst: the water runs down to it.
+func _lower_city() -> bool:
 	return LocationManager.district_of(location_id) in [&"undercity", &"industrial", &"market"]
+
+
+## Fall speed (art px/s) of a particle kind; snow and leaves drift sideways.
+func _drop_velocity(k: int, i: int) -> Vector2:
+	match k:
+		1:
+			return Vector2(-24, 150)
+		2:
+			return Vector2(sin(_time * 0.9 + i) * 8.0, 22)
+		3:
+			return Vector2(sin(_time * 1.6 + i) * 14.0 - 6.0, 26)
+	return Vector2(-18, 180)
 
 
 func _process(delta: float) -> void:
@@ -73,9 +105,12 @@ func _process(delta: float) -> void:
 		elif w.x < -6:
 			w.x = _art().x + 6
 		_walkers[i] = w
+	var calm := Settings.reduce_motion or not Settings.environment_effects
 	for i in _drops.size():
+		if calm:
+			break
 		var d := _drops[i]
-		d += Vector2(-18, 180) * delta
+		d += _drop_velocity(_drop_kind[i] if i < _drop_kind.size() else 0, i) * delta
 		if d.y > _art().y:
 			d = Vector2(fmod(d.x + 37.0 * (i + 1), _art().x + 20), -4)
 		_drops[i] = d
@@ -183,10 +218,11 @@ func _draw_life(a: Vector2, ground: float, night: bool, flags: Array) -> void:
 		var glow := Color("ff3040") if on else Color("3050ff")
 		_r(a.x - 70, ground - 34, 70, 34, Color(glow, 0.08))
 		_r(a.x - 70, ground, 70, 10, Color(glow, 0.12))  # on the wet street
-	# Rain.
-	for d in _drops:
-		_r(d.x, d.y, 1, 4, Color(0.6, 0.7, 0.85, 0.3))
-	# The hour's light.
+	_draw_weather(a, ground)
+	# The season's light under the hour's.
+	var st := TimeManager.season_tint()
+	if st.a > 0.0:
+		draw_rect(Rect2(Vector2.ZERO, size), Color(st.r, st.g, st.b, st.a))
 	var t := TimeManager.tint()
 	if t.a > 0.0:
 		draw_rect(Rect2(Vector2.ZERO, size), Color(t.r, t.g, t.b, t.a * 0.8))
@@ -194,6 +230,37 @@ func _draw_life(a: Vector2, ground: float, night: bool, flags: Array) -> void:
 	if flags.has(&"closed") or flags.has(&"after_hours"):
 		draw_rect(Rect2(Vector2.ZERO, size), Color(0, 0, 0, 0.45))
 	draw_rect(Rect2(Vector2.ZERO, size), Palette.LINE, false, 2.0)
+
+
+## Today's weather: the particles, plus what it leaves on the street (a wet
+## sheen, a line of slush, a heat shimmer).
+func _draw_weather(a: Vector2, ground: float) -> void:
+	if _weather.is_empty():
+		return
+	var density := float(_weather["density"])
+	var kind := str(_weather["kind"])
+	if density > 0.0:
+		if kind == "haze" or (str(_weather["next"]) == "haze" and float(_weather["mix"]) > 0.5):
+			# Heat: a warm band over the street and a slow shimmer.
+			_r(0, ground - 40, a.x, 40, Color(1.0, 0.75, 0.4, 0.06 * density))
+			for k in 4:
+				var y := ground - 8 - k * 9 + sin(_time * 1.3 + k) * 1.5
+				_r(0, y, a.x, 1, Color(1.0, 0.9, 0.7, 0.05 * density))
+		elif kind in ["snow", "sleet"] or str(_weather["next"]) == "snow":
+			_r(0, ground, a.x, 1, Color(0.85, 0.9, 0.95, 0.35 * density))
+		else:
+			_r(0, ground + 1, a.x, 3, Color(0.55, 0.65, 0.8, 0.1 * density))
+	for i in _drops.size():
+		var d := _drops[i]
+		match int(_drop_kind[i]) if i < _drop_kind.size() else 0:
+			1:
+				_r(d.x, d.y, 1, 2, Color(0.75, 0.82, 0.92, 0.4))
+			2:
+				_r(d.x, d.y, 1, 1, Color(0.92, 0.95, 1.0, 0.75))
+			3:
+				_r(d.x, d.y, 2, 1, Color(0.7, 0.4, 0.15, 0.8) if i % 2 == 0 else Color(0.55, 0.3, 0.1, 0.8))
+			_:
+				_r(d.x, d.y, 1, 4, Color(0.6, 0.7, 0.85, 0.3))
 
 
 func _blink(period: float, phase: float = 0.0) -> bool:

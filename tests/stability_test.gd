@@ -22,6 +22,8 @@ var _main: Node
 
 func _ready() -> void:
 	Hints.enabled = false
+	CutscenePlayer.enabled = false  # scenes have their own tests (narrative_tests, narrative_probe)
+	CustomerManager.breather_scale = 0.0  # the next patient knocks at once
 	var shifts := 30
 	var monkey := 3000
 	for arg in OS.get_cmdline_user_args():

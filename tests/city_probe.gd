@@ -19,6 +19,8 @@ var _main: Node
 
 func _ready() -> void:
 	Hints.enabled = false
+	CutscenePlayer.enabled = false  # scenes have their own tests (narrative_tests, narrative_probe)
+	CustomerManager.breather_scale = 0.0  # the next patient knocks at once
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--shots="):
 			_shots = arg.trim_prefix("--shots=")

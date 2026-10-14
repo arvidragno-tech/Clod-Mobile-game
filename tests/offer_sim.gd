@@ -30,6 +30,8 @@ var _failures: Array[String] = []
 
 func _ready() -> void:
 	Hints.enabled = false
+	CutscenePlayer.enabled = false  # scenes have their own tests (narrative_tests, narrative_probe)
+	CustomerManager.breather_scale = 0.0  # the next patient knocks at once
 	var offers := 2000
 	var seed_value := 7
 	var check := false

@@ -673,3 +673,63 @@ every view reads the existing rules. Audit and results:
   `Features.show_intro` and `Hints.show_again`.
 - **UIKit.flavor(text)** styles atmosphere (quoted, slanted, dim) so it
   never reads like a requirement.
+
+## 3.11: story cases, pacing and seasons
+
+No new managers or screens. Audit, plan and results are in
+`docs/NARRATIVE_PACING_3.11.md`.
+
+- **Pacing** (`data/time.json` `pacing`; `CustomerManager`):
+  - `visit_budget()` is surgery capacity + `spare_visits`. `count_visit()`
+    is called for every arrival (`next_visit()`, a seated walk-in).
+  - `request_next_customer()` waits `breather()` seconds, by the
+    `kind_of()` the last patient was (routine, character, story).
+  - `day_is_quiet()` (budget spent, nobody due) makes
+    `BusinessManager.is_day_full()` true.
+  - `walk_ins_allowed()` gates the hourly walk-in roll in
+    `ClinicLifeManager`, also during `quiet_until`, which is set after a
+    story case. `can_seat()` is unchanged, so a door patient can still wait
+    when you go out.
+  - The schedule (`schedule_day`, `visits_today`, `story_slot`,
+    `quiet_until`) is saved under `"schedule"`. An old save counts
+    `jobs_today` as visits used.
+  - `EventManager` caps random incidents with `max_incidents_per_day`
+    (forced events are not counted); `incident_day` and `incidents_today`
+    are saved.
+- **Story cases** (`data/cases.json`, `StoryManager`):
+  - `due_case()` picks the first open case whose act window, `min_day`,
+    `min_ops`, `min_day_in_act` and `cond` match, at most one every
+    `story_case_gap_days`.
+  - `CustomerManager._next_customer` swaps it in for the routine visit at
+    `story_slot` (`make_case_customer`): a generated patient with the case's
+    name, words, history and scan clue, and `CustomerData.case_id`.
+  - `case_arrived` / `case_finished` / `case_declined` apply the case's
+    `on_<outcome>` effects and queue its `after` event.
+  - Case decisions are ordinary events (`data/events.json`, weight 0, once).
+    Outcomes may carry `effects` (the `StoryManager.apply_effects`
+    vocabulary, now with `wall`, `news` and `cutscene`).
+  - Echoes use the existing systems: comms, Wall pins, and dialogue
+    variants with `world_cond` `flag` / `not_flag`.
+  - Save keys: `cases`, `last_case_day`.
+- **Cutscenes** (`data/cutscenes.json`, `scripts/components/cutscene_player.gd`):
+  - `StoryManager.queue_cutscene(id)` (once per save; dropped when
+    `Settings.story_cutscenes` is off). Act changes queue `cs_act_<n>`;
+    beats and effects can queue `{"cutscene": id}`.
+  - `ClinicScreen` plays them as a modal, after a pending event and before
+    a conversation.
+  - `CutscenePlayer` pauses arrivals, hides toasts and the consequence card
+    (`UIManager.set_feedback_hidden`) and routes ESC to `skip_scene`.
+  - Save keys: `cutscenes`, `seen_cutscenes`. Harnesses set
+    `CutscenePlayer.enabled = false`.
+- **Seasons** (`data/time.json` `seasons`, `TimeManager`):
+  - Calendar: `season(day)`, `season_blend(day)`, `season_value(section,
+    key)`, `season_tint()`.
+  - `weather(day)` is seeded from the day number, so it needs no save
+    data. It returns `{kind, next, mix, second, density}`.
+  - `EventBus.season_changed` fires on the first day of a season
+    (`WorldEventManager` posts the turn).
+  - `ClinicView` scales drip, steam and dust by the season. `LocationView`
+    draws rain, sleet, snow, leaves or haze (at most 70 particles; none
+    with Reduce Motion).
+  - `AudioManager` has a `rain` layer; the season sets a `season` mix
+    modifier.

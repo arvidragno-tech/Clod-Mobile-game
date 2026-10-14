@@ -108,6 +108,36 @@
      }
     }
    ]
+  },
+  "c_crane_letter": {
+   "kind": "message",
+   "from": "Bram Okoye",
+   "subject": "The van",
+   "body": "Went back to the Low Line to ask about the tonic. Van's gone. Nobody on the platform remembers it, and they all remember everything. Hands still steady. Thanks for telling me, I think. — B."
+  },
+  "c_ama_van": {
+   "kind": "message",
+   "from": "Ama Adeyemi",
+   "subject": "Second dose",
+   "body": "I found the van. A nice man in a clean coat said Wren is 'responding well' and asked if I wanted the second dose for myself. I said no. He wrote that down. — Ama"
+  },
+  "c_rook_van": {
+   "kind": "call",
+   "from": "rook_varga",
+   "subject": "Incoming call",
+   "body": "\"The van came back to the Belt last night. Somebody slashed all four tyres and nobody saw a thing. Mother is very upset. I'm very upset for her. We never talked.\""
+  },
+  "c_runaway_letter": {
+   "kind": "message",
+   "from": "",
+   "subject": "Postcard, no stamp",
+   "body": "A drawing of a bird on a wire. Underneath, in shaky letters: 'I can sing again. Badly. — Bed 14'"
+  },
+  "c_runaway_gone": {
+   "kind": "message",
+   "from": "vesna_kalo",
+   "subject": "Your runaway",
+   "body": "She went home in a corporate car this morning, darling. She waved. Nobody waves from those cars. — W."
   }
  }
 }

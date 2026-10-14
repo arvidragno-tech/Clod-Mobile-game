@@ -79,6 +79,7 @@ const DEFAULTS := {
 	"seen_hints": [],
 	"tooltips": true,
 	"pause_dialogue": true,
+	"story_cutscenes": true,
 	"pause_focus_loss": true,
 	"time_pressure": 0,
 	"difficulty": 1,
@@ -139,6 +140,9 @@ var controls_setup_done: bool = false
 var seen_hints: Array = []
 var tooltips: bool = true
 var pause_dialogue: bool = true
+## Short in-engine scenes at chapter changes and big story moments (always
+## skippable); off skips them entirely.
+var story_cutscenes: bool = true
 var pause_focus_loss: bool = true
 ## Emergency countdowns: 0 normal, 1 relaxed, 2 off (accessibility).
 var time_pressure: int = 0

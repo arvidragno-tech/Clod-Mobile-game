@@ -27,6 +27,8 @@ var _checks: int = 0
 
 func _ready() -> void:
 	Hints.enabled = false
+	CutscenePlayer.enabled = false  # scenes have their own tests (narrative_tests, narrative_probe)
+	CustomerManager.breather_scale = 0.0  # the next patient knocks at once
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--shots="):
 			_shots = arg.trim_prefix("--shots=")
@@ -163,6 +165,8 @@ func _flow() -> void:
 	await _dismiss_intros()
 	_check(TutorialManager.intro_pending.is_empty(), "5: every intro was shown once")
 	Hints.enabled = false
+	CutscenePlayer.enabled = false  # scenes have their own tests (narrative_tests, narrative_probe)
+	CustomerManager.breather_scale = 0.0  # the next patient knocks at once
 	# 6. SUPPLY: before you pay.
 	await _press_named("Nav_supply")
 	await _settle()

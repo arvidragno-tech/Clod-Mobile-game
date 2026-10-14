@@ -156,6 +156,17 @@ func clear_toasts() -> void:
 			t.queue_free()
 
 
+## A cutscene hides the toasts and the consequence card drawn over it
+## (they keep running underneath and show again when it ends).
+func set_feedback_hidden(hidden: bool) -> void:
+	if _toast_box and _toast_box.get_parent() is CanvasItem:
+		(_toast_box.get_parent() as CanvasItem).visible = not hidden
+	var host := get_overlay_host()
+	var ch := host.get_node_or_null("ConsequenceHost") as CanvasItem if host else null
+	if ch:
+		ch.visible = not hidden
+
+
 func show_toast(text: String, kind: StringName = &"info") -> void:
 	if _toast_box == null:
 		return

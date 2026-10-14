@@ -26,6 +26,8 @@ var _check := false
 
 func _ready() -> void:
 	Hints.enabled = false
+	CutscenePlayer.enabled = false  # scenes have their own tests (narrative_tests, narrative_probe)
+	CustomerManager.breather_scale = 0.0  # the next patient knocks at once
 	var days := 20
 	var seeds := 5
 	for arg in OS.get_cmdline_user_args():
@@ -83,9 +85,16 @@ func _run(strat: String, seed_value: int, days: int) -> Dictionary:
 	for day in days:
 		var cap := BusinessManager.capacity()
 		var guard := 0
-		while BusinessManager.jobs_today < cap and guard < cap * 4:
+		# 3.11: the day's schedule decides how many people come (jobs a day +
+		# a few spare), story cases included in place of routine patients.
+		while BusinessManager.jobs_today < cap and CustomerManager.visits_left() > 0 and guard < cap * 4:
 			guard += 1
-			var c: CustomerData = CustomerManager.tutorial_customer() if op == 0 else CustomerManager._next_customer()
+			var c: CustomerData = null
+			if op == 0:
+				CustomerManager.count_visit()
+				c = CustomerManager.tutorial_customer()
+			else:
+				c = CustomerManager.next_visit()
 			CustomerManager.debug_set_customer(c)
 			GameManager.chosen_diagnosis_id = &""
 			GameManager.selected_implant_uid = ""

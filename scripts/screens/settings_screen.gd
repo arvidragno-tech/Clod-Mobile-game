@@ -292,6 +292,7 @@ func _build_gameplay() -> void:
 	sample.play()
 	_toggle(text, "AUTO-ADVANCE DIALOGUE", "auto_advance", "Lines without choices move on by themselves.")
 	_toggle(text, "PAUSE DURING DIALOGUE", "pause_dialogue", "Nobody walks in while you're talking.")
+	_toggle(text, "STORY CUTSCENES", "story_cutscenes", "Short scenes at chapter changes and big story moments. ESC skips any of them.")
 	var play := UIKit.section(left, "GAME")
 	_choice_int(play, "DIFFICULTY", "difficulty", Settings.DIFFICULTY_NAMES)
 	play.add_child(UIKit.label("STORY: wider tolerances, more time, cheaper rent. BRUTAL: tight hands, short timers, expensive city.", &"DimLabel", true))

@@ -21,6 +21,7 @@ const QualityTests := preload("res://tests/quality_tests.gd")
 const OnboardingTests := preload("res://tests/onboarding_tests.gd")
 const IntakeTests := preload("res://tests/intake_tests.gd")
 const Clinic310Tests := preload("res://tests/clinic_310_tests.gd")
+const NarrativeTests := preload("res://tests/narrative_tests.gd")
 
 var _failures: Array[String] = []
 var _dilemmas_seen: bool = false
@@ -33,6 +34,8 @@ var _handling_complication: bool = false
 
 func _ready() -> void:
 	Hints.enabled = false
+	CutscenePlayer.enabled = false  # scenes have their own tests (narrative_tests, narrative_probe)
+	CustomerManager.breather_scale = 0.0  # the next patient knocks at once
 	# Pin the logical viewport (headless windows are 64x64). The design canvas
 	# is 1920x1080; smaller sizes emulate a window at that resolution.
 	var viewport_size := Vector2i(1920, 1080)
@@ -67,6 +70,7 @@ func _run_all() -> void:
 	OnboardingTests.new().run(self)
 	IntakeTests.new().run(self)
 	Clinic310Tests.new().run(self)
+	NarrativeTests.new().run(self)
 	if OS.get_cmdline_user_args().has("--unit-only"):
 		_finish()
 		return
