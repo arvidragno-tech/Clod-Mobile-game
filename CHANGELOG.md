@@ -4,7 +4,7 @@ All notable changes to *UNDERCITY: RIPPER*. Versions follow
 `application/config/version` in `project.godot` and the Windows file version
 in `export_presets.cfg`.
 
-## Unreleased — The slow burn: story cases, pacing and seasons
+## 3.11.0 — The slow burn: story cases, pacing and seasons
 
 Details, audit and numbers: `docs/NARRATIVE_PACING_3.11.md`.
 
