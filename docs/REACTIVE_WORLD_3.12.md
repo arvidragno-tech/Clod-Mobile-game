@@ -185,7 +185,11 @@ Steps to answer a decision that isn't on screen: before, there was no way (you h
   - `living_probe` (the clock is in the status bar, the room names the place);
   - `onboarding_tests` (ARRIVALS PAUSED);
   - the E2E bot (BACK instead of RE-DIAGNOSE).
-- **Full suite** (`tests/run_tests.sh`): results are in the PR.
+- **Full suite** (`tests/run_tests.sh godot`, Godot 4.3, headless and under xvfb at 1920×1080): ALL SUITES PASSED.
+  - The compile check, the balance simulation (4 seeds), ECONOMY OK and OFFERS OK.
+  - Stability: 574 checks.
+  - Unit + E2E: 1,855 checks.
+  - Probes: display 96, living 290, city 203, UI 162, UI stability 86, UX 133, onboarding 80, 3.10 21, narrative 42.
 
 ## Known limitations
 
