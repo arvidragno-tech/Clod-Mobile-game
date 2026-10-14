@@ -187,15 +187,10 @@ func _build_plan(col: VBoxContainer) -> void:
 		UIManager.go_to(UIManager.SCREEN_CUSTOMER, {"assign": true}), "ChangeSurgeon", 44)
 	_hand_off.tooltip_text = "Hand the job to one of your ripperdocs instead (their odds, their stress)."
 	buttons.add_child(_hand_off)
-	var row := UIKit.hbox(8)
-	buttons.add_child(row)
-	var back := UIKit.button("RE-DIAGNOSE", &"GhostButton", _show_diagnose, "PlanBackButton", 44)
-	UIKit.expand(back)
-	row.add_child(back)
-	var cancel := UIKit.button("CANCEL", &"GhostButton", func() -> void: UIManager.go_to(UIManager.SCREEN_CUSTOMER), "PlanCancel", 44)
-	cancel.tooltip_text = "Back to the patient's file (nothing is spent)."
-	UIKit.expand(cancel)
-	row.add_child(cancel)
+	# BACK (top left) returns to the scan; this is the other way out.
+	var cancel := UIKit.button("BACK TO THE PATIENT", &"GhostButton", func() -> void: UIManager.go_to(UIManager.SCREEN_CUSTOMER), "PlanCancel", 44)
+	cancel.tooltip_text = "Back to the patient's file. Nothing is spent."
+	buttons.add_child(cancel)
 
 
 func _on_back() -> void:

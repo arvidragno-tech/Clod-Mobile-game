@@ -390,11 +390,11 @@
   },
   "doors": {
    "topic": "basics",
-   "title": "Closing the doors",
-   "short": "CLOSE DOORS stops walk-ins so you can read, shop and plan.",
-   "text": "CLOSE DOORS (TODAY card in the clinic) stops new customers walking in and keeps the waiting room empty. Nobody already in the chair is sent away, and the clock, rent and story keep running as normal.\nUse it to read messages, compare implants, spend skill points or restock without someone waiting at the door. OPEN DOORS lets the next customer in. The doors open again on their own every morning.",
+   "title": "Pausing arrivals",
+   "short": "PAUSE ARRIVALS stops new patients so you can read, shop and plan. It is not the same as CLOSE FOR THE NIGHT.",
+   "text": "PAUSE ARRIVALS (the bar under the clinic room) stops new patients walking in and keeps the waiting room empty. Nobody already at the door is sent away, and the clock, rent and story keep running as normal.\nUse it to read messages, compare implants, spend skill points or restock without someone waiting. LET PATIENTS IN opens up again, and arrivals resume on their own every morning.\nCLOSE FOR THE NIGHT is different: it ends the day and pays the bills.",
    "why": "It buys time to read and shop without anyone waiting.",
-   "where": "The TODAY card on the clinic screen."
+   "where": "The bar under the clinic room."
   },
   "standing": {
    "topic": "street",

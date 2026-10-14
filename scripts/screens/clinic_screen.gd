@@ -148,6 +148,7 @@ func _build() -> void:
 	_faction_tag = UIKit.label("", &"SubHeaderLabel", true)
 	text.add_child(_faction_tag)
 	_occupation = UIKit.label("", &"DimLabel", true)
+	_occupation.name = "DoorSentBy"
 	text.add_child(_occupation)
 	_request_box = UIKit.hbox(12)
 	_info_box.add_child(_request_box)
@@ -254,7 +255,7 @@ func _process(delta: float) -> void:
 		elif BusinessManager.is_day_full():
 			_waiting.text = "It's %s. The day's work is done.\n\nPress CLOSE FOR THE NIGHT (below the room) to pay the bills and start tomorrow." % TimeManager.clock_text()
 		elif not BusinessManager.doors_open:
-			_waiting.text = "DOORS CLOSED\n\nNobody new comes in while the doors are shut. Take your time: restock in SUPPLY, spend skill points, read the JOURNAL. Press OPEN DOORS (below the room) when you're ready."
+			_waiting.text = "ARRIVALS PAUSED\n\nNobody new comes in. Take your time: restock in SUPPLY, spend skill points, read the JOURNAL. Press LET PATIENTS IN (below the room) when you're ready."
 		else:
 			_waiting.text = "Waiting for the next patient" + ".".repeat(int(_waiting_dots) % 4) + _waiting_tail
 
@@ -296,6 +297,19 @@ func _show_talk() -> void:
 	AudioManager.play_sfx(&"customer", 0.0)
 	UIManager.show_modal(panel)
 	panel.closed.connect(_after_event)
+
+
+## Shows what's waiting for an answer (a decision, a scene, a conversation)
+## if nothing is on screen: the NEXT line's link.
+func resume_story() -> void:
+	if UIManager.has_modal():
+		return
+	if EventManager.has_pending():
+		_show_event()
+	elif StoryManager.has_cutscene():
+		_show_cutscene()
+	elif StoryManager.has_talk():
+		_show_talk()
 
 
 func _after_event() -> void:
@@ -347,7 +361,9 @@ func _show_customer(customer: CustomerData, animate: bool) -> void:
 	_faction_tag.text = "EMERGENCY" if customer.is_emergency else ""
 	_faction_tag.visible = customer.is_emergency
 	_faction_tag.add_theme_color_override(&"font_color", Palette.DANGER)
-	_occupation.visible = false
+	# Who sent them, when someone did: the street answering your standing.
+	_occupation.text = "Sent by %s" % customer.referred_by if customer.referred_by != "" else ""
+	_occupation.visible = customer.referred_by != ""
 	UIKit.clear(_request_box)
 	if item:
 		_request_box.add_child(CyberwareIcon.make(item))
@@ -385,16 +401,16 @@ func _close_day() -> void:
 var _doors_button: Button
 
 
-## CLOSE DOORS / OPEN DOORS: pauses walk-ins (not the same as closing for
-## the night, which ends the day and pays the bills).
+## PAUSE ARRIVALS / LET PATIENTS IN (the doors): pauses walk-ins. Named
+## so it can't be mistaken for CLOSE FOR THE NIGHT, which ends the day.
 func _refresh_doors() -> void:
 	if _doors_button == null:
 		return
 	var open := BusinessManager.doors_open
-	_doors_button.text = "CLOSE DOORS" if open else "OPEN DOORS"
+	_doors_button.text = "PAUSE ARRIVALS" if open else "LET PATIENTS IN"
 	_doors_button.theme_type_variation = &"GhostButton" if open else &"AccentButton"
-	_doors_button.tooltip_text = ("Stop walk-ins for a while: nobody new comes in until you open again, so you can read, shop and level up in peace. Time only moves when you act. Someone already at the door stays." if open
-		else "Let customers in again.")
+	_doors_button.tooltip_text = ("Stop new patients for a while, so you can read, shop and level up in peace. Someone already at the door stays. This doesn't end the day." if open
+		else "Let patients in again.")
 	if open and not CustomerManager.has_customer():
 		CustomerManager.request_next_customer()
 
@@ -431,7 +447,8 @@ func _refresh_status() -> void:
 	_security_button.text = "SECURITY" if open == 0 else "%d OPEN CASE%s" % [open, "S" if open > 1 else ""]
 	_security_button.theme_type_variation = &"DangerButton" if open > 0 else &"GhostButton"
 	if _loc:
-		_loc.text = "%s · %s" % [WorldManager.district_name().to_upper(), TimeManager.stamp()]
+		# Where you are; the status bar above has the day and the time.
+		_loc.text = "%s · %s" % [ClinicManager.get_tier_name().to_upper(), WorldManager.district_name().to_upper()]
 	_refresh_status_card()
 	_refresh_matters(true)
 	# New sections become available as they become relevant (Features).
@@ -452,7 +469,9 @@ func _refresh_status_card() -> void:
 	var level: StringName = ClinicStatus.GOOD
 	var text := ""
 	_status_link = {}
-	if str(head["key"]) != "ready":
+	# A decision that's waiting is already the NEXT line above: the bar
+	# doesn't say it twice.
+	if str(head["key"]) not in ["ready", "action"]:
 		level = head["level"]
 		text = "%s %s · %s" % [ClinicStatus.mark(level), str(head["text"]), str(head["why"])]
 		_status_link = head["link"]

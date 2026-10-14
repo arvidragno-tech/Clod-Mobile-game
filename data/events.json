@@ -831,6 +831,10 @@
         "title": "Printout, folded",
         "text": "LYR-THREAD v0.9. Permission granted x3112.",
         "ref": "case_log"
+       },
+       "consequence": {
+        "id": "c_pike_thanks",
+        "days": 4
        }
       },
       "text": "You print it, fold it twice and pin it behind the wall where the damp can't reach."
@@ -930,6 +934,10 @@
         "title": "Laundry bag",
         "text": "Forty closed seizure files, Civic Medical Board.",
         "ref": "case_files"
+       },
+       "consequence": {
+        "id": "ev_hester_tipoff",
+        "days": 6
        }
       },
       "text": "They arrive two nights later in a laundry bag, under the towels."
@@ -942,6 +950,10 @@
       "effects": {
        "dims": {
         "civilian": 1
+       },
+       "consequence": {
+        "id": "c_hester_transferred",
+        "days": 5
        }
       },
       "text": "'People who read those files get transferred, Hester. Then they get forgotten.' She nods. She'll keep looking."
@@ -1084,6 +1096,492 @@
      "outcomes": {
       "flag": "crane_comfort",
       "text": "You turn the light down and sit with him a while. He thanks you for the chair. He'd thank you for anything now."
+     }
+    }
+   ]
+  },
+  {
+   "id": "case_lieutenant_after",
+   "title": "THE BOUNTY",
+   "weight": 0,
+   "once": true,
+   "conditions": {},
+   "text": "Hook sleeps it off on your table. Your terminal chimes: Aegis Meridian will pay 800 cr to any clinic that reports 'a gunshot to the left shoulder, treated in the last 24 hours'. Only Rook knows he's here. And you.",
+   "choices": [
+    {
+     "label": "KEEP HIM HIDDEN",
+     "outcomes": {
+      "flag": "sided_crews",
+      "faction": {
+       "street_gangs": 6
+      },
+      "effects": {
+       "rel_other": {
+        "rook_varga": 8
+       },
+       "remember": {
+        "rook_varga": "PLAYER_KEPT_SECRET"
+       },
+       "path": {
+        "network": 1
+       },
+       "consequence": {
+        "id": "c_rook_favor",
+        "days": 3
+       }
+      },
+      "text": "You wipe the terminal and burn the slugs in the steriliser. Hook leaves before dawn through the back. Rook will hear you kept quiet. Aegis will hear nothing."
+     }
+    },
+    {
+     "label": "SELL HIM TO AEGIS (+800 cr · Rook will find out)",
+     "outcomes": {
+      "money": 800,
+      "flag": "sided_aegis",
+      "faction": {
+       "corporate_security": 6,
+       "street_gangs": -8
+      },
+      "effects": {
+       "flag": "hook_sold",
+       "rel_other": {
+        "rook_varga": -30
+       },
+       "remember": {
+        "rook_varga": "PLAYER_BETRAYED_FACTION"
+       },
+       "path": {
+        "corporate": 1
+       },
+       "consequence": {
+        "id": "ev_crew_reprisal",
+        "days": 2
+       }
+      },
+      "text": "A van with no markings collects him at the door. The credit lands before the van's around the corner. Rook will know by morning; Rook always knows."
+     }
+    },
+    {
+     "label": "PATCH HIM, NO PROMISES",
+     "outcomes": {
+      "flag": "hook_patched",
+      "faction": {
+       "street_gangs": 2
+      },
+      "text": "Clean work, a fair bill, no favours either way. Hook nods on his way out. Neither Rook nor Aegis owes you anything, and neither will forget that."
+     }
+    }
+   ]
+  },
+  {
+   "id": "ev_crew_reprisal",
+   "title": "PAID IN KIND",
+   "character": "rook_varga",
+   "weight": 0,
+   "once": true,
+   "conditions": {},
+   "text": "Two Rustline runners in your waiting room, not waiting. Rook leans in the doorway. 'Aegis paid you well for Hook. Seems fair you share.'",
+   "choices": [
+    {
+     "label": "PAY ROOK (−600 cr)",
+     "requires": {
+      "money": 600
+     },
+     "outcomes": {
+      "money": -600,
+      "faction": {
+       "street_gangs": 2
+      },
+      "text": "Rook counts it in front of you, slowly. 'We're square. We're not friends.'"
+     }
+    },
+    {
+     "label": "LET THEM TAKE SUPPLIES",
+     "outcomes": {
+      "supplies": -3,
+      "faction": {
+       "street_gangs": -2
+      },
+      "heat": 3,
+      "text": "They leave with three crates and your spare light. Somebody calls it in. Nobody comes."
+     }
+    }
+   ]
+  },
+  {
+   "id": "case_retainer_after",
+   "title": "THE RETAINER",
+   "weight": 0,
+   "once": true,
+   "conditions": {},
+   "text": "Sato pays in clean scrip and leaves a card. Aegis Meridian offers you a retainer: 500 cr now, and the inspectors kept off your door. The small print asks for one thing: the name and wound of every Rustline patient, weekly.",
+   "choices": [
+    {
+     "label": "SIGN AND SEND THE NAMES (+500 cr)",
+     "outcomes": {
+      "money": 500,
+      "heat": -10,
+      "flag": "sided_aegis",
+      "faction": {
+       "corporate_security": 8,
+       "street_gangs": -6
+      },
+      "effects": {
+       "flag": "aegis_informant",
+       "supplier": {
+        "glass": 40
+       },
+       "path": {
+        "corporate": 2
+       },
+       "dims": {
+        "corporate": 3,
+        "criminal": -3
+       },
+       "consequence": {
+        "id": "c_crews_notice",
+        "days": 4
+       }
+      },
+      "text": "The first list goes out that night: four names, four wounds. A man called Glass sends you a price list the next morning. Aegis keeps its friends supplied."
+     }
+    },
+    {
+     "label": "SIGN, SEND NOTHING (+500 cr)",
+     "outcomes": {
+      "money": 500,
+      "flag": "retainer_empty",
+      "faction": {
+       "corporate_security": 2
+      },
+      "effects": {
+       "consequence": {
+        "id": "ev_aegis_audit",
+        "days": 5
+       }
+      },
+      "text": "You take the money and send a blank report. Then another. Aegis reads everything; sooner or later it will read those."
+     }
+    },
+    {
+     "label": "JUST THE JOB",
+     "outcomes": {
+      "flag": "retainer_declined",
+      "text": "You hand the card back. Sato pockets it without a word. 'The offer won't come twice, doctor.' It doesn't."
+     }
+    }
+   ]
+  },
+  {
+   "id": "ev_aegis_audit",
+   "title": "BLANK REPORTS",
+   "weight": 0,
+   "once": true,
+   "conditions": {},
+   "text": "Lieutenant Sato is back, in uniform this time. 'Five blank reports, doctor. Aegis doesn't pay for blank.'",
+   "choices": [
+    {
+     "label": "START SENDING NAMES",
+     "outcomes": {
+      "flag": "sided_aegis",
+      "faction": {
+       "corporate_security": 5
+      },
+      "effects": {
+       "flag": "aegis_informant",
+       "dims": {
+        "criminal": -2
+       },
+       "consequence": {
+        "id": "c_crews_notice",
+        "days": 4
+       }
+      },
+      "text": "'Good.' She doesn't smile. The first list goes out that night."
+     }
+    },
+    {
+     "label": "RETURN THE MONEY (−500 cr)",
+     "requires": {
+      "money": 500
+     },
+     "outcomes": {
+      "money": -500,
+      "flag": "retainer_returned",
+      "faction": {
+       "corporate_security": -4
+      },
+      "text": "She counts it twice, then once more. 'Nobody ever gives it back.' She leaves the door open on her way out."
+     }
+    },
+    {
+     "label": "TEAR UP THE CARD",
+     "outcomes": {
+      "flag": "retainer_torn",
+      "faction": {
+       "corporate_security": -10
+      },
+      "heat": 8,
+      "effects": {
+       "dims": {
+        "criminal": 2
+       }
+      },
+      "text": "Sato watches the pieces fall. The inspectors start coming again on Monday."
+     }
+    }
+   ]
+  },
+  {
+   "id": "case_courier_after",
+   "title": "NO FLAGS",
+   "weight": 0,
+   "once": true,
+   "conditions": {},
+   "text": "Lio pays exactly what you asked, to the credit. 'Okafor runs crates out of the old Aegis depot. He only sells to people nobody owns. That's you, for now.'",
+   "choices": [
+    {
+     "label": "TAKE THE INTRODUCTION",
+     "outcomes": {
+      "flag": "independent_contact",
+      "faction": {
+       "independent_mercs": 6
+      },
+      "effects": {
+       "supplier": {
+        "okafor": 40
+       }
+      },
+      "text": "A crate arrives two hours later with a price list taped to the lid. No logo, no faction, no questions."
+     }
+    },
+    {
+     "label": "STAY UNKNOWN",
+     "outcomes": {
+      "flag": "courier_declined",
+      "text": "Lio shrugs. 'Offer stands. Offers always stand, until they don't.'"
+     }
+    }
+   ]
+  },
+  {
+   "id": "case_pike_after",
+   "title": "WHAT YOU OWE",
+   "weight": 0,
+   "once": true,
+   "conditions": {},
+   "text": "Pike flexes the new port, testing it like a sore tooth. 'Wire paid you 250 for my head. I want to hear you say it was worth it.'",
+   "choices": [
+    {
+     "label": "GIVE HIM WIRE'S MONEY (−250 cr)",
+     "requires": {
+      "money": 250
+     },
+     "outcomes": {
+      "money": -250,
+      "flag": "pike_forgiven",
+      "effects": {
+       "dims": {
+        "civilian": 2
+       },
+       "remember": {
+        "case_pike_lindqvist": "PLAYER_KEPT_PROMISE"
+       },
+       "rel_other": {
+        "vesna_kalo": -4
+       }
+      },
+      "text": "He looks at the credits a long time. 'Doesn't buy the year back.' He takes them anyway, and shakes your hand on the way out."
+     }
+    },
+    {
+     "label": "TELL HIM IT WAS BUSINESS",
+     "outcomes": {
+      "flag": "pike_enemy",
+      "effects": {
+       "remember": {
+        "case_pike_lindqvist": "PLAYER_LIED"
+       },
+       "consequence": {
+        "id": "ev_pike_boards",
+        "days": 3
+       }
+      },
+      "text": "'Business.' He laughs once. 'I'm in business too, doc.' He leaves without paying the tip."
+     }
+    }
+   ]
+  },
+  {
+   "id": "ev_pike_boards",
+   "title": "ON EVERY BOARD",
+   "weight": 0,
+   "once": true,
+   "conditions": {},
+   "text": "Pike kept his word. Your address, your hours and a bad drawing of your face are up on every message board in the Sump. Underneath, one line: SELLS HIS PATIENTS.",
+   "choices": [
+    {
+     "label": "PAY A RUNNER TO SCRUB IT (−300 cr)",
+     "requires": {
+      "money": 300
+     },
+     "outcomes": {
+      "money": -300,
+      "heat": 2,
+      "text": "Most of it is gone by morning. The drawing turns up again in a toilet stall in Caldera. That one stays."
+     }
+    },
+    {
+     "label": "LET IT STAND",
+     "outcomes": {
+      "heat": 10,
+      "effects": {
+       "dims": {
+        "civilian": -3
+       }
+      },
+      "text": "Some people stop coming. Others come because of it. The Board makes a note."
+     }
+    }
+   ]
+  },
+  {
+   "id": "ev_hester_tipoff",
+   "title": "LAUNDRY DAY",
+   "weight": 0,
+   "once": true,
+   "conditions": {},
+   "text": "Another laundry bag, no towels this time. A Medical Board inspection roster with your address on it, Thursday's date, and a note: 'One good turn. H.'",
+   "choices": [
+    {
+     "label": "CLEAN UP BEFORE THEY COME (−1 supplies)",
+     "outcomes": {
+      "supplies": -1,
+      "heat": -12,
+      "text": "By Thursday the clinic smells of bleach and nothing else. The inspector leaves bored. Bored is good."
+     }
+    },
+    {
+     "label": "PASS THE ROSTER TO THE CREWS",
+     "outcomes": {
+      "flag": "roster_shared",
+      "faction": {
+       "street_gangs": 5
+      },
+      "heat": -4,
+      "text": "Rook's people clear three chop shops off Thursday's route. The Board finds nothing anywhere, and wonders why."
+     }
+    }
+   ]
+  },
+  {
+   "id": "case_sable_after",
+   "title": "WHAT SHE BROUGHT",
+   "weight": 0,
+   "once": true,
+   "conditions": {},
+   "text": "A folded trial chart, lifted on her way out: anchor sites, doses, a list of beds. Bed 14 is crossed out. Beds 15 to 40 aren't.",
+   "choices": [
+    {
+     "label": "KEEP IT FOR THE INSPECTOR",
+     "outcomes": {
+      "flag": "lyra_chart",
+      "effects": {
+       "path": {
+        "investigator": 2
+       },
+       "rel_other": {
+        "adaeze_moor": 8
+       },
+       "wall": {
+        "kind": "clipping",
+        "title": "Trial chart",
+        "text": "Beds 15 to 40. Lyra Biocomp, Meridian wing.",
+        "ref": "case_chart"
+       }
+      },
+      "text": "It goes behind the Wall, next to everything else nobody's supposed to have. Moor will want it. So will Lyra."
+     }
+    },
+    {
+     "label": "SELL IT TO WIRE (+900 cr)",
+     "outcomes": {
+      "money": 900,
+      "flag": "lyra_chart_sold",
+      "effects": {
+       "rel_other": {
+        "vesna_kalo": 6
+       },
+       "path": {
+        "network": 1
+       }
+      },
+      "text": "Wire whistles at the bed numbers. 'Forty buyers for this, darling. I'll find the richest.'"
+     }
+    },
+    {
+     "label": "BURN IT",
+     "outcomes": {
+      "flag": "lyra_chart_burned",
+      "heat": -6,
+      "text": "Some things are safer as ash. Sable watches it curl and doesn't say a word."
+     }
+    }
+   ]
+  },
+  {
+   "id": "case_liaison_after",
+   "title": "COMMUNITY WELLNESS",
+   "weight": 0,
+   "once": true,
+   "conditions": {},
+   "text": "On her way out she sets a Lyra contract on your tray: install their 'stabilisers' in your neural patients, 1,200 cr on completion. For a second her hand shakes. Then it doesn't.",
+   "choices": [
+    {
+     "label": "SIGN THE CONTRACT",
+     "outcomes": {
+      "flag": "liaison_signed",
+      "faction": {
+       "lyra_biocomp": 6
+      },
+      "effects": {
+       "quest": "q_thread_installs",
+       "path": {
+        "corporate": 1
+       }
+      },
+      "text": "'Lyra thanks you,' she says, and you can't tell whether she means it, or whether anyone does."
+     }
+    },
+    {
+     "label": "REFUSE",
+     "outcomes": {
+      "flag": "liaison_refused",
+      "faction": {
+       "lyra_biocomp": -6
+      },
+      "heat": 5,
+      "text": "She files the refusal on the spot, politely. A grey car parks across the street for the rest of the week."
+     }
+    },
+    {
+     "label": "SAY HER NAME",
+     "outcomes": {
+      "risk": {
+       "chance": 0.5,
+       "success": {
+        "flag": "sable_remembers",
+        "effects": {
+         "path": {
+          "investigator": 1
+         }
+        },
+        "text": "'...Sable.' She says it like a word from a language she used to speak. Then she leaves fast, before it can go."
+       },
+       "fail": {
+        "text": "Nothing. She smiles politely and books her next adjustment."
+       }
+      }
      }
     }
    ]

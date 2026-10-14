@@ -94,12 +94,36 @@ static func advice(c: CustomerData) -> Dictionary:
 	if by.has("risk") and by["risk"]["level"] == &"bad":
 		return {"text": "High risk: it pays, but it can go wrong. Scan carefully and keep supplies ready.", "level": &"warn"}
 	if warn >= 2:
+		# Name what to look out for in words, not a list of captions.
 		var watch: Array[String] = []
 		for x in cs:
 			if x["level"] != &"good":
-				watch.append(str(x["label"]).to_lower())
-		return {"text": "Doable. Watch the %s." % ", ".join(watch), "level": &"warn"}
+				watch.append(watch_phrase(x))
+		return {"text": "Doable, but %s." % _join_and(watch), "level": &"warn"}
 	return {"text": "A good job for you. Take it.", "level": &"good"}
+
+
+## One check as a short clause: "you'll have to buy the implant".
+static func watch_phrase(x: Dictionary) -> String:
+	var v := str(x.get("value", ""))
+	match str(x["key"]):
+		"implant":
+			return "you'll have to buy the implant" if v.begins_with("buy") else ("it's a substitute unit" if v.begins_with("a substitute") else "you have no implant for it")
+		"risk":
+			return "the patient is %s risk" % v.to_lower()
+		"difficulty":
+			return "it's hard for your level"
+		"neural":
+			return "their neural load runs high"
+		"pay":
+			return "they can't pay it all now"
+	return "watch the %s" % str(x["label"]).to_lower()
+
+
+static func _join_and(parts: Array[String]) -> String:
+	if parts.size() <= 1:
+		return "".join(parts)
+	return ", ".join(parts.slice(0, parts.size() - 1)) + " and " + parts[parts.size() - 1]
 
 
 static func color(level: StringName) -> Color:

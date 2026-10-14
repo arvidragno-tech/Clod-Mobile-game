@@ -42,7 +42,8 @@ func _build() -> void:
 	var titles := UIKit.vbox(2)
 	titles.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	UIKit.expand(titles)
-	titles.add_child(UIKit.label("INCIDENT", &"SubHeaderLabel"))
+	# Story decisions (never rolled at random) read as what they are.
+	titles.add_child(UIKit.label("DECISION" if float(e.get("weight", 0)) <= 0.0 else "INCIDENT", &"SubHeaderLabel"))
 	titles.add_child(UIKit.label(str(e.get("title", "EVENT")), &"HeaderLabel", true))
 	if who:
 		titles.add_child(UIKit.label(who.get_display_title(), &"DimLabel", true))

@@ -2582,6 +2582,12 @@
      "variants": [
       {
        "if": {
+        "flag": "lyra_chart"
+       },
+       "text": "I've counted forty static cases, and you have a trial chart with forty beds on it. Beds, doctor. Names. With that, a tribunal can't look away. Will you give it to me?"
+      },
+      {
+       "if": {
         "flag": "board_files"
        },
        "text": "I've counted forty static cases, and a clerk of mine has been carrying laundry to your door. Don't look like that: I hired her. Forty closed files, your implants, your patients. Together it's a case. Will you give them to me?"

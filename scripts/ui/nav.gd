@@ -8,6 +8,7 @@ extends RefCounted
 ##   {"term": "heat"}                       the field-guide card for a word
 ##   {"panel": "changes"}                   the recent-changes panel
 ##   {"doors": "open"}                      open (or close) the clinic doors
+##   {"answer": true}                       bring back the decision or conversation that's waiting
 ## Unknown or stale links do nothing (never a dead click into an error).
 
 
@@ -18,6 +19,8 @@ static func can_open(link: Dictionary) -> bool:
 		return CustomerManager.has_customer()
 	if link.has("location"):
 		return LocationManager.get_location(StringName(str(link["location"]))).size() > 0
+	if link.has("answer"):
+		return EventManager.has_pending() or StoryManager.has_talk() or StoryManager.has_cutscene()
 	return link.has("screen") or link.has("term") or link.has("panel") or link.has("doors")
 
 
@@ -33,6 +36,12 @@ static func open(link: Dictionary) -> void:
 		UIManager.go_to(UIManager.SCREEN_MAP, {"location": StringName(str(link["location"]))})
 	elif link.has("term"):
 		Glossary.show(str(link["term"]))
+	elif link.has("answer"):
+		# The clinic shows what's waiting (decision > scene > conversation).
+		if UIManager.current_screen_id == UIManager.SCREEN_CLINIC and UIManager.current_screen.has_method("resume_story"):
+			UIManager.current_screen.resume_story()
+		else:
+			GameManager.go_to_clinic()
 	elif link.has("doors"):
 		BusinessManager.set_doors_open(str(link["doors"]) == "open")
 	elif link.has("panel"):

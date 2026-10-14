@@ -172,8 +172,11 @@ func _time_of_day(label: String) -> void:
 		EventManager.pending_event = &""
 		UIManager.close_modal()
 		await _frames(10)
-		var clock := root.find_child("ClockLabel", true, false) as Label
-		_check(clock != null and clock.text.contains(TimeManager.clock_text()) and clock.text.contains(TimeManager.period_label()), "%s: the room shows %s %s" % [label, TimeManager.clock_text(), TimeManager.period_label()])
+		# 3.12: the status bar says when, the room says where (once each).
+		var clock := root.find_child("StatusClock", true, false) as Label
+		_check(clock != null and clock.text.contains(TimeManager.clock_text()) and clock.text.contains(TimeManager.period_label()), "%s: the status bar shows %s %s" % [label, TimeManager.clock_text(), TimeManager.period_label()])
+		var place := root.find_child("ClockLabel", true, false) as Label
+		_check(place != null and not place.text.contains(TimeManager.clock_text()), "%s: the room names the place, not the time again (%s)" % [label, place.text if place else "-"])
 		var st := root.find_child("StatusHeadline", true, false) as Button
 		_check(st != null and st.text != "", "%s: the clinic's status line is shown (%s)" % [label, st.text if st else "-"])
 		await _shot(label, "clinic_%s" % String(TimeManager.period()))

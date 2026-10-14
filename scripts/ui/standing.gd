@@ -216,12 +216,28 @@ static func preview(o: Dictionary) -> String:
 	var parts: Array[String] = []
 	if o.has("reputation") and int(o["reputation"]) != 0:
 		parts.append("REP %+d" % int(o["reputation"]))
-	var fac: Dictionary = o.get("faction", {})
+	# Faction changes (top level, or in the story effects), with what the
+	# rivals of a faction you side with lose (FactionManager.rival_losses)
+	# folded in, so the numbers match what will happen.
+	var fac: Dictionary = (o.get("faction", {}) as Dictionary).duplicate()
+	var fx: Dictionary = o.get("effects", {}).get("faction", {}) if o.get("effects", {}) is Dictionary else {}
+	for f: Variant in fx:
+		fac[f] = int(fac.get(f, 0)) + int(fx[f])
+	var total := {}
 	for f: Variant in fac:
-		if int(fac[f]) != 0:
-			parts.append("%s %+d" % [FactionManager.get_name_of(StringName(str(f))), int(fac[f])])
-	if o.has("heat") and absf(float(o["heat"])) >= 0.5:
-		parts.append("heat %+d" % roundi(float(o["heat"])))
+		var id := StringName(str(f))
+		total[id] = int(total.get(id, 0)) + int(fac[f])
+		var rl := FactionManager.rival_losses(id, int(fac[f]))
+		for r: Variant in rl:
+			total[r] = int(total.get(r, 0)) + int(rl[r])
+	for id: StringName in total:
+		if int(total[id]) == 0:
+			continue
+		var only_rival := not fac.has(String(id)) and not fac.has(id)
+		parts.append("%s %+d%s" % [FactionManager.get_name_of(id), int(total[id]), " (rivals)" if only_rival else ""])
+	var heat := float(o.get("heat", 0.0)) + float(o.get("effects", {}).get("heat", 0.0) if o.get("effects", {}) is Dictionary else 0.0)
+	if absf(heat) >= 0.5:
+		parts.append("heat %+d" % roundi(heat))
 	return ", ".join(parts)
 
 

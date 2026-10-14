@@ -211,14 +211,14 @@ func get_next_objective() -> Dictionary:
 	if LocationManager.is_away():
 		return {"text": "You're at %s: RETURN TO CLINIC when you're done" % LocationManager.location_name(LocationManager.player_location), "why": "Patients only come while you're there.", "kind": &"info", "optional": false}
 	if EventManager.has_pending():
-		return {"text": "Someone is waiting: deal with the incident", "why": "Nothing else moves until you answer.", "kind": &"warn", "optional": false}
+		return {"text": "Decide: %s" % pending_title(), "why": "Nothing else moves until you answer. Click here to bring it back.", "kind": &"warn", "optional": false, "link": {"answer": true}}
 	if StoryManager.has_talk():
 		var who := CharacterManager.get_character(StringName(str(DialogueManager.get_dialogue(StoryManager.peek_talk()).get("character", ""))))
-		return {"text": "%s wants to talk" % (who.display_name if who else "Someone"), "why": "The story moves through the people you meet.", "kind": &"warn", "optional": false}
+		return {"text": "%s wants to talk" % (who.display_name if who else "Someone"), "why": "The story moves through the people you meet.", "kind": &"warn", "optional": false, "link": {"answer": true}}
 	var c := get_current_customer()
 	if c:
 		return {"text": "See %s at the door%s" % [c.display_name, " (EMERGENCY)" if c.is_emergency else ""],
-			"why": "They're bleeding out: decide fast." if c.is_emergency else "Jobs are how you earn: check what they want and what you'd keep.", "kind": &"warn" if c.is_emergency else &"info", "optional": false}
+			"why": "They're bleeding out: decide fast." if c.is_emergency else ("There's more to this one than the job. What you decide may come back." if c.case_id != &"" else "Jobs are how you earn: check what they want and what you'd keep."), "kind": &"warn" if c.is_emergency else &"info", "optional": false}
 	if SkillManager.points > 0 and Features.is_on(&"skills"):
 		return {"text": "Spend %d skill point%s in SKILLS" % [SkillManager.points, "s" if SkillManager.points > 1 else ""], "why": "Steadier hands raise your odds on every job.", "kind": &"info", "optional": true}
 	if BusinessManager.is_day_full() and CustomerManager.day_is_quiet() and BusinessManager.jobs_today < BusinessManager.capacity():
@@ -232,6 +232,11 @@ func get_next_objective() -> Dictionary:
 	if InventoryManager.supplies < 2:
 		return {"text": "Supplies low: restock in SUPPLY", "why": "Every operation uses supplies.", "kind": &"warn", "optional": false}
 	return {"text": "Waiting for the next patient", "why": "A good moment to restock, read the journal or plan.", "kind": &"info", "optional": true}
+
+
+## The waiting decision's title ("THE BOUNTY").
+func pending_title() -> String:
+	return str(EventManager.get_event(EventManager.pending_event).get("title", "what happened"))
 
 
 func open_screen(screen_id: StringName) -> void:
@@ -704,6 +709,8 @@ func get_surgery_readiness() -> Dictionary:
 	for req in item.get_tool_requirements():
 		if not InventoryManager.has_tool_category(req["category"], int(req["tier"])):
 			var label := "%s T%d" % [String(req["category"]).to_upper(), int(req["tier"])]
+			# One entry per tool: "DRILL T1", not "DRILL, DRILL T1".
+			missing.erase(String(req["category"]).to_upper())
 			if not missing.has(label):
 				missing.append(label)
 	r["missing_tools"] = missing
