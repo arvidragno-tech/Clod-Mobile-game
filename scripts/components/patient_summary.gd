@@ -73,6 +73,15 @@ func _head(col: VBoxContainer) -> void:
 		who.add_child(UIKit.label("EMERGENCY", &"SubHeaderLabel", false, Palette.DANGER))
 	var nm := str(_brief["name"]) + ((" \"%s\"" % str(_brief["alias"])) if str(_brief["alias"]) != "" else "")
 	who.add_child(UIKit.label(nm, &"HeaderLabel"))
+	if _customer.referred_by != "":
+		who.add_child(UIKit.label("Sent by %s" % _customer.referred_by, &"DimLabel", true, Palette.TEXT_DIM, 15))
+	# Someone with a story speaks for themselves here: the case is told
+	# through what they say, so it can't be skipped by never opening the file.
+	if _customer.case_id != &"" and _customer.dialogue != "":
+		var said := UIKit.flavor(_customer.dialogue, 15)
+		said.name = "SummarySaid"
+		said.custom_minimum_size.x = 520
+		who.add_child(said)
 	var close := UIKit.button("CLOSE  %s" % Controls.hint("pause"), &"GhostButton", _close, "SummaryClose", 40)
 	close.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	head.add_child(close)
@@ -164,10 +173,7 @@ func _build_details() -> void:
 	if src in ["stock", "substitute"] or int(f["owed"]) > 0:
 		var why := "the implant is already yours" if src in ["stock", "substitute"] else "the rest comes in instalments"
 		_line(box, "SummaryCash", "CASH TODAY", "%+d cr (%s)" % [int(f["cash_today"]), why], Palette.TEXT_DIM)
-	var rec: Dictionary = _brief["recommendation"]
-	var adv := UIKit.label(str(rec["text"]), &"", true, JobVerdict.color(rec["level"]), 15)
-	adv.name = "SummaryAdvice"
-	box.add_child(adv)
+	# (The one-line advice is on the door card behind this window.)
 	var rf := IntakeRecord.risks(_customer)
 	if rf.size() > 1:
 		for e: Dictionary in rf:

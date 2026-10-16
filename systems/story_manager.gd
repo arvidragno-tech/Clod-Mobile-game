@@ -309,6 +309,38 @@ func cond(w: Dictionary) -> bool:
 	for f: Variant in fm:
 		if FactionManager.get_rep(StringName(str(f))) < int(fm[f]):
 			return false
+	# 3.12: the world reads your standing, not only your flags.
+	var fx: Dictionary = w.get("faction_max", {})
+	for f: Variant in fx:
+		if FactionManager.get_rep(StringName(str(f))) > int(fx[f]):
+			return false
+	if w.has("max_heat") and FactionManager.heat > float(w["max_heat"]):
+		return false
+	if w.has("not_flag_any"):
+		for f: Variant in w["not_flag_any"]:
+			if has_flag(StringName(str(f))):
+				return false
+	# Trust of a named character (cast.json): {id: n}.
+	var rmin: Dictionary = w.get("rel_min", {})
+	for c: Variant in rmin:
+		if CharacterManager.relationship(StringName(str(c))) < int(rmin[c]):
+			return false
+	var rmax: Dictionary = w.get("rel_max", {})
+	for c: Variant in rmax:
+		if CharacterManager.relationship(StringName(str(c))) > int(rmax[c]):
+			return false
+	# What the street trusts you for (ReputationManager dimensions): {dim: n}.
+	var dmin: Dictionary = w.get("dim_min", {})
+	for d: Variant in dmin:
+		if ReputationManager.dim(StringName(str(d))) < int(dmin[d]):
+			return false
+	# Any one of several conditions: [{cond}, {cond}].
+	if w.has("any"):
+		var ok := false
+		for alt: Variant in w["any"]:
+			ok = ok or (alt is Dictionary and cond(alt))
+		if not ok:
+			return false
 	return true
 
 
@@ -349,7 +381,7 @@ func apply_effects(e: Dictionary, char_id: StringName = &"") -> Array[String]:
 		out.append("rep %+d" % int(e["rep"]))
 	var fa: Dictionary = e.get("faction", {})
 	for f: Variant in fa:
-		FactionManager.change(StringName(str(f)), int(fa[f]))
+		FactionManager.change_by_choice(StringName(str(f)), int(fa[f]))
 		out.append("%s %+d" % [str(FactionManager.factions.get(StringName(str(f)), {}).get("short", f)), int(fa[f])])
 	if e.has("heat"):
 		FactionManager.add_heat(float(e["heat"]))
@@ -378,6 +410,17 @@ func apply_effects(e: Dictionary, char_id: StringName = &"") -> Array[String]:
 			out.append("%s rep %+d" % [str(ReputationManager.DIMENSION_LABELS.get(StringName(str(d)), d)).to_lower(), int(e["dims"][d])])
 	if e.has("memory") and char_id != &"":
 		MemoryManager.remember(char_id, StringName(str(e["memory"])))
+	# Someone else remembers what you did ({who: TAG}): the cast, or a
+	# patient by their person id.
+	var rem: Dictionary = e.get("remember", {})
+	for who: Variant in rem:
+		MemoryManager.remember(StringName(str(who)), StringName(str(rem[who])))
+	# An introduction: a supplier you can now deal with, and how far they
+	# trust you from the start ({id: trust}).
+	var sup: Dictionary = e.get("supplier", {})
+	for sid: Variant in sup:
+		SupplierManager.discover(str(sid), "You were introduced.")
+		SupplierManager.change_trust(str(sid), int(sup[sid]))
 	if e.has("discover"):
 		var ds: Variant = e["discover"]
 		for l: Variant in (ds if ds is Array else [ds]):

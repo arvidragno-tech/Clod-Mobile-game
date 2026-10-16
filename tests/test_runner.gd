@@ -22,6 +22,7 @@ const OnboardingTests := preload("res://tests/onboarding_tests.gd")
 const IntakeTests := preload("res://tests/intake_tests.gd")
 const Clinic310Tests := preload("res://tests/clinic_310_tests.gd")
 const NarrativeTests := preload("res://tests/narrative_tests.gd")
+const ReactiveTests := preload("res://tests/reactive_tests.gd")
 
 var _failures: Array[String] = []
 var _dilemmas_seen: bool = false
@@ -71,6 +72,7 @@ func _run_all() -> void:
 	IntakeTests.new().run(self)
 	Clinic310Tests.new().run(self)
 	NarrativeTests.new().run(self)
+	ReactiveTests.new().run(self)
 	if OS.get_cmdline_user_args().has("--unit-only"):
 		_finish()
 		return
@@ -181,7 +183,7 @@ func _e2e() -> void:
 	var begin := _find_visible("BeginButton") as Button
 	check(begin != null and begin.disabled, "insufficient tools: BEGIN disabled without a drill")
 	await _checkpoint("plan_missing_drill")
-	await _click_named("PlanBackButton")
+	await _click_named("BackButton")  # plan -> scan (3.12: BACK is the one way back)
 	await _click_named("BackButton")
 	await _wait_screen(UIManager.SCREEN_CLINIC)
 	await _click_named("Nav_supply")

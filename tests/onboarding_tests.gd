@@ -79,7 +79,7 @@ func _dashboard() -> void:
 	check(str(d["headline"]["key"]) == "supplies" and (d["headline"]["link"] as Dictionary).get("screen", &"") == &"shop", "no supplies: the headline says so and links to SUPPLY")
 	InventoryManager.supplies = 8
 	BusinessManager.set_doors_open(false)
-	check(str(ClinicStatus.dashboard()["headline"]["text"]) == "DOORS CLOSED", "doors closed: the headline says so")
+	check(str(ClinicStatus.dashboard()["headline"]["text"]) == "ARRIVALS PAUSED", "doors closed: the headline says so")
 	BusinessManager.set_doors_open(true)
 	FactionManager.heat = 60.0
 	d = ClinicStatus.dashboard()

@@ -27,7 +27,7 @@ static func items(n: int = MAX_ITEMS) -> Array[Dictionary]:
 		add.call("emergency", CRITICAL, "✚", "Emergency: %s is bleeding at the door%s" % [c.display_name,
 			(" · %ds" % ceili(left)) if left > 0.0 else ""], {"customer": true})
 	if EventManager.has_pending():
-		add.call("incident", CRITICAL, "!", "Someone is waiting: deal with the incident", {"screen": &"clinic"})
+		add.call("incident", CRITICAL, "!", "Decide: %s" % GameManager.pending_title(), {"answer": true})
 	if InventoryManager.supplies <= 0:
 		add.call("supplies_out", CRITICAL, "✚", "No medical supplies: you can't operate. Restock in SUPPLY", {"screen": &"shop"})
 	if FactionManager.heat >= 75.0:
@@ -38,7 +38,7 @@ static func items(n: int = MAX_ITEMS) -> Array[Dictionary]:
 	# --- Important ---------------------------------------------------------------------
 	if StoryManager.has_talk():
 		var who := CharacterManager.get_character(StringName(str(DialogueManager.get_dialogue(StoryManager.peek_talk()).get("character", ""))))
-		add.call("talk", IMPORTANT, "»", "%s wants to speak with you" % (who.display_name if who else "Someone"), {"screen": &"clinic"})
+		add.call("talk", IMPORTANT, "»", "%s wants to speak with you" % (who.display_name if who else "Someone"), {"answer": true})
 	if c and not c.is_emergency:
 		var item := CyberwareManager.get_cyberware(c.requested_cyberware_id)
 		add.call("door", IMPORTANT, "●", "%s is at the door · wants %s · pays ≈%s" % [c.display_name, item.display_name if item else "work",

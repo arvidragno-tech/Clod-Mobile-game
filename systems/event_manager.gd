@@ -150,6 +150,9 @@ func conditions_met(c: Dictionary) -> bool:
 		var rng: Array = fac[f]
 		if r < int(rng[0]) or r > int(rng[1]):
 			return false
+	# The story's own conditions (trust, reputation types, flags...).
+	if c.has("story") and not StoryManager.cond(c["story"]):
+		return false
 	return true
 
 
@@ -216,7 +219,7 @@ func apply_outcomes(o: Dictionary) -> String:
 		ReputationManager.change(int(o["reputation"]))
 	var fac: Dictionary = o.get("faction", {})
 	for f: Variant in fac:
-		FactionManager.change(StringName(str(f)), int(fac[f]))
+		FactionManager.change_by_choice(StringName(str(f)), int(fac[f]))
 	if o.has("heat"):
 		FactionManager.add_heat(float(o["heat"]))
 	if o.has("xp"):

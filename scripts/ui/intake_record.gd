@@ -267,14 +267,15 @@ static func risks(c: CustomerData) -> Array[Dictionary]:
 	var risk := c.get_risk_level()
 	if risk >= 2:
 		# Once the scan has found something, say so instead of "unidentified".
-		var cause := "the cause isn't identified. A scan can reveal conditions."
+		# Plain words: what it means for the job, then what a scan can add.
+		var cause := "A scan may show what."
 		if not c.revealed_conditions.is_empty():
 			var names: Array[String] = []
 			for cid in c.revealed_conditions:
 				names.append(str(CustomerManager.get_condition(cid).get("name", cid)).to_lower())
-			cause = "the scan found %s, which accounts for some of it." % ", ".join(names)
+			cause = "The scan found %s, which explains part of it." % ", ".join(names)
 		out.append(_e("overall", "OVERALL RISK", ["", "low", "medium", "high"][risk], SUSPECTED, CAUTION if risk == 2 else SIGNIFICANT,
-			"The intake exam rates this patient's physiology as %s risk; %s" % [["", "low", "medium", "high"][risk], cause],
+			"Something in their body makes this %s than usual. %s" % ["harder" if risk == 2 else "much harder", cause],
 			"bleeding, sedation, complications"))
 	# The implant's own failure risk (data), which feeds the complication chance.
 	if item and item.failure_risk > 0.0:

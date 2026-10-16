@@ -55,6 +55,162 @@
    "after": "case_clerk_after"
   },
   {
+   "id": "case_crew_lieutenant",
+   "act": 2,
+   "last_act": 4,
+   "when": {
+    "min_day_in_act": 2,
+    "not_flag_any": [
+     "sided_crews",
+     "sided_aegis"
+    ],
+    "any": [
+     {
+      "faction_min": {
+       "street_gangs": 15
+      },
+      "faction_max": {
+       "corporate_security": 10
+      }
+     },
+     {
+      "flag": "crews_warned",
+      "faction_min": {
+       "street_gangs": 8
+      }
+     }
+    ]
+   },
+   "patient": {
+    "id": "dace_marrow",
+    "name": "Dace Marrow",
+    "alias": "Hook",
+    "age": 31,
+    "occupation": "Rustline lieutenant, the Belt",
+    "archetype": "gang_member",
+    "faction": "street_gangs",
+    "category": "arms",
+    "referred_by": "Rook Varga",
+    "pay": 1.6
+   },
+   "line": "Rook says you're the one cutter who doesn't talk to Aegis. Their checkpoint put two rounds in my shoulder. Fix the arm, doc. Rook's paying, and Rook pays well.",
+   "line_variants": [
+    {
+     "if": {
+      "flag": "crews_warned"
+     },
+     "text": "Rook says you warned us about the van when nobody else would. Aegis put two rounds in my shoulder at the Belt. Fix the arm, doc. Rook's paying, and Rook pays well."
+    }
+   ],
+   "history": "Gunshot wounds, left shoulder, under 24 hours old. Treated in a stairwell with tape. Referred by Rook Varga.",
+   "clue": "Two Aegis-issue slugs, still in the joint. Somebody will be asking who took them out.",
+   "after": "case_lieutenant_after",
+   "on_declined": {
+    "rel_other": {
+     "rook_varga": -6
+    }
+   }
+  },
+  {
+   "id": "case_aegis_retainer",
+   "act": 2,
+   "last_act": 4,
+   "when": {
+    "min_day_in_act": 2,
+    "not_flag_any": [
+     "sided_crews",
+     "sided_aegis"
+    ],
+    "any": [
+     {
+      "faction_min": {
+       "corporate_security": 15
+      },
+      "faction_max": {
+       "street_gangs": 10
+      }
+     },
+     {
+      "flag": "called_aegis",
+      "faction_min": {
+       "corporate_security": 5
+      }
+     }
+    ]
+   },
+   "patient": {
+    "id": "imogen_sato",
+    "name": "Imogen Sato",
+    "alias": "",
+    "age": 38,
+    "occupation": "Lieutenant, Aegis Meridian Security",
+    "archetype": "security_officer",
+    "faction": "corporate_security",
+    "category": "eyes",
+    "referred_by": "Aegis Meridian",
+    "pay": 1.6
+   },
+   "line": "Aegis medical takes notes. You don't, I'm told. Someone who wasn't us rerouted my optic. I want it back to factory, quietly. Aegis pays well for quiet.",
+   "history": "Corporate security officer. Optic firmware altered off-network. Paying with corporate scrip, no insurance claim.",
+   "clue": "The optic's log has been edited by hand. Whoever did it knew Aegis codes, and knew where she'd be looking.",
+   "after": "case_retainer_after"
+  },
+  {
+   "id": "case_courier_offer",
+   "act": 2,
+   "last_act": 4,
+   "when": {
+    "min_day_in_act": 4,
+    "not_flag_any": [
+     "sided_crews",
+     "sided_aegis"
+    ],
+    "any": [
+     {
+      "faction_max": {
+       "street_gangs": 14,
+       "corporate_security": 14
+      }
+     },
+     {
+      "flag_any": [
+       "retainer_declined",
+       "hook_patched"
+      ]
+     }
+    ]
+   },
+   "patient": {
+    "id": "lio_banks",
+    "name": "Lio Banks",
+    "alias": "Courier",
+    "age": 26,
+    "occupation": "Courier, Free Contractors",
+    "archetype": "street_merc",
+    "faction": "independent_mercs",
+    "category": "legs",
+    "referred_by": "Sergeant Okafor"
+   },
+   "line": "Okafor says you don't take sides. Neither do we. Turns out that's rarer than chrome down here. Knee's shot. I run for a living.",
+   "line_variants": [
+    {
+     "if": {
+      "flag": "retainer_declined"
+     },
+     "text": "Okafor heard you handed an Aegis retainer back across the table. Nobody does that. Knee's shot, doc. I run for a living, and I'd rather run for people like you."
+    },
+    {
+     "if": {
+      "flag": "hook_patched"
+     },
+     "text": "Okafor heard you patched a Rustline lieutenant and didn't sell him, or keep him. That's our kind of doctor. Knee's shot. I run for a living."
+    }
+   ],
+   "history": "Freelance courier. Pays in exact change. Refuses to say who for.",
+   "clue": "Old courier wear and nothing else. The cleanest knee you've opened this year.",
+   "after": "case_courier_after"
+  },
+  {
    "id": "case_lyra_runaway",
    "act": 3, "last_act": 4,
    "when": {"min_day_in_act": 1},
@@ -64,6 +220,29 @@
    "clue": "A woven lattice the width of a hand, rooted along the vagus nerve. Lyra part numbers etched into the anchors. This is THREAD, finished.",
    "on_arrive": {"flag": "static_seen"},
    "after": "case_runaway_after"
+  },
+  {
+   "id": "case_pike_grudge",
+   "act": 3,
+   "last_act": 4,
+   "when": {
+    "flag": "thread_log_sold",
+    "min_day_in_act": 2
+   },
+   "patient": {
+    "id": "pike_lindqvist",
+    "name": "Pike Lindqvist",
+    "alias": "Dial",
+    "age": 29,
+    "occupation": "Netrunner, out of work",
+    "archetype": "netrunner",
+    "faction": "independent_mercs",
+    "category": "neural"
+   },
+   "line": "Wire sold my log. Three buyers, and one of them came in through my port and wiped a year out of me. You were the only other one who saw that log, doc. Fix the port. Then we'll talk about it.",
+   "history": "Returning patient. Port wiped from the inside; memory gaps of about a year. Says he knows who sold him.",
+   "clue": "The port's been scrubbed by a corporate tool. The same LYR signature, signing its work this time.",
+   "after": "case_pike_after"
   },
   {
    "id": "case_crane_returns",
@@ -79,6 +258,61 @@
    "clue": "The filaments have become a lattice. It has your servo's wiring wrapped in it like ivy on a fence.",
    "after": "case_crane_end",
    "on_failed": {"flag": "crane_lost"}
+  },
+  {
+   "id": "case_sable_returns",
+   "act": 4,
+   "last_act": 5,
+   "when": {
+    "flag": "runaway_freed",
+    "min_day_in_act": 1
+   },
+   "patient": {
+    "id": "sable_ndiaye",
+    "name": "Sable Ndiaye",
+    "alias": "Bed 14",
+    "age": 24,
+    "occupation": "Singer, night market",
+    "archetype": "club_performer",
+    "category": "neural"
+   },
+   "line": "I sing at the night market now. Badly, and every night. Lyra's been asking around for my surgeon. I didn't tell them. I brought you something from Bed 14 instead.",
+   "history": "Returning patient. Lattice removed (your work). Voice recovering. Wants the old trial port closed for good.",
+   "clue": "The scar from the lattice has healed clean. The anchors you left are inert. Your work held.",
+   "after": "case_sable_after",
+   "on_success": {
+    "supplier": {
+     "curator": 60
+    },
+    "rel_other": {
+     "noor_sayeh": 5
+    }
+   }
+  },
+  {
+   "id": "case_sable_liaison",
+   "act": 4,
+   "last_act": 5,
+   "when": {
+    "flag": "runaway_sold",
+    "min_day_in_act": 1
+   },
+   "patient": {
+    "id": "sable_ndiaye",
+    "name": "Sable Ndiaye",
+    "alias": "",
+    "age": 24,
+    "occupation": "Community liaison, Lyra Biocomp",
+    "archetype": "corporate",
+    "faction": "lyra_biocomp",
+    "category": "neural",
+    "referred_by": "Lyra Biocomp",
+    "pay": 1.4
+   },
+   "line": "Doctor. Community Neural Wellness thanks you for your cooperation. I'm here for a routine adjustment. Please don't look at me like that. I don't remember why you would.",
+   "history": "Lyra Biocomp liaison. Company-paid. Records list no prior visits to this clinic.",
+   "clue": "The lattice is still there, finished and quiet. It has grown around the nerve that carries her voice.",
+   "after": "case_liaison_after"
   }
  ]
 }

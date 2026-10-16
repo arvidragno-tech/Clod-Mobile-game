@@ -319,6 +319,13 @@ func make_case_customer(sc: Dictionary) -> CustomerData:
 	c.age = int(p.get("age", c.age))
 	c.occupation = str(p.get("occupation", c.occupation))
 	c.patience = maxi(c.patience, 70)
+	# Who sent them (shown on the door card and the file), and a better
+	# fee when your standing brought the job (budget follows, so they can
+	# afford it).
+	c.referred_by = str(p.get("referred_by", ""))
+	if p.has("pay"):
+		c.pay_multiplier *= float(p["pay"])
+		c.budget = maxi(int(c.budget * float(p["pay"])), CustomerGenerator.estimate_fee(c))
 	var person := PeopleManager.get_person(c.id)
 	if not person.is_empty():
 		c.visits = int(person.get("visits", 0))

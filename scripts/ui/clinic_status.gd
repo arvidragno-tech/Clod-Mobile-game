@@ -115,7 +115,7 @@ static func dashboard(max_issues: int = 3) -> Dictionary:
 	elif by["money"]["level"] == BAD and Features.is_on(&"business"):
 		head = {"key": "money", "text": "FINANCIAL CONCERN", "why": str(by["money"]["advice"]), "level": BAD, "link": {"screen": &"business"}}
 	elif not BusinessManager.doors_open:
-		head = {"key": "doors", "text": "DOORS CLOSED", "why": "No walk-ins until you open them. Take your time.", "level": WARN, "link": {"doors": "open"}}
+		head = {"key": "doors", "text": "ARRIVALS PAUSED", "why": "Nobody new comes in until you let them. Take your time.", "level": WARN, "link": {"doors": "open"}}
 	elif BusinessManager.is_day_full() and c == null:
 		head = {"key": "day_done", "text": "DAY'S WORK DONE", "why": "Close for the night: rent and wages are paid, the books are shown.", "level": GOOD, "link": {}}
 	else:

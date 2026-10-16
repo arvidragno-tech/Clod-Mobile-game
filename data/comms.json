@@ -138,6 +138,90 @@
    "from": "vesna_kalo",
    "subject": "Your runaway",
    "body": "She went home in a corporate car this morning, darling. She waved. Nobody waves from those cars. — W."
+  },
+  "c_rook_favor": {
+   "kind": "call",
+   "from": "rook_varga",
+   "subject": "A favour",
+   "body": "Hook's walking. Mother doesn't know you exist, and I'd like to keep it that way for you. I need medical supplies at the Belt tonight, no questions. Do this and I'll put you onto Sallow: the best pharma under Canal Street, and she gives my friends credit.",
+   "actions": [
+    {
+     "label": "SEND TWO CRATES (−2 supplies)",
+     "effects": {
+      "supplies": -2,
+      "rel": 6,
+      "faction": {
+       "street_gangs": 4
+      },
+      "supplier": {
+       "sallow": 40
+      }
+     }
+    },
+    {
+     "label": "NOT THIS TIME",
+     "effects": {
+      "rel": -8
+     }
+    }
+   ]
+  },
+  "c_crews_notice": {
+   "kind": "message",
+   "from": "rook_varga",
+   "subject": "Fresh stitches",
+   "body": "Funny thing. Four of our boys got lifted by Aegis this week. All four had fresh stitches. Your stitches. Want to tell me something, doc?",
+   "actions": [
+    {
+     "label": "IT WASN'T ME",
+     "effects": {
+      "rel": -10,
+      "faction": {
+       "street_gangs": -4
+      },
+      "memory": "PLAYER_LIED"
+     }
+    },
+    {
+     "label": "BUSINESS IS BUSINESS",
+     "effects": {
+      "faction": {
+       "street_gangs": -8
+      },
+      "memory": "PLAYER_BETRAYED_FACTION"
+     }
+    }
+   ]
+  },
+  "c_hester_transferred": {
+   "kind": "message",
+   "from": "",
+   "subject": "Transferred",
+   "body": "The Board's records office has a new clerk. Hester Quaye was transferred to the Outer Ring archive on Monday. Her desk was cleared within the hour. Nobody asked where her files went."
+  },
+  "c_pike_thanks": {
+   "kind": "encrypted",
+   "from": "",
+   "subject": "[ENCRYPTED] You kept it",
+   "body": "You copied the log and didn't sell it. I noticed. I've been inside Lyra's annex network since: there's a back way in, past the checkpoint. Want it? — Dial",
+   "actions": [
+    {
+     "label": "SEND ME THE ROUTE",
+     "effects": {
+      "discover": "lyra_annex",
+      "flag": "pike_ally",
+      "path": {
+       "investigator": 1
+      }
+     }
+    },
+    {
+     "label": "LIE LOW, PIKE",
+     "effects": {
+      "flag": "pike_ally"
+     }
+    }
+   ]
   }
  }
 }

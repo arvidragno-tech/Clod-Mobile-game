@@ -53,6 +53,38 @@ func change(id: StringName, delta: int, reason: String = "") -> int:
 	return actual
 
 
+## Taking a side has a price. When a DECISION (an event choice, a
+## conversation, a reply) wins you standing with a faction, its rivals
+## (factions.json `rivals`) hear about it and lose some: a share of the
+## gain, at least 1 and at most RIVAL_MAX_LOSS each. Routine work (paid
+## operations, quest rewards) uses change() and stays neutral.
+const RIVAL_SHARE := 0.4
+const RIVAL_MIN_GAIN := 3
+const RIVAL_MAX_LOSS := 5
+
+
+## What the rivals would lose if `id` gained `delta` by a decision:
+## {rival_id: -n}. Pure, so previews show the same numbers.
+func rival_losses(id: StringName, delta: int) -> Dictionary:
+	var out := {}
+	if delta < RIVAL_MIN_GAIN:
+		return out
+	for r: Variant in get_faction(id).get("rivals", []):
+		var rid := StringName(str(r))
+		if factions.has(rid) and rid != id:
+			out[rid] = -clampi(roundi(delta * RIVAL_SHARE), 1, RIVAL_MAX_LOSS)
+	return out
+
+
+## A faction change that comes from a choice the player made (rivals react).
+func change_by_choice(id: StringName, delta: int, reason: String = "") -> int:
+	var actual := change(id, delta, reason)
+	var losses := rival_losses(id, actual)
+	for rid: StringName in losses:
+		change(rid, int(losses[rid]), "%s: you sided with %s" % [reason if reason != "" else "Word gets around", get_name_of(id)])
+	return actual
+
+
 func get_standing(id: StringName) -> String:
 	var r := get_rep(id)
 	for s: Array in GameConfig.FACTION_STANDINGS:

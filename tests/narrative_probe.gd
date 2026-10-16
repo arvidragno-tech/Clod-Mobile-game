@@ -10,7 +10,11 @@ extends Node
 ##  - the clinic and a street in each season (screenshots), with the
 ##    season's weather on the street;
 ##  - after a story case, the next knock waits longer than after a routine
-##    patient.
+##    patient;
+##  - 3.12: a patient your standing brought (who sent them, what they say),
+##    the decision that follows (named as one, its rivals shown, the
+##    betrayal telegraphed), and the NEXT line bringing it back when it
+##    isn't on screen.
 ##   godot --path . res://tests/narrative_probe.tscn -- [--shots=DIR]
 
 var _shots: String = ""
@@ -41,6 +45,7 @@ func _ready() -> void:
 	await _chapter_card_runs_by_itself()
 	await _skip_button_then_conversation()
 	await _story_case()
+	await _reactive_case()
 	await _breathers()
 	await _seasons()
 	SaveManager.delete_save()
@@ -177,6 +182,68 @@ func _story_case() -> void:
 	await _key(KEY_ESCAPE)
 	await _wait(1.0)
 	_check(_player() == null, "case: ESC skips it")
+
+
+func _reactive_case() -> void:
+	UIManager.close_modal()
+	StoryManager.cutscene_queue.clear()
+	StoryManager.talk_queue.clear()
+	EventManager.pending_event = &""
+	CustomerManager.dismiss_current()
+	UIManager.go_to(UIManager.SCREEN_CLINIC)
+	await _settle()
+	UIManager.close_modal()
+	FactionManager.rep[&"street_gangs"] = 20
+	FactionManager.rep[&"corporate_security"] = 0
+	var c := CustomerManager.make_case_customer(StoryManager.get_case(&"case_crew_lieutenant"))
+	CustomerManager.debug_set_customer(c)
+	await _frames(10)
+	var sent := _find_visible("DoorSentBy") as Label
+	_check(sent != null and sent.text == "Sent by Rook Varga", "reactive: the door card says who sent him (%s)" % (sent.text if sent else "none"))
+	await _shot("312_door_sent_by")
+	await _press_named("SeeButton")
+	await _frames(10)
+	var said := _find_visible("SummarySaid") as Label
+	_check(said != null and said.text.contains("Rook"), "reactive: the summary lets him speak (his words carry the story)")
+	await _shot("312_summary_said")
+	UIManager.close_modal()
+	InventoryManager.supplies = 10
+	CustomerManager.dismiss_current()
+	UIManager.go_to(UIManager.SCREEN_INVENTORY)
+	await _settle()
+	StoryManager.case_finished(c, "success")
+	UIManager.go_to(UIManager.SCREEN_CLINIC)
+	await _settle()
+	await _frames(6)
+	var panel := UIManager.top_modal() as EventPanel
+	_check(panel != null and panel.event_id == &"case_lieutenant_after", "reactive: THE BOUNTY asks for a decision")
+	var labels := ""
+	if panel:
+		for l in panel.find_children("*", "Label", true, false):
+			labels += (l as Label).text + "\n"
+	_check(labels.contains("DECISION") and not labels.contains("INCIDENT"), "reactive: it's headed DECISION, not INCIDENT")
+	_check(labels.contains("(rivals)"), "reactive: the choice shows what the rivals will think")
+	var sell := _find_visible_button("Choice_1")
+	_check(sell != null and sell.text.contains("Rook will find out"), "reactive: the betrayal says who will know (%s)" % (sell.text if sell else "none"))
+	await _shot("312_decision")
+	# Not on screen (closed by something else): the NEXT line brings it back.
+	UIManager.close_modal()
+	await _frames(20)
+	var obj := _find_visible("Objective") as Label
+	_check(obj != null and obj.text.contains("DECIDE: THE BOUNTY"), "reactive: NEXT names the waiting decision (%s)" % (obj.text if obj else "none"))
+	var bar := _find_visible("StatusHeadline") as Button
+	_check(bar != null and not bar.text.contains("ACTION REQUIRED"), "reactive: the bar under the room doesn't say it a second time (%s)" % (bar.text if bar else "none"))
+	await _shot("312_next_decide")
+	if obj:
+		await _click(obj.get_global_rect().get_center())
+	await _frames(10)
+	_check(UIManager.top_modal() is EventPanel, "reactive: clicking NEXT brings the decision back")
+	await _press_named("Choice_0")
+	await _frames(6)
+	await _press_named("EventContinue")
+	await _frames(10)
+	_check(StoryManager.has_flag(&"sided_crews"), "reactive: keeping him hidden puts you with the Crews")
+	UIManager.close_modal()
 
 
 func _breathers() -> void:

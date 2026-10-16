@@ -45,6 +45,7 @@ func _ready() -> void:
 	title.add_theme_color_override(&"font_color", Palette.BRAND)
 	brand.add_child(title)
 	_location = UIKit.label("", &"SubHeaderLabel")
+	_location.name = "StatusClock"
 	# Long clinic + district + clock lines are clipped (full text on hover)
 	# so the bar never pushes MENU off-screen.
 	_location.clip_text = true
@@ -161,8 +162,9 @@ func _refresh() -> void:
 		var here := LocationManager.player_location
 		_location.text = "%s · %s · %s" % [TimeManager.stamp(), LocationManager.location_name(here).to_upper(), WorldManager.district_name(LocationManager.district_of(here)).to_upper()]
 	else:
-		_location.text = "%s · %s · %s" % [TimeManager.stamp(), ClinicManager.get_tier_name().to_upper(), WorldManager.district_name().to_upper()]
-	_location.tooltip_text = _location.text
+		# At the clinic the room says where you are; the bar says when.
+		_location.text = TimeManager.stamp()
+	_location.tooltip_text = "%s · %s · %s" % [TimeManager.stamp(), ClinicManager.get_tier_name().to_upper(), WorldManager.district_name().to_upper()] if not LocationManager.is_away() else _location.text
 	_level.text = "LV %d" % ProgressionManager.level
 	var need := ProgressionManager.xp_required_for_level(ProgressionManager.level + 1)
 	_xp_text.text = "%d / %d XP" % [ProgressionManager.total_xp, need]
