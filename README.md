@@ -7,7 +7,12 @@ almost nothing, take customers, install cyberware at a surgical workstation,
 hire staff, buy clinics across the city, and decide what you become while a
 corporate conspiracy spreads through your patients' nerves.
 
-**Status: 3.11.0**: the mystery reaches the operating table. Seven story
+**Status: 3.12.0**: the world reacts. Taking a side costs you
+standing with its rivals, your choices bring factions, friends and old
+grudges back to the door, and the clinic screen is simpler: one clock, a
+clearer NEXT and risk in plain words.
+
+**3.11.0**: the mystery reaches the operating table. Seven story
 patients bring clues and decisions that come back later, short skippable
 scenes mark each chapter, the clinic day has a calmer rhythm, and the
 city turns through four seasons of weather.

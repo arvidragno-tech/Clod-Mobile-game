@@ -4,7 +4,7 @@ All notable changes to *UNDERCITY: RIPPER*. Versions follow
 `application/config/version` in `project.godot` and the Windows file version
 in `export_presets.cfg`.
 
-## Unreleased — A world that reacts
+## 3.12.0 — A world that reacts
 
 Details, audit and numbers: `docs/REACTIVE_WORLD_3.12.md`.
 
