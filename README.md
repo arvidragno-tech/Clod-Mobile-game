@@ -531,6 +531,9 @@ Any PNG can be replaced 1:1 by hand-made art of the same size.
 tests/run_tests.sh   # compile check, balance sim, stability suite, E2E (mouse + keyboard) and display probe
 ```
 
+- **What fails a suite:** a non-zero exit, a `SCRIPT ERROR`, an engine `ERROR:` line not listed for that suite in `tests/expected_errors.txt` (a missing resource, `push_error`…), or a missing pass marker. `tests/runner_selftest.sh` runs first and proves a missing resource fails a run.
+- **Results:** `ALL SUITES PASSED` (exit 0), `SOME SUITES FAILED` (exit 1), or `NOT ALL SUITES RAN` (exit 2) when `xvfb-run` is missing and the rendered suites were skipped.
+
 - **Compile check:** loads every script and scene, and fails on scripts that load but don't compile.
 - **Unit and system tests:**
   - vitals, scoring, progression, economy and inventory
