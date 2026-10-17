@@ -606,9 +606,15 @@ func get_save_data() -> Dictionary:
 	var c := {}
 	for k: Variant in counters:
 		c[String(k)] = counters[k]
+	# A conversation open at save time goes back to the front of the queue,
+	# so it's waiting again after a reload (DialogueManager resumes it).
+	var talks := talk_queue.duplicate()
+	var open := DialogueManager.open_dialogue_id()
+	if open != "" and not talks.has(open):
+		talks.push_front(open)
 	return {"flags": f, "rumors": unlocked_rumors.map(func(x: StringName) -> String: return String(x)),
 			"met": met_characters.map(func(x: StringName) -> String: return String(x)), "act": act,
-			"act_started_day": act_started_day, "pending": pending.duplicate(true), "talks": talk_queue.duplicate(),
+			"act_started_day": act_started_day, "pending": pending.duplicate(true), "talks": talks,
 			"beats": fired_beats.duplicate(), "paths": p, "counters": c, "ending": String(ending),
 			"cases": case_state.duplicate(), "last_case_day": last_case_day,
 			"cutscenes": cutscene_queue.duplicate(), "seen_cutscenes": seen_cutscenes.duplicate()}

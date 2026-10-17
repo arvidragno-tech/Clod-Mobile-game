@@ -4,6 +4,16 @@ All notable changes to *UNDERCITY: RIPPER*. Versions follow
 `application/config/version` in `project.godot` and the Windows file version
 in `export_presets.cfg`.
 
+## Unreleased
+
+- **A conversation open when the game closes is no longer lost.** Closing
+  the window (or losing focus, which saves) during a story conversation
+  used to drop it for good; Voss's ultimatum could leave act IV with no
+  way out. After a reload it waits again and picks up on the line it was
+  on, without anything it already did happening twice.
+- `tests/run_tests.sh` fails on unexpected engine errors (a missing
+  resource, `push_error`) and reports skipped suites as skipped.
+
 ## 3.12.0 — A world that reacts
 
 Details, audit and numbers: `docs/REACTIVE_WORLD_3.12.md`.
