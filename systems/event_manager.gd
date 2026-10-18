@@ -11,6 +11,9 @@ var history: Dictionary = {}
 ## Array of {"key": String, "value": float, "ops": int, "source": String}
 var temp_modifiers: Array[Dictionary] = []
 var pending_event: StringName = &""
+## Events that came while another was waiting, oldest first. Each becomes
+## pending in turn as the one before it is answered.
+var waiting: Array[StringName] = []
 var operations: int = 0
 var last_result_text: String = ""
 ## Random incidents today (capped by time.json pacing.max_incidents_per_day,
@@ -34,6 +37,7 @@ func reset_state() -> void:
 	history.clear()
 	temp_modifiers.clear()
 	pending_event = &""
+	waiting.clear()
 	operations = 0
 	incident_day = -1
 	incidents_today = 0
@@ -48,10 +52,24 @@ func has_pending() -> bool:
 	return pending_event != &""
 
 
+## Queues an event. If another is already waiting for an answer, this one
+## waits behind it (first come, first answered) instead of replacing it. A
+## one-time event that is already waiting is not queued twice.
 func queue_event(id: StringName) -> void:
-	if events.has(id):
+	if not events.has(id):
+		return
+	if bool(get_event(id).get("once", false)) and (pending_event == id or waiting.has(id)):
+		return
+	if pending_event == &"":
 		pending_event = id
-		EventBus.event_queued.emit(id)
+	else:
+		waiting.append(id)
+	EventBus.event_queued.emit(id)
+
+
+## The next waiting event, or "".
+func _next_waiting() -> StringName:
+	return waiting.pop_front() if not waiting.is_empty() else &""
 
 
 ## Called once per finished operation.
@@ -195,6 +213,9 @@ func _resolve_impl(choice_index: int) -> String:
 	h["count"] = int(h.get("count", 0)) + 1
 	h["last_op"] = operations
 	history[id] = h
+	# The next event in line comes up; anything this answer queues waits
+	# behind it.
+	pending_event = _next_waiting()
 	if e.has("character"):
 		StoryManager.meet(StringName(str(e["character"])))
 	var text := apply_outcomes(choice.get("outcomes", {}))
@@ -292,7 +313,8 @@ func get_save_data() -> Dictionary:
 	var h := {}
 	for k: StringName in history:
 		h[String(k)] = history[k]
-	return {"history": h, "temp_modifiers": temp_modifiers, "pending": String(pending_event), "operations": operations,
+	return {"history": h, "temp_modifiers": temp_modifiers, "pending": String(pending_event),
+		"waiting": waiting.map(func(w: StringName) -> String: return String(w)), "operations": operations,
 		"incident_day": incident_day, "incidents_today": incidents_today}
 
 
@@ -305,7 +327,10 @@ func load_save_data(data: Dictionary) -> void:
 		if typeof(m) == TYPE_DICTIONARY:
 			temp_modifiers.append(m)
 	var p := StringName(str(data.get("pending", "")))
-	pending_event = p if events.has(p) else &""
+	for w: Variant in data.get("waiting", []):
+		if events.has(StringName(str(w))):
+			waiting.append(StringName(str(w)))
+	pending_event = p if events.has(p) else _next_waiting()
 	operations = int(data.get("operations", 0))
 	incident_day = int(data.get("incident_day", -1))
 	incidents_today = int(data.get("incidents_today", 0))

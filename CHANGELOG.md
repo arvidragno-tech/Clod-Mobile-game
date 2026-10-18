@@ -11,6 +11,11 @@ in `export_presets.cfg`.
   used to drop it for good; Voss's ultimatum could leave act IV with no
   way out. After a reload it waits again and picks up on the line it was
   on, without anything it already did happening twice.
+- **Decisions and incidents no longer replace each other.** When two came
+  at once (consequences due the same morning, a story case's decision and
+  other news, a patient coming back after an appointment arrived during
+  the operation), only the last one was kept. Now each waits its turn and
+  is answered in the order it came, and the line survives a reload.
 - `tests/run_tests.sh` fails on unexpected engine errors (a missing
   resource, `push_error`) and reports skipped suites as skipped.
 
