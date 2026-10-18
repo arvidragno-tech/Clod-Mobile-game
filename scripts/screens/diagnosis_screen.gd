@@ -26,6 +26,8 @@ var _ready_note: Label
 var _preview: VBoxContainer
 var _hand_off: Button
 var _region_text: Dictionary = {}
+## The patient this scan is for.
+var _customer: CustomerData
 
 
 func on_enter(_params: Dictionary) -> void:
@@ -34,6 +36,7 @@ func on_enter(_params: Dictionary) -> void:
 	if customer == null or surgery == null:
 		UIManager.go_to.call_deferred(UIManager.SCREEN_CLINIC)
 		return
+	_customer = customer
 	var col := UIKit.workstation(self, &"clinic")
 	var header := UIKit.header("STEP 2 / 4 · DIAGNOSIS", "BODY SCAN", _on_back)
 	col.add_child(header)
@@ -217,6 +220,10 @@ func _scan_region(region: StringName) -> void:
 
 func _on_region_scanned(region: StringName) -> void:
 	var customer := GameManager.get_current_customer()
+	# The patient left while the scanner ran (declined from the patient
+	# summary): there's nobody to report on.
+	if customer == null or customer != _customer:
+		return
 	var text := str(customer.scan_findings.get(String(region), "No anomalies."))
 	var found := false
 	var body: Label = _region_text.get(region)

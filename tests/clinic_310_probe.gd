@@ -2,6 +2,8 @@ extends Node
 ## 3.10 end-to-end probe, real mouse clicks on the real screens:
 ##  - a scan that finds a condition says what it is, what it changes and
 ##    what to do, and the operation plan names it (not "x 1 condition(s)");
+##  - a scan that finishes after the patient has left is ignored (it used
+##    to read the missing patient and stop the script);
 ##  - storage sells a tool (confirm, cash up, item gone) and a stack of
 ##    supplies by quantity, and a double click on the confirm sells once.
 ##   godot --path . res://tests/clinic_310_probe.tscn -- [--shots=DIR]
@@ -35,6 +37,7 @@ func _ready() -> void:
 	UIManager.close_modal()
 	await _frames(4)
 	await _scan_flow()
+	await _scan_after_patient_left()
 	await _sell_flow()
 	SaveManager.delete_save()
 	DirAccess.remove_absolute(Settings.path)
@@ -79,10 +82,7 @@ func _scan_flow() -> void:
 	_check(is_equal_approx(c.bleed_multiplier, bleed), "scan: finding it changes no gameplay value")
 	await _shot("310_scan_condition_found")
 	await _press_named("Scan_head")
-	t = 0
-	while not (_find_visible("RegionName_head") as Label).text.contains("·") and t < 240:
-		await get_tree().process_frame
-		t += 1
+	await _wait_scanned("head")
 	await _frames(6)
 	var opt: Button = null
 	for b in get_tree().root.find_children("Option_*", "Button", true, false):
@@ -192,6 +192,46 @@ func _find_visible_button(n: String) -> Button:
 		if (b as Button).is_visible_in_tree() and not (b as Button).disabled:
 			return b
 	return null
+
+
+## Waits (up to 5 s) for a region's scan to be marked done. The surgical
+## site's name already reads "HEAD  · SURGICAL SITE", so look for the scan's
+## own mark.
+func _wait_scanned(region: String) -> void:
+	var t0 := Time.get_ticks_msec()
+	while Time.get_ticks_msec() - t0 < 5000:
+		var l := _find_visible("RegionName_%s" % region) as Label
+		if l and (l.text.contains("SCANNED") or l.text.contains("CONDITION FOUND")):
+			break
+		await get_tree().process_frame
+
+
+## The patient leaves (DECLINE in the patient summary, which the patient-info
+## key opens on this screen too) while a region is still being scanned. The
+## scanner keeps running on the screen and finishes with nobody there.
+## Before the fix that read the missing patient: a SCRIPT ERROR, which fails
+## this suite in tests/run_tests.sh.
+func _scan_after_patient_left() -> void:
+	var c := CustomerManager.generator.generate({"archetype": "civilian"})
+	CustomerManager.debug_set_customer(c)
+	GameManager.accept_customer()
+	await _settle()
+	_check(UIManager.current_screen_id == UIManager.SCREEN_DIAGNOSIS, "left mid-scan: the body scan opens")
+	await _press_named("Scan_neck")
+	var name_before := (_find_visible("RegionName_neck") as Label).text
+	CustomerManager.dismiss_current()
+	_check(GameManager.get_current_customer() == null, "left mid-scan: the patient is gone while the scanner runs")
+	var t0 := Time.get_ticks_msec()
+	while Time.get_ticks_msec() - t0 < 1500:  # SCAN_TIME is 0.7 s
+		await get_tree().process_frame
+	var scan := get_tree().root.find_child("ScanView", true, false) as ScanView
+	_check(scan != null and scan.get_scanned_count() >= 1 and not scan.is_busy(), "left mid-scan: the scan finished with nobody there")
+	var name_label := _find_visible("RegionName_neck") as Label
+	_check(name_label != null and name_label.text == name_before, "left mid-scan: nothing is reported for a patient who left (%s)" % (name_label.text if name_label else "none"))
+	_check(get_tree().root.find_children("Condition_*", "Label", true, false).is_empty(), "left mid-scan: no finding is shown")
+	UIManager.go_to(UIManager.SCREEN_CLINIC)
+	await _settle()
+	_check(UIManager.current_screen_id == UIManager.SCREEN_CLINIC, "left mid-scan: back to the clinic")
 
 
 func _press_named(n: String) -> void:
