@@ -4,7 +4,10 @@ extends RefCounted
 ## story case's decision deferred to a morning that has other news, and the
 ## incidents an operation queues on top of one that came during surgery
 ## (post-op return, angry relative, static fever). Every one is answered in
-## the order it came, once, and the line survives a save and reload.
+## the order it came, once, and the line survives a save and reload. The
+## day's appointments (the supplier's van, an inspection, the midnight
+## deal, the late emergency) come at their time even when a decision is
+## waiting, once each, and their decision waits in line.
 ## Run by tests/test_runner.gd.
 
 var t: Node
@@ -22,6 +25,8 @@ func run(runner: Node) -> void:
 	_operation_collisions()
 	_repeats_and_duplicates()
 	_save_and_reload()
+	_agenda_while_waiting()
+	_agenda_save_and_duplicates()
 	_old_saves_load()
 	SaveManager.reset_all()
 	CutscenePlayer.enabled = cs_was
@@ -208,6 +213,108 @@ func _save_and_reload() -> void:
 	SaveManager.reset_all()
 	SaveManager.load_game()
 	check(not EventManager.has_pending() and EventManager.waiting.is_empty(), "event queue: answered events don't come back after a reload")
+
+
+## Today's appointments from data/time.json, all of them (no chance roll).
+func _full_agenda() -> void:
+	var out: Array[Dictionary] = []
+	for a: Dictionary in TimeManager.data.get("appointments", []):
+		out.append({"id": str(a["id"]), "minute": int(a["minute"]), "label": str(a.get("label", "")),
+			"event": str(a["event"]), "hidden": bool(a.get("hidden", false)), "done": false})
+	TimeManager.agenda = out
+	TimeManager.minute = TimeManager.open_minute()
+
+
+func _agenda_done() -> Array[String]:
+	var out: Array[String] = []
+	for a: Dictionary in TimeManager.agenda:
+		if bool(a["done"]):
+			out.append(str(a["id"]))
+	return out
+
+
+## Heat over the inspection's 35, Wire met (the midnight deal), past the
+## learning phase (the late emergency), a decision on the table.
+func _busy_day() -> void:
+	SaveManager.reset_all()
+	EconomyManager.add_money(5000)
+	InventoryManager.add_tokens(2)
+	FactionManager.add_heat(45)
+	StoryManager.set_flag(&"bm_access")
+	EventManager.operations = 10
+	_new_day(20)
+	_full_agenda()
+	EventManager.queue_event(&"angry_relative")
+
+
+func _agenda_while_waiting() -> void:
+	_busy_day()
+	TimeManager.advance(600 - TimeManager.minute)  # 10:00, the van
+	check(_agenda_done() == ["supplier"], "agenda: at 10:00 only the van has come (%s)" % [_agenda_done()])
+	check(EventManager.pending_event == &"angry_relative" and EventManager.waiting == [&"supply_drop"], "agenda: the van comes while a decision waits, and waits behind it (%s)" % [EventManager.waiting])
+	TimeManager.advance(60)  # 11:00: nothing new is due
+	check(EventManager.waiting == [&"supply_drop"], "agenda: nothing comes before its time")
+	TimeManager.advance(780 - TimeManager.minute)  # 13:00, the inspection
+	check(EventManager.waiting == [&"supply_drop", &"inspector_visit"], "agenda: the inspection comes at 13:00 and waits behind the van (%s)" % [EventManager.waiting])
+	TimeManager.advance(1440 - TimeManager.minute)  # midnight
+	TimeManager.advance(1560 - TimeManager.minute)  # 02:00, the late emergency
+	var up := [EventManager.pending_event] + EventManager.waiting
+	check(up == [&"angry_relative", &"supply_drop", &"inspector_visit", &"bm_deal", &"emergency_patient"],
+		"agenda: every appointment came at its time and waits in the order it came (%s)" % [up])
+	check(_agenda_done().size() == 4 and TimeManager.upcoming().is_empty(), "agenda: all four are marked as come, none still upcoming")
+	TimeManager._run_agenda()
+	TimeManager.advance(30)
+	check(EventManager.waiting.size() == 4, "agenda: the clock moving on doesn't bring any of them twice")
+	var heat := FactionManager.heat
+	var answered := _answer_all()
+	check(answered == up, "agenda: each is answered once, in order (%s)" % [answered])
+	check(FactionManager.heat < heat, "agenda: the inspection's answer still applies (heat %.0f -> %.0f)" % [heat, FactionManager.heat])
+	check(CustomerManager.has_customer() and CustomerManager.current_customer.is_emergency, "agenda: treating the late emergency still brings the patient in")
+	CustomerManager.reset_state()
+	TimeManager._run_agenda()
+	check(not EventManager.has_pending(), "agenda: answered appointments never come back")
+	# Prerequisites are read at the appointment's time: no midnight deal
+	# without Wire, even if you meet Wire later that night.
+	_busy_day()
+	StoryManager.set_flag(&"bm_access", false)
+	TimeManager.advance(1440 - TimeManager.minute)
+	check(not EventManager.waiting.has(&"bm_deal"), "agenda: the midnight deal doesn't come without Wire")
+	StoryManager.set_flag(&"bm_access")
+	TimeManager.advance(60)
+	check(not EventManager.waiting.has(&"bm_deal"), "agenda: and doesn't come late once Wire is met")
+	# Nothing waiting: the van is up straight away, as before.
+	SaveManager.reset_all()
+	_full_agenda()
+	TimeManager.advance(600 - TimeManager.minute)
+	check(EventManager.pending_event == &"supply_drop" and EventManager.waiting.is_empty(), "agenda: with nothing waiting, the van is up at once")
+
+
+func _agenda_save_and_duplicates() -> void:
+	_busy_day()
+	TimeManager.advance(800 - TimeManager.minute)  # the van and the inspection have come
+	SaveManager.save_game(&"manual")
+	SaveManager.reset_all()
+	SaveManager.load_game()
+	check(EventManager.pending_event == &"angry_relative" and EventManager.waiting == [&"supply_drop", &"inspector_visit"], "agenda save: a reload keeps the waiting appointments (%s)" % [EventManager.waiting])
+	check(_agenda_done() == ["supplier", "inspection"], "agenda save: and which appointments have come (%s)" % [_agenda_done()])
+	TimeManager._run_agenda()
+	TimeManager.advance(10)
+	check(EventManager.waiting == [&"supply_drop", &"inspector_visit"], "agenda save: after the reload neither comes again")
+	check(_answer() == &"angry_relative" and _answer() == &"supply_drop", "agenda save: answering the first two")
+	SaveManager.save_game(&"manual")
+	SaveManager.reset_all()
+	SaveManager.load_game()
+	check(EventManager.pending_event == &"inspector_visit" and EventManager.waiting.is_empty(), "agenda save: saved between two, the inspection is up after the reload")
+	TimeManager.advance(1440 - TimeManager.minute)
+	check(EventManager.waiting == [&"bm_deal"], "agenda save: the midnight deal still comes at its time after the reload (%s)" % [EventManager.waiting])
+	var answered := _answer_all()
+	check(answered == [&"inspector_visit", &"bm_deal"], "agenda save: the rest answered once, in order (%s)" % [answered])
+	SaveManager.save_game(&"manual")
+	SaveManager.reset_all()
+	SaveManager.load_game()
+	TimeManager._run_agenda()
+	check(not EventManager.has_pending() and EventManager.waiting.is_empty(), "agenda save: answered appointments don't come back after a reload")
+	CustomerManager.reset_state()
 
 
 func _old_saves_load() -> void:

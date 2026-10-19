@@ -40,7 +40,7 @@ Rules the code sticks to:
 | `SkillManager` | Skill ranks and points; contributes modifiers |
 | `ClinicManager` | Clinic tier (0–5), upgrade costs and gates; contributes modifiers |
 | `StoryManager` | Story flags, met characters, rumours |
-| `EventManager` | Random and story events, choices, outcomes, timed modifiers, operation counter |
+| `EventManager` | Random and story events, choices, outcomes, timed modifiers, operation counter. One event is pending at a time; one that comes while another waits joins `waiting` (first come, first answered) instead of replacing it |
 | `BlackMarketManager` | Stock rotation, hidden traits, buy/sell/study/modify/scrap, mystery cases |
 | `ModifierManager` | Sums every modifier source into one key → value stack |
 | `CustomerManager` | Story characters, archetypes, procedural generator, arrival queue, history, consequences |
@@ -252,7 +252,7 @@ day full → CLOSE FOR THE NIGHT → BusinessManager.end_day
       → StaffManager.end_of_day (stress, loyalty, growth, secrets, other clinics)
       → rent / running / upkeep / salaries / interest → report → EventBus.day_ended
       → EventBus.day_started → StoryManager: due consequences → talks / events / comms
-clinic screen: pending event > queued talk (DialoguePanel) > customer
+clinic screen: pending event (then each waiting one, in order) > queued talk (DialoguePanel) > customer
 ```
 
 ### Story data
@@ -296,7 +296,7 @@ existing managers call into them at a handful of points.
 | `MemoryManager` | What people remember about you: tags such as `PLAYER_SAVED_ME`, `PLAYER_OVERCHARGED_ME`, `PLAYER_KILLED_FRIEND`, `PLAYER_BETRAYED_FACTION`. A memory moves the relationship once (cast → `CharacterManager`, patients → `PeopleManager`, staff → loyalty) and the reputation dimensions, and gives them something to say (`recall_line`, ~60% of visits) | `data/memories.json` |
 | `PeopleManager` | Everyone who walked in, as people: identity, traits, finances, relationship (stranger … loyal / hostile), visits, money paid, chrome, links (friend, family, crew), history. After a visit they may come back days later, changed (`_evolve`: wealth, scars, chrome from elsewhere, a new crew or job; appearance events persist). Referrals, payment terms (`settle`), patient debts (demand, plan, write off, fixer, favour), cyberware dependency (0–4) | `data/patients.json` |
 | `StaffLifeManager` | Employee lives (family, money, fear, dream), bonds between colleagues (friendly, professional, suspicious, competitive, resentful, loyal, fearful, respectful, involved), life events as COMMS choices, reactions (defend after a death, resent a forced job, envy a raise); `team_modifier` feeds `EmployeeAI.success_chance` | `data/staff_life.json` |
-| `TimeManager` | The clinic clock (09:00–04:00), moved by arrivals (`arrival_gap` spreads the day's jobs), operations (20 min … 2 h by difficulty), triage and talk. Five periods weight archetypes, incidents, prices (`get_modifiers`), black-market prices, staff (`staff_modifier`), room tint and ambience; daily appointments become incidents at their time | `data/time.json` |
+| `TimeManager` | The clinic clock (09:00–04:00), moved by arrivals (`arrival_gap` spreads the day's jobs), operations (20 min … 2 h by difficulty), triage and talk. Five periods weight archetypes, incidents, prices (`get_modifiers`), black-market prices, staff (`staff_modifier`), room tint and ambience; daily appointments become incidents at their time (once each; behind any decision already waiting, never dropped for it) | `data/time.json` |
 | `ClinicLifeManager` | Waiting room (seats walk-ins while you work; patience runs out; rival factions make a scene), hourly vignettes with small effects, the Clinic Wall (pins for milestones, losses, regulars, wanted notices, faction marks, clippings) | `data/clinic_life.json` |
 | `WorldEventManager` | City situations lasting days (gang war, recall, inquiry, takeover, missing fixer, port strike, mass casualty, neural program, blackout, someone you know in trouble) as weights and modifiers; the news wire (situations, reactions to the clinic, filler, your street identity) | `data/world_events.json` |
 | `SurgicalDilemmas` (class) + `SurgeryManager` hooks | Decision complications that freeze the table (`dilemma_started`, `resolve_dilemma`), with odds from patient, chrome, tools, skill, staff | `data/dilemmas.json` |

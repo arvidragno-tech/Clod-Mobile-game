@@ -461,7 +461,7 @@ Details are in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#neural-load).
   - quests and their states, the comms inbox, every dialogue choice
   - tools, implant instances (condition and traits), supplies, parts and tokens
   - black-market stock
-  - story flags, contacts, rumours, pending event and timed modifiers
+  - story flags, contacts, rumours, the pending event and those waiting behind it, timed modifiers
   - customer queue and history, and the waiting customer
   - records and settings
 - **Settings and key bindings** are stored separately in `settings.cfg`.

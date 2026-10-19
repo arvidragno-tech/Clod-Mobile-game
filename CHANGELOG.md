@@ -16,6 +16,11 @@ in `export_presets.cfg`.
   other news, a patient coming back after an appointment arrived during
   the operation), only the last one was kept. Now each waits its turn and
   is answered in the order it came, and the line survives a reload.
+- **Appointments are no longer missed while a decision waits.** The
+  supplier's van, an inspection, the midnight deal and the late emergency
+  used to be skipped for the day if anything else was waiting for an
+  answer. They still come at their time (and only if they make sense
+  then), once each; their decision now waits in line behind the other.
 - `tests/run_tests.sh` fails on unexpected engine errors (a missing
   resource, `push_error`) and reports skipped suites as skipped.
 
