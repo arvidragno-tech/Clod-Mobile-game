@@ -216,26 +216,29 @@ static func preview(o: Dictionary) -> String:
 	var parts: Array[String] = []
 	if o.has("reputation") and int(o["reputation"]) != 0:
 		parts.append("REP %+d" % int(o["reputation"]))
-	# Faction changes (top level, or in the story effects), with what the
-	# rivals of a faction you side with lose (FactionManager.rival_losses)
-	# folded in, so the numbers match what will happen.
-	var fac: Dictionary = (o.get("faction", {}) as Dictionary).duplicate()
-	var fx: Dictionary = o.get("effects", {}).get("faction", {}) if o.get("effects", {}) is Dictionary else {}
-	for f: Variant in fx:
-		fac[f] = int(fac.get(f, 0)) + int(fx[f])
+	# Faction and heat changes as the managers will apply them, in the order
+	# they're applied (the choice's own, then its story effects): gains
+	# scaled by Faction Relations and heat modifiers, capped, with what the
+	# rivals of a faction you side with lose folded in.
+	var fx: Dictionary = o.get("effects", {}) if o.get("effects", {}) is Dictionary else {}
+	var sides := {}
 	var total := {}
-	for f: Variant in fac:
-		var id := StringName(str(f))
-		total[id] = int(total.get(id, 0)) + int(fac[f])
-		var rl := FactionManager.rival_losses(id, int(fac[f]))
-		for r: Variant in rl:
-			total[r] = int(total.get(r, 0)) + int(rl[r])
+	var reps := {}
+	var heat := 0.0
+	for step: Dictionary in [o, fx]:
+		var fac: Dictionary = step.get("faction", {})
+		for f: Variant in fac:
+			var id := StringName(str(f))
+			sides[id] = true
+			var ch := FactionManager.preview_by_choice(id, int(fac[f]), reps)
+			for r: StringName in ch:
+				total[r] = int(total.get(r, 0)) + int(ch[r])
+		if step.has("heat"):
+			heat += FactionManager.preview_heat(float(step["heat"]), FactionManager.heat + heat)
 	for id: StringName in total:
 		if int(total[id]) == 0:
 			continue
-		var only_rival := not fac.has(String(id)) and not fac.has(id)
-		parts.append("%s %+d%s" % [FactionManager.get_name_of(id), int(total[id]), " (rivals)" if only_rival else ""])
-	var heat := float(o.get("heat", 0.0)) + float(o.get("effects", {}).get("heat", 0.0) if o.get("effects", {}) is Dictionary else 0.0)
+		parts.append("%s %+d%s" % [FactionManager.get_name_of(id), int(total[id]), "" if sides.has(id) else " (rivals)"])
 	if absf(heat) >= 0.5:
 		parts.append("heat %+d" % roundi(heat))
 	return ", ".join(parts)

@@ -742,6 +742,7 @@ No new managers, screens or save keys. Audit, plan and results are in
 - **Rivals**:
   - `FactionManager.change_by_choice(id, delta)` is used by `EventManager.apply_outcomes` and `StoryManager.apply_effects`. It applies the change, and on a gain of `RIVAL_MIN_GAIN` or more, each faction in `factions.json` `rivals` loses `RIVAL_SHARE` of it (at least 1, at most `RIVAL_MAX_LOSS`).
   - `rival_losses()` is pure; `Standing.preview` folds it into the totals it shows.
+  - Previews use the managers' own rules: `preview_by_choice()` and `preview_heat()` run the same `scaled_change()` (Faction Relations) and `scaled_heat()` (heat modifiers, criminal / corporate street reputation) as `change()` and `add_heat()`, and the same caps. Rivals lose a share of the gain actually made, after scaling.
   - Paid work and quest rewards use `change()` and stay neutral.
 - **Conditions**:
   - `StoryManager.cond` adds `rel_min` / `rel_max` (cast trust), `dim_min`, `faction_max`, `max_heat`, `not_flag_any` and `any` (a list of conditions, any of which may hold).

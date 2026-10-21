@@ -21,6 +21,12 @@ in `export_presets.cfg`.
   used to be skipped for the day if anything else was waiting for an
   answer. They still come at their time (and only if they make sense
   then), once each; their decision now waits in line behind the other.
+- **Decision cards show the standing and heat you'll really get.** The
+  numbers ignored Faction Relations, the heat modifiers (criminal or
+  corporate street reputation, Smuggling, clinic upgrades) and the caps,
+  so they were off whenever any of those applied, rivals' losses
+  included. Event choices and conversation lines now show the exact
+  change.
 - `tests/run_tests.sh` fails on unexpected engine errors (a missing
   resource, `push_error`) and reports skipped suites as skipped.
 

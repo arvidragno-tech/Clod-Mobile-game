@@ -25,6 +25,7 @@ const NarrativeTests := preload("res://tests/narrative_tests.gd")
 const ReactiveTests := preload("res://tests/reactive_tests.gd")
 const DialogueSaveTests := preload("res://tests/dialogue_save_tests.gd")
 const EventQueueTests := preload("res://tests/event_queue_tests.gd")
+const PreviewAccuracyTests := preload("res://tests/preview_accuracy_tests.gd")
 
 var _failures: Array[String] = []
 var _dilemmas_seen: bool = false
@@ -77,6 +78,7 @@ func _run_all() -> void:
 	ReactiveTests.new().run(self)
 	DialogueSaveTests.new().run(self)
 	EventQueueTests.new().run(self)
+	PreviewAccuracyTests.new().run(self)
 	if OS.get_cmdline_user_args().has("--unit-only"):
 		_finish()
 		return
