@@ -385,6 +385,10 @@ func _case_decision_and_echoes() -> void:
 
 func _case_decline_and_missed() -> void:
 	SaveManager.reset_all()
+	# No city situation that day: a mass casualty (from day 4) would put
+	# its wounded at the door ahead of the case patient.
+	var rolls := WorldEventManager.auto_roll
+	WorldEventManager.auto_roll = false
 	_new_day(2)
 	EventManager.operations = 3
 	CustomerManager.story_slot = 0
@@ -428,6 +432,7 @@ func _case_decline_and_missed() -> void:
 			StoryManager.case_state[str(sc["id"])] = "done"
 	check(StoryManager.due_case().is_empty() and str(StoryManager.case_state.get("case_crane_returns", "")) == "missed", "cases: someone who died can't walk in for their case")
 	SaveManager.reset_all()
+	WorldEventManager.auto_roll = rolls
 
 
 func _case_dialogue_variants() -> void:
