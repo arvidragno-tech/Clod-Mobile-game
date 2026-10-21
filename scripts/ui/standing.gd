@@ -214,8 +214,6 @@ static func preview(o: Dictionary) -> String:
 			return ""
 		return "Risky (%d%%): %s / if it goes wrong: %s" % [roundi(float(r.get("chance", 0.5)) * 100.0), a if a != "" else "no standing change", b if b != "" else "no standing change"]
 	var parts: Array[String] = []
-	if o.has("reputation") and int(o["reputation"]) != 0:
-		parts.append("REP %+d" % int(o["reputation"]))
 	# Faction and heat changes as the managers will apply them, in the order
 	# they're applied (the choice's own, then its story effects): gains
 	# scaled by Faction Relations and heat modifiers, capped, with what the
@@ -225,7 +223,15 @@ static func preview(o: Dictionary) -> String:
 	var total := {}
 	var reps := {}
 	var heat := 0.0
-	for step: Dictionary in [o, fx]:
+	var rep := 0
+	var steps: Array[Dictionary] = [o, fx]
+	for i in steps.size():
+		var step := steps[i]
+		# Street reputation first, as apply_outcomes / apply_effects do, with
+		# its diminishing returns and cap.
+		var dr := int(step.get("reputation" if i == 0 else "rep", 0))
+		if dr != 0:
+			rep += ReputationManager.applied_change(dr, ReputationManager.reputation + rep)
 		var fac: Dictionary = step.get("faction", {})
 		for f: Variant in fac:
 			var id := StringName(str(f))
@@ -235,6 +241,8 @@ static func preview(o: Dictionary) -> String:
 				total[r] = int(total.get(r, 0)) + int(ch[r])
 		if step.has("heat"):
 			heat += FactionManager.preview_heat(float(step["heat"]), FactionManager.heat + heat)
+	if rep != 0:
+		parts.append("REP %+d" % rep)
 	for id: StringName in total:
 		if int(total[id]) == 0:
 			continue

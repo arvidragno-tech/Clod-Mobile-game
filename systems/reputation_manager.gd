@@ -113,13 +113,19 @@ func dominant_dim() -> StringName:
 	return best
 
 
+## What change(delta) does to a reputation of `from` (pure, so previews
+## show the same number). Diminishing returns: each point is harder to earn
+## the higher you are, so "Legend" stays a long-term goal (losses always hit
+## in full); then the -100..100 cap.
+func applied_change(delta: int, from: int) -> int:
+	if delta > 0 and from > 0:
+		delta = maxi(1, roundi(delta * (1.0 - float(from) / (GameConfig.MAX_REPUTATION * 1.4))))
+	return clampi(from + delta, GameConfig.MIN_REPUTATION, GameConfig.MAX_REPUTATION) - from
+
+
 func change(delta: int, reason: String = "") -> void:
 	var old := reputation
-	# Diminishing returns: each point is harder to earn the higher you are,
-	# so "Legend" stays a long-term goal (losses always hit in full).
-	if delta > 0 and reputation > 0:
-		delta = maxi(1, roundi(delta * (1.0 - float(reputation) / (GameConfig.MAX_REPUTATION * 1.4))))
-	reputation = clampi(reputation + delta, GameConfig.MIN_REPUTATION, GameConfig.MAX_REPUTATION)
+	reputation = old + applied_change(delta, old)
 	if reputation != old:
 		EventBus.reputation_changed.emit(reputation, reputation - old)
 		ChangeLog.record_standing("rep", "Street reputation", reputation - old, reputation, reason)
