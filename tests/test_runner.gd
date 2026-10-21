@@ -1009,10 +1009,17 @@ func _scroll_parent(c: Control) -> ScrollContainer:
 
 
 func _click_named(node_name: String, timeout: float = STEP_TIMEOUT) -> void:
+	# Something the last step set off may open on the clinic at the end of
+	# this frame (call_deferred): let it, so the click doesn't land on it.
+	await get_tree().process_frame
 	# Timed incidents (the supplier at 10:00, a midnight deal...) can pop up
 	# on the clinic between scripted steps: resolve them first.
 	if not (node_name.begins_with("Choice_") or node_name == "EventContinue") and _find_visible("EventPanel") != null:
 		await _resolve_incident()
+	# So can a conversation the run's money, reputation or flags just made
+	# due (a story beat): play it through.
+	if not node_name.begins_with("Dialogue") and _find_visible("DialoguePanel") != null:
+		await _play_talks()
 	# Back on the clinic with the day's jobs done (and nobody at the door),
 	# the night closes by itself and its report covers the screen: read it.
 	if node_name != "DayReportClose" and _find_visible("DayReportClose") != null:
