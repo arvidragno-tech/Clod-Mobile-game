@@ -210,6 +210,12 @@ func charge(category: StringName, amount: int) -> int:
 	return paid
 
 
+## Money you now owe without having paid anything (a loan's terms, a
+## story's bill). Never takes the debt below zero.
+func add_debt(amount: int) -> void:
+	debt = maxi(0, debt + amount)
+
+
 func pay_debt(amount: int = -1) -> int:
 	var n := debt if amount < 0 else mini(amount, debt)
 	n = mini(n, EconomyManager.money)

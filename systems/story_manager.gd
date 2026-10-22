@@ -371,7 +371,7 @@ func apply_effects(e: Dictionary, char_id: StringName = &"") -> Array[String]:
 			BusinessManager.charge(&"events", -m)  # short of cash: the rest is owed
 			out.append("%d cr" % m)
 	if e.has("debt"):
-		BusinessManager.debt += int(e["debt"])
+		BusinessManager.add_debt(int(e["debt"]))
 		out.append("debt +%d" % int(e["debt"]))
 	if e.has("rep"):
 		ReputationManager.change(int(e["rep"]))
@@ -497,7 +497,7 @@ func case_finished(c: CustomerData, outcome: String) -> void:
 		else:
 			EventManager.queue_event(after)
 	# The room stays quiet for a while after a case like that.
-	CustomerManager.quiet_until = TimeManager.minute + int(TimeManager.data.get("pacing", {}).get("quiet_minutes_after_story", 60))
+	CustomerManager.quiet_for(int(TimeManager.data.get("pacing", {}).get("quiet_minutes_after_story", 60)))
 
 
 func case_declined(c: CustomerData) -> void:

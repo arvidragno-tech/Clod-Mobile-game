@@ -408,10 +408,9 @@ func _count_away(mins: int, from: StringName) -> void:
 ## room on the bench, otherwise they leave.
 func _leave_clinic() -> void:
 	CustomerManager.stop_arrivals()
-	var c := CustomerManager.current_customer
+	var c := CustomerManager.take_from_door()
 	if c == null:
 		return
-	CustomerManager.current_customer = null
 	if ClinicLifeManager.can_seat():
 		ClinicLifeManager.seat(c)
 	else:
