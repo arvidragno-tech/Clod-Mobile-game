@@ -7,7 +7,12 @@ almost nothing, take customers, install cyberware at a surgical workstation,
 hire staff, buy clinics across the city, and decide what you become while a
 corporate conspiracy spreads through your patients' nerves.
 
-**Status: 3.12.0**: the world reacts. Taking a side costs you
+**Status: 3.13.0**: the clinic holds together. Every kind of chrome
+has its own operation, cutscenes are full scenes, nothing comes free for
+an empty store room, fines you can't pay become debt the same way
+everywhere, and the operating table is draped and prepped.
+
+**3.12.0**: the world reacts. Taking a side costs you
 standing with its rivals, your choices bring factions, friends and old
 grudges back to the door, and the clinic screen is simpler: one clock, a
 clearer NEXT and risk in plain words.

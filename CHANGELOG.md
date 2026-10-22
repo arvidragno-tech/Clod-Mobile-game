@@ -4,7 +4,7 @@ All notable changes to *UNDERCITY: RIPPER*. Versions follow
 `application/config/version` in `project.godot` and the Windows file version
 in `export_presets.cfg`.
 
-## Unreleased
+## 3.13.0 — Holding together: costs, procedures, scenes and the operating field
 
 - **A conversation open when the game closes is no longer lost.** Closing
   the window (or losing focus, which saves) during a story conversation
