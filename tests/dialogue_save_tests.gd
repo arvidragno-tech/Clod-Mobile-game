@@ -21,6 +21,7 @@ func run(runner: Node) -> void:
 	_open_conversation_survives_reload()
 	_effects_never_run_twice()
 	_finished_conversation_is_not_resumed()
+	_city_conversation_resumes_in_the_city()
 	_voss_ultimatum_reaches_act_five()
 	_old_saves_load()
 	DialogueManager.dialogues.erase(TEST_DIALOGUE)
@@ -127,6 +128,43 @@ func _finished_conversation_is_not_resumed() -> void:
 	# Started fresh later (a repeatable talk), it starts from the top.
 	DialogueManager.start(StringName(TEST_DIALOGUE))
 	check(DialogueManager.current_node_id == "start" and EconomyManager.money == base + 1215, "dialogue save: started again later, it begins at the start")
+	DialogueManager.current_id = &""
+
+
+## Talking to a cast member out in the city, the game saves and is
+## reloaded. City talks come off the same story queue the clinic uses, so
+## the open one goes back on it: you are still at that place, talking to
+## the same person there picks it up on its line, and nothing pays twice.
+## (If you go home first, they come by the clinic instead, as any queued
+## talk does; tying it to the place could strand a story talk.)
+func _city_conversation_resumes_in_the_city() -> void:
+	SaveManager.reset_all()
+	var place := &""
+	for id: StringName in LocationManager.locations:
+		if id != LocationManager.CLINIC:
+			place = id
+			break
+	var cid := &""
+	for c: Variant in CharacterManager.cast:
+		cid = StringName(str(c))
+		break
+	DialogueManager.dialogues[TEST_DIALOGUE]["character"] = String(cid)
+	LocationManager.player_location = place
+	var base := EconomyManager.money
+	StoryManager.queue_talk(StringName(TEST_DIALOGUE))
+	var r := WorldSimulationManager.talk("cast", String(cid))
+	check(StringName(str(r.get("dialogue", ""))) == StringName(TEST_DIALOGUE), "dialogue save: talking to %s in the city opens their queued talk" % cid)
+	DialogueManager.start(StringName(TEST_DIALOGUE))
+	check(not StoryManager.has_talk(), "dialogue save: the city talk is off the queue while it is open")
+	_save_quit_and_reload()
+	check(LocationManager.player_location == place, "dialogue save: after a reload you are still at %s" % place)
+	check(StoryManager.talk_queue.count(TEST_DIALOGUE) == 1, "dialogue save: the city talk is waiting again, once")
+	r = WorldSimulationManager.talk("cast", String(cid))
+	check(StringName(str(r.get("dialogue", ""))) == StringName(TEST_DIALOGUE), "dialogue save: talking to %s there again picks it up" % cid)
+	DialogueManager.start(StringName(TEST_DIALOGUE))
+	check(DialogueManager.current_node_id == "start" and EconomyManager.money == base + 100, "dialogue save: it resumes on its line without paying again")
+	DialogueManager.dialogues[TEST_DIALOGUE]["character"] = ""
+	LocationManager.player_location = LocationManager.CLINIC
 	DialogueManager.current_id = &""
 
 
