@@ -185,7 +185,7 @@ static func show(term: String) -> void:
 	var mouse := h.get_global_mouse_position()
 	var sz := card.get_combined_minimum_size()
 	card.position = (mouse + Vector2(16, 16)).clamp(Vector2(8, 8), vp - sz - Vector2(8, 8))
-	ok.grab_focus.call_deferred()
+	UIManager.focus_later(ok)
 	AudioManager.play_sfx(&"click", 0.0)
 
 
@@ -278,7 +278,7 @@ static func open_guide(topic: String = "basics", focus_term: String = "") -> voi
 		if str(tp["id"]) == topic:
 			label = str(tp["label"])
 	fill.call(terms_in(topic), label, focus_term, hidden_in(topic), true)
-	find.grab_focus.call_deferred()
+	UIManager.focus_later(find)
 	AudioManager.play_sfx(&"click", 0.0)
 
 

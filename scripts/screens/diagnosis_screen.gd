@@ -294,7 +294,7 @@ func _on_confirm() -> void:
 	_build_plan_contents()
 	TutorialManager.notify("plan")
 	if not _begin.disabled:
-		_begin.grab_focus.call_deferred()
+		UIManager.focus_later(_begin)
 
 
 func _build_plan_contents() -> void:

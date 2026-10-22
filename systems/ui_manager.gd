@@ -377,6 +377,17 @@ func has_modal() -> bool:
 	return _modal_host != null and _modal_host.get_child_count() > 0
 
 
+## Focuses a control at the end of the frame, if it is still on screen by
+## then (a modal or screen that closes in the same frame takes it away).
+func focus_later(c: Control) -> void:
+	_focus_if_present.call_deferred(c)
+
+
+func _focus_if_present(c: Control) -> void:
+	if is_instance_valid(c) and c.is_inside_tree() and c.is_visible_in_tree():
+		c.grab_focus()
+
+
 ## Every button in the game gets a click sound, a hover tick and the hand
 ## cursor automatically.
 func _on_node_added(node: Node) -> void:

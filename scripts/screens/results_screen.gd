@@ -234,7 +234,7 @@ func _animate() -> void:
 			UIManager.celebrate(&"unlock", "TIER %d CHROME NOW IN SUPPLY" % r.unlocked_tier))
 	t.tween_callback(func() -> void:
 		_continue.disabled = false
-		_continue.grab_focus())
+		UIManager.focus_later(_continue))
 
 
 ## ESC or a click skips the count-up (it was unskippable); then CONTINUE.

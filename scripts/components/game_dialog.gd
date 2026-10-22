@@ -51,7 +51,7 @@ func setup(title: String, body: String, buttons: Array[Dictionary]) -> void:
 	# Keyboard users land on the first (safe) choice.
 	var first := find_children("*", "Button", true, false)
 	if not first.is_empty():
-		(first[0] as Button).call_deferred("grab_focus")
+		UIManager.focus_later(first[0] as Button)
 	create_tween().tween_property(self, "modulate:a", 1.0, 0.12)
 
 

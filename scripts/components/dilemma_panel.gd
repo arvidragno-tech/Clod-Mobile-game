@@ -49,7 +49,7 @@ func _build() -> void:
 		_box.add_child(b)
 		_box.add_child(UIKit.label("   " + (why if why != "" else str(ch.get("risk", ""))), &"DimLabel", true, Palette.WARN if why != "" else Palette.TEXT_DIM, 13))
 		if i == 0 and why == "":
-			b.grab_focus.call_deferred()
+			UIManager.focus_later(b)
 
 
 func _pick(i: int) -> void:
@@ -63,7 +63,7 @@ func _pick(i: int) -> void:
 	_box.add_child(UIKit.label(str(r["text"]), &"MonoLabel", true))
 	var b := UIKit.button("BACK TO THE TABLE" if not bool(r["aborted"]) else "CLOSE UP", &"AccentButton", _close, "DilemmaContinue", 48)
 	_box.add_child(b)
-	b.grab_focus.call_deferred()
+	UIManager.focus_later(b)
 
 
 func _close() -> void:

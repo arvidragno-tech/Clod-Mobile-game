@@ -52,7 +52,7 @@ func _ready() -> void:
 		_box.add_child(first)
 	if first:
 		first.set_meta(&"default", true)
-		first.grab_focus.call_deferred()
+		UIManager.focus_later(first)
 
 
 func _on_choice(i: int) -> void:
@@ -63,7 +63,7 @@ func _on_choice(i: int) -> void:
 	_box.add_child(UIKit.label(out if out != "" else "Done.", &"", true))
 	var b := UIKit.button("CONTINUE", &"AccentButton", _close, "ChoiceContinue")
 	_box.add_child(b)
-	b.grab_focus.call_deferred()
+	UIManager.focus_later(b)
 
 
 ## ESC can't dodge a decision; after the outcome it continues.

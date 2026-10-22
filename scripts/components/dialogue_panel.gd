@@ -189,7 +189,7 @@ func _build_options() -> void:
 		var last := DialogueManager.is_end_node()
 		var b := UIKit.button("END CONVERSATION" if last else "CONTINUE  %s" % Controls.hint("context"), &"AccentButton", _continue, "DialogueEnd" if last else "DialogueNext", 52)
 		_options.add_child(b)
-		b.grab_focus.call_deferred()
+		UIManager.focus_later(b)
 		if Settings.get("auto_advance") == true and not last:
 			_auto_timer = 1.6 + _line.text.length() / maxf(1.0, Settings.chars_per_second() if Settings.chars_per_second() > 0 else 60.0)
 		return
@@ -215,7 +215,7 @@ func _build_options() -> void:
 			k.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 			_options.add_child(k)
 		if i == 0:
-			b.grab_focus.call_deferred()
+			UIManager.focus_later(b)
 		i += 1
 
 

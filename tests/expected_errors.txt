@@ -23,12 +23,6 @@
 stability    ^ERROR: Parse JSON failed\. Error at line [0-9]+:
 e2e          ^ERROR: Parse JSON failed\. Error at line [0-9]+:
 
-# Known, harmless, not yet fixed: a deferred grab_focus() lands after its
-# control left the tree (a modal or screen closed in the same frame). Godot
-# ignores the call. Remove this entry when the call sites check
-# is_inside_tree().
-*            ^ERROR: Condition "!is_inside_tree\(\)" is true\.$
-
 # The test runner rebuilds the main scene, which runs UIManager.setup() a
 # second time. Test-only: the game builds main once.
 e2e          ^ERROR: Signal 'node_added' is already connected to given callable 'Node\(ui_manager\.gd\)::_on_node_added' in that object\.$
