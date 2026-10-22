@@ -13,6 +13,8 @@ const STAGE_TYPES := {
 	&"calibrate": preload("res://scripts/surgery/stages/calibrate_stage.gd"),
 	&"close_incision": preload("res://scripts/surgery/stages/close_incision_stage.gd"),
 	&"anchor_drill": preload("res://scripts/surgery/stages/anchor_drill_stage.gd"),
+	&"sequence": preload("res://scripts/surgery/stages/sequence_stage.gd"),
+	&"hold_steady": preload("res://scripts/surgery/stages/hold_steady_stage.gd"),
 }
 
 

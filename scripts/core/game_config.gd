@@ -183,6 +183,15 @@ const MISTAKE_EFFECTS := {
 	&"bone_crack": {"health": -7.0, "pain": 14.0, "bleed_rate": 0.25},
 	&"loose_anchor": {"pain": 4.0},
 	&"overdose": {"health": -10.0, "neural": -10.0},
+	# The signature step of each kind of chrome (SequenceStage / HoldSteadyStage).
+	&"nerve_misfire": {"neural": -8.0, "pain": 4.0},
+	&"cord_nick": {"neural": -12.0, "pain": 10.0},
+	&"plate_overlap": {"bleed_rate": 0.15, "blood": 1.0, "pain": 5.0},
+	&"vessel_tear": {"bleed_rate": 0.4, "blood": 3.0, "pain": 6.0},
+	&"retina_scuff": {"neural": -6.0, "pain": 6.0},
+	&"tendon_slip": {"health": -3.0, "pain": 8.0},
+	&"joint_buckle": {"health": -4.0, "pain": 10.0},
+	&"air_leak": {"health": -5.0, "pain": 4.0},
 }
 
 ## Human-readable labels for mistakes (shown as floating text / in the log).
@@ -200,11 +209,20 @@ const MISTAKE_LABELS := {
 	&"bone_crack": "BONE CRACK",
 	&"loose_anchor": "LOOSE ANCHOR",
 	&"overdose": "OVERDOSED",
+	&"nerve_misfire": "MISFIRE",
+	&"cord_nick": "CORD NICKED",
+	&"plate_overlap": "PLATE OVERLAP",
+	&"vessel_tear": "VESSEL TORN",
+	&"retina_scuff": "RETINA SCUFFED",
+	&"tendon_slip": "TENDON SLIPPED",
+	&"joint_buckle": "JOINT BUCKLED",
+	&"air_leak": "AIR LEAK",
 }
 
 ## Mistakes that read as MAJOR (red). Everything else is MINOR (amber)
 ## unless its severity is >= MAJOR_SEVERITY.
-const MAJOR_MISTAKES: Array[StringName] = [&"tissue_tear", &"nerve_burn", &"implant_drop", &"wrong_connection", &"bone_crack", &"overdose"]
+const MAJOR_MISTAKES: Array[StringName] = [&"tissue_tear", &"nerve_burn", &"implant_drop", &"wrong_connection", &"bone_crack", &"overdose",
+	&"cord_nick", &"vessel_tear"]
 const MAJOR_SEVERITY := 1.3
 
 ## Sedation dose -> pain baseline mapping.
