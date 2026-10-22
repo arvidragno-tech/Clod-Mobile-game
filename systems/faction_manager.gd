@@ -38,14 +38,17 @@ func get_rep(id: StringName) -> int:
 	return int(rep.get(id, 0))
 
 
+## The change a delta really makes before the -100..100 cap: gains are
+## scaled by faction.gain (Faction Relations), losses hit in full.
+func scaled_change(delta: int) -> int:
+	return int(round(delta * ModifierManager.mult(&"faction.gain"))) if delta > 0 else delta
+
+
 func change(id: StringName, delta: int, reason: String = "") -> int:
 	if not factions.has(id) or delta == 0:
 		return 0
-	var scaled := delta
-	if delta > 0:
-		scaled = int(round(delta * ModifierManager.mult(&"faction.gain")))
 	var old := get_rep(id)
-	rep[id] = clampi(old + scaled, -100, 100)
+	rep[id] = clampi(old + scaled_change(delta), -100, 100)
 	var actual := get_rep(id) - old
 	if actual != 0:
 		EventBus.faction_changed.emit(id, get_rep(id), actual)
@@ -85,6 +88,28 @@ func change_by_choice(id: StringName, delta: int, reason: String = "") -> int:
 	return actual
 
 
+## What change_by_choice(id, delta) would change, without changing it:
+## {faction_id: change}, by the same rules (scaling, cap, rivals). `reps`
+## holds standings already previewed (faction_id -> standing) and is
+## updated, so several changes in a row add up as they would in play.
+func preview_by_choice(id: StringName, delta: int, reps: Dictionary) -> Dictionary:
+	var out := {}
+	var actual := _preview_change(id, delta, reps)
+	out[id] = actual
+	var losses := rival_losses(id, actual)
+	for rid: StringName in losses:
+		out[rid] = int(out.get(rid, 0)) + _preview_change(rid, int(losses[rid]), reps)
+	return out
+
+
+func _preview_change(id: StringName, delta: int, reps: Dictionary) -> int:
+	if not factions.has(id) or delta == 0:
+		return 0
+	var old := int(reps.get(id, get_rep(id)))
+	reps[id] = clampi(old + scaled_change(delta), -100, 100)
+	return int(reps[id]) - old
+
+
 func get_standing(id: StringName) -> String:
 	var r := get_rep(id)
 	for s: Array in GameConfig.FACTION_STANDINGS:
@@ -107,10 +132,21 @@ func customer_weight(id: StringName) -> float:
 	return clampf(1.0 + get_rep(id) / 50.0, 0.15, 3.0)
 
 
+## The heat an amount really adds before the 0..MAX_HEAT cap: gains are
+## scaled by heat.gain and by who the street thinks you are; cooling down
+## is never scaled.
+func scaled_heat(amount: float) -> float:
+	return amount * (ModifierManager.mult(&"heat.gain") * ReputationManager.heat_gain_mult() if amount > 0.0 else 1.0)
+
+
+## What add_heat(amount) would change, starting from heat `from`.
+func preview_heat(amount: float, from: float) -> float:
+	return clampf(from + scaled_heat(amount), 0.0, GameConfig.MAX_HEAT) - from
+
+
 func add_heat(amount: float, reason: String = "") -> void:
-	var scaled := amount * (ModifierManager.mult(&"heat.gain") * ReputationManager.heat_gain_mult() if amount > 0.0 else 1.0)
 	var old := heat
-	heat = clampf(heat + scaled, 0.0, GameConfig.MAX_HEAT)
+	heat = clampf(heat + scaled_heat(amount), 0.0, GameConfig.MAX_HEAT)
 	if not is_equal_approx(old, heat):
 		EventBus.heat_changed.emit(heat, heat - old)
 		ChangeLog.record_standing("heat", "Authority attention (heat)", heat - old, heat, reason)

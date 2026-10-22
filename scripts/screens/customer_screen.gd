@@ -149,7 +149,7 @@ func on_enter(params: Dictionary) -> void:
 	if bool(_params.get("assign", false)) and staff_n > 0:
 		_toggle_staff.call_deferred()
 	_panels.append(decide.get_parent())
-	accept.grab_focus.call_deferred()
+	UIManager.focus_later(accept)
 
 	# Typewriter at the player's text speed (Settings; 0 = instant).
 	var cps := Settings.chars_per_second()

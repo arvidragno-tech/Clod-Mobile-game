@@ -233,6 +233,19 @@ func set_arrivals_paused(on: bool) -> void:
 		_arrival_timer.paused = on
 
 
+## Whoever is at the door steps away from it (into the waiting room, or
+## off home: the caller decides and tells the world). Returns them.
+func take_from_door() -> CustomerData:
+	var c := current_customer
+	current_customer = null
+	return c
+
+
+## Nobody new walks in for the next `minutes` of game time.
+func quiet_for(minutes: int) -> void:
+	quiet_until = maxi(quiet_until, TimeManager.minute + minutes)
+
+
 func dismiss_current() -> void:
 	if current_customer == null:
 		return

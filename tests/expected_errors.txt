@@ -1,0 +1,28 @@
+# Engine ERROR: lines a clean test run is allowed to print.
+#
+# tests/run_tests.sh fails a suite on any "ERROR:" line that no entry here
+# matches. Keep this list short: every entry hides a class of messages.
+#
+# Format: <scope> <extended regex>
+#   scope: a suite id from run_tests.sh (compile, balance, economy, offers,
+#          stability, e2e, display, living, city, ui, ui_stability, ux,
+#          onboarding, clinic_310, narrative, selftest) or * for every suite.
+#   The regex is matched against the whole "ERROR: ..." line.
+
+# No sound card (CI runners, containers): the ALSA driver can't open an
+# output device and Godot falls back to the dummy driver.
+*            ^ERROR: Condition "status < 0" is true\. Returning: ERR_CANT_OPEN$
+
+# Exit-time leak reports from the engine's own cleanup. Leaks during play
+# are measured by the stability suite's own node/orphan/memory checks.
+*            ^ERROR: [0-9]+ resources still in use at exit \(run with --verbose for details\)\.$
+*            ^ERROR: [0-9]+ RID allocations of type '[A-Za-z0-9_]+' were leaked at exit\.$
+*            ^ERROR: Texture with GL ID of [0-9]+: leaked [0-9]+ bytes\.$
+
+# Save fuzzing and tamper tests feed SaveManager broken JSON on purpose.
+stability    ^ERROR: Parse JSON failed\. Error at line [0-9]+:
+e2e          ^ERROR: Parse JSON failed\. Error at line [0-9]+:
+
+# The test runner rebuilds the main scene, which runs UIManager.setup() a
+# second time. Test-only: the game builds main once.
+e2e          ^ERROR: Signal 'node_added' is already connected to given callable 'Node\(ui_manager\.gd\)::_on_node_added' in that object\.$

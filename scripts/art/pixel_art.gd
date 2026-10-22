@@ -108,6 +108,8 @@ static func build_palette(app: Dictionary) -> PackedByteArray:
 		ramp("material", "leather"),
 		ramp("material", "grime"),
 		ramp("material", "blood"),
+		ramp("material", "drape"),
+		ramp("material", "iodine"),
 	]
 	while ramps.size() < RAMP_COUNT:
 		ramps.append(fixed)

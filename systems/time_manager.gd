@@ -316,15 +316,16 @@ func _roll_agenda() -> void:
 	agenda.sort_custom(func(x: Dictionary, y: Dictionary) -> bool: return int(x["minute"]) < int(y["minute"]))
 
 
-## Appointments whose time has come turn into incidents (if nothing else
-## is already waiting, and the incident makes sense right now).
+## Appointments whose time has come turn into incidents (if the incident
+## makes sense right now). Each fires once, at its time; if another decision
+## is waiting, its own decision waits in line behind it (EventManager).
 func _run_agenda() -> void:
 	for a in agenda:
 		if bool(a["done"]) or int(a["minute"]) > minute:
 			continue
 		a["done"] = true
 		var ev := StringName(str(a["event"]))
-		if not EventManager.has_pending() and EventManager.is_eligible(ev):
+		if EventManager.is_eligible(ev):
 			EventManager.queue_event(ev)
 
 

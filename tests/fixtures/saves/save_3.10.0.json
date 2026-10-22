@@ -1,0 +1,3582 @@
+{
+	"meta": {
+		"clinic": "Back-Alley Room",
+		"level": 5,
+		"money": 2850,
+		"ops": 7,
+		"rep": 37
+	},
+	"saved_at": 1792672824,
+	"systems": {
+		"BlackMarketManager": {
+			"ops_since_refresh": 0,
+			"stock": [
+				{
+					"instance": {
+						"condition": 99.9010009765625,
+						"grade": "",
+						"id": "warden_coprocessor",
+						"identified": true,
+						"modified": 0,
+						"revealed": [],
+						"source": "black_market",
+						"supplier": "",
+						"traits": [
+							"efficient"
+						],
+						"uid": "imp_58343038_98776"
+					},
+					"price": 1657
+				},
+				{
+					"instance": {
+						"condition": 95.9232788085938,
+						"grade": "",
+						"id": "unknown_military_core",
+						"identified": true,
+						"modified": 0,
+						"revealed": [],
+						"source": "black_market",
+						"supplier": "",
+						"traits": [
+							"overclocked",
+							"efficient"
+						],
+						"uid": "imp_58343076_99671"
+					},
+					"price": 2297
+				},
+				{
+					"instance": {
+						"condition": 53.1534805297852,
+						"grade": "",
+						"id": "warden_coprocessor",
+						"identified": true,
+						"modified": 0,
+						"revealed": [],
+						"source": "black_market",
+						"supplier": "",
+						"traits": [],
+						"uid": "imp_58343100_69763"
+					},
+					"price": 1308
+				},
+				{
+					"instance": {
+						"condition": 87.8607330322266,
+						"grade": "",
+						"id": "kinetic_lattice",
+						"identified": true,
+						"modified": 0,
+						"revealed": [],
+						"source": "black_market",
+						"supplier": "",
+						"traits": [],
+						"uid": "imp_58343115_95269"
+					},
+					"price": 1936
+				}
+			]
+		},
+		"BusinessManager": {
+			"day": 3,
+			"days_in_debt": 0,
+			"debt": 0,
+			"doors_open": true,
+			"history": [
+				{
+					"clinic": "Back-Alley Room",
+					"day": 1,
+					"debt": 0,
+					"jobs": 3,
+					"ledger": {
+						"cyberware": -220,
+						"events": 250,
+						"operating": -10,
+						"rent": -20,
+						"revenue": 1282
+					},
+					"money": 1582,
+					"notes": [],
+					"profit": 1282
+				},
+				{
+					"clinic": "Back-Alley Room",
+					"day": 2,
+					"debt": 0,
+					"jobs": 3,
+					"ledger": {
+						"cyberware": -486,
+						"events": -90,
+						"operating": -10,
+						"rent": -20,
+						"revenue": 1474
+					},
+					"money": 2450,
+					"notes": [
+						"Break-in overnight: 2 salvaged parts from the bench is gone. Open SECURITY to investigate."
+					],
+					"profit": 868
+				}
+			],
+			"jobs_today": 1,
+			"today": {
+				"revenue": 400
+			},
+			"totals": {
+				"cyberware": -706,
+				"events": 160,
+				"operating": -20,
+				"rent": -40,
+				"revenue": 3156
+			}
+		},
+		"ChangeLog": {
+			"entries": [
+				{
+					"at": 2740,
+					"cat": "money",
+					"day": 1,
+					"delta": -220,
+					"key": "money:cyberware",
+					"level": "info",
+					"link": {
+						"screen": "business"
+					},
+					"minute": 740,
+					"seq": 4,
+					"subject": "Credits",
+					"text": "-220 cr · cyberware"
+				},
+				{
+					"at": 2740,
+					"cat": "money",
+					"day": 1,
+					"delta": 502,
+					"key": "money:revenue",
+					"level": "info",
+					"link": {
+						"screen": "business"
+					},
+					"minute": 740,
+					"seq": 5,
+					"subject": "Credits",
+					"text": "+502 cr · revenue"
+				},
+				{
+					"at": 2740,
+					"cat": "level",
+					"day": 1,
+					"delta": 0,
+					"key": "level:You:Reached level 2 · new skill point",
+					"level": "important",
+					"link": {
+						"screen": "skills"
+					},
+					"minute": 740,
+					"seq": 6,
+					"subject": "You",
+					"text": "Reached level 2 · new skill point"
+				},
+				{
+					"at": 2740,
+					"cat": "rep",
+					"day": 1,
+					"delta": 6,
+					"key": "rep",
+					"level": "info",
+					"link": {
+
+					},
+					"minute": 740,
+					"seq": 7,
+					"subject": "Reputation",
+					"text": "+6 · now 6"
+				},
+				{
+					"at": 2740,
+					"cat": "faction",
+					"day": 1,
+					"delta": 6,
+					"key": "faction:medical_authorities",
+					"level": "important",
+					"link": {
+						"params": {
+							"tab_name": "STANDING"
+						},
+						"screen": "dossier"
+					},
+					"minute": 740,
+					"seq": 8,
+					"subject": "Civic Medical Board",
+					"text": "Standing +6 · now 6"
+				},
+				{
+					"at": 2780,
+					"cat": "lead",
+					"day": 1,
+					"delta": 0,
+					"key": "lead:New lead:The Spindle Interchange sees everyone sooner or later. If someone in Caldera is hiding, ask the freight handlers.",
+					"level": "important",
+					"link": {
+						"params": {
+							"tab_name": "DISCOVERIES",
+							"view": "NEWS"
+						},
+						"screen": "dossier"
+					},
+					"minute": 780,
+					"seq": 9,
+					"subject": "New lead",
+					"text": "The Spindle Interchange sees everyone sooner or later. If someone in Caldera is hiding, ask the freight handlers."
+				},
+				{
+					"at": 3070,
+					"cat": "supplies",
+					"day": 1,
+					"delta": -1,
+					"key": "supplies",
+					"level": "info",
+					"link": {
+						"screen": "shop"
+					},
+					"minute": 1070,
+					"seq": 10,
+					"subject": "Medical supplies",
+					"text": "-1 · now 6"
+				},
+				{
+					"at": 3070,
+					"cat": "money",
+					"day": 1,
+					"delta": 318,
+					"key": "money:revenue",
+					"level": "info",
+					"link": {
+						"screen": "business"
+					},
+					"minute": 1070,
+					"seq": 11,
+					"subject": "Credits",
+					"text": "+318 cr · revenue"
+				},
+				{
+					"at": 3070,
+					"cat": "rep",
+					"day": 1,
+					"delta": 6,
+					"key": "rep",
+					"level": "info",
+					"link": {
+
+					},
+					"minute": 1070,
+					"seq": 12,
+					"subject": "Reputation",
+					"text": "+6 · now 12"
+				},
+				{
+					"at": 3090,
+					"cat": "lead",
+					"day": 1,
+					"delta": 0,
+					"key": "lead:New lead:Doctors whisper about 'static fever': chrome-heavy patients losing time, then losing themselves.",
+					"level": "important",
+					"link": {
+						"params": {
+							"tab_name": "DISCOVERIES",
+							"view": "NEWS"
+						},
+						"screen": "dossier"
+					},
+					"minute": 1090,
+					"seq": 14,
+					"subject": "New lead",
+					"text": "Doctors whisper about 'static fever': chrome-heavy patients losing time, then losing themselves."
+				},
+				{
+					"at": 3090,
+					"cat": "lead",
+					"day": 1,
+					"delta": 0,
+					"key": "lead:New lead:The Undermarket moves military chrome through the old flood tunnels. Ask for Wire.",
+					"level": "important",
+					"link": {
+						"params": {
+							"tab_name": "DISCOVERIES",
+							"view": "NEWS"
+						},
+						"screen": "dossier"
+					},
+					"minute": 1090,
+					"seq": 15,
+					"subject": "New lead",
+					"text": "The Undermarket moves military chrome through the old flood tunnels. Ask for Wire."
+				},
+				{
+					"at": 3090,
+					"cat": "money",
+					"day": 1,
+					"delta": 250,
+					"key": "money:events",
+					"level": "info",
+					"link": {
+						"screen": "business"
+					},
+					"minute": 1090,
+					"seq": 16,
+					"subject": "Credits",
+					"text": "+250 cr · events"
+				},
+				{
+					"at": 3090,
+					"cat": "faction",
+					"day": 1,
+					"delta": 4,
+					"key": "faction:black_market",
+					"level": "info",
+					"link": {
+						"params": {
+							"tab_name": "STANDING"
+						},
+						"screen": "dossier"
+					},
+					"minute": 1090,
+					"seq": 17,
+					"subject": "The Undermarket",
+					"text": "Standing +4 · now 4"
+				},
+				{
+					"at": 3090,
+					"cat": "faction",
+					"day": 1,
+					"delta": 0,
+					"key": "faction:corporate_security",
+					"level": "important",
+					"link": {
+						"params": {
+							"tab_name": "STANDING"
+						},
+						"screen": "dossier"
+					},
+					"minute": 1090,
+					"seq": 18,
+					"subject": "Aegis Meridian Security",
+					"text": "Standing +0 · now -5"
+				},
+				{
+					"at": 3090,
+					"cat": "heat",
+					"day": 1,
+					"delta": 10,
+					"key": "heat",
+					"level": "info",
+					"link": {
+						"params": {
+							"tab_name": "STANDING"
+						},
+						"screen": "dossier"
+					},
+					"minute": 1090,
+					"seq": 19,
+					"subject": "Authority heat",
+					"text": "+10 · now 10"
+				},
+				{
+					"at": 3092,
+					"cat": "supplies",
+					"day": 1,
+					"delta": -1,
+					"key": "supplies",
+					"level": "info",
+					"link": {
+						"screen": "shop"
+					},
+					"minute": 1092,
+					"seq": 20,
+					"subject": "Medical supplies",
+					"text": "-1 · now 5"
+				},
+				{
+					"at": 3092,
+					"cat": "money",
+					"day": 1,
+					"delta": 462,
+					"key": "money:revenue",
+					"level": "info",
+					"link": {
+						"screen": "business"
+					},
+					"minute": 1092,
+					"seq": 21,
+					"subject": "Credits",
+					"text": "+462 cr · revenue"
+				},
+				{
+					"at": 3092,
+					"cat": "level",
+					"day": 1,
+					"delta": 0,
+					"key": "level:You:Reached level 3 · new skill point",
+					"level": "important",
+					"link": {
+						"screen": "skills"
+					},
+					"minute": 1092,
+					"seq": 22,
+					"subject": "You",
+					"text": "Reached level 3 · new skill point"
+				},
+				{
+					"at": 3092,
+					"cat": "rep",
+					"day": 1,
+					"delta": 5,
+					"key": "rep",
+					"level": "info",
+					"link": {
+
+					},
+					"minute": 1092,
+					"seq": 23,
+					"subject": "Reputation",
+					"text": "+5 · now 17"
+				},
+				{
+					"at": 3092,
+					"cat": "faction",
+					"day": 1,
+					"delta": 6,
+					"key": "faction:street_gangs",
+					"level": "important",
+					"link": {
+						"params": {
+							"tab_name": "STANDING"
+						},
+						"screen": "dossier"
+					},
+					"minute": 1092,
+					"seq": 24,
+					"subject": "Rustline Crews",
+					"text": "Standing +6 · now 6"
+				},
+				{
+					"at": 3092,
+					"cat": "heat",
+					"day": 1,
+					"delta": -3,
+					"key": "heat",
+					"level": "info",
+					"link": {
+						"params": {
+							"tab_name": "STANDING"
+						},
+						"screen": "dossier"
+					},
+					"minute": 1092,
+					"seq": 25,
+					"subject": "Authority heat",
+					"text": "-3 · now 7"
+				},
+				{
+					"at": 3132,
+					"cat": "lead",
+					"day": 1,
+					"delta": 0,
+					"key": "lead:New lead:Up-level clinics run robot arms and neural scanners. Down here we use hands.",
+					"level": "important",
+					"link": {
+						"params": {
+							"tab_name": "DISCOVERIES",
+							"view": "NEWS"
+						},
+						"screen": "dossier"
+					},
+					"minute": 1132,
+					"seq": 26,
+					"subject": "New lead",
+					"text": "Up-level clinics run robot arms and neural scanners. Down here we use hands."
+				},
+				{
+					"at": 3132,
+					"cat": "money",
+					"day": 1,
+					"delta": -20,
+					"key": "money:rent",
+					"level": "info",
+					"link": {
+						"screen": "business"
+					},
+					"minute": 1132,
+					"seq": 27,
+					"subject": "Credits",
+					"text": "-20 cr · rent"
+				},
+				{
+					"at": 3132,
+					"cat": "money",
+					"day": 1,
+					"delta": -10,
+					"key": "money:operating",
+					"level": "info",
+					"link": {
+						"screen": "business"
+					},
+					"minute": 1132,
+					"seq": 28,
+					"subject": "Credits",
+					"text": "-10 cr · operating"
+				},
+				{
+					"at": 5132,
+					"cat": "message",
+					"day": 2,
+					"delta": 0,
+					"key": "message:Pell Ormond:Rent",
+					"level": "important",
+					"link": {
+						"params": {
+							"tab_name": "MAIN"
+						},
+						"screen": "dossier"
+					},
+					"minute": 1132,
+					"seq": 29,
+					"subject": "Pell Ormond",
+					"text": "Rent"
+				},
+				{
+					"at": 5132,
+					"cat": "message",
+					"day": 2,
+					"delta": 0,
+					"key": "message:Unknown:New place: Furnace Line Works (Furnace Line)",
+					"level": "important",
+					"link": {
+						"params": {
+							"tab_name": "MAIN"
+						},
+						"screen": "dossier"
+					},
+					"minute": 1132,
+					"seq": 30,
+					"subject": "Unknown",
+					"text": "New place: Furnace Line Works (Furnace Line)"
+				},
+				{
+					"at": 5132,
+					"cat": "place",
+					"day": 2,
+					"delta": 0,
+					"key": "place:Furnace Line Works:New place on your map",
+					"level": "important",
+					"link": {
+						"location": "furnace_works"
+					},
+					"minute": 1132,
+					"seq": 31,
+					"subject": "Furnace Line Works",
+					"text": "New place on your map"
+				},
+				{
+					"at": 5132,
+					"cat": "message",
+					"day": 2,
+					"delta": 0,
+					"key": "message:Unknown:New place: Caldera Stacks (Old Caldera)",
+					"level": "important",
+					"link": {
+						"params": {
+							"tab_name": "MAIN"
+						},
+						"screen": "dossier"
+					},
+					"minute": 1132,
+					"seq": 32,
+					"subject": "Unknown",
+					"text": "New place: Caldera Stacks (Old Caldera)"
+				},
+				{
+					"at": 5132,
+					"cat": "place",
+					"day": 2,
+					"delta": 0,
+					"key": "place:Caldera Stacks:New place on your map",
+					"level": "important",
+					"link": {
+						"location": "caldera_stacks"
+					},
+					"minute": 1132,
+					"seq": 33,
+					"subject": "Caldera Stacks",
+					"text": "New place on your map"
+				},
+				{
+					"at": 5132,
+					"cat": "quest",
+					"day": 2,
+					"delta": 0,
+					"key": "quest:Keep The Lights On:New objective",
+					"level": "important",
+					"link": {
+						"params": {
+							"tab_name": "MAIN"
+						},
+						"screen": "dossier"
+					},
+					"minute": 1132,
+					"seq": 34,
+					"subject": "Keep The Lights On",
+					"text": "New objective"
+				},
+				{
+					"at": 5132,
+					"cat": "quest",
+					"day": 2,
+					"delta": 0,
+					"key": "quest:Another Pair Of Hands:New objective",
+					"level": "important",
+					"link": {
+						"params": {
+							"tab_name": "MAIN"
+						},
+						"screen": "dossier"
+					},
+					"minute": 1132,
+					"seq": 35,
+					"subject": "Another Pair Of Hands",
+					"text": "New objective"
+				},
+				{
+					"at": 4768,
+					"cat": "money",
+					"day": 2,
+					"delta": -243,
+					"key": "money:cyberware",
+					"level": "info",
+					"link": {
+						"screen": "business"
+					},
+					"minute": 768,
+					"seq": 36,
+					"subject": "Credits",
+					"text": "-243 cr · cyberware"
+				},
+				{
+					"at": 4768,
+					"cat": "supplies",
+					"day": 2,
+					"delta": -1,
+					"key": "supplies",
+					"level": "info",
+					"link": {
+						"screen": "shop"
+					},
+					"minute": 768,
+					"seq": 37,
+					"subject": "Medical supplies",
+					"text": "-1 · now 4"
+				},
+				{
+					"at": 4768,
+					"cat": "money",
+					"day": 2,
+					"delta": 412,
+					"key": "money:revenue",
+					"level": "info",
+					"link": {
+						"screen": "business"
+					},
+					"minute": 768,
+					"seq": 38,
+					"subject": "Credits",
+					"text": "+412 cr · revenue"
+				},
+				{
+					"at": 4768,
+					"cat": "level",
+					"day": 2,
+					"delta": 0,
+					"key": "level:You:Reached level 4 · new skill point",
+					"level": "important",
+					"link": {
+						"screen": "skills"
+					},
+					"minute": 768,
+					"seq": 39,
+					"subject": "You",
+					"text": "Reached level 4 · new skill point"
+				},
+				{
+					"at": 4768,
+					"cat": "rep",
+					"day": 2,
+					"delta": 5,
+					"key": "rep",
+					"level": "info",
+					"link": {
+
+					},
+					"minute": 768,
+					"seq": 40,
+					"subject": "Reputation",
+					"text": "+5 · now 22"
+				},
+				{
+					"at": 4768,
+					"cat": "faction",
+					"day": 2,
+					"delta": 6,
+					"key": "faction:street_gangs",
+					"level": "important",
+					"link": {
+						"params": {
+							"tab_name": "STANDING"
+						},
+						"screen": "dossier"
+					},
+					"minute": 768,
+					"seq": 41,
+					"subject": "Rustline Crews",
+					"text": "Standing +6 · now 12"
+				},
+				{
+					"at": 4768,
+					"cat": "heat",
+					"day": 2,
+					"delta": -3,
+					"key": "heat",
+					"level": "info",
+					"link": {
+						"params": {
+							"tab_name": "STANDING"
+						},
+						"screen": "dossier"
+					},
+					"minute": 768,
+					"seq": 42,
+					"subject": "Authority heat",
+					"text": "-3 · now 4"
+				},
+				{
+					"at": 4808,
+					"cat": "lead",
+					"day": 2,
+					"delta": 0,
+					"key": "lead:New lead:Two Rustline crews are fighting over the drowned district. Expect more knife wounds.",
+					"level": "important",
+					"link": {
+						"params": {
+							"tab_name": "DISCOVERIES",
+							"view": "NEWS"
+						},
+						"screen": "dossier"
+					},
+					"minute": 808,
+					"seq": 43,
+					"subject": "New lead",
+					"text": "Two Rustline crews are fighting over the drowned district. Expect more knife wounds."
+				},
+				{
+					"at": 4808,
+					"cat": "money",
+					"day": 2,
+					"delta": -90,
+					"key": "money:events",
+					"level": "info",
+					"link": {
+						"screen": "business"
+					},
+					"minute": 808,
+					"seq": 44,
+					"subject": "Credits",
+					"text": "-90 cr · events"
+				},
+				{
+					"at": 4810,
+					"cat": "supplies",
+					"day": 2,
+					"delta": 5,
+					"key": "supplies",
+					"level": "info",
+					"link": {
+						"screen": "shop"
+					},
+					"minute": 810,
+					"seq": 46,
+					"subject": "Medical supplies",
+					"text": "+5 · now 9"
+				},
+				{
+					"at": 4810,
+					"cat": "money",
+					"day": 2,
+					"delta": 317,
+					"key": "money:revenue",
+					"level": "info",
+					"link": {
+						"screen": "business"
+					},
+					"minute": 810,
+					"seq": 47,
+					"subject": "Credits",
+					"text": "+317 cr · revenue"
+				},
+				{
+					"at": 4810,
+					"cat": "rep",
+					"day": 2,
+					"delta": 5,
+					"key": "rep",
+					"level": "info",
+					"link": {
+
+					},
+					"minute": 810,
+					"seq": 48,
+					"subject": "Reputation",
+					"text": "+5 · now 27"
+				},
+				{
+					"at": 4810,
+					"cat": "faction_standing",
+					"day": 2,
+					"delta": 0,
+					"key": "faction_standing:Rustline Crews:Now FRIENDLY (was NEUTRAL)",
+					"level": "important",
+					"link": {
+						"params": {
+							"tab_name": "STANDING"
+						},
+						"screen": "dossier"
+					},
+					"minute": 810,
+					"seq": 49,
+					"subject": "Rustline Crews",
+					"text": "Now FRIENDLY (was NEUTRAL)"
+				},
+				{
+					"at": 4810,
+					"cat": "faction",
+					"day": 2,
+					"delta": 6,
+					"key": "faction:street_gangs",
+					"level": "important",
+					"link": {
+						"params": {
+							"tab_name": "STANDING"
+						},
+						"screen": "dossier"
+					},
+					"minute": 810,
+					"seq": 50,
+					"subject": "Rustline Crews",
+					"text": "Standing +6 · now 18"
+				},
+				{
+					"at": 4810,
+					"cat": "heat",
+					"day": 2,
+					"delta": -3,
+					"key": "heat",
+					"level": "info",
+					"link": {
+						"params": {
+							"tab_name": "STANDING"
+						},
+						"screen": "dossier"
+					},
+					"minute": 810,
+					"seq": 51,
+					"subject": "Authority heat",
+					"text": "-3 · now 1"
+				},
+				{
+					"at": 4830,
+					"cat": "lead",
+					"day": 2,
+					"delta": 0,
+					"key": "lead:New lead:A disgraced corporate surgeon is drinking her pension away in the Sump.",
+					"level": "important",
+					"link": {
+						"params": {
+							"tab_name": "DISCOVERIES",
+							"view": "NEWS"
+						},
+						"screen": "dossier"
+					},
+					"minute": 830,
+					"seq": 52,
+					"subject": "New lead",
+					"text": "A disgraced corporate surgeon is drinking her pension away in the Sump."
+				},
+				{
+					"at": 5130,
+					"cat": "money",
+					"day": 2,
+					"delta": -243,
+					"key": "money:cyberware",
+					"level": "info",
+					"link": {
+						"screen": "business"
+					},
+					"minute": 1130,
+					"seq": 53,
+					"subject": "Credits",
+					"text": "-243 cr · cyberware"
+				},
+				{
+					"at": 5130,
+					"cat": "supplies",
+					"day": 2,
+					"delta": -1,
+					"key": "supplies",
+					"level": "info",
+					"link": {
+						"screen": "shop"
+					},
+					"minute": 1130,
+					"seq": 54,
+					"subject": "Medical supplies",
+					"text": "-1 · now 8"
+				},
+				{
+					"at": 5130,
+					"cat": "money",
+					"day": 2,
+					"delta": 745,
+					"key": "money:revenue",
+					"level": "info",
+					"link": {
+						"screen": "business"
+					},
+					"minute": 1130,
+					"seq": 55,
+					"subject": "Credits",
+					"text": "+745 cr · revenue"
+				},
+				{
+					"at": 5130,
+					"cat": "rep",
+					"day": 2,
+					"delta": 5,
+					"key": "rep",
+					"level": "info",
+					"link": {
+
+					},
+					"minute": 1130,
+					"seq": 56,
+					"subject": "Reputation",
+					"text": "+5 · now 32"
+				},
+				{
+					"at": 5130,
+					"cat": "faction",
+					"day": 2,
+					"delta": 6,
+					"key": "faction:independent_mercs",
+					"level": "important",
+					"link": {
+						"params": {
+							"tab_name": "STANDING"
+						},
+						"screen": "dossier"
+					},
+					"minute": 1130,
+					"seq": 57,
+					"subject": "Free Contractors",
+					"text": "Standing +6 · now 6"
+				},
+				{
+					"at": 5130,
+					"cat": "heat",
+					"day": 2,
+					"delta": -1,
+					"key": "heat",
+					"level": "info",
+					"link": {
+						"params": {
+							"tab_name": "STANDING"
+						},
+						"screen": "dossier"
+					},
+					"minute": 1130,
+					"seq": 58,
+					"subject": "Authority heat",
+					"text": "-1 · now 0"
+				},
+				{
+					"at": 5170,
+					"cat": "lead",
+					"day": 2,
+					"delta": 0,
+					"key": "lead:New lead:A Lyra Biocomp prototype memory core went missing from a lab convoy last week.",
+					"level": "important",
+					"link": {
+						"params": {
+							"tab_name": "DISCOVERIES",
+							"view": "NEWS"
+						},
+						"screen": "dossier"
+					},
+					"minute": 1170,
+					"seq": 59,
+					"subject": "New lead",
+					"text": "A Lyra Biocomp prototype memory core went missing from a lab convoy last week."
+				},
+				{
+					"at": 5170,
+					"cat": "money",
+					"day": 2,
+					"delta": -20,
+					"key": "money:rent",
+					"level": "info",
+					"link": {
+						"screen": "business"
+					},
+					"minute": 1170,
+					"seq": 60,
+					"subject": "Credits",
+					"text": "-20 cr · rent"
+				},
+				{
+					"at": 5170,
+					"cat": "money",
+					"day": 2,
+					"delta": -10,
+					"key": "money:operating",
+					"level": "info",
+					"link": {
+						"screen": "business"
+					},
+					"minute": 1170,
+					"seq": 61,
+					"subject": "Credits",
+					"text": "-10 cr · operating"
+				},
+				{
+					"at": 5170,
+					"cat": "message",
+					"day": 2,
+					"delta": 0,
+					"key": "message:Unknown:Break-in: 2 salvaged parts from the bench",
+					"level": "important",
+					"link": {
+						"params": {
+							"tab_name": "MAIN"
+						},
+						"screen": "dossier"
+					},
+					"minute": 1170,
+					"seq": 62,
+					"subject": "Unknown",
+					"text": "Break-in: 2 salvaged parts from the bench"
+				},
+				{
+					"at": 7170,
+					"cat": "message",
+					"day": 3,
+					"delta": 0,
+					"key": "message:Tomas Varga:Incoming call",
+					"level": "important",
+					"link": {
+						"params": {
+							"tab_name": "MAIN"
+						},
+						"screen": "dossier"
+					},
+					"minute": 1170,
+					"seq": 63,
+					"subject": "Tomas Varga",
+					"text": "Incoming call"
+				},
+				{
+					"at": 6540,
+					"cat": "message",
+					"day": 3,
+					"delta": 0,
+					"key": "message:Unknown:Lena Delgado is in trouble",
+					"level": "important",
+					"link": {
+						"params": {
+							"tab_name": "MAIN"
+						},
+						"screen": "dossier"
+					},
+					"minute": 540,
+					"seq": 64,
+					"subject": "Unknown",
+					"text": "Lena Delgado is in trouble"
+				},
+				{
+					"at": 6540,
+					"cat": "message",
+					"day": 3,
+					"delta": 0,
+					"key": "message:Unknown:New place: The Flood Tunnels (The Sump)",
+					"level": "important",
+					"link": {
+						"params": {
+							"tab_name": "MAIN"
+						},
+						"screen": "dossier"
+					},
+					"minute": 540,
+					"seq": 65,
+					"subject": "Unknown",
+					"text": "New place: The Flood Tunnels (The Sump)"
+				},
+				{
+					"at": 6540,
+					"cat": "place",
+					"day": 3,
+					"delta": 0,
+					"key": "place:The Flood Tunnels:New place on your map",
+					"level": "important",
+					"link": {
+						"location": "flood_tunnels"
+					},
+					"minute": 540,
+					"seq": 66,
+					"subject": "The Flood Tunnels",
+					"text": "New place on your map"
+				},
+				{
+					"at": 6540,
+					"cat": "message",
+					"day": 3,
+					"delta": 0,
+					"key": "message:Unknown:New place: The Orchid Room (Velvet Tier)",
+					"level": "important",
+					"link": {
+						"params": {
+							"tab_name": "MAIN"
+						},
+						"screen": "dossier"
+					},
+					"minute": 540,
+					"seq": 67,
+					"subject": "Unknown",
+					"text": "New place: The Orchid Room (Velvet Tier)"
+				},
+				{
+					"at": 6540,
+					"cat": "place",
+					"day": 3,
+					"delta": 0,
+					"key": "place:The Orchid Room:New place on your map",
+					"level": "important",
+					"link": {
+						"location": "velvet_lounge"
+					},
+					"minute": 540,
+					"seq": 68,
+					"subject": "The Orchid Room",
+					"text": "New place on your map"
+				},
+				{
+					"at": 6840,
+					"cat": "supplies",
+					"day": 3,
+					"delta": -1,
+					"key": "supplies",
+					"level": "info",
+					"link": {
+						"screen": "shop"
+					},
+					"minute": 840,
+					"seq": 69,
+					"subject": "Medical supplies",
+					"text": "-1 · now 7"
+				},
+				{
+					"at": 6840,
+					"cat": "money",
+					"day": 3,
+					"delta": 400,
+					"key": "money:revenue",
+					"level": "info",
+					"link": {
+						"screen": "business"
+					},
+					"minute": 840,
+					"seq": 70,
+					"subject": "Credits",
+					"text": "+400 cr · revenue"
+				},
+				{
+					"at": 6840,
+					"cat": "level",
+					"day": 3,
+					"delta": 0,
+					"key": "level:You:Reached level 5 · new skill point",
+					"level": "important",
+					"link": {
+						"screen": "skills"
+					},
+					"minute": 840,
+					"seq": 71,
+					"subject": "You",
+					"text": "Reached level 5 · new skill point"
+				},
+				{
+					"at": 6840,
+					"cat": "rep",
+					"day": 3,
+					"delta": 5,
+					"key": "rep",
+					"level": "info",
+					"link": {
+
+					},
+					"minute": 840,
+					"seq": 72,
+					"subject": "Reputation",
+					"text": "+5 · now 37"
+				},
+				{
+					"at": 6840,
+					"cat": "faction",
+					"day": 3,
+					"delta": 6,
+					"key": "faction:black_market",
+					"level": "important",
+					"link": {
+						"params": {
+							"tab_name": "STANDING"
+						},
+						"screen": "dossier"
+					},
+					"minute": 840,
+					"seq": 73,
+					"subject": "The Undermarket",
+					"text": "Standing +6 · now 10"
+				}
+			],
+			"seen": 3,
+			"seq": 73,
+			"standing": [
+				{
+					"day": 1,
+					"delta": 6,
+					"group": "rep",
+					"label": "Street reputation",
+					"minute": 740,
+					"reason": "Operation on Viktor Ilyin (grade S)",
+					"value": 6
+				},
+				{
+					"day": 1,
+					"delta": 6,
+					"group": "faction:medical_authorities",
+					"label": "Civic Medical Board",
+					"minute": 740,
+					"reason": "Operation on Viktor Ilyin (grade S)",
+					"value": 6
+				},
+				{
+					"day": 1,
+					"delta": 6,
+					"group": "rep",
+					"label": "Street reputation",
+					"minute": 1070,
+					"reason": "Operation on Lena Delgado (grade S)",
+					"value": 12
+				},
+				{
+					"day": 1,
+					"delta": 6,
+					"group": "faction:corporate_security",
+					"label": "Aegis Meridian Security",
+					"minute": 1070,
+					"reason": "Operation on Lena Delgado (grade S)",
+					"value": 1
+				},
+				{
+					"day": 1,
+					"delta": 4,
+					"group": "faction:black_market",
+					"label": "The Undermarket",
+					"minute": 1090,
+					"reason": "Event: SUSPICIOUS CUSTOMER",
+					"value": 4
+				},
+				{
+					"day": 1,
+					"delta": -6,
+					"group": "faction:corporate_security",
+					"label": "Aegis Meridian Security",
+					"minute": 1090,
+					"reason": "Event: SUSPICIOUS CUSTOMER",
+					"value": -5
+				},
+				{
+					"day": 1,
+					"delta": 10,
+					"group": "heat",
+					"label": "Authority attention (heat)",
+					"minute": 1090,
+					"reason": "Event: SUSPICIOUS CUSTOMER",
+					"value": 10
+				},
+				{
+					"day": 1,
+					"delta": 5,
+					"group": "rep",
+					"label": "Street reputation",
+					"minute": 1092,
+					"reason": "Operation on Sana Quill (grade S)",
+					"value": 17
+				},
+				{
+					"day": 1,
+					"delta": 6,
+					"group": "faction:street_gangs",
+					"label": "Rustline Crews",
+					"minute": 1092,
+					"reason": "Operation on Sana Quill (grade S)",
+					"value": 6
+				},
+				{
+					"day": 1,
+					"delta": -3,
+					"group": "heat",
+					"label": "Authority attention (heat)",
+					"minute": 1092,
+					"reason": "Operation on Sana Quill (grade S)",
+					"value": 7
+				},
+				{
+					"day": 1,
+					"delta": 1,
+					"group": "dim:civilian",
+					"label": "Civilian reputation",
+					"minute": 1092,
+					"reason": "Remembered: player referred",
+					"value": 1
+				},
+				{
+					"day": 2,
+					"delta": 5,
+					"group": "rep",
+					"label": "Street reputation",
+					"minute": 768,
+					"reason": "Operation on Wren Adeyemi (grade S)",
+					"value": 22
+				},
+				{
+					"day": 2,
+					"delta": 6,
+					"group": "faction:street_gangs",
+					"label": "Rustline Crews",
+					"minute": 768,
+					"reason": "Operation on Wren Adeyemi (grade S)",
+					"value": 12
+				},
+				{
+					"day": 2,
+					"delta": -3,
+					"group": "heat",
+					"label": "Authority attention (heat)",
+					"minute": 768,
+					"reason": "Operation on Wren Adeyemi (grade S)",
+					"value": 4
+				},
+				{
+					"day": 2,
+					"delta": 5,
+					"group": "rep",
+					"label": "Street reputation",
+					"minute": 810,
+					"reason": "Operation on Bao Sato (grade S)",
+					"value": 27
+				},
+				{
+					"day": 2,
+					"delta": 6,
+					"group": "faction:street_gangs",
+					"label": "Rustline Crews",
+					"minute": 810,
+					"reason": "Operation on Bao Sato (grade S)",
+					"value": 18
+				},
+				{
+					"day": 2,
+					"delta": -3,
+					"group": "heat",
+					"label": "Authority attention (heat)",
+					"minute": 810,
+					"reason": "Operation on Bao Sato (grade S)",
+					"value": 1
+				},
+				{
+					"day": 2,
+					"delta": 5,
+					"group": "rep",
+					"label": "Street reputation",
+					"minute": 1130,
+					"reason": "Operation on Tariq Lindqvist (grade S)",
+					"value": 32
+				},
+				{
+					"day": 2,
+					"delta": 6,
+					"group": "faction:independent_mercs",
+					"label": "Free Contractors",
+					"minute": 1130,
+					"reason": "Operation on Tariq Lindqvist (grade S)",
+					"value": 6
+				},
+				{
+					"day": 2,
+					"delta": -1,
+					"group": "heat",
+					"label": "Authority attention (heat)",
+					"minute": 1130,
+					"reason": "Operation on Tariq Lindqvist (grade S)",
+					"value": 0
+				},
+				{
+					"day": 3,
+					"delta": 5,
+					"group": "rep",
+					"label": "Street reputation",
+					"minute": 840,
+					"reason": "Operation on Dez Okafor (grade S)",
+					"value": 37
+				},
+				{
+					"day": 3,
+					"delta": 6,
+					"group": "faction:black_market",
+					"label": "The Undermarket",
+					"minute": 840,
+					"reason": "Operation on Dez Okafor (grade S)",
+					"value": 10
+				},
+				{
+					"day": 3,
+					"delta": 1,
+					"group": "dim:civilian",
+					"label": "Civilian reputation",
+					"minute": 840,
+					"reason": "Remembered: player referred",
+					"value": 2
+				}
+			]
+		},
+		"CharacterManager": {
+			"adaeze_moor": {
+				"events": [],
+				"fear": 0,
+				"met": false,
+				"notes": [],
+				"rel": -15,
+				"romance": false
+			},
+			"cassian_voss": {
+				"events": [],
+				"fear": 0,
+				"met": false,
+				"notes": [],
+				"rel": 0,
+				"romance": false
+			},
+			"ilse_hartmann": {
+				"events": [],
+				"fear": 0,
+				"met": true,
+				"notes": [],
+				"rel": 15,
+				"romance": false
+			},
+			"noor_sayeh": {
+				"events": [],
+				"fear": 0,
+				"met": false,
+				"notes": [],
+				"rel": 0,
+				"romance": false
+			},
+			"pell_ormond": {
+				"events": [],
+				"fear": 0,
+				"met": true,
+				"notes": [],
+				"rel": 0,
+				"romance": false
+			},
+			"rika_kessel": {
+				"events": [],
+				"fear": 0,
+				"met": true,
+				"notes": [],
+				"rel": -10,
+				"romance": false
+			},
+			"rook_varga": {
+				"events": [],
+				"fear": 0,
+				"met": false,
+				"notes": [],
+				"rel": 0,
+				"romance": false
+			},
+			"silas_dune": {
+				"events": [],
+				"fear": 0,
+				"met": false,
+				"notes": [],
+				"rel": -5,
+				"romance": false
+			},
+			"teo_marr": {
+				"events": [],
+				"fear": 0,
+				"met": true,
+				"notes": [],
+				"rel": 20,
+				"romance": false
+			},
+			"vesna_kalo": {
+				"events": [],
+				"fear": 0,
+				"met": false,
+				"notes": [],
+				"rel": 0,
+				"romance": false
+			}
+		},
+		"ClinicLifeManager": {
+			"captions": [
+				"17:50  Sana Quill sits down in the waiting room.",
+				"17:50  A fixer smokes in the alley outside, watching who comes and goes.",
+				"18:10  A kid presses their face to the glass, staring at the chrome on the shelf.",
+				"18:52  A fixer smokes in the alley outside, watching who comes and goes.",
+				"12:48  Bao Sato sits down in the waiting room.",
+				"12:48  Bao Sato tells nobody in particular about the first time they got chromed.",
+				"18:50  A kid presses their face to the glass, staring at the chrome on the shelf.",
+				"14:00  Pavel Petrov sits down in the waiting room.",
+				"14:00  The power dips. The monitors reboot one by one, complaining.",
+				"14:20  The pipe over the table drips again. Somebody puts a cup under it."
+			],
+			"waiting": [
+				{
+					"customer": {
+						"age": 26,
+						"alias": "Ghost",
+						"appearance": {
+							"accessories": [
+								"headlamp"
+							],
+							"age_look": "young",
+							"body_acc": [
+								"backpack"
+							],
+							"body_cyber": [],
+							"brows": "heavy",
+							"build": "slim",
+							"cloth_a": "black",
+							"cloth_b": "black",
+							"cloth_c": "gang_red",
+							"cyber": [
+								"patched_implant"
+							],
+							"expr": "sad",
+							"face": "oval",
+							"facial_hair": "full",
+							"glow": "red",
+							"hair": "topknot",
+							"hair_color": "blond",
+							"iris": "green",
+							"makeup": [],
+							"metal": "chrome",
+							"nose": "small",
+							"outfit": "civilian",
+							"piercings": [],
+							"posture": "hunched",
+							"presentation": "masc",
+							"rim": "8a2a3a",
+							"scars": [],
+							"skin": 4,
+							"tattoos": [],
+							"v": 2
+						},
+						"archetype_id": "scavenger",
+						"backer": "",
+						"bleed_multiplier": 1.06422567367554,
+						"budget": 440,
+						"care": "",
+						"changes": [],
+						"character_id": "",
+						"complication_risk": 1.1054013967514,
+						"crashes": 0,
+						"dependency": 0,
+						"dialogue": "Saw a patrol two blocks up. Just so you know. The air down here is killing me. Literally. Cash up front, if you want. I'll take anything. Please.",
+						"display_name": "Pavel Petrov",
+						"emergency_deadline": -1,
+						"existing_cyberware": [],
+						"extra_damaged_tissue": 2,
+						"faction_id": "street_gangs",
+						"finance": "working",
+						"health_drain_multiplier": 1,
+						"hidden_conditions": [],
+						"id": "cust_54288796_42730",
+						"is_emergency": false,
+						"is_story": false,
+						"medical_history": [
+							"Stim use, past and present"
+						],
+						"min_reputation": 0,
+						"mood": "calm",
+						"neural_sensitivity": 1.12769448757172,
+						"neural_stability": 87.1134796142578,
+						"occupation": "Tunnel scavenger",
+						"pain_tolerance": 0.814303278923035,
+						"patience": 74,
+						"pay_multiplier": 0.8075,
+						"personality": "tired",
+						"post_op_risk": 0,
+						"referred_by": "",
+						"requested_cyberware_id": "smogbreaker_filter",
+						"requested_surgery_id": "install_respiratory",
+						"revealed_conditions": [],
+						"risk_tolerance": 0.526554378867149,
+						"scan_findings": {
+							"arms": "No anomalies.",
+							"chest": "Fibrous scarring around the site.",
+							"head": "No anomalies.",
+							"legs": "Tissue within normal range.",
+							"neck": "Healthy signal."
+						},
+						"street_rep": 1,
+						"terms": "full",
+						"traits": [
+							"desperate",
+							"greedy"
+						],
+						"triage": [],
+						"true_diagnosis_id": "tissue_damage",
+						"visits": 0,
+						"wealth": 1
+					},
+					"since": 840
+				}
+			],
+			"wall": [
+				{
+					"day": 1,
+					"kind": "milestone",
+					"ref": "first_op",
+					"text": "Viktor Ilyin, day 1. Hands still shaking.",
+					"title": "First job"
+				},
+				{
+					"day": 1,
+					"kind": "milestone",
+					"ref": "first_s",
+					"text": "Respiratory Implant Install on Viktor Ilyin. Grade S.",
+					"title": "Perfect work"
+				}
+			]
+		},
+		"ClinicManager": {
+			"active": "backalley",
+			"owned": [
+				"backalley"
+			],
+			"tier": 0,
+			"upgrades": {
+
+			}
+		},
+		"CommsManager": {
+			"inbox": [
+				{
+					"actions": [],
+					"body": "Lovely to have you in the building. Popping by later to discuss the arithmetic. — P.O.",
+					"day": 2,
+					"from": "pell_ormond",
+					"kind": "message",
+					"read": false,
+					"resolved": -1,
+					"subject": "Rent",
+					"template": "c_landlord_notice",
+					"uid": 1
+				},
+				{
+					"actions": [],
+					"body": "Word gets around.\n\nSmelters, presses and a salvage yard that runs three shifts. Arms get caught in machines here every week. The yard sells what the machines spit out: scrap, parts, sometimes chrome still warm.",
+					"day": 2,
+					"from": "",
+					"kind": "message",
+					"read": false,
+					"resolved": -1,
+					"subject": "New place: Furnace Line Works (Furnace Line)",
+					"template": "location_found",
+					"uid": 2
+				},
+				{
+					"actions": [],
+					"body": "Word gets around.\n\nPre-collapse apartment blocks with working lifts and nosy neighbours. Retired surgeons, old soldiers, families who pay their bills. The old city remembers everyone.",
+					"day": 2,
+					"from": "",
+					"kind": "message",
+					"read": false,
+					"resolved": -1,
+					"subject": "New place: Caldera Stacks (Old Caldera)",
+					"template": "location_found",
+					"uid": 3
+				},
+				{
+					"actions": [],
+					"body": "The lock's fine. Whoever it was knew what they wanted. Open SECURITY on the clinic screen to look into it.",
+					"day": 2,
+					"from": "",
+					"kind": "message",
+					"read": false,
+					"resolved": -1,
+					"subject": "Break-in: 2 salvaged parts from the bench",
+					"template": "theft",
+					"uid": 4
+				},
+				{
+					"actions": [],
+					"body": "\"Mother wants a word. Be nice. She's nice back, mostly.\"",
+					"day": 3,
+					"from": "rook_varga",
+					"kind": "call",
+					"read": false,
+					"resolved": -1,
+					"subject": "Incoming call",
+					"template": "c_rook_message",
+					"uid": 5
+				},
+				{
+					"actions": [
+						{
+							"effects": {
+								"money": -250
+							},
+							"label": "PAY THE BAIL (250)",
+							"person": {
+								"memory": "PLAYER_KEPT_PROMISE",
+								"rel": 10,
+								"return_days": 2
+							}
+						},
+						{
+							"label": "BRING THEM IN. I'LL PATCH THEM UP",
+							"person": {
+								"emergency": true,
+								"memory": "PLAYER_SAVED_ME"
+							}
+						},
+						{
+							"label": "NOT MY PROBLEM",
+							"person": {
+								"memory": "PLAYER_REFUSED_TREATMENT"
+							}
+						}
+					],
+					"body": "A kid you don't know runs in: \"Lena Delgado sent me. Security picked them up in a sweep and they're bleeding in a holding cell. They said you'd help.\"",
+					"day": 3,
+					"from": "",
+					"kind": "message",
+					"read": false,
+					"resolved": -1,
+					"subject": "Lena Delgado is in trouble",
+					"template": "world_trouble",
+					"uid": 6,
+					"vars": {
+						"kind": "person",
+						"person": "cust_10732257_14907"
+					}
+				},
+				{
+					"actions": [],
+					"body": "Word gets around.\n\nStorm drains under the Sump, dry nine months a year. Stalls on pallets, lamps on wires, and the Undermarket proper behind a curtain of chain. The people who sell you chrome by courier sell it here in person.",
+					"day": 3,
+					"from": "",
+					"kind": "message",
+					"read": false,
+					"resolved": -1,
+					"subject": "New place: The Flood Tunnels (The Sump)",
+					"template": "location_found",
+					"uid": 7
+				},
+				{
+					"actions": [],
+					"body": "Word gets around.\n\nA members' lounge three floors above the Velvet Tier clubs. Fixers take meetings in the booths; performers come up between sets; someone from Meridian is always slumming. The drinks cost what a stitch costs downstairs.",
+					"day": 3,
+					"from": "",
+					"kind": "message",
+					"read": false,
+					"resolved": -1,
+					"subject": "New place: The Orchid Room (Velvet Tier)",
+					"template": "location_found",
+					"uid": 8
+				}
+			],
+			"last_debt": -10,
+			"next_uid": 9
+		},
+		"CustomerManager": {
+			"current": {
+
+			},
+			"history": [
+				{
+					"character": "",
+					"faction": "medical_authorities",
+					"grade": "S",
+					"implant": "Smogbreaker Filter",
+					"name": "Viktor Ilyin",
+					"op": 0,
+					"outcome": "success",
+					"regular": false,
+					"surgery": "Respiratory Implant Install",
+					"uid": "cust_3497610_39639",
+					"visits": 1
+				},
+				{
+					"character": "",
+					"faction": "corporate_security",
+					"grade": "S",
+					"implant": "NX-1 Neural Bridge",
+					"name": "Lena Delgado \"Patch\"",
+					"op": 1,
+					"outcome": "success",
+					"regular": false,
+					"surgery": "Neural Implant Install",
+					"uid": "cust_10732257_14907",
+					"visits": 1
+				},
+				{
+					"character": "",
+					"faction": "street_gangs",
+					"grade": "S",
+					"implant": "Kestrel Sight-1",
+					"name": "Sana Quill",
+					"op": 2,
+					"outcome": "success",
+					"regular": false,
+					"surgery": "Optic Implant Install",
+					"uid": "cust_10733850_68365",
+					"visits": 1
+				},
+				{
+					"character": "",
+					"faction": "street_gangs",
+					"grade": "S",
+					"implant": "Kestrel Sight-1",
+					"name": "Wren Adeyemi \"Halo\"",
+					"op": 3,
+					"outcome": "success",
+					"regular": false,
+					"surgery": "Optic Implant Install",
+					"uid": "cust_22120161_31705",
+					"visits": 1
+				},
+				{
+					"character": "",
+					"faction": "street_gangs",
+					"grade": "S",
+					"implant": "Kevlace Subdermal Mesh",
+					"name": "Bao Sato",
+					"op": 4,
+					"outcome": "success",
+					"regular": false,
+					"surgery": "Dermal Plating Install",
+					"uid": "cust_25081507_26832",
+					"visits": 1
+				},
+				{
+					"character": "",
+					"faction": "independent_mercs",
+					"grade": "S",
+					"implant": "Kestrel Sight-1",
+					"name": "Tariq Lindqvist \"Ash\"",
+					"op": 5,
+					"outcome": "success",
+					"regular": false,
+					"surgery": "Optic Implant Install",
+					"uid": "cust_47218472_31423",
+					"visits": 1
+				},
+				{
+					"character": "dez_okafor",
+					"faction": "black_market",
+					"grade": "S",
+					"implant": "NX-1 Neural Bridge",
+					"name": "Dez Okafor \"Static\"",
+					"op": 6,
+					"outcome": "success",
+					"regular": false,
+					"surgery": "Neural Implant Install",
+					"uid": "dez_okafor",
+					"visits": 1
+				}
+			],
+			"queue": [
+				{
+					"customer": {
+						"age": 48,
+						"alias": "Rust",
+						"appearance": {
+							"accessories": [
+								"glasses"
+							],
+							"age_look": "adult",
+							"body_acc": [
+								"backpack"
+							],
+							"body_cyber": [],
+							"brows": "thin",
+							"build": "average",
+							"cloth_a": "black",
+							"cloth_b": "charcoal",
+							"cloth_c": "bm_purple",
+							"cyber": [],
+							"expr": "fear",
+							"face": "oval",
+							"facial_hair": "",
+							"glow": "red",
+							"hair": "long",
+							"hair_color": "dye_blue",
+							"iris": "blue",
+							"makeup": [],
+							"metal": "gunmetal",
+							"nose": "small",
+							"outfit": "civilian",
+							"piercings": [],
+							"posture": "upright",
+							"presentation": "femme",
+							"rim": "7a2a6a",
+							"scars": [],
+							"skin": 4,
+							"tattoos": [],
+							"v": 2
+						},
+						"archetype_id": "civilian",
+						"backer": "",
+						"bleed_multiplier": 0.923615872859955,
+						"budget": 540,
+						"care": "",
+						"changes": [],
+						"character_id": "",
+						"complication_risk": 1.14408600330353,
+						"crashes": 0,
+						"dependency": 0,
+						"dialogue": "Dez Okafor sent me. Said you're the real deal. The air down here is killing me. Literally. I'm short on cash, but I'll pay what I can.",
+						"display_name": "Marek Delgado",
+						"emergency_deadline": -1,
+						"existing_cyberware": [],
+						"extra_damaged_tissue": 0,
+						"faction_id": "black_market",
+						"finance": "poor",
+						"health_drain_multiplier": 1,
+						"hidden_conditions": [],
+						"id": "cust_58341461_15620",
+						"is_emergency": false,
+						"is_story": false,
+						"medical_history": [
+							"Burn scars on the forearm"
+						],
+						"min_reputation": 0,
+						"mood": "calm",
+						"neural_sensitivity": 0.974555730819702,
+						"neural_stability": 94.3919906616211,
+						"occupation": "Bus driver",
+						"pain_tolerance": 0.65133148431778,
+						"patience": 73,
+						"pay_multiplier": 0.704,
+						"personality": "nervous",
+						"post_op_risk": 0,
+						"referred_by": "Dez Okafor",
+						"requested_cyberware_id": "deepbreath_booster",
+						"requested_surgery_id": "install_respiratory",
+						"revealed_conditions": [],
+						"risk_tolerance": 0.101819694042206,
+						"scan_findings": {
+							"arms": "Minor wear, nothing urgent.",
+							"chest": "Metal fragments and dead leads in the site.",
+							"head": "No anomalies.",
+							"legs": "Tissue within normal range.",
+							"neck": "Minor wear, nothing urgent."
+						},
+						"street_rep": 60,
+						"terms": "full",
+						"traits": [
+							"ashamed"
+						],
+						"triage": [],
+						"true_diagnosis_id": "old_hardware",
+						"visits": 0,
+						"wealth": 0
+					},
+					"due_op": 9
+				}
+			]
+		},
+		"CyberwareManager": {
+			"unlocked": [
+				"nx1_neural_bridge"
+			]
+		},
+		"DialogueManager": {
+			"choices": []
+		},
+		"EconomyManager": {
+			"money": 2850
+		},
+		"EventManager": {
+			"history": {
+				"supply_drop": {
+					"count": 1,
+					"last_op": 4
+				},
+				"suspicious_customer": {
+					"count": 1,
+					"last_op": 2
+				}
+			},
+			"operations": 7,
+			"pending": "",
+			"temp_modifiers": []
+		},
+		"FactionManager": {
+			"heat": 0,
+			"rep": {
+				"black_market": 10,
+				"corporate_security": -5,
+				"independent_mercs": 6,
+				"lyra_biocomp": 0,
+				"medical_authorities": 6,
+				"street_gangs": 18
+			}
+		},
+		"Follows": {
+			"follows": []
+		},
+		"InventoryManager": {
+			"instances": [],
+			"owned_tools": [
+				"scalpel_rust",
+				"retractor_basic",
+				"cautery_basic",
+				"forceps_basic",
+				"splicer_basic",
+				"suture_basic",
+				"scanner_basic",
+				"tuning_deck"
+			],
+			"parts": 0,
+			"supplies": 7,
+			"tokens": 0,
+			"tool_condition": {
+				"cautery_basic": 82,
+				"forceps_basic": 79,
+				"retractor_basic": 79,
+				"scalpel_rust": 79,
+				"splicer_basic": 82,
+				"suture_basic": 79
+			}
+		},
+		"LocationManager": {
+			"at": "clinic",
+			"away_night": 0,
+			"known": [
+				"clinic",
+				"sump_tenements",
+				"rusty_valve",
+				"glow_night_market",
+				"spindle_interchange",
+				"furnace_works",
+				"caldera_stacks",
+				"flood_tunnels",
+				"velvet_lounge"
+			],
+			"last_trip": {
+
+			},
+			"metro_pass": 0,
+			"visits": {
+
+			},
+			"zone": ""
+		},
+		"MemoryManager": {
+			"memories": {
+				"cust_10732257_14907": [
+					{
+						"about": "nx1_neural_bridge",
+						"day": 1,
+						"note": "",
+						"tag": "PLAYER_INSTALLED_CYBERWARE"
+					}
+				],
+				"cust_10733850_68365": [
+					{
+						"about": "kestrel_sight",
+						"day": 1,
+						"note": "",
+						"tag": "PLAYER_INSTALLED_CYBERWARE"
+					},
+					{
+						"about": "cust_22120161_31705",
+						"day": 1,
+						"note": "",
+						"tag": "PLAYER_REFERRED"
+					}
+				],
+				"cust_22120161_31705": [
+					{
+						"about": "kestrel_sight",
+						"day": 2,
+						"note": "",
+						"tag": "PLAYER_INSTALLED_CYBERWARE"
+					}
+				],
+				"cust_25081507_26832": [
+					{
+						"about": "kevlace_mesh",
+						"day": 2,
+						"note": "",
+						"tag": "PLAYER_INSTALLED_CYBERWARE"
+					}
+				],
+				"cust_3497610_39639": [
+					{
+						"about": "smogbreaker_filter",
+						"day": 1,
+						"note": "",
+						"tag": "PLAYER_INSTALLED_CYBERWARE"
+					}
+				],
+				"cust_47218472_31423": [
+					{
+						"about": "kestrel_sight",
+						"day": 2,
+						"note": "",
+						"tag": "PLAYER_INSTALLED_CYBERWARE"
+					}
+				],
+				"dez_okafor": [
+					{
+						"about": "nx1_neural_bridge",
+						"day": 3,
+						"note": "",
+						"tag": "PLAYER_INSTALLED_CYBERWARE"
+					},
+					{
+						"about": "cust_58341461_15620",
+						"day": 3,
+						"note": "",
+						"tag": "PLAYER_REFERRED"
+					}
+				]
+			}
+		},
+		"PeopleManager": {
+			"debts": [
+				{
+					"amount": 156,
+					"day": 3,
+					"history": [
+						"D3 owes 156 (couldn't cover the fee)",
+						"D3 payment plan: 39 a night"
+					],
+					"id": 1,
+					"original": 156,
+					"person": "dez_okafor",
+					"plan": 39,
+					"reason": "couldn't cover the fee",
+					"status": "plan"
+				}
+			],
+			"next_debt": 2,
+			"people": {
+				"cust_10732257_14907": {
+					"age": 29,
+					"alias": "Patch",
+					"appearance": {
+						"accessories": [],
+						"age_look": "adult",
+						"body_acc": [],
+						"body_cyber": [],
+						"brows": "heavy",
+						"build": "heavy",
+						"cloth_a": "corp_white",
+						"cloth_b": "corp_gray",
+						"cloth_c": "cold_blue",
+						"cyber": [
+							"skin_seam",
+							"neck_ports"
+						],
+						"expr": "fear",
+						"face": "long",
+						"facial_hair": "",
+						"glow": "cyan",
+						"hair": "slick",
+						"hair_color": "blond",
+						"iris": "brown",
+						"makeup": [],
+						"metal": "ceramic",
+						"nose": "broken",
+						"outfit": "civilian",
+						"piercings": [],
+						"posture": "slouch",
+						"presentation": "masc",
+						"rim": "4a6a9a",
+						"scars": [],
+						"skin": 1,
+						"tattoos": [],
+						"v": 2
+					},
+					"archetype": "civilian",
+					"cyber": [
+						"kevlace_mesh",
+						"nx1_neural_bridge",
+						"nx1_neural_bridge"
+					],
+					"dependency": 0,
+					"faction": "corporate_security",
+					"favor": false,
+					"finance": "poor",
+					"first_day": 1,
+					"history": [
+						"D1 Installed NX-1 Neural Bridge."
+					],
+					"home": "sump_tenements",
+					"id": "cust_10732257_14907",
+					"last_day": 1,
+					"last_price": 318,
+					"links": {
+
+					},
+					"loyal": false,
+					"name": "Lena Delgado",
+					"next_day": -1,
+					"occupation": "Noodle cook",
+					"paid_total": 318,
+					"personality": "nervous",
+					"refused": 0,
+					"rel": 6,
+					"social": "velvet_lounge",
+					"status": "alive",
+					"traits": [
+						"nervous"
+					],
+					"visits": 1,
+					"wealth": 0,
+					"work": "glow_night_market"
+				},
+				"cust_10733850_68365": {
+					"age": 23,
+					"alias": "",
+					"appearance": {
+						"accessories": [
+							"bandana"
+						],
+						"age_look": "young",
+						"body_acc": [
+							"blade"
+						],
+						"body_cyber": [
+							"arm_r",
+							"eye"
+						],
+						"brows": "thin",
+						"build": "muscular",
+						"cloth_a": "gang_red",
+						"cloth_b": "black",
+						"cloth_c": "maroon",
+						"cyber": [
+							"shoulder_chrome",
+							"twin_optics",
+							"patched_implant",
+							"optic"
+						],
+						"expr": "angry",
+						"face": "round",
+						"facial_hair": "",
+						"glow": "magenta",
+						"hair": "mohawk",
+						"hair_color": "blond",
+						"iris": "gray",
+						"makeup": [],
+						"metal": "brass",
+						"nose": "straight",
+						"outfit": "gang",
+						"piercings": [
+							"studs"
+						],
+						"posture": "wide",
+						"presentation": "andro",
+						"rim": "8a2a3a",
+						"scars": [
+							"cheek"
+						],
+						"skin": 2,
+						"tattoos": [
+							"forehead_glyph"
+						],
+						"v": 2
+					},
+					"archetype": "gang_member",
+					"cyber": [
+						"torsion_forearm",
+						"kestrel_sight",
+						"kestrel_sight",
+						"kestrel_sight"
+					],
+					"dependency": 0,
+					"faction": "street_gangs",
+					"favor": false,
+					"finance": "poor",
+					"first_day": 1,
+					"history": [
+						"D1 Installed Kestrel Sight-1."
+					],
+					"home": "sump_tenements",
+					"id": "cust_10733850_68365",
+					"last_day": 1,
+					"last_price": 462,
+					"links": {
+						"cust_22120161_31705": "family"
+					},
+					"loyal": false,
+					"name": "Sana Quill",
+					"next_day": -1,
+					"occupation": "Rustline enforcer",
+					"paid_total": 462,
+					"personality": "aggressive",
+					"refused": 0,
+					"rel": 0,
+					"social": "rusty_valve",
+					"status": "alive",
+					"traits": [
+						"distrustful"
+					],
+					"visits": 1,
+					"wealth": 0,
+					"work": "rusty_valve"
+				},
+				"cust_22120161_31705": {
+					"age": 39,
+					"alias": "Halo",
+					"appearance": {
+						"accessories": [
+							"headlamp"
+						],
+						"age_look": "adult",
+						"body_acc": [
+							"backpack"
+						],
+						"body_cyber": [
+							"eye",
+							"eye"
+						],
+						"brows": "heavy",
+						"build": "average",
+						"cloth_a": "charcoal",
+						"cloth_b": "black",
+						"cloth_c": "maroon",
+						"cyber": [
+							"optic",
+							"patched_implant"
+						],
+						"expr": "fear",
+						"face": "oval",
+						"facial_hair": "",
+						"glow": "red",
+						"hair": "slick",
+						"hair_color": "dark_brown",
+						"iris": "dark",
+						"makeup": [],
+						"metal": "brass",
+						"nose": "straight",
+						"outfit": "civilian",
+						"piercings": [],
+						"posture": "hunched",
+						"presentation": "masc",
+						"rim": "8a2a3a",
+						"scars": [],
+						"skin": 5,
+						"tattoos": [],
+						"v": 2
+					},
+					"archetype": "scavenger",
+					"cyber": [
+						"lumen_pro_optic",
+						"kestrel_sight"
+					],
+					"dependency": 0,
+					"faction": "street_gangs",
+					"favor": false,
+					"finance": "poor",
+					"first_day": 1,
+					"history": [
+						"D1 Sent by Sana Quill.",
+						"D2 Installed Kestrel Sight-1."
+					],
+					"home": "sump_tenements",
+					"id": "cust_22120161_31705",
+					"last_day": 2,
+					"last_price": 412,
+					"links": {
+						"cust_10733850_68365": "family"
+					},
+					"loyal": false,
+					"name": "Wren Adeyemi",
+					"next_day": 4,
+					"occupation": "Drowned-district diver",
+					"paid_total": 412,
+					"personality": "nervous",
+					"refused": 0,
+					"rel": 6,
+					"social": "rusty_valve",
+					"status": "alive",
+					"traits": [
+						"greedy",
+						"nervous"
+					],
+					"visits": 1,
+					"wealth": 0,
+					"work": "furnace_works"
+				},
+				"cust_25081507_26832": {
+					"age": 48,
+					"alias": "",
+					"appearance": {
+						"accessories": [
+							"bandana"
+						],
+						"age_look": "adult",
+						"body_acc": [
+							"blade"
+						],
+						"body_cyber": [
+							"arm_l"
+						],
+						"brows": "thin",
+						"build": "average",
+						"cloth_a": "gang_red",
+						"cloth_b": "black",
+						"cloth_c": "gang_red",
+						"cyber": [
+							"shoulder_chrome",
+							"patched_implant",
+							"serial_marks"
+						],
+						"expr": "angry",
+						"face": "long",
+						"facial_hair": "",
+						"glow": "magenta",
+						"hair": "mohawk",
+						"hair_color": "dark_brown",
+						"iris": "hazel",
+						"makeup": [],
+						"metal": "brass",
+						"nose": "straight",
+						"outfit": "gang",
+						"piercings": [
+							"brow_ring"
+						],
+						"posture": "wide",
+						"presentation": "andro",
+						"rim": "8a2a3a",
+						"scars": [],
+						"skin": 6,
+						"tattoos": [
+							"tear"
+						],
+						"v": 2
+					},
+					"archetype": "gang_member",
+					"cyber": [
+						"torsion_forearm",
+						"kevlace_mesh",
+						"kevlace_mesh"
+					],
+					"dependency": 0,
+					"faction": "street_gangs",
+					"favor": false,
+					"finance": "desperate",
+					"first_day": 2,
+					"history": [
+						"D2 Installed Kevlace Subdermal Mesh."
+					],
+					"home": "sump_tenements",
+					"id": "cust_25081507_26832",
+					"last_day": 2,
+					"last_price": 317,
+					"links": {
+
+					},
+					"loyal": false,
+					"name": "Bao Sato",
+					"next_day": -1,
+					"occupation": "Corner runner",
+					"paid_total": 317,
+					"personality": "aggressive",
+					"refused": 0,
+					"rel": 6,
+					"social": "rusty_valve",
+					"status": "alive",
+					"traits": [
+						"aggressive",
+						"loyal"
+					],
+					"visits": 1,
+					"wealth": 0,
+					"work": "rusty_valve"
+				},
+				"cust_3497610_39639": {
+					"age": 33,
+					"alias": "",
+					"appearance": {
+						"accessories": [
+							"scarf"
+						],
+						"age_look": "adult",
+						"body_acc": [
+							"backpack"
+						],
+						"body_cyber": [],
+						"brows": "thin",
+						"build": "average",
+						"cloth_a": "dirty_white",
+						"cloth_b": "dirty_white",
+						"cloth_c": "scrub_green",
+						"cyber": [
+							"neck_ports",
+							"mouth_grille"
+						],
+						"expr": "smirk",
+						"face": "oval",
+						"facial_hair": "",
+						"glow": "cyan",
+						"hair": "shaved",
+						"hair_color": "auburn",
+						"iris": "hazel",
+						"makeup": [],
+						"metal": "chrome",
+						"nose": "straight",
+						"outfit": "civilian",
+						"piercings": [],
+						"posture": "slouch",
+						"presentation": "femme",
+						"rim": "3a8a7a",
+						"scars": [],
+						"skin": 2,
+						"tattoos": [],
+						"v": 2
+					},
+					"archetype": "civilian",
+					"cyber": [
+						"smogbreaker_filter",
+						"smogbreaker_filter"
+					],
+					"dependency": 0,
+					"faction": "medical_authorities",
+					"favor": false,
+					"finance": "working",
+					"first_day": 1,
+					"history": [
+						"D1 Installed Smogbreaker Filter."
+					],
+					"home": "sump_tenements",
+					"id": "cust_3497610_39639",
+					"last_day": 1,
+					"last_price": 502,
+					"links": {
+
+					},
+					"loyal": false,
+					"name": "Viktor Ilyin",
+					"next_day": -1,
+					"occupation": "Bus driver",
+					"paid_total": 502,
+					"personality": "chatty",
+					"refused": 0,
+					"rel": 11,
+					"social": "caldera_stacks",
+					"status": "alive",
+					"traits": [
+						"compassionate"
+					],
+					"visits": 1,
+					"wealth": 1,
+					"work": "glow_night_market"
+				},
+				"cust_47218472_31423": {
+					"age": 43,
+					"alias": "Ash",
+					"appearance": {
+						"accessories": [],
+						"age_look": "adult",
+						"body_acc": [
+							"holster"
+						],
+						"body_cyber": [
+							"legs",
+							"eye"
+						],
+						"brows": "thin",
+						"build": "muscular",
+						"cloth_a": "military_olive",
+						"cloth_b": "khaki",
+						"cloth_c": "muted_red",
+						"cyber": [
+							"shoulder_chrome",
+							"optic"
+						],
+						"expr": "angry",
+						"face": "square",
+						"facial_hair": "",
+						"glow": "green",
+						"hair": "bob",
+						"hair_color": "brown",
+						"iris": "green",
+						"makeup": [],
+						"metal": "chrome",
+						"nose": "broad",
+						"outfit": "military",
+						"piercings": [],
+						"posture": "wide",
+						"presentation": "femme",
+						"rim": "8a6a3a",
+						"scars": [
+							"brow"
+						],
+						"skin": 6,
+						"tattoos": [
+							"neck_code"
+						],
+						"v": 2
+					},
+					"archetype": "street_merc",
+					"cyber": [
+						"sprintline_struts",
+						"kestrel_sight",
+						"kestrel_sight"
+					],
+					"dependency": 0,
+					"faction": "independent_mercs",
+					"favor": false,
+					"finance": "comfortable",
+					"first_day": 2,
+					"history": [
+						"D2 Installed Kestrel Sight-1."
+					],
+					"home": "caldera_stacks",
+					"id": "cust_47218472_31423",
+					"last_day": 2,
+					"last_price": 745,
+					"links": {
+
+					},
+					"loyal": false,
+					"name": "Tariq Lindqvist",
+					"next_day": -1,
+					"occupation": "Street mercenary",
+					"paid_total": 745,
+					"personality": "aggressive",
+					"refused": 0,
+					"rel": 6,
+					"social": "rusty_valve",
+					"status": "alive",
+					"traits": [
+						"aggressive"
+					],
+					"visits": 1,
+					"wealth": 2,
+					"work": "rusty_valve"
+				},
+				"cust_58341461_15620": {
+					"age": 48,
+					"alias": "Rust",
+					"appearance": {
+						"accessories": [
+							"glasses"
+						],
+						"age_look": "adult",
+						"body_acc": [
+							"backpack"
+						],
+						"body_cyber": [],
+						"brows": "thin",
+						"build": "average",
+						"cloth_a": "black",
+						"cloth_b": "charcoal",
+						"cloth_c": "bm_purple",
+						"cyber": [],
+						"expr": "fear",
+						"face": "oval",
+						"facial_hair": "",
+						"glow": "red",
+						"hair": "long",
+						"hair_color": "dye_blue",
+						"iris": "blue",
+						"makeup": [],
+						"metal": "gunmetal",
+						"nose": "small",
+						"outfit": "civilian",
+						"piercings": [],
+						"posture": "upright",
+						"presentation": "femme",
+						"rim": "7a2a6a",
+						"scars": [],
+						"skin": 4,
+						"tattoos": [],
+						"v": 2
+					},
+					"archetype": "civilian",
+					"cyber": [],
+					"dependency": 0,
+					"faction": "black_market",
+					"favor": false,
+					"finance": "poor",
+					"first_day": 3,
+					"history": [
+						"D3 Sent by Dez Okafor."
+					],
+					"id": "cust_58341461_15620",
+					"last_day": 3,
+					"last_price": 0,
+					"links": {
+						"dez_okafor": "family"
+					},
+					"loyal": false,
+					"name": "Marek Delgado",
+					"next_day": -1,
+					"occupation": "Bus driver",
+					"paid_total": 0,
+					"personality": "nervous",
+					"refused": 0,
+					"rel": 0,
+					"status": "alive",
+					"traits": [
+						"ashamed"
+					],
+					"visits": 0,
+					"wealth": 0
+				},
+				"dez_okafor": {
+					"age": 34,
+					"alias": "Static",
+					"appearance": {
+						"accessories": [
+							"headset"
+						],
+						"age_look": "young",
+						"body_acc": [
+							"datapad"
+						],
+						"body_cyber": [],
+						"brows": "thin",
+						"build": "slim",
+						"cloth_a": "black",
+						"cloth_b": "charcoal",
+						"cloth_c": "bm_purple",
+						"cyber": [
+							"temple_ports",
+							"neck_ports",
+							"cheek_leds"
+						],
+						"expr": "smirk",
+						"face": "oval",
+						"facial_hair": "",
+						"glow": "magenta",
+						"hair": "shaved",
+						"hair_color": "dye_cyan",
+						"iris": "dark",
+						"makeup": [
+							"liner"
+						],
+						"metal": "blackened",
+						"nose": "straight",
+						"outfit": "netrunner",
+						"piercings": [
+							"septum",
+							"brow_ring"
+						],
+						"posture": "slouch",
+						"presentation": "andro",
+						"rim": "7a2a6a",
+						"scars": [
+							"brow"
+						],
+						"skin": 5,
+						"tattoos": [
+							"cheek_lines"
+						],
+						"v": 2
+					},
+					"archetype": "bm_tech",
+					"cyber": [
+						"synapse_router_s2",
+						"kestrel_sight",
+						"nx1_neural_bridge"
+					],
+					"dependency": 0,
+					"faction": "black_market",
+					"favor": false,
+					"finance": "working",
+					"first_day": 3,
+					"history": [
+						"D3 Owes 156 (couldn't cover the fee).",
+						"D3 Installed NX-1 Neural Bridge."
+					],
+					"home": "sump_tenements",
+					"id": "dez_okafor",
+					"last_day": 3,
+					"last_price": 400,
+					"links": {
+						"cust_58341461_15620": "family"
+					},
+					"loyal": false,
+					"name": "Dez Okafor",
+					"next_day": -1,
+					"occupation": "Freelance signal jockey",
+					"paid_total": 400,
+					"personality": "chatty",
+					"refused": 0,
+					"rel": 13,
+					"social": "glow_night_market",
+					"status": "alive",
+					"traits": [],
+					"visits": 1,
+					"wealth": 1,
+					"work": "glow_night_market"
+				}
+			}
+		},
+		"ProgressionManager": {
+			"customers_served": 7,
+			"level": 5,
+			"surgery_records": {
+				"install_basic_neural_implant": {
+					"best_grade": "S",
+					"completed": 2,
+					"failed": 0
+				},
+				"install_dermal": {
+					"best_grade": "S",
+					"completed": 1,
+					"failed": 0
+				},
+				"install_optic": {
+					"best_grade": "S",
+					"completed": 3,
+					"failed": 0
+				},
+				"install_respiratory": {
+					"best_grade": "S",
+					"completed": 1,
+					"failed": 0
+				}
+			},
+			"total_xp": 811
+		},
+		"QuestManager": {
+			"states": {
+				"q_find_wire": {
+					"ended_day": 0,
+					"started_day": 1,
+					"state": "active"
+				},
+				"q_first_hire": {
+					"ended_day": 0,
+					"started_day": 2,
+					"state": "active"
+				},
+				"q_fit_out": {
+					"ended_day": 0,
+					"started_day": 1,
+					"state": "active"
+				},
+				"q_regulars": {
+					"ended_day": 0,
+					"started_day": 1,
+					"state": "active"
+				},
+				"q_survive": {
+					"ended_day": 0,
+					"started_day": 2,
+					"state": "active"
+				}
+			}
+		},
+		"ReputationManager": {
+			"dims": {
+				"black_market": 0,
+				"civilian": 2,
+				"corporate": 0,
+				"criminal": 0,
+				"medical": 0
+			},
+			"reputation": 37
+		},
+		"SecurityManager": {
+			"cases": [
+				{
+					"clues": [],
+					"culprit": {
+						"id": "external",
+						"kind": "external",
+						"name": "Street thieves"
+					},
+					"day": 2,
+					"id": 1,
+					"loot": {
+						"amount": 2,
+						"kind": "parts",
+						"text": "2 salvaged parts from the bench"
+					},
+					"loot_text": "2 salvaged parts from the bench",
+					"outcome": "",
+					"status": "open",
+					"used": []
+				}
+			],
+			"informant": false,
+			"next_case": 2
+		},
+		"SkillManager": {
+			"points": 5,
+			"ranks": {
+
+			}
+		},
+		"StaffLifeManager": {
+			"last_fired": {
+
+			}
+		},
+		"StaffManager": {
+			"candidates": [
+				{
+					"age": 23,
+					"ambition": 40,
+					"anim": "fidget",
+					"appearance": {
+						"accessories": [
+							"glasses",
+							"headlamp"
+						],
+						"age_look": "young",
+						"body_acc": [
+							"toolbelt"
+						],
+						"body_cyber": [],
+						"brows": "thin",
+						"build": "slim",
+						"cloth_a": "work_brown",
+						"cloth_b": "charcoal",
+						"cloth_c": "black",
+						"cyber": [
+							"patched_implant",
+							"neck_ports"
+						],
+						"expr": "neutral",
+						"face": "oval",
+						"facial_hair": "",
+						"glow": "amber",
+						"hair": "messy",
+						"hair_color": "brown",
+						"iris": "green",
+						"makeup": [],
+						"metal": "brass",
+						"nose": "straight",
+						"outfit": "technician",
+						"piercings": [],
+						"posture": "slouch",
+						"presentation": "masc",
+						"rim": "3b9da0",
+						"scars": [],
+						"skin": 3,
+						"tattoos": [],
+						"v": 2
+					},
+					"background": "Dropped out of a med-tech program when the tuition chip in his neck bricked. Has been fixing neighbours' implants with a soldering iron ever since.",
+					"cast": true,
+					"clinic": 0,
+					"deaths": 0,
+					"ethics": [
+						"no_minors",
+						"no_harvest"
+					],
+					"hired_day": 0,
+					"history": [],
+					"id": "teo_marr",
+					"jobs_done": 0,
+					"jobs_today": 0,
+					"loyalty": 55,
+					"name": "Teo Marr",
+					"personality": "nervous",
+					"precision": 3,
+					"presentation": "masc",
+					"raise_pending": false,
+					"relationships": {
+
+					},
+					"reliability": 3,
+					"salary": 35,
+					"secret_faction": "",
+					"secret_known": false,
+					"skill": 2,
+					"specialization": "general",
+					"speed": 2,
+					"status": "working",
+					"stress": 10,
+					"traits": [
+						"idealist",
+						"quick_learner"
+					],
+					"xp": 0
+				},
+				{
+					"age": 57,
+					"ambition": 53.7931137084961,
+					"anim": "calm",
+					"appearance": {
+						"accessories": [
+							"surgical_mask"
+						],
+						"age_look": "old",
+						"body_acc": [
+							"toolbelt"
+						],
+						"body_cyber": [
+							"hands"
+						],
+						"brows": "thin",
+						"build": "average",
+						"cloth_a": "slate",
+						"cloth_b": "black",
+						"cloth_c": "work_blue",
+						"cyber": [
+							"twin_optics"
+						],
+						"expr": "smirk",
+						"face": "heavy",
+						"facial_hair": "",
+						"glow": "amber",
+						"hair": "bob",
+						"hair_color": "gray",
+						"iris": "blue",
+						"makeup": [],
+						"metal": "chrome",
+						"nose": "straight",
+						"outfit": "ripperdoc",
+						"piercings": [],
+						"posture": "hunched",
+						"presentation": "femme",
+						"rim": "3b9da0",
+						"scars": [
+							"lip"
+						],
+						"skin": 5,
+						"tattoos": [],
+						"v": 2
+					},
+					"background": "Twenty years patching up dockhands; knows every cheap implant by the sound it makes.",
+					"clinic": 0,
+					"deaths": 0,
+					"ethics": [
+						"no_minors"
+					],
+					"hired_day": 0,
+					"history": [],
+					"id": "staff_112572_416",
+					"jobs_done": 0,
+					"jobs_today": 0,
+					"loyalty": 37.9425773620605,
+					"name": "Ravi Castillo",
+					"personality": "chatty",
+					"precision": 2,
+					"presentation": "femme",
+					"raise_pending": false,
+					"relationships": {
+
+					},
+					"reliability": 3,
+					"salary": 20,
+					"secret_faction": "",
+					"secret_known": false,
+					"skill": 1,
+					"specialization": "general",
+					"speed": 1,
+					"status": "working",
+					"stress": 0.777114570140839,
+					"traits": [
+						"perfectionist",
+						"quick_learner"
+					],
+					"xp": 0
+				},
+				{
+					"age": 30,
+					"ambition": 12.0918655395508,
+					"anim": "calm",
+					"appearance": {
+						"accessories": [
+							"shades"
+						],
+						"age_look": "adult",
+						"body_acc": [
+							"cigarette"
+						],
+						"body_cyber": [],
+						"brows": "thin",
+						"build": "slim",
+						"cloth_a": "bm_purple",
+						"cloth_b": "charcoal",
+						"cloth_c": "dark_red",
+						"cyber": [],
+						"expr": "smirk",
+						"face": "long",
+						"facial_hair": "",
+						"glow": "magenta",
+						"hair": "shaved",
+						"hair_color": "dye_magenta",
+						"iris": "brown",
+						"makeup": [],
+						"metal": "gunmetal",
+						"nose": "straight",
+						"outfit": "technician",
+						"piercings": [
+							"brow_ring"
+						],
+						"posture": "slouch",
+						"presentation": "andro",
+						"rim": "7a2a6a",
+						"scars": [],
+						"skin": 3,
+						"tattoos": [
+							"tear"
+						],
+						"v": 2
+					},
+					"background": "Cuts serials for the Undermarket and installs what comes back.",
+					"clinic": 0,
+					"deaths": 0,
+					"ethics": [
+						"no_minors",
+						"no_harvest"
+					],
+					"hired_day": 0,
+					"history": [],
+					"id": "staff_112758_628",
+					"jobs_done": 0,
+					"jobs_today": 0,
+					"loyalty": 46.2997665405273,
+					"name": "Kofi Osei",
+					"personality": "chatty",
+					"precision": 1,
+					"presentation": "andro",
+					"raise_pending": false,
+					"relationships": {
+
+					},
+					"reliability": 5,
+					"salary": 54,
+					"secret_faction": "",
+					"secret_known": false,
+					"skill": 2,
+					"specialization": "black_market",
+					"speed": 4,
+					"status": "working",
+					"stress": 6.75247812271118,
+					"traits": [
+						"butcher"
+					],
+					"xp": 0
+				},
+				{
+					"age": 34,
+					"ambition": 38.7976303100586,
+					"anim": "calm",
+					"appearance": {
+						"accessories": [
+							"goggles"
+						],
+						"age_look": "adult",
+						"body_acc": [
+							"toolbelt"
+						],
+						"body_cyber": [
+							"arm_r"
+						],
+						"brows": "thin",
+						"build": "heavy",
+						"cloth_a": "work_brown",
+						"cloth_b": "charcoal",
+						"cloth_c": "work_blue",
+						"cyber": [
+							"shoulder_chrome"
+						],
+						"expr": "neutral",
+						"face": "heavy",
+						"facial_hair": "",
+						"glow": "cyan",
+						"hair": "short",
+						"hair_color": "black",
+						"iris": "gray",
+						"makeup": [],
+						"metal": "chrome",
+						"nose": "broad",
+						"outfit": "ripperdoc",
+						"piercings": [],
+						"posture": "slouch",
+						"presentation": "andro",
+						"rim": "3b9da0",
+						"scars": [
+							"brow"
+						],
+						"skin": 0,
+						"tattoos": [
+							"jaw_ink"
+						],
+						"v": 2
+					},
+					"background": "Builds prosthetics from scrap in a garage on the Furnace Line.",
+					"clinic": 0,
+					"deaths": 0,
+					"ethics": [
+						"no_minors"
+					],
+					"hired_day": 0,
+					"history": [],
+					"id": "staff_112870_654",
+					"jobs_done": 0,
+					"jobs_today": 0,
+					"loyalty": 54.9936981201172,
+					"name": "Rosa Ilyin",
+					"personality": "calm",
+					"precision": 5,
+					"presentation": "andro",
+					"raise_pending": false,
+					"relationships": {
+
+					},
+					"reliability": 2,
+					"salary": 40,
+					"secret_faction": "",
+					"secret_known": false,
+					"skill": 1,
+					"specialization": "cyber_limb",
+					"speed": 2,
+					"status": "working",
+					"stress": 16.5080261230469,
+					"traits": [
+						"butcher"
+					],
+					"xp": 0
+				}
+			],
+			"employees": [],
+			"next_id": 1
+		},
+		"StoryManager": {
+			"act": 1,
+			"act_started_day": 1,
+			"beats": [
+				"b_wire_quest",
+				"b_ilse",
+				"b_landlord",
+				"b_teo",
+				"b_mother"
+			],
+			"counters": {
+				"neural_install": 2
+			},
+			"ending": "",
+			"flags": {
+				"landlord_met": true
+			},
+			"met": [
+				"ilse_hartmann",
+				"pell_ormond",
+				"teo_marr",
+				"dez_okafor",
+				"rika_kessel"
+			],
+			"paths": {
+
+			},
+			"pending": [],
+			"rumors": [
+				"welcome",
+				"city_routes",
+				"static_fever_lore",
+				"undermarket",
+				"elite_clinics",
+				"rustline_war",
+				"hartmann_lore",
+				"mnemos"
+			],
+			"talks": []
+		},
+		"SupplierManager": {
+			"contraband": [],
+			"deliveries": [],
+			"state": {
+				"curator": {
+					"bought": 0,
+					"cut_off_until": -1,
+					"debt": 0,
+					"debt_jobs": 0,
+					"discovered": false,
+					"favors_done": 0,
+					"lead_from": "",
+					"loyalty": 0,
+					"price_drift": 0.934700051297629,
+					"stock": [],
+					"suspicion": 0,
+					"trust": 0
+				},
+				"glass": {
+					"bought": 0,
+					"cut_off_until": -1,
+					"debt": 0,
+					"debt_jobs": 0,
+					"discovered": false,
+					"favors_done": 0,
+					"lead_from": "",
+					"loyalty": 0,
+					"price_drift": 0.9934706335549,
+					"stock": [],
+					"suspicion": 0,
+					"trust": 0
+				},
+				"juno": {
+					"bought": 0,
+					"cut_off_until": -1,
+					"debt": 0,
+					"debt_jobs": 0,
+					"discovered": false,
+					"favors_done": 0,
+					"lead_from": "",
+					"loyalty": 0,
+					"price_drift": 1.07154242261267,
+					"stock": [],
+					"suspicion": 0,
+					"trust": 5
+				},
+				"magpie": {
+					"bought": 0,
+					"cut_off_until": -1,
+					"debt": 0,
+					"debt_jobs": 0,
+					"discovered": false,
+					"favors_done": 0,
+					"lead_from": "",
+					"loyalty": 0,
+					"price_drift": 0.95532707087149,
+					"stock": [],
+					"suspicion": 0,
+					"trust": 10
+				},
+				"okafor": {
+					"bought": 0,
+					"cut_off_until": -1,
+					"debt": 0,
+					"debt_jobs": 0,
+					"discovered": false,
+					"favors_done": 0,
+					"lead_from": "",
+					"loyalty": 0,
+					"price_drift": 1.03390112266791,
+					"stock": [],
+					"suspicion": 0,
+					"trust": 0
+				},
+				"sallow": {
+					"bought": 0,
+					"cut_off_until": -1,
+					"debt": 0,
+					"debt_jobs": 0,
+					"discovered": false,
+					"favors_done": 0,
+					"lead_from": "",
+					"loyalty": 0,
+					"price_drift": 1.05402853209307,
+					"stock": [],
+					"suspicion": 0,
+					"trust": 15
+				}
+			}
+		},
+		"TimeManager": {
+			"agenda": [],
+			"minute": 860
+		},
+		"TutorialManager": {
+			"active": false,
+			"completed": true,
+			"intro_pending": [
+				"skills",
+				"supply",
+				"inventory",
+				"dossier",
+				"business",
+				"database",
+				"staff",
+				"upgrades",
+				"map",
+				"blackmarket"
+			],
+			"introduced": {
+				"blackmarket": 2,
+				"business": 2,
+				"database": 2,
+				"dossier": 1,
+				"inventory": 1,
+				"map": 2,
+				"skills": 1,
+				"staff": 2,
+				"supply": 1,
+				"upgrades": 2
+			},
+			"step": -1
+		},
+		"WorldEventManager": {
+			"active": [
+				{
+					"days_left": 3,
+					"id": "shortage",
+					"start": 2,
+					"vars": {
+						"district": "The Sump",
+						"name": "Crank"
+					}
+				}
+			],
+			"deaths_today": 0,
+			"identity": "nobody",
+			"news": [
+				{
+					"about_you": false,
+					"body": "Couriers are charging triple. Some clinics are boiling gauze again.",
+					"day": 2,
+					"headline": "Port strike: sterile supplies short across the lower city",
+					"minute": 540
+				},
+				{
+					"about_you": false,
+					"body": "",
+					"day": 2,
+					"headline": "Night market raided, reopens an hour later.",
+					"minute": 540
+				},
+				{
+					"about_you": false,
+					"body": "",
+					"day": 3,
+					"headline": "Heat wave: cooling units sold out uptown.",
+					"minute": 540
+				}
+			],
+			"reactive": {
+
+			}
+		},
+		"WorldManager": {
+			"influence": {
+				"undercity": 7
+			},
+			"visited": [
+				"undercity"
+			]
+		},
+		"WorldSimulationManager": {
+			"closures": {
+
+			},
+			"encounter": {
+
+			},
+			"events": {
+				"caldera_stacks": {
+					"day": 3,
+					"done": false,
+					"id": "tenement_argument",
+					"period": "day",
+					"vars": {
+
+					}
+				},
+				"spindle_interchange": {
+					"day": 3,
+					"done": false,
+					"id": "transit_smuggle",
+					"period": "day",
+					"vars": {
+
+					}
+				},
+				"sump_tenements": {
+					"day": 3,
+					"done": false,
+					"id": "tenement_argument",
+					"period": "day",
+					"vars": {
+
+					}
+				}
+			},
+			"feed": [
+				{
+					"day": 1,
+					"loc": "glow_night_market",
+					"text": "EMPTY STALLS: Half the medical stalls are empty. 'Trucks didn't come.' The ones that are open have tripled their prices.",
+					"time": "12:20"
+				},
+				{
+					"day": 1,
+					"loc": "spindle_interchange",
+					"text": "LINE DOWN: A recorded voice apologises for 'a person on the tracks'. The crowd groans and starts walking.",
+					"time": "12:20"
+				},
+				{
+					"day": 2,
+					"loc": "spindle_interchange",
+					"text": "LINE DOWN: A recorded voice apologises for 'a person on the tracks'. The crowd groans and starts walking.",
+					"time": "09:00"
+				},
+				{
+					"day": 3,
+					"loc": "furnace_works",
+					"text": "SCRAP SPARKS: A welder throws a shower of sparks into a puddle, and for a second the whole yard is gold.",
+					"time": "09:00"
+				},
+				{
+					"day": 3,
+					"loc": "spindle_interchange",
+					"text": "LINE DOWN: A recorded voice apologises for 'a person on the tracks'. The crowd groans and starts walking.",
+					"time": "09:00"
+				}
+			],
+			"missing": {
+
+			},
+			"once": [],
+			"shifts": {
+
+			},
+			"talked": {
+
+			},
+			"used": {
+
+			}
+		}
+	},
+	"version": 5
+}
+#md5:6a5383ca424cc9b2b8d257a741f647cd

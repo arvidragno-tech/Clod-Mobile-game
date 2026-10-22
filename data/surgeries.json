@@ -9,13 +9,39 @@
       "cyberware": "nx1_neural_bridge",
       "base_pay": 260,
       "base_xp": 60,
-      "target_time_sec": 150,
+      "target_time_sec": 165,
       "supplies": 1,
       "site": {
         "region": "neck",
         "nerves": [
-          [[0.41, 0.3],[0.38, 0.45],[0.4, 0.64]],
-          [[0.59, 0.3],[0.62, 0.45],[0.6, 0.64]]
+          [
+            [
+              0.41,
+              0.3
+            ],
+            [
+              0.38,
+              0.45
+            ],
+            [
+              0.4,
+              0.64
+            ]
+          ],
+          [
+            [
+              0.59,
+              0.3
+            ],
+            [
+              0.62,
+              0.45
+            ],
+            [
+              0.6,
+              0.64
+            ]
+          ]
         ],
         "opening_half_width": 13.0
       },
@@ -68,7 +94,20 @@
           "instruction": "Open the cervical port along the guide. Stay on the line: nerves run close.",
           "tool": "scalpel",
           "params": {
-            "path": [[0.47, 0.18],[0.5, 0.5],[0.53, 0.82]],
+            "path": [
+              [
+                0.47,
+                0.18
+              ],
+              [
+                0.5,
+                0.5
+              ],
+              [
+                0.53,
+                0.82
+              ]
+            ],
             "tolerance_px": 3.2
           }
         },
@@ -79,7 +118,24 @@
           "instruction": "Click each clamp point to hold the site open.",
           "tool": "retractor",
           "params": {
-            "clamps": [[0.33, 0.3],[0.67, 0.3],[0.33, 0.7],[0.67, 0.7]],
+            "clamps": [
+              [
+                0.33,
+                0.3
+              ],
+              [
+                0.67,
+                0.3
+              ],
+              [
+                0.33,
+                0.7
+              ],
+              [
+                0.67,
+                0.7
+              ]
+            ],
             "radius_px": 6.0
           },
           "complication_window": true
@@ -104,11 +160,43 @@
           "instruction": "Seat the bridge in the port and line up the contact notch. Then SEAT.",
           "tool": "forceps",
           "params": {
-            "socket": [0.5, 0.5],
+            "socket": [
+              0.5,
+              0.5
+            ],
             "snap_px": 9.0,
             "align_tolerance_deg": 12.0
           },
           "complication_window": true
+        },
+        {
+          "id": "map_cortex",
+          "type": "sequence",
+          "title": "MAP THE CORTEX",
+          "instruction": "The bridge listens before it speaks. Touch the live nodes in the order they light, or it learns the wrong map.",
+          "params": {
+            "points": [
+              [
+                0.42,
+                0.38
+              ],
+              [
+                0.58,
+                0.42
+              ],
+              [
+                0.44,
+                0.56
+              ],
+              [
+                0.56,
+                0.62
+              ]
+            ],
+            "mistake": "nerve_misfire",
+            "label": "node",
+            "radius_px": 5.0
+          }
         },
         {
           "id": "connect",
@@ -117,7 +205,20 @@
           "instruction": "Splice each lead to its matching nerve. Wrong pairings scramble the signal.",
           "tool": "splicer",
           "params": {
-            "endpoints": [[0.41, 0.3],[0.59, 0.3],[0.5, 0.74]]
+            "endpoints": [
+              [
+                0.41,
+                0.3
+              ],
+              [
+                0.59,
+                0.3
+              ],
+              [
+                0.5,
+                0.74
+              ]
+            ]
           },
           "complication_window": true
         },
@@ -155,13 +256,39 @@
       "cyberware": "",
       "base_pay": 420,
       "base_xp": 90,
-      "target_time_sec": 190,
+      "target_time_sec": 205,
       "supplies": 2,
       "site": {
         "region": "neck",
         "nerves": [
-          [[0.41, 0.3],[0.38, 0.45],[0.4, 0.64]],
-          [[0.59, 0.3],[0.62, 0.45],[0.6, 0.64]]
+          [
+            [
+              0.41,
+              0.3
+            ],
+            [
+              0.38,
+              0.45
+            ],
+            [
+              0.4,
+              0.64
+            ]
+          ],
+          [
+            [
+              0.59,
+              0.3
+            ],
+            [
+              0.62,
+              0.45
+            ],
+            [
+              0.6,
+              0.64
+            ]
+          ]
         ],
         "opening_half_width": 13.0
       },
@@ -217,7 +344,20 @@
           "instruction": "Midline cut over the vertebrae. Drag straight along the guide.",
           "tool": "scalpel",
           "params": {
-            "path": [[0.5, 0.3],[0.5, 0.55],[0.5, 0.8]],
+            "path": [
+              [
+                0.5,
+                0.3
+              ],
+              [
+                0.5,
+                0.55
+              ],
+              [
+                0.5,
+                0.8
+              ]
+            ],
             "tolerance_px": 3.2
           }
         },
@@ -228,7 +368,24 @@
           "instruction": "Click each clamp point to hold the site open.",
           "tool": "retractor",
           "params": {
-            "clamps": [[0.34, 0.42],[0.66, 0.42],[0.34, 0.7],[0.66, 0.7]],
+            "clamps": [
+              [
+                0.34,
+                0.42
+              ],
+              [
+                0.66,
+                0.42
+              ],
+              [
+                0.34,
+                0.7
+              ],
+              [
+                0.66,
+                0.7
+              ]
+            ],
             "radius_px": 6.0
           },
           "complication_window": true
@@ -240,12 +397,62 @@
           "instruction": "Vertebral anchors: the drill is slow and the green band narrow. Release in the green.",
           "tool": "drill",
           "params": {
-            "anchors": [[0.44, 0.47],[0.56, 0.47],[0.44, 0.66],[0.56, 0.66]],
+            "anchors": [
+              [
+                0.44,
+                0.47
+              ],
+              [
+                0.56,
+                0.47
+              ],
+              [
+                0.44,
+                0.66
+              ],
+              [
+                0.56,
+                0.66
+              ]
+            ],
             "depth_rate": 44.0,
             "zone_min": 60.0,
             "zone_max": 76.0
           },
           "complication_window": true
+        },
+        {
+          "id": "thread_bus",
+          "type": "sequence",
+          "title": "THREAD THE SPINAL BUS",
+          "instruction": "Feed the bus down the vertebrae, top to bottom. Skip one and you nick the cord.",
+          "params": {
+            "points": [
+              [
+                0.5,
+                0.38
+              ],
+              [
+                0.5,
+                0.47
+              ],
+              [
+                0.5,
+                0.56
+              ],
+              [
+                0.5,
+                0.65
+              ],
+              [
+                0.5,
+                0.74
+              ]
+            ],
+            "mistake": "cord_nick",
+            "label": "vertebra",
+            "radius_px": 4.5
+          }
         },
         {
           "id": "install",
@@ -254,7 +461,10 @@
           "instruction": "Drag the implant into the socket, turn it until the notch lines up, then SEAT.",
           "tool": "forceps",
           "params": {
-            "socket": [0.5, 0.56],
+            "socket": [
+              0.5,
+              0.56
+            ],
             "snap_px": 9.0,
             "align_tolerance_deg": 12.0
           },
@@ -267,7 +477,20 @@
           "instruction": "Drag each implant pin to the nerve with the same mark.",
           "tool": "splicer",
           "params": {
-            "endpoints": [[0.41, 0.36],[0.59, 0.36],[0.5, 0.76]]
+            "endpoints": [
+              [
+                0.41,
+                0.36
+              ],
+              [
+                0.59,
+                0.36
+              ],
+              [
+                0.5,
+                0.76
+              ]
+            ]
           },
           "complication_window": true
         },
@@ -305,13 +528,39 @@
       "cyberware": "",
       "base_pay": 340,
       "base_xp": 75,
-      "target_time_sec": 170,
+      "target_time_sec": 185,
       "supplies": 2,
       "site": {
         "region": "forearm",
         "nerves": [
-          [[0.43, 0.28],[0.41, 0.5],[0.43, 0.72]],
-          [[0.57, 0.28],[0.59, 0.5],[0.57, 0.72]]
+          [
+            [
+              0.43,
+              0.28
+            ],
+            [
+              0.41,
+              0.5
+            ],
+            [
+              0.43,
+              0.72
+            ]
+          ],
+          [
+            [
+              0.57,
+              0.28
+            ],
+            [
+              0.59,
+              0.5
+            ],
+            [
+              0.57,
+              0.72
+            ]
+          ]
         ],
         "opening_half_width": 13.0
       },
@@ -367,7 +616,20 @@
           "instruction": "Open the forearm along the guide for the mount.",
           "tool": "scalpel",
           "params": {
-            "path": [[0.5, 0.24],[0.5, 0.5],[0.5, 0.76]],
+            "path": [
+              [
+                0.5,
+                0.24
+              ],
+              [
+                0.5,
+                0.5
+              ],
+              [
+                0.5,
+                0.76
+              ]
+            ],
             "tolerance_px": 3.2
           }
         },
@@ -378,7 +640,24 @@
           "instruction": "Click each clamp point to hold the site open.",
           "tool": "retractor",
           "params": {
-            "clamps": [[0.37, 0.36],[0.63, 0.36],[0.37, 0.64],[0.63, 0.64]],
+            "clamps": [
+              [
+                0.37,
+                0.36
+              ],
+              [
+                0.63,
+                0.36
+              ],
+              [
+                0.37,
+                0.64
+              ],
+              [
+                0.63,
+                0.64
+              ]
+            ],
             "radius_px": 6.0
           },
           "complication_window": true
@@ -403,7 +682,16 @@
           "instruction": "Bolt the mount to the bone: hold on each anchor, release with depth in the green.",
           "tool": "drill",
           "params": {
-            "anchors": [[0.5, 0.37],[0.5, 0.65]],
+            "anchors": [
+              [
+                0.5,
+                0.37
+              ],
+              [
+                0.5,
+                0.65
+              ]
+            ],
             "depth_rate": 55.0,
             "zone_min": 58.0,
             "zone_max": 78.0
@@ -417,9 +705,31 @@
           "instruction": "Fit the limb module onto the mount and turn it until the coupling locks in line. Then SEAT.",
           "tool": "forceps",
           "params": {
-            "socket": [0.5, 0.51],
+            "socket": [
+              0.5,
+              0.51
+            ],
             "snap_px": 10.0,
             "align_tolerance_deg": 15.0
+          },
+          "complication_window": true
+        },
+        {
+          "id": "tension_tendons",
+          "type": "hold_steady",
+          "title": "TENSION THE TENDONS",
+          "instruction": "Hold the tendon line taut while the actuators lock onto it. Let it pull you and it slips.",
+          "params": {
+            "anchor": [
+              0.5,
+              0.5
+            ],
+            "drift_px": 6.0,
+            "period": 5.0,
+            "duration": 4.0,
+            "mistake": "tendon_slip",
+            "label": "the tendon",
+            "radius_px": 6.0
           },
           "complication_window": true
         },
@@ -430,7 +740,20 @@
           "instruction": "Wire the motor leads to the matching nerves.",
           "tool": "splicer",
           "params": {
-            "endpoints": [[0.43, 0.31],[0.57, 0.31],[0.5, 0.71]]
+            "endpoints": [
+              [
+                0.43,
+                0.31
+              ],
+              [
+                0.57,
+                0.31
+              ],
+              [
+                0.5,
+                0.71
+              ]
+            ]
           },
           "complication_window": true
         },
@@ -468,13 +791,39 @@
       "cyberware": "",
       "base_pay": 330,
       "base_xp": 75,
-      "target_time_sec": 170,
+      "target_time_sec": 185,
       "supplies": 2,
       "site": {
         "region": "thigh",
         "nerves": [
-          [[0.4, 0.25],[0.38, 0.5],[0.41, 0.75]],
-          [[0.6, 0.25],[0.62, 0.5],[0.59, 0.75]]
+          [
+            [
+              0.4,
+              0.25
+            ],
+            [
+              0.38,
+              0.5
+            ],
+            [
+              0.41,
+              0.75
+            ]
+          ],
+          [
+            [
+              0.6,
+              0.25
+            ],
+            [
+              0.62,
+              0.5
+            ],
+            [
+              0.59,
+              0.75
+            ]
+          ]
         ],
         "opening_half_width": 13.0
       },
@@ -530,7 +879,20 @@
           "instruction": "Open the thigh along the guide for the mount.",
           "tool": "scalpel",
           "params": {
-            "path": [[0.5, 0.22],[0.5, 0.5],[0.5, 0.78]],
+            "path": [
+              [
+                0.5,
+                0.22
+              ],
+              [
+                0.5,
+                0.5
+              ],
+              [
+                0.5,
+                0.78
+              ]
+            ],
             "tolerance_px": 3.2
           }
         },
@@ -541,7 +903,24 @@
           "instruction": "Click each clamp point to hold the site open.",
           "tool": "retractor",
           "params": {
-            "clamps": [[0.34, 0.34],[0.66, 0.34],[0.34, 0.66],[0.66, 0.66]],
+            "clamps": [
+              [
+                0.34,
+                0.34
+              ],
+              [
+                0.66,
+                0.34
+              ],
+              [
+                0.34,
+                0.66
+              ],
+              [
+                0.66,
+                0.66
+              ]
+            ],
             "radius_px": 6.0
           },
           "complication_window": true
@@ -553,7 +932,20 @@
           "instruction": "Heavy load-bearing mount: hold on each anchor, release with depth in the green.",
           "tool": "drill",
           "params": {
-            "anchors": [[0.5, 0.33],[0.44, 0.62],[0.56, 0.62]],
+            "anchors": [
+              [
+                0.5,
+                0.33
+              ],
+              [
+                0.44,
+                0.62
+              ],
+              [
+                0.56,
+                0.62
+              ]
+            ],
             "depth_rate": 62.0,
             "zone_min": 58.0,
             "zone_max": 78.0
@@ -567,7 +959,10 @@
           "instruction": "Fit the limb module onto the mount and turn it until the coupling locks in line. Then SEAT.",
           "tool": "forceps",
           "params": {
-            "socket": [0.5, 0.49],
+            "socket": [
+              0.5,
+              0.49
+            ],
             "snap_px": 10.0,
             "align_tolerance_deg": 15.0
           },
@@ -580,7 +975,39 @@
           "instruction": "Wire the motor leads to the matching nerves.",
           "tool": "splicer",
           "params": {
-            "endpoints": [[0.42, 0.3],[0.58, 0.3],[0.5, 0.74]]
+            "endpoints": [
+              [
+                0.42,
+                0.3
+              ],
+              [
+                0.58,
+                0.3
+              ],
+              [
+                0.5,
+                0.74
+              ]
+            ]
+          },
+          "complication_window": true
+        },
+        {
+          "id": "load_test",
+          "type": "hold_steady",
+          "title": "LOAD TEST",
+          "instruction": "Put weight through the new joint. Follow the knee as it settles and keep it from buckling.",
+          "params": {
+            "anchor": [
+              0.5,
+              0.52
+            ],
+            "drift_px": 7.0,
+            "period": 4.0,
+            "duration": 4.5,
+            "mistake": "joint_buckle",
+            "label": "the knee",
+            "radius_px": 6.0
           },
           "complication_window": true
         },
@@ -605,13 +1032,31 @@
       "cyberware": "",
       "base_pay": 300,
       "base_xp": 70,
-      "target_time_sec": 160,
+      "target_time_sec": 175,
       "supplies": 1,
       "site": {
         "region": "orbital",
         "nerves": [
-          [[0.34, 0.66],[0.42, 0.7]],
-          [[0.7, 0.66],[0.62, 0.7]]
+          [
+            [
+              0.34,
+              0.66
+            ],
+            [
+              0.42,
+              0.7
+            ]
+          ],
+          [
+            [
+              0.7,
+              0.66
+            ],
+            [
+              0.62,
+              0.7
+            ]
+          ]
         ],
         "opening_half_width": 11.0
       },
@@ -667,7 +1112,20 @@
           "instruction": "A fine curve under the orbit. Follow the guide slowly: the tolerance is tight.",
           "tool": "scalpel",
           "params": {
-            "path": [[0.3, 0.62],[0.5, 0.66],[0.7, 0.62]],
+            "path": [
+              [
+                0.3,
+                0.62
+              ],
+              [
+                0.5,
+                0.66
+              ],
+              [
+                0.7,
+                0.62
+              ]
+            ],
             "tolerance_px": 2.6
           }
         },
@@ -678,7 +1136,20 @@
           "instruction": "Retract the lids and orbital tissue: click each clamp point.",
           "tool": "retractor",
           "params": {
-            "clamps": [[0.34, 0.5],[0.66, 0.5],[0.5, 0.76]],
+            "clamps": [
+              [
+                0.34,
+                0.5
+              ],
+              [
+                0.66,
+                0.5
+              ],
+              [
+                0.5,
+                0.76
+              ]
+            ],
             "radius_px": 6.0
           },
           "complication_window": true
@@ -703,7 +1174,10 @@
           "instruction": "Seat the optic and turn it until the focal notch lines up exactly; optical alignment is tight.",
           "tool": "forceps",
           "params": {
-            "socket": [0.52, 0.6],
+            "socket": [
+              0.52,
+              0.6
+            ],
             "snap_px": 7.5,
             "align_tolerance_deg": 9.0
           },
@@ -716,7 +1190,39 @@
           "instruction": "Connect the optic leads to the matching optic nerve bundles.",
           "tool": "splicer",
           "params": {
-            "endpoints": [[0.36, 0.58],[0.68, 0.58],[0.52, 0.74]]
+            "endpoints": [
+              [
+                0.36,
+                0.58
+              ],
+              [
+                0.68,
+                0.58
+              ],
+              [
+                0.52,
+                0.74
+              ]
+            ]
+          },
+          "complication_window": true
+        },
+        {
+          "id": "fix_gaze",
+          "type": "hold_steady",
+          "title": "HOLD THE GAZE",
+          "instruction": "The eye drifts under sedation. Hold on the pupil ring and follow it until the lens fuses.",
+          "params": {
+            "anchor": [
+              0.52,
+              0.6
+            ],
+            "drift_px": 5.0,
+            "period": 4.5,
+            "duration": 4.0,
+            "mistake": "retina_scuff",
+            "label": "the pupil",
+            "radius_px": 6.0
           },
           "complication_window": true
         },
@@ -754,13 +1260,39 @@
       "cyberware": "",
       "base_pay": 180,
       "base_xp": 40,
-      "target_time_sec": 100,
+      "target_time_sec": 115,
       "supplies": 1,
       "site": {
         "region": "forearm",
         "nerves": [
-          [[0.43, 0.28],[0.41, 0.5],[0.43, 0.72]],
-          [[0.57, 0.28],[0.59, 0.5],[0.57, 0.72]]
+          [
+            [
+              0.43,
+              0.28
+            ],
+            [
+              0.41,
+              0.5
+            ],
+            [
+              0.43,
+              0.72
+            ]
+          ],
+          [
+            [
+              0.57,
+              0.28
+            ],
+            [
+              0.59,
+              0.5
+            ],
+            [
+              0.57,
+              0.72
+            ]
+          ]
         ],
         "opening_half_width": 12.0
       },
@@ -816,7 +1348,20 @@
           "instruction": "A shallow pocket cut for the plate. Drag along the guide.",
           "tool": "scalpel",
           "params": {
-            "path": [[0.5, 0.32],[0.5, 0.5],[0.5, 0.68]],
+            "path": [
+              [
+                0.5,
+                0.32
+              ],
+              [
+                0.5,
+                0.5
+              ],
+              [
+                0.5,
+                0.68
+              ]
+            ],
             "tolerance_px": 3.6
           }
         },
@@ -827,10 +1372,52 @@
           "instruction": "Two clamps lift the skin flap: click each point.",
           "tool": "retractor",
           "params": {
-            "clamps": [[0.38, 0.42],[0.62, 0.58]],
+            "clamps": [
+              [
+                0.38,
+                0.42
+              ],
+              [
+                0.62,
+                0.58
+              ]
+            ],
             "radius_px": 6.0
           },
           "complication_window": true
+        },
+        {
+          "id": "lay_plates",
+          "type": "sequence",
+          "title": "LAY THE PLATES",
+          "instruction": "Subdermal plates overlap like scales. Lay them in order or they ride up and cut.",
+          "params": {
+            "points": [
+              [
+                0.44,
+                0.4
+              ],
+              [
+                0.56,
+                0.4
+              ],
+              [
+                0.44,
+                0.52
+              ],
+              [
+                0.56,
+                0.52
+              ],
+              [
+                0.5,
+                0.62
+              ]
+            ],
+            "mistake": "plate_overlap",
+            "label": "plate",
+            "radius_px": 5.0
+          }
         },
         {
           "id": "install",
@@ -839,7 +1426,10 @@
           "instruction": "Lay the plate in the pocket: placement matters more than rotation. Then SEAT.",
           "tool": "forceps",
           "params": {
-            "socket": [0.5, 0.5],
+            "socket": [
+              0.5,
+              0.5
+            ],
             "snap_px": 8.0,
             "align_tolerance_deg": 20.0
           },
@@ -866,13 +1456,39 @@
       "cyberware": "",
       "base_pay": 280,
       "base_xp": 65,
-      "target_time_sec": 150,
+      "target_time_sec": 165,
       "supplies": 1,
       "site": {
         "region": "chest",
         "nerves": [
-          [[0.42, 0.25],[0.4, 0.5],[0.42, 0.75]],
-          [[0.58, 0.25],[0.6, 0.5],[0.58, 0.75]]
+          [
+            [
+              0.42,
+              0.25
+            ],
+            [
+              0.4,
+              0.5
+            ],
+            [
+              0.42,
+              0.75
+            ]
+          ],
+          [
+            [
+              0.58,
+              0.25
+            ],
+            [
+              0.6,
+              0.5
+            ],
+            [
+              0.58,
+              0.75
+            ]
+          ]
         ],
         "opening_half_width": 13.0
       },
@@ -928,7 +1544,20 @@
           "instruction": "Drag along the guide from the marker. Slow and steady: straying bleeds.",
           "tool": "scalpel",
           "params": {
-            "path": [[0.5, 0.24],[0.5, 0.5],[0.5, 0.76]],
+            "path": [
+              [
+                0.5,
+                0.24
+              ],
+              [
+                0.5,
+                0.5
+              ],
+              [
+                0.5,
+                0.76
+              ]
+            ],
             "tolerance_px": 3.2
           }
         },
@@ -939,7 +1568,24 @@
           "instruction": "Click each clamp point to hold the site open.",
           "tool": "retractor",
           "params": {
-            "clamps": [[0.35, 0.36],[0.65, 0.36],[0.35, 0.64],[0.65, 0.64]],
+            "clamps": [
+              [
+                0.35,
+                0.36
+              ],
+              [
+                0.65,
+                0.36
+              ],
+              [
+                0.35,
+                0.64
+              ],
+              [
+                0.65,
+                0.64
+              ]
+            ],
             "radius_px": 6.0
           },
           "complication_window": true
@@ -964,7 +1610,10 @@
           "instruction": "Drag the implant into the socket, turn it until the notch lines up, then SEAT.",
           "tool": "forceps",
           "params": {
-            "socket": [0.5, 0.5],
+            "socket": [
+              0.5,
+              0.5
+            ],
             "snap_px": 9.0,
             "align_tolerance_deg": 12.0
           },
@@ -977,7 +1626,39 @@
           "instruction": "Drag each implant pin to the nerve with the same mark.",
           "tool": "splicer",
           "params": {
-            "endpoints": [[0.42, 0.3],[0.58, 0.3],[0.5, 0.72]]
+            "endpoints": [
+              [
+                0.42,
+                0.3
+              ],
+              [
+                0.58,
+                0.3
+              ],
+              [
+                0.5,
+                0.72
+              ]
+            ]
+          },
+          "complication_window": true
+        },
+        {
+          "id": "seal_airway",
+          "type": "hold_steady",
+          "title": "SEAL THE AIRWAY",
+          "instruction": "Pressure on. Hold the seal ring over the junction until the gasket sets.",
+          "params": {
+            "anchor": [
+              0.5,
+              0.5
+            ],
+            "drift_px": 4.0,
+            "period": 5.5,
+            "duration": 4.0,
+            "mistake": "air_leak",
+            "label": "the seal",
+            "radius_px": 6.0
           },
           "complication_window": true
         },
@@ -1002,13 +1683,39 @@
       "cyberware": "",
       "base_pay": 400,
       "base_xp": 90,
-      "target_time_sec": 190,
+      "target_time_sec": 205,
       "supplies": 2,
       "site": {
         "region": "chest",
         "nerves": [
-          [[0.47, 0.25],[0.45, 0.5],[0.47, 0.75]],
-          [[0.69, 0.25],[0.71, 0.5],[0.69, 0.75]]
+          [
+            [
+              0.47,
+              0.25
+            ],
+            [
+              0.45,
+              0.5
+            ],
+            [
+              0.47,
+              0.75
+            ]
+          ],
+          [
+            [
+              0.69,
+              0.25
+            ],
+            [
+              0.71,
+              0.5
+            ],
+            [
+              0.69,
+              0.75
+            ]
+          ]
         ],
         "opening_half_width": 13.0
       },
@@ -1064,7 +1771,20 @@
           "instruction": "Open the chest wall along the guide. Watch the vitals as you go.",
           "tool": "scalpel",
           "params": {
-            "path": [[0.56, 0.26],[0.58, 0.5],[0.6, 0.76]],
+            "path": [
+              [
+                0.56,
+                0.26
+              ],
+              [
+                0.58,
+                0.5
+              ],
+              [
+                0.6,
+                0.76
+              ]
+            ],
             "tolerance_px": 3.2
           }
         },
@@ -1075,7 +1795,24 @@
           "instruction": "Click each clamp point to hold the site open.",
           "tool": "retractor",
           "params": {
-            "clamps": [[0.42, 0.36],[0.72, 0.36],[0.44, 0.66],[0.74, 0.66]],
+            "clamps": [
+              [
+                0.42,
+                0.36
+              ],
+              [
+                0.72,
+                0.36
+              ],
+              [
+                0.44,
+                0.66
+              ],
+              [
+                0.74,
+                0.66
+              ]
+            ],
             "radius_px": 6.0
           },
           "complication_window": true
@@ -1094,13 +1831,45 @@
           "complication_window": true
         },
         {
+          "id": "clamp_vessels",
+          "type": "sequence",
+          "title": "CLAMP THE VESSELS",
+          "instruction": "Clamp from the heart outwards. Close a downstream vessel first and the pressure tears it.",
+          "params": {
+            "points": [
+              [
+                0.52,
+                0.34
+              ],
+              [
+                0.62,
+                0.42
+              ],
+              [
+                0.54,
+                0.56
+              ],
+              [
+                0.66,
+                0.64
+              ]
+            ],
+            "mistake": "vessel_tear",
+            "label": "vessel",
+            "radius_px": 5.0
+          }
+        },
+        {
           "id": "install",
           "type": "install_implant",
           "title": "INSTALL IMPLANT",
           "instruction": "Place the module precisely in the cavity and line up its port. Then SEAT.",
           "tool": "forceps",
           "params": {
-            "socket": [0.58, 0.52],
+            "socket": [
+              0.58,
+              0.52
+            ],
             "snap_px": 8.0,
             "align_tolerance_deg": 12.0
           },
@@ -1113,7 +1882,20 @@
           "instruction": "Drag each implant pin to the nerve with the same mark.",
           "tool": "splicer",
           "params": {
-            "endpoints": [[0.48, 0.32],[0.68, 0.32],[0.58, 0.74]]
+            "endpoints": [
+              [
+                0.48,
+                0.32
+              ],
+              [
+                0.68,
+                0.32
+              ],
+              [
+                0.58,
+                0.74
+              ]
+            ]
           },
           "complication_window": true
         },

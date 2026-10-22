@@ -3,7 +3,9 @@ extends Node
 ##  - a new game opens on the opening cutscene; nobody knocks while it
 ##    plays; a click finishes the line, another moves on; ESC skips; the
 ##    first patient knocks after it;
-##  - a chapter card ends by itself (no input) in reasonable time;
+##  - a chapter card ends by itself (no input), after at least 30 s and
+##    about as long as CutscenePlayer.estimate_seconds says;
+##  - --all-cutscenes: every scene is played to its end untouched and timed;
 ##  - the SKIP button ends a scene and the conversation it leads into
 ##    follows;
 ##  - a story case at the door, its decision, and the cutscene it queues;
@@ -15,11 +17,12 @@ extends Node
 ##    the decision that follows (named as one, its rivals shown, the
 ##    betrayal telegraphed), and the NEXT line bringing it back when it
 ##    isn't on screen.
-##   godot --path . res://tests/narrative_probe.tscn -- [--shots=DIR]
+##   godot --path . res://tests/narrative_probe.tscn -- [--shots=DIR] [--all-cutscenes]
 
 var _shots: String = ""
 var _fails: Array[String] = []
 var _checks: int = 0
+var _all_scenes := false
 
 
 func _ready() -> void:
@@ -29,6 +32,8 @@ func _ready() -> void:
 		if arg.begins_with("--shots="):
 			_shots = arg.trim_prefix("--shots=")
 			DirAccess.make_dir_recursive_absolute(_shots)
+		elif arg == "--all-cutscenes":
+			_all_scenes = true
 	Settings.path = "user://narrative_probe_settings.cfg"
 	DirAccess.remove_absolute(Settings.path)
 	Settings.load_settings()
@@ -48,6 +53,8 @@ func _ready() -> void:
 	await _reactive_case()
 	await _breathers()
 	await _seasons()
+	if _all_scenes:
+		await _time_every_scene()
 	SaveManager.delete_save()
 	DirAccess.remove_absolute(Settings.path)
 	print("")
@@ -109,11 +116,13 @@ func _chapter_card_runs_by_itself() -> void:
 	var card := _find_visible("CutsceneCard") as Label
 	_check(card != null and card.text == "ACT II · REPUTATION", "chapter: the card names the act")
 	await _shot("311_chapter_card")
-	var t := 0.0
-	while _player() != null and t < 30.0:
-		await _wait(0.25)
-		t += 0.25
-	_check(_player() == null and t < 20.0, "chapter: it ends by itself without input (%.1f s)" % t)
+	var expect := CutscenePlayer.estimate_seconds(StoryManager.get_cutscene(&"cs_act_2")["shots"], Settings.chars_per_second())
+	var t0 := Time.get_ticks_msec()
+	while _player() != null and Time.get_ticks_msec() - t0 < 120000:
+		await _frames(1)
+	var t := (Time.get_ticks_msec() - t0) / 1000.0
+	_check(_player() == null and t >= CutscenePlayer.MIN_SCENE_SEC and t <= expect + 8.0,
+		"chapter: it ends by itself without input, after at least %d s (%.1f s, estimate %.1f s)" % [int(CutscenePlayer.MIN_SCENE_SEC), t, expect])
 	await _frames(10)
 	UIManager.close_modal()
 
@@ -131,14 +140,49 @@ func _skip_button_then_conversation() -> void:
 	_check(_player() != null and _player().cutscene_id == &"cs_act_3", "skip: the act III scene plays first")
 	_check(StoryManager.has_talk(), "skip: Voss's conversation waits behind it")
 	await _wait(0.6)
+	var p := _player()
+	var closes := [0]
+	p.closed.connect(func() -> void: closes[0] += 1)
 	await _press_named("CutsceneSkip")
+	if is_instance_valid(p):
+		p.on_escape()  # ESC as well, while it fades: still one ending
 	await _wait(1.2)
+	_check(closes[0] == 1 and StoryManager.seen_cutscenes.count("cs_act_3") == 1 and not StoryManager.cutscene_queue.has("cs_act_3"),
+		"skip: skipping ends the scene once and marks it seen once (%d endings)" % closes[0])
 	var talk := UIManager.top_modal()
 	_check(talk is DialoguePanel, "skip: SKIP ends the scene and the conversation follows (%s)" % (talk.name if talk else "nothing"))
 	await _shot("311_after_skip_conversation")
 	UIManager.close_modal()
 	StoryManager.talk_queue.clear()
 	await _frames(6)
+
+
+## Plays every scene from start to end without touching it, at the default
+## text speed, and times it on the wall clock.
+func _time_every_scene() -> void:
+	var speed := Settings.text_speed
+	Settings.text_speed = 1
+	for id: String in StoryManager.cutscenes:
+		StoryManager.cutscene_queue.clear()
+		StoryManager.talk_queue.clear()
+		StoryManager.seen_cutscenes.erase(id)
+		EventManager.pending_event = &""
+		CustomerManager.dismiss_current()
+		UIManager.close_modal()
+		UIManager.go_to(UIManager.SCREEN_CLINIC)
+		await _frames(6)
+		StoryManager.queue_cutscene(StringName(id))
+		var t0 := Time.get_ticks_msec()
+		while _player() == null and Time.get_ticks_msec() - t0 < 5000:
+			await _frames(1)
+		t0 = Time.get_ticks_msec()
+		while _player() != null and Time.get_ticks_msec() - t0 < 120000:
+			await _frames(1)
+		var t := (Time.get_ticks_msec() - t0) / 1000.0
+		var expect := CutscenePlayer.estimate_seconds(StoryManager.get_cutscene(StringName(id))["shots"], Settings.chars_per_second())
+		print("  CUTSCENE %-18s %5.1f s played (estimate %5.1f s)" % [id, t, expect])
+		_check(t >= CutscenePlayer.MIN_SCENE_SEC, "scene %s runs at least %d s untouched (%.1f s)" % [id, int(CutscenePlayer.MIN_SCENE_SEC), t])
+	Settings.text_speed = speed
 
 
 func _story_case() -> void:

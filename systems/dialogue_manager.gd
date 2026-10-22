@@ -29,6 +29,10 @@ var current_id: StringName = &""
 var current_node_id: String = ""
 var log_lines: Array[Dictionary] = []  # this conversation: {speaker, text, kind?}
 var choices: Array[Dictionary] = []  # all-time: {dialogue, node, option, kind, success, day}
+## A conversation that was open when the game saved: {id, node, log}. The
+## next start() of that id picks up on that line instead of the first one,
+## without running the line's effects again (they already happened).
+var _resume: Dictionary = {}
 var _rng := RandomNumberGenerator.new()
 
 
@@ -45,6 +49,7 @@ func reset_state() -> void:
 	current_node_id = ""
 	log_lines.clear()
 	choices.clear()
+	_resume = {}
 
 
 func has_dialogue(id: StringName) -> bool:
@@ -70,11 +75,22 @@ func current_node() -> Dictionary:
 func start(id: StringName) -> bool:
 	if not has_dialogue(id):
 		return false
+	var resume := {}
+	if str(_resume.get("id", "")) == String(id):
+		resume = _resume
+		_resume = {}
 	current_id = id
 	log_lines.clear()
 	CharacterManager.mark_met(character_id())
 	CharacterPortraitManager.prewarm(character_id())
 	started.emit(id)
+	if not resume.is_empty():
+		for l: Variant in resume.get("log", []):
+			if l is Dictionary:
+				log_lines.append(l)
+		current_node_id = str(resume["node"])
+		_show(current_node())
+		return true
 	_enter(str(get_dialogue().get("start", "start")))
 	return true
 
@@ -88,9 +104,14 @@ func _enter(node_id: String) -> void:
 	if n.has("effects"):
 		StoryManager.apply_effects(n["effects"], character_id())
 	# Lines can change with who you've become and what they remember.
+	log_lines.append({"speaker": str(n.get("speaker", "npc")), "text": node_text(n)})
+	_show(n)
+
+
+## Puts a line on screen (no effects: _enter runs those once).
+func _show(n: Dictionary) -> void:
 	var shown := n.duplicate()
 	shown["text"] = node_text(n)
-	log_lines.append({"speaker": str(n.get("speaker", "npc")), "text": str(shown["text"])})
 	node_changed.emit(shown)
 
 
@@ -318,7 +339,19 @@ func end() -> void:
 
 
 func get_save_data() -> Dictionary:
-	return {"choices": choices.duplicate(true)}
+	var d := {"choices": choices.duplicate(true)}
+	# An open conversation (the window closed mid-talk) comes back where it
+	# was. StoryManager puts it back on the talk queue.
+	if is_active():
+		d["open"] = {"id": String(current_id), "node": current_node_id, "log": log_lines.duplicate(true)}
+	elif not _resume.is_empty():
+		d["open"] = _resume.duplicate(true)
+	return d
+
+
+## The conversation that was open when the game saved ("" if none).
+func open_dialogue_id() -> String:
+	return String(current_id) if is_active() else str(_resume.get("id", ""))
 
 
 func load_save_data(data: Dictionary) -> void:
@@ -326,3 +359,8 @@ func load_save_data(data: Dictionary) -> void:
 	for c: Variant in data.get("choices", []):
 		if c is Dictionary:
 			choices.append(c)
+	# 3.12.1: absent in older saves (nothing to resume).
+	var o: Variant = data.get("open", {})
+	if o is Dictionary and has_dialogue(StringName(str(o.get("id", "")))) \
+			and dialogues[str(o["id"])].get("nodes", {}).has(str(o.get("node", ""))):
+		_resume = (o as Dictionary).duplicate(true)

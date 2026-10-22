@@ -84,6 +84,8 @@ and legendary magenta.
 | Blackened | Black-market metal with magenta accents |
 | Tissue | `TISSUE` ramp, wet highlights. Necrotic tissue shifts toward purple |
 | Nerves | Yellow `NERVE` ramp, 1 px wide with a highlight |
+| Surgical drape | Fixed `drape` ramp (washed teal, never the patient's clothes), broad lit folds, a darker tuck and a lit hem where it meets skin, towel clamps in metal |
+| Iodine prep | Fixed `iodine` ramp (burnt amber) in a brush-streaked band inside the drape window, following the skin's own shading and thinning toward the middle; a few wet glints from the lamp |
 
 Cyberware tier reads at a glance: T1 is simple and chunky; T5 is dense, glowing and asymmetric.
 

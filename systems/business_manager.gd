@@ -165,7 +165,7 @@ func _end_day_impl() -> Dictionary:
 			today[&"interest"] = int(today.get(&"interest", 0)) - amt
 			notes.append("Debt interest: +%d owed" % amt)
 			continue
-		_charge(StringName(c["category"]), amt)
+		charge(StringName(c["category"]), amt)
 	var rep := int(ModifierManager.value(&"reputation.daily")) + int(ClinicManager.get_tier_data().get("reputation", 0)) / 5
 	if rep != 0:
 		ReputationManager.change(rep)
@@ -194,16 +194,26 @@ func _end_day_impl() -> Dictionary:
 	return report
 
 
-## Pays a bill; whatever can't be paid becomes debt.
-func _charge(category: StringName, amount: int) -> void:
+## Pays a bill you can't refuse (rent, a fine, a crew's cut, severance):
+## what the cash covers is paid now, the rest becomes debt. Either way the
+## whole amount lands in today's ledger under `category`. Returns the part
+## paid in cash. Every forced cost goes through here.
+func charge(category: StringName, amount: int) -> int:
 	if amount <= 0:
-		return
+		return 0
 	var paid := mini(amount, maxi(EconomyManager.money, 0))
 	if paid > 0:
 		EconomyManager.spend(paid, category)
 	if amount > paid:
 		debt += amount - paid
 		today[category] = int(today.get(category, 0)) - (amount - paid)
+	return paid
+
+
+## Money you now owe without having paid anything (a loan's terms, a
+## story's bill). Never takes the debt below zero.
+func add_debt(amount: int) -> void:
+	debt = maxi(0, debt + amount)
 
 
 func pay_debt(amount: int = -1) -> int:

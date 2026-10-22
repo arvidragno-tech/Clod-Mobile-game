@@ -16,7 +16,7 @@ const QUICK_ICONS := {
 	&"sedate": "res://assets/sprites/ui/icons/sedate.png",
 	&"stabilize": "res://assets/sprites/ui/icons/stabilize.png",
 }
-const BLEEDING_MISTAKES: Array[StringName] = [&"cut_deviation", &"tissue_tear", &"bad_stitch"]
+const BLEEDING_MISTAKES: Array[StringName] = [&"cut_deviation", &"tissue_tear", &"bad_stitch", &"vessel_tear", &"plate_overlap"]
 ## What to do differently, per mistake (the first time it happens in an
 ## operation; what it cost comes from GameConfig.MISTAKE_EFFECTS).
 ## wrong_tool is left out: its own hint already names the right tool.
@@ -33,6 +33,14 @@ const MISTAKE_TIPS := {
 	&"overdose": "Let go sooner: inside the green zone.",
 	&"bone_crack": "Too deep: release inside the depth zone.",
 	&"loose_anchor": "Too shallow: hold until the depth is inside the zone.",
+	&"nerve_misfire": "Map the nodes in order: the next one pulses.",
+	&"cord_nick": "Thread the bus down the spine in order, top to bottom.",
+	&"plate_overlap": "Lay the plates in their numbered order.",
+	&"vessel_tear": "Clamp from the heart outwards: the next vessel pulses.",
+	&"retina_scuff": "Stay on the ring as the eye drifts.",
+	&"tendon_slip": "Keep your hold on the tendon ring as it pulls.",
+	&"joint_buckle": "Follow the knee ring while it takes the weight.",
+	&"air_leak": "Keep the seal ring under your hold until it sets.",
 }
 const BURN_SFX_INTERVAL := 0.15
 const MISTAKE_SHAKE := 5.0

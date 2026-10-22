@@ -11,6 +11,9 @@ var history: Dictionary = {}
 ## Array of {"key": String, "value": float, "ops": int, "source": String}
 var temp_modifiers: Array[Dictionary] = []
 var pending_event: StringName = &""
+## Events that came while another was waiting, oldest first. Each becomes
+## pending in turn as the one before it is answered.
+var waiting: Array[StringName] = []
 var operations: int = 0
 var last_result_text: String = ""
 ## Random incidents today (capped by time.json pacing.max_incidents_per_day,
@@ -34,6 +37,7 @@ func reset_state() -> void:
 	history.clear()
 	temp_modifiers.clear()
 	pending_event = &""
+	waiting.clear()
 	operations = 0
 	incident_day = -1
 	incidents_today = 0
@@ -48,10 +52,24 @@ func has_pending() -> bool:
 	return pending_event != &""
 
 
+## Queues an event. If another is already waiting for an answer, this one
+## waits behind it (first come, first answered) instead of replacing it. A
+## one-time event that is already waiting is not queued twice.
 func queue_event(id: StringName) -> void:
-	if events.has(id):
+	if not events.has(id):
+		return
+	if bool(get_event(id).get("once", false)) and (pending_event == id or waiting.has(id)):
+		return
+	if pending_event == &"":
 		pending_event = id
-		EventBus.event_queued.emit(id)
+	else:
+		waiting.append(id)
+	EventBus.event_queued.emit(id)
+
+
+## The next waiting event, or "".
+func _next_waiting() -> StringName:
+	return waiting.pop_front() if not waiting.is_empty() else &""
 
 
 ## Called once per finished operation.
@@ -156,9 +174,14 @@ func conditions_met(c: Dictionary) -> bool:
 	return true
 
 
-## "" if the choice can be taken, otherwise why not.
+## "" if the choice can be taken, otherwise why not. A choice that spends
+## something (choice_costs) needs it, so nothing comes free for an empty
+## stock: events, street encounters and COMMS replies all ask here.
 func get_choice_block_reason(choice: Dictionary) -> String:
-	var req: Dictionary = choice.get("requires", {})
+	var req: Dictionary = (choice.get("requires", {}) as Dictionary).duplicate()
+	var cost := choice_costs(choice)
+	for k: String in cost:
+		req[k] = maxi(int(req.get(k, 0)), int(cost[k]))
 	if req.has("money") and not EconomyManager.can_afford(int(req["money"])):
 		return "Need %s" % EconomyManager.format_money(int(req["money"]))
 	if req.has("parts") and InventoryManager.parts < int(req["parts"]):
@@ -170,6 +193,26 @@ func get_choice_block_reason(choice: Dictionary) -> String:
 	if req.has("flag") and not StoryManager.has_flag(StringName(str(req["flag"]))):
 		return "Unavailable"
 	return ""
+
+
+const COST_KEYS := ["money", "supplies", "parts", "tokens"]
+
+
+## The money, supplies, parts and tokens a choice spends for certain (not a
+## risk branch: that is a consequence, not a price). Reads event outcomes,
+## COMMS effects, security fx and supplier favours.
+static func choice_costs(choice: Dictionary) -> Dictionary:
+	var out := {}
+	var o: Dictionary = choice.get("outcomes", {})
+	var fav: Dictionary = choice.get("supplier_favor", {})
+	for part: Variant in [o, o.get("effects", {}), choice.get("effects", {}), choice.get("security", {}), fav.get("fx", {})]:
+		if not part is Dictionary:
+			continue
+		for k: String in COST_KEYS:
+			var v := int((part as Dictionary).get(k, 0))
+			if v < 0:
+				out[k] = int(out.get(k, 0)) - v
+	return out
 
 
 ## Applies a choice of the pending event; returns the result text.
@@ -195,6 +238,9 @@ func _resolve_impl(choice_index: int) -> String:
 	h["count"] = int(h.get("count", 0)) + 1
 	h["last_op"] = operations
 	history[id] = h
+	# The next event in line comes up; anything this answer queues waits
+	# behind it.
+	pending_event = _next_waiting()
 	if e.has("character"):
 		StoryManager.meet(StringName(str(e["character"])))
 	var text := apply_outcomes(choice.get("outcomes", {}))
@@ -214,7 +260,7 @@ func apply_outcomes(o: Dictionary) -> String:
 		if m >= 0:
 			EconomyManager.add_money(m, &"events")
 		else:
-			EconomyManager.spend(mini(-m, EconomyManager.money), &"events")
+			BusinessManager.charge(&"events", -m)  # short of cash: the rest is owed
 	if o.has("reputation"):
 		ReputationManager.change(int(o["reputation"]))
 	var fac: Dictionary = o.get("faction", {})
@@ -292,7 +338,8 @@ func get_save_data() -> Dictionary:
 	var h := {}
 	for k: StringName in history:
 		h[String(k)] = history[k]
-	return {"history": h, "temp_modifiers": temp_modifiers, "pending": String(pending_event), "operations": operations,
+	return {"history": h, "temp_modifiers": temp_modifiers, "pending": String(pending_event),
+		"waiting": waiting.map(func(w: StringName) -> String: return String(w)), "operations": operations,
 		"incident_day": incident_day, "incidents_today": incidents_today}
 
 
@@ -305,7 +352,10 @@ func load_save_data(data: Dictionary) -> void:
 		if typeof(m) == TYPE_DICTIONARY:
 			temp_modifiers.append(m)
 	var p := StringName(str(data.get("pending", "")))
-	pending_event = p if events.has(p) else &""
+	for w: Variant in data.get("waiting", []):
+		if events.has(StringName(str(w))):
+			waiting.append(StringName(str(w)))
+	pending_event = p if events.has(p) else _next_waiting()
 	operations = int(data.get("operations", 0))
 	incident_day = int(data.get("incident_day", -1))
 	incidents_today = int(data.get("incidents_today", 0))

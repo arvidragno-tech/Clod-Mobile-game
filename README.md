@@ -7,7 +7,12 @@ almost nothing, take customers, install cyberware at a surgical workstation,
 hire staff, buy clinics across the city, and decide what you become while a
 corporate conspiracy spreads through your patients' nerves.
 
-**Status: 3.12.0**: the world reacts. Taking a side costs you
+**Status: 3.13.0**: the clinic holds together. Every kind of chrome
+has its own operation, cutscenes are full scenes, nothing comes free for
+an empty store room, fines you can't pay become debt the same way
+everywhere, and the operating table is draped and prepped.
+
+**3.12.0**: the world reacts. Taking a side costs you
 standing with its rivals, your choices bring factions, friends and old
 grudges back to the door, and the clinic screen is simpler: one clock, a
 clearer NEXT and risk in plain words.
@@ -461,7 +466,7 @@ Details are in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#neural-load).
   - quests and their states, the comms inbox, every dialogue choice
   - tools, implant instances (condition and traits), supplies, parts and tokens
   - black-market stock
-  - story flags, contacts, rumours, pending event and timed modifiers
+  - story flags, contacts, rumours, the pending event and those waiting behind it, timed modifiers
   - customer queue and history, and the waiting customer
   - records and settings
 - **Settings and key bindings** are stored separately in `settings.cfg`.
@@ -528,8 +533,15 @@ Any PNG can be replaced 1:1 by hand-made art of the same size.
 ## Tests
 
 ```sh
-tests/run_tests.sh   # compile check, balance sim, stability suite, E2E (mouse + keyboard) and display probe
+tests/run_tests.sh   # runner self-test, compile check, balance and economy sims, offers, stability, E2E and the rendered probes
 ```
+
+GitHub Actions runs the same script on every push and pull request
+(`.github/workflows/tests.yml`, Godot 4.3, Xvfb); the job passes only on
+`ALL SUITES PASSED`.
+
+- **What fails a suite:** a non-zero exit, a `SCRIPT ERROR`, an engine `ERROR:` line not listed for that suite in `tests/expected_errors.txt` (a missing resource, `push_error`…), or a missing pass marker. `tests/runner_selftest.sh` runs first and proves a missing resource fails a run.
+- **Results:** `ALL SUITES PASSED` (exit 0), `SOME SUITES FAILED` (exit 1), or `NOT ALL SUITES RAN` (exit 2) when `xvfb-run` is missing and the rendered suites were skipped.
 
 - **Compile check:** loads every script and scene, and fails on scripts that load but don't compile.
 - **Unit and system tests:**
@@ -543,6 +555,9 @@ tests/run_tests.sh   # compile check, balance sim, stability suite, E2E (mouse +
   - clinics, upgrades (slots, modifiers, every clinic × category × level overlay exists), business days, ledger, debt and interest, districts and walk-in mix
   - staff: hiring board, capacity, ethics refusals and insisting, specialization and stress odds, visible growth, nightly pay, staff-run clinics
   - story: content integrity (every option, beat, quest and comms id resolves), dialogue effects and checks, delayed consequences, quests (complete and fail), acts, contracts, endings, and **two full-campaign playthroughs** that reach Act V and different endings
+  - choices that spend money, supplies, parts or tokens need them (events, encounters, COMMS); fines you can't cover become debt the same way everywhere; no manager writes another's money, debt or door state
+  - saves written by 3.10.0, 3.11.0 and 3.12.0 (`tests/fixtures/saves`) load with their money, day and progress
+  - every implant category has its own operation and signature step (`docs/PROCEDURES.md`); every cutscene runs at least 30 s
   - settings: every new option persists and takes effect (frame cap, integer scaling, UI and text scale, tooltips, shake, flashing), the six audio buses, difficulty, autosave modes; controls: ten categories, no default conflicts, context-aware clashes, swap / keep, mouse buttons, reset one or all, menus follow movement keys
 - **End-to-end bot** on the 1920×1080 canvas: plays the game through real mouse events (clicks, drags, holds, right-clicks) and key events:
   1. clean neural install (the whole tutorial)
@@ -551,12 +566,14 @@ tests/run_tests.sh   # compile check, balance sim, stability suite, E2E (mouse +
   4. aborted op (confirm dialog, pause/resume)
   5. reckless run that kills the patient
   6. optic install on a generated customer
+  7. the spine, leg, dermal, respiratory and internal operations, each with its signature step
 
   It also plays the story conversations that open in the clinic (picking answers, with a screenshot of each), buys a clinic, installs an upgrade, visits BUSINESS and the CITY MAP (clicking a district), hires a ripperdoc and assigns a customer to them, checks the journal QUESTS / COMMS / PEOPLE / STORY tabs, rebinds a key through the conflict dialog and a mouse button, and covers the Wire story event, black-market buy/study/sell, a skill upgrade, a clinic upgrade, all journal tabs, **I** (inventory: right-click compare, drag & drop onto a compare slot, tabs), **B** (database), **ESC** pause open/close, **F5** quick save, **TAB** focus, the settings tabs (graphics, audio slider drag, controls, gameplay toggles), and a reload. A layout guard asserts that every button is on-screen and nothing overflows the canvas. It runs rendered under Xvfb (headless Godot measures fonts differently).
 - **UI probe** (`tests/ui_probe.tscn`, needs a display or Xvfb): F1 opens the field guide (topics, close), clicking a status-bar value and a "?" chip opens its explanation, the door card and customer file show AT A GLANCE, SCAN buttons scan regions and unlock diagnoses, the plan explains readiness, settings has ROOM BRIGHTNESS; at 1920×1080, 1600×900, 1366×768, 1280×720 windowed, borderless and fullscreen, with on-screen checks.
 - **UX probe** (`tests/ux_probe.tscn`, needs a display or Xvfb): the 26-step early game: first-launch control setup, rebinding with search, a REPLACE conflict, a CTRL+ secondary key, critical keys that can't be unassigned, ESC cancelling; NEW GAME; WHAT MATTERS NOW leading to the patient; the recommendation and ★ RECOMMENDED ripperdoc; the surgery preview; the results' new lead; the custom key opening the map; FOLLOW on a place; travel; the journal's MAIN page; RECENT CHANGES; context checks (text fields, the field guide, dialogs, ESC order); save / load of follows and changes; the bindings surviving a restart; reset one action and a category; then a layout round at 1920×1080, 1600×900, 1366×768, 1280×720 windowed, borderless and fullscreen.
 - **City probe** (`tests/city_probe.tscn`, needs a display or Xvfb): opens the map with M, clicks a place, travels, uses the location screen (event, service, TAB, an encounter, ESC, GO IN, RETURN TO CLINIC), visits every place by day and night, and F5 / F9 while out, at 1920×1080, 1600×900, 1366×768, 1280×720 windowed, borderless and fullscreen, with screenshots and on-screen checks.
 - **Display probe** (`tests/display_probe.tscn`, needs a display or Xvfb): drives the real window through 1920×1080, 1600×900, 1366×768, 1280×720 windowed, borderless, fullscreen and a 5:4 window; checks the window size/mode, the uniform 16:9 canvas, nearest filtering and that every button stays on-screen on the menu, clinic, inventory, staff, business, city map, facility, journal, settings and an open conversation, with screenshots.
+- **Economy simulator** (`tests/economy_sim.tscn`): five strategies over seeded 20-day runs of the real economy, story included (events, conversations and COMMS answered with seeded choices; story income and costs reported). A seed replays exactly.
 - **Balance simulator** (`tests/balance_sim.tscn`): 40 jobs through the real economy for normal and struggling players. It asserts pacing milestones and that there are no dead ends.
 - **Stability suite** (`tests/stability_test.tscn`):
   - a soak through the real screens, with save → wipe → load every 5 shifts, closing for the night and answering the story's conversations as they come
@@ -564,6 +581,7 @@ tests/run_tests.sh   # compile check, balance sim, stability suite, E2E (mouse +
   - rapid screen-change spam
   - 60 fuzzed save files (byte flips, truncation, garbage)
   - node and orphan leak checks
+  - `--seed=N` sets the bot's choices (printed at the start; the game's own systems keep their generators)
 - **Release smoke test:** the exported game itself accepts `--smoke-test` (`UndercityRipper.exe -- --smoke-test`): it starts a game in slot 3, opens every main screen (including staff, business and the city map) and a conversation, saves, reloads, checks the save file, writes screenshots to `%APPDATA%\UndercityRipper\smoke\`, prints `SMOKE OK` and quits.
 - **Perf probe:** `xvfb-run -a godot --path . --rendering-driver opengl3 --resolution 1920x1080 res://tests/perf_probe.tscn` prints load time, frame time, draw calls, nodes and memory per screen.
 

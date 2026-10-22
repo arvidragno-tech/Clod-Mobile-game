@@ -23,6 +23,14 @@ const IntakeTests := preload("res://tests/intake_tests.gd")
 const Clinic310Tests := preload("res://tests/clinic_310_tests.gd")
 const NarrativeTests := preload("res://tests/narrative_tests.gd")
 const ReactiveTests := preload("res://tests/reactive_tests.gd")
+const DialogueSaveTests := preload("res://tests/dialogue_save_tests.gd")
+const EventQueueTests := preload("res://tests/event_queue_tests.gd")
+const PreviewAccuracyTests := preload("res://tests/preview_accuracy_tests.gd")
+const ResourceCostTests := preload("res://tests/resource_cost_tests.gd")
+const PaymentTests := preload("res://tests/payment_tests.gd")
+const OwnershipTests := preload("res://tests/ownership_tests.gd")
+const SaveFixtureTests := preload("res://tests/save_fixture_tests.gd")
+const ProcedureTests := preload("res://tests/procedure_tests.gd")
 
 var _failures: Array[String] = []
 var _dilemmas_seen: bool = false
@@ -73,6 +81,14 @@ func _run_all() -> void:
 	Clinic310Tests.new().run(self)
 	NarrativeTests.new().run(self)
 	ReactiveTests.new().run(self)
+	DialogueSaveTests.new().run(self)
+	EventQueueTests.new().run(self)
+	PreviewAccuracyTests.new().run(self)
+	ResourceCostTests.new().run(self)
+	PaymentTests.new().run(self)
+	OwnershipTests.new().run(self)
+	SaveFixtureTests.new().run(self)
+	ProcedureTests.new().run(self)
 	if OS.get_cmdline_user_args().has("--unit-only"):
 		_finish()
 		return
@@ -537,6 +553,30 @@ func _e2e() -> void:
 	await _click_named("ContinueButton", 10.0)
 	await _after_results()
 
+	# Every kind of chrome has its own procedure: play the ones the runs
+	# above didn't, signature step included, through the real screens.
+	for cat: String in ["spine", "legs", "dermal", "respiratory", "internal"]:
+		var pc := CustomerManager.generator.generate({"category": cat})
+		pc.hidden_conditions.clear()
+		pc.risk_tolerance = 0.9
+		pc.is_emergency = false
+		var sg := SurgeryManager.get_surgery(pc.requested_surgery_id)
+		for tool_cat in sg.get_required_tool_categories():
+			if not InventoryManager.has_tool_category(tool_cat):
+				EconomyManager.add_money(3000)
+				for td in InventoryManager.get_purchasable_tools(true):
+					if td.category == tool_cat and InventoryManager.buy_tool(td.id):
+						break
+		CustomerManager.debug_set_customer(pc)
+		InventoryManager.add_implant(pc.requested_cyberware_id)
+		InventoryManager.add_supplies(5)
+		var rp := await _play_current(false, pc.true_diagnosis_id)
+		check(rp != null and rp.success and rp.surgery_id == sg.id, "procedure %s: %s completed through its own steps" % [cat, sg.id])
+		if rp:
+			print("     procedure %s grade=%s mistakes=%d time=%.0fs" % [cat, rp.grade, rp.mistakes, rp.elapsed_sec])
+		await _click_named("ContinueButton", 10.0)
+		await _after_results()
+
 	# The story happened along the way.
 	check(_talks_seen.has("d_ilse_intro"), "Ilse's conversation played in the clinic")
 	check(DialogueManager.choices.size() >= 2 and QuestManager.by_state("active").size() + QuestManager.by_state("completed").size() >= 3, "dialogue choices logged, quests running")
@@ -789,6 +829,28 @@ func _play_stage(stage: SurgeryStage, sloppy: bool) -> void:
 			await _frames(2)
 			await _click(cal.get_autoplay_hints()["lock_button"])
 			await _frames(4)
+	elif stage is SequenceStage:
+		if sloppy:
+			var wrong: Array = stage.get_autoplay_hints()["wrong"]
+			if not wrong.is_empty():
+				await _tap(_fs(wrong[0]))
+		while is_instance_valid(stage) and not stage.is_finished:
+			var targets: Array = stage.get_autoplay_hints()["targets"]
+			if targets.is_empty():
+				break
+			await _tap(_fs(targets[0]))
+	elif stage is HoldSteadyStage:
+		var hs := stage as HoldSteadyStage
+		var at := _fs(hs.marker_pos())
+		await _press(at)
+		var t := 0.0
+		while is_instance_valid(hs) and not hs.is_finished and t < 30.0:
+			var to := _fs(hs.marker_pos())
+			_send_motion(to, to - at)
+			at = to
+			await _frames(1)
+			t += get_process_delta_time()
+		await _release(at)
 	elif stage is CloseIncisionStage:
 		var targets: Array = stage.get_autoplay_hints()["targets"]
 		if sloppy and targets.size() > 2:
@@ -1003,10 +1065,17 @@ func _scroll_parent(c: Control) -> ScrollContainer:
 
 
 func _click_named(node_name: String, timeout: float = STEP_TIMEOUT) -> void:
+	# Something the last step set off may open on the clinic at the end of
+	# this frame (call_deferred): let it, so the click doesn't land on it.
+	await get_tree().process_frame
 	# Timed incidents (the supplier at 10:00, a midnight deal...) can pop up
 	# on the clinic between scripted steps: resolve them first.
 	if not (node_name.begins_with("Choice_") or node_name == "EventContinue") and _find_visible("EventPanel") != null:
 		await _resolve_incident()
+	# So can a conversation the run's money, reputation or flags just made
+	# due (a story beat): play it through.
+	if not node_name.begins_with("Dialogue") and _find_visible("DialoguePanel") != null:
+		await _play_talks()
 	# Back on the clinic with the day's jobs done (and nobody at the door),
 	# the night closes by itself and its report covers the screen: read it.
 	if node_name != "DayReportClose" and _find_visible("DayReportClose") != null:

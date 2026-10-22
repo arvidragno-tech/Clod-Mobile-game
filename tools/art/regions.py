@@ -13,6 +13,7 @@ import random
 from .lib import Canvas, LIGHT, bayer, clamp
 
 SK, HR, CA, CB, MT, GL, IR, FX = range(8)
+DR, IO = 12, 13  # fixed material ramps: sterile drape, iodine prep wash
 SIZE = 160
 
 
@@ -70,6 +71,95 @@ def drape_height(x, y):
     return 7 * math.sin(x * 0.045 + 2.2 * math.sin(y * 0.021)) + 3 * math.sin(y * 0.07 + x * 0.013 + 1.3) + 1.2 * math.sin(x * 0.13 - y * 0.05)
 
 
+def operating_field(cv, rng, window, edge_dist, clips):
+    """Dresses a region as a prepped operating field: everything outside
+    `window(x, y)` is a sterile drape (its own folds, lit by the lamp, with
+    a contact shadow and a hem where it meets skin); the skin just inside
+    the window carries the iodine prep wash in brush-streaked bands that
+    fade toward the middle; towel clamps pin the drape at `clips`; and wet
+    skin catches a few lamp glints. `edge_dist(x, y)` is the distance in
+    pixels from the window's edge (inside > 0)."""
+    phase = rng.random() * 6.0
+    for y in range(SIZE):
+        for x in range(SIZE):
+            if window(x, y):
+                continue
+            hx = drape_height(x + 1, y + phase) - drape_height(x - 1, y + phase)
+            hy = drape_height(x, y + 1 + phase) - drape_height(x, y - 1 + phase)
+            i = clamp(0.42 - hx * 0.14 - hy * 0.14 + lamp(x, y) * 0.5, 0, 1)
+            d = -edge_dist(x, y)
+            v = 1.2 + i * 4.2
+            if d < 3:
+                v -= 1.4 - d * 0.35  # tucked under: shadow on the skin side
+            elif d < 5:
+                v += 0.9  # folded hem catches the lamp
+            if (x * 5 + y * 3) % 23 == 0:
+                v -= 0.6  # weave
+            cv.shade_px(x, y, DR, v)
+    # Iodine: a band inside the window, painted in strokes, thinning inward.
+    strokes = [(rng.uniform(0, math.tau), rng.uniform(6, 14)) for _ in range(14)]
+    for y in range(SIZE):
+        for x in range(SIZE):
+            if not window(x, y):
+                continue
+            c = cv.get(x, y)
+            if not c or c[0] != SK:
+                continue
+            d = edge_dist(x, y)
+            ang = math.atan2(y - 80, x - 80)
+            reach = 10.0
+            for a, r in strokes:
+                da = abs((ang - a + math.pi) % math.tau - math.pi)
+                if da < 0.22:
+                    reach = max(reach, r + 8.0 * (1 - da / 0.22))
+            fade = clamp(1.15 - d / reach, 0.0, 1.0)
+            if d < reach and (bayer(x, y) * 0.6 + rng.random() * 0.4) < fade:
+                cv.set(x, y, (IO, clamp(c[1] - 1 + (1 if d < 2 else 0), 0, 7)))
+            elif c[1] >= 6 and rng.random() < 0.006:
+                cv.set(x, y, (FX, 3))  # wet glint under the lamp
+    # Towel clamps: a ring handle and the jaw biting the drape edge.
+    for cx, cy in clips:
+        for dy in range(-3, 4):
+            for dx in range(-3, 4):
+                rr = math.hypot(dx, dy)
+                if 1.6 <= rr <= 2.9:
+                    cv.set(cx + dx, cy + dy, (MT, 5 if dx + dy < 0 else 3))
+        cv.set(cx, cy + 3, (MT, 2))
+        cv.set(cx, cy + 4, (MT, 1))
+        cv.set(cx + 1, cy - 2, (MT, 7))
+
+
+def ellipse_window(cx, cy, rx, ry, wobble=0.04, seed=0.0):
+    """An irregular elliptical opening in the drape, and its edge distance."""
+    def r(x, y):
+        a = math.atan2(y - cy, x - cx)
+        k = 1.0 + wobble * math.sin(a * 5 + seed) + wobble * 0.5 * math.sin(a * 11 + seed * 2)
+        return math.hypot((x - cx) / (rx * k), (y - cy) / (ry * k))
+
+    def window(x, y):
+        return r(x, y) < 1.0
+
+    def dist(x, y):
+        return (1.0 - r(x, y)) * min(rx, ry)
+
+    return window, dist
+
+
+def limb_window(half_w, cy, ry, frac=0.8):
+    """An oval opening in the drape along a limb: it follows the limb's
+    taper (frac of its half width) and closes in a curve at both ends."""
+    def r(x, y):
+        return math.hypot((x - 80) / max(1.0, half_w(y) * frac), (y - cy) / ry)
+
+    def window(x, y):
+        return r(x, y) < 1.0
+
+    def dist(x, y):
+        return (1.0 - r(x, y)) * min(half_w(y) * frac, ry)
+
+    return window, dist
+
+
 # --- Regions -----------------------------------------------------------------
 
 def neck():
@@ -107,6 +197,8 @@ def neck():
             elif y < hl + 3 and (x + y) % 3 == 0:
                 cv.set(x, y, (HR, 1))
     skin_details(cv, rng, (0, 30, SIZE, SIZE), 70)
+    win, dist = ellipse_window(80, 92, 64, 76, seed=1.0)
+    operating_field(cv, rng, win, dist, [(30, 60), (130, 60), (34, 140), (126, 140)])
     return cv
 
 
@@ -151,6 +243,10 @@ def forearm():
             if c and c[0] == SK:
                 cv.set(int(x), y, (SK, max(0, c[1] - 1)))
     skin_details(cv, rng, (45, 0, 115, SIZE), 60)
+
+    win, dist = limb_window(half_w, 80, 84, 1.0)
+
+    operating_field(cv, rng, win, dist, [(80, 6), (80, 154)])
     return cv
 
 
@@ -173,6 +269,8 @@ def chest():
                 cv.shade_px(x, y, CA, 2.0 + lamp(x, y) * 2 + (0.5 if (x // 6) % 2 else 0))
     render_height(cv, h, lambda x, y: SK if 6 <= y <= 150 else None, scale=0.8)
     skin_details(cv, rng, (0, 10, SIZE, 148), 70)
+    win, dist = ellipse_window(80, 80, 66, 64, seed=2.0)
+    operating_field(cv, rng, win, dist, [(24, 40), (136, 40), (24, 122), (136, 122)])
     return cv
 
 
@@ -204,6 +302,10 @@ def thigh():
                 cv.shade_px(x, y, CA, 1.0 + i * 4.0 - (1.2 if abs(abs(x - 80) - half_w(y)) < 4 else 0))
     render_height(cv, h, lambda x, y: SK if inside(x, y) else None, scale=0.6)
     skin_details(cv, rng, (24, 0, 136, SIZE), 70)
+
+    win, dist = limb_window(half_w, 82, 84, 1.0)
+
+    operating_field(cv, rng, win, dist, [(80, 4)])
     return cv
 
 
@@ -237,6 +339,8 @@ def orbital():
             cv.set(x, y + 1, (HR, 1))
         cv.set(x, y - 1, (SK, 2))
     skin_details(cv, rng, (0, 0, SIZE, SIZE), 80)
+    win, dist = ellipse_window(84, 84, 68, 60, wobble=0.03, seed=3.0)
+    operating_field(cv, rng, win, dist, [(26, 46), (142, 46), (40, 142), (130, 142)])
     return cv
 
 
@@ -251,7 +355,9 @@ def generate():
 
 
 def scan_hologram():
-    """Holographic full-body scan (RGB, 60x124) for the diagnosis screen."""
+    """Holographic full-body scan (RGB, 60x124) for the diagnosis screen.
+    The silhouette (and so ScanView.REGIONS) is fixed; anatomy() draws the
+    skeleton, organs and nerve trunks inside it."""
     from . import palette as pal
     from .lib import poly_pixels
     W2, H2 = 60, 124
@@ -279,15 +385,101 @@ def scan_hologram():
             else:
                 c = (8, 40, 38) if (x + y) % 2 else (10, 48, 44)
             out.set(x, y, (c[0], c[1], c[2], 255 if edge else 200))
-    bone = (110, 210, 200, 255)
-    for y in range(20, 64, 3):  # spine
-        out.set(30, y, bone)
-    for k, y in enumerate(range(30, 50, 4)):  # ribs
-        for d in range(1, 9 - k // 2):
-            out.set(30 - d, y + d // 3, (60, 150, 140, 255))
-            out.set(30 + d, y + d // 3, (60, 150, 140, 255))
-    out.ellipse(30, 9, 4.5, 5, (40, 120, 112, 230))  # brain
-    for x in range(26, 35):
-        out.set(x, 9 + (1 if x % 2 else 0), (120, 230, 220, 255))
-    out.ellipse(33, 38, 2.5, 2.5, (200, 60, 90, 255))  # heart
+    anatomy(out, mask, cyan)
     return out
+
+
+def anatomy(out, mask, cyan):
+    """Skeleton, organs and nerve trunks for the scan hologram, in the
+    cyan glow ramp (bone brightest, soft tissue dim, the heart warm)."""
+    W2, H2 = out.w, out.h
+
+    def inside(x, y):
+        return 0 <= x < W2 and 0 <= y < H2 and mask.px[y][x] is not None
+
+    def put(x, y, c, a=255):
+        x, y = int(round(x)), int(round(y))
+        if inside(x, y):
+            out.set(x, y, (c[0], c[1], c[2], a))
+
+    def seg(ax, ay, bx, by, c, a=255):
+        n = int(max(abs(bx - ax), abs(by - ay))) + 1
+        for i in range(n + 1):
+            t = i / max(1, n)
+            put(ax + (bx - ax) * t, ay + (by - ay) * t, c, a)
+
+    # Bone sits between the fill and the bright silhouette edge, so the
+    # outline still reads as the body's edge.
+    bone, bone_dim, tissue, nerve = (70, 185, 166), (44, 132, 120), (24, 100, 90), (34, 150, 132)
+    # Organs first, so bone draws over them.
+    for side in (-1, 1):  # lungs: two lobes behind the ribs
+        for y in range(28, 46):
+            half = 6 if y < 42 else 6 - (y - 42)
+            for d in range(2, 2 + half):
+                if (d + y) % 2 == 0:
+                    put(30 + side * (d + 1), y, tissue, 170)
+    for y in range(46, 53):  # liver (right of the body = left of the image)
+        for x in range(21, 30 - (y - 46) // 2):
+            if (x + y) % 2:
+                put(x, y, tissue, 190)
+    for y in range(47, 52):  # stomach
+        for x in range(32, 37):
+            if (x * 3 + y) % 4 == 0:
+                put(x, y, tissue, 190)
+    for y in range(53, 61, 2):  # gut coils
+        for x in range(25 + (y % 4), 36, 3):
+            put(x, y, tissue, 170)
+    # Brain: rounded mass with folds.
+    for y in range(4, 14):
+        for x in range(24, 37):
+            if (x - 30) ** 2 / 36.0 + (y - 9) ** 2 / 25.0 <= 1.0:
+                fold = (x * 2 + y * 3) % 5 == 0 or (x + y * 2) % 7 == 0
+                put(x, y, cyan[5] if fold else cyan[2], 230)
+    seg(30, 4, 30, 13, cyan[1], 230)  # the fissure between hemispheres
+    # Jaw and orbits (the silhouette edge is the skull).
+    seg(26, 16, 30, 19, bone_dim)
+    seg(34, 16, 30, 19, bone_dim)
+    put(28, 14, cyan[6])
+    put(32, 14, cyan[6])  # optic sockets glint
+    # Spine: vertebrae as short bars, sacrum at the bottom.
+    for y in range(19, 62, 2):
+        put(30, y, bone)
+        if y % 4 == 1:
+            put(29, y, bone_dim)
+            put(31, y, bone_dim)
+    # Clavicles, sternum, ribs (curving down and out).
+    seg(29, 26, 21, 25, bone)
+    seg(31, 26, 39, 25, bone)
+    seg(30, 27, 30, 40, bone_dim)
+    for k, y in enumerate(range(28, 46, 3)):
+        span = 11 - abs(k - 2)
+        for d in range(2, span):
+            dy = (d * d) // 28
+            put(30 - d, y + dy, bone_dim, 240)
+            put(30 + d, y + dy, bone_dim, 240)
+    # Pelvis.
+    for d in range(2, 11):
+        put(30 - d, 60 + (d * d) // 30, bone)
+        put(30 + d, 60 + (d * d) // 30, bone)
+    seg(20, 61, 23, 65, bone_dim)
+    seg(40, 61, 37, 65, bone_dim)
+    # Limb bones follow the same capsules as the silhouette.
+    for (ax, ay, bx, by) in ((17, 27, 11, 50), (43, 27, 49, 50), (11, 51, 9, 69), (49, 51, 51, 69),
+                             (24, 65, 22, 91), (36, 65, 38, 91), (22, 93, 22, 117), (38, 93, 38, 117)):
+        seg(ax, ay, bx, by, bone)
+    for (x, y) in ((11, 50), (49, 50), (22, 92), (38, 92), (17, 27), (43, 27)):  # joints
+        put(x - 1, y, bone_dim)
+        put(x + 1, y, bone_dim)
+    for (x, y) in ((9, 70), (51, 70), (22, 118), (38, 118)):  # hands, feet
+        for d in (-1, 0, 1):
+            put(x + d, y + 1, bone_dim)
+    # Nerve trunks: a faint dotted line beside each long bone.
+    for (ax, ay, bx, by) in ((15, 30, 10, 49), (45, 30, 50, 49), (26, 66, 24, 90), (34, 66, 36, 90)):
+        n = 12
+        for i in range(0, n + 1, 2):
+            t = i / n
+            put(ax + (bx - ax) * t, ay + (by - ay) * t, nerve, 200)
+    # Heart last: it is the only warm colour on the scan.
+    for (x, y) in ((32, 36), (33, 36), (34, 36), (32, 37), (33, 37), (34, 37), (35, 37), (33, 38), (34, 38), (33, 39)):
+        put(x, y, (200, 60, 90))
+    put(32, 36, (240, 120, 140))

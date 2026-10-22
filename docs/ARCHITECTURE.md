@@ -40,7 +40,7 @@ Rules the code sticks to:
 | `SkillManager` | Skill ranks and points; contributes modifiers |
 | `ClinicManager` | Clinic tier (0–5), upgrade costs and gates; contributes modifiers |
 | `StoryManager` | Story flags, met characters, rumours |
-| `EventManager` | Random and story events, choices, outcomes, timed modifiers, operation counter |
+| `EventManager` | Random and story events, choices, outcomes, timed modifiers, operation counter. One event is pending at a time; one that comes while another waits joins `waiting` (first come, first answered) instead of replacing it |
 | `BlackMarketManager` | Stock rotation, hidden traits, buy/sell/study/modify/scrap, mystery cases |
 | `ModifierManager` | Sums every modifier source into one key → value stack |
 | `CustomerManager` | Story characters, archetypes, procedural generator, arrival queue, history, consequences |
@@ -139,8 +139,9 @@ The plan screen shows a before → after load meter, and the consent line reads 
 
 `SurgeryManager.start_session(surgery, customer, diagnosis_ok, quality, seed, implant, session_mods)`.
 - **Stages** are registered by `type` in `surgery_stage_registry.gd`:
-  - `anesthesia`, `incision`, `expose`, `remove_tissue`, `anchor_drill`, `install_implant`, `connect_interface`, `calibrate`, `close_incision`
+  - `anesthesia`, `incision`, `expose`, `remove_tissue`, `anchor_drill`, `install_implant`, `connect_interface`, `calibrate`, `close_incision`, `sequence` (points worked in one order), `hold_steady` (hold on a drifting ring until it sets)
   - A new surgery is a data entry that reuses these types with its own params.
+  - Each implant category has its own sequence and a signature step (`docs/PROCEDURES.md`, checked by `tests/procedure_tests.gd`).
 - **Site framing.** `SurgicalSiteView` renders the operating field at native art resolution inside a `SubViewport` whose container `stretch_shrink` is the field zoom (3×–6×, wheel / + −), so stage drawing is pixel-exact. `SurgeryScreen.field_to_screen()` converts field to screen coordinates at the current zoom; stages get `view_scale` for UI-sized hit radii.
 - **PC input on stages.** `SurgeryStage` adds `hover_pos` (drives the `FieldHover` reticle and target brackets), `key_action(action, pressed)` (SPACE/E hold-to-infuse, LOCK, SEAT, rotate, nudge), `wheel_steps()` (rotate / tune instead of zoom) and `cancel()` (right-click returns a held implant). `SurgeryScreen` routes 1–9 / Q / R to the instrument rack and Z / X / V to the emergency actions.
   - Stages work in normalised field coordinates and convert with `to_local_pos()` / `to_norm()`.
@@ -252,7 +253,7 @@ day full → CLOSE FOR THE NIGHT → BusinessManager.end_day
       → StaffManager.end_of_day (stress, loyalty, growth, secrets, other clinics)
       → rent / running / upkeep / salaries / interest → report → EventBus.day_ended
       → EventBus.day_started → StoryManager: due consequences → talks / events / comms
-clinic screen: pending event > queued talk (DialoguePanel) > customer
+clinic screen: pending event (then each waiting one, in order) > queued talk (DialoguePanel) > customer
 ```
 
 ### Story data
@@ -296,7 +297,7 @@ existing managers call into them at a handful of points.
 | `MemoryManager` | What people remember about you: tags such as `PLAYER_SAVED_ME`, `PLAYER_OVERCHARGED_ME`, `PLAYER_KILLED_FRIEND`, `PLAYER_BETRAYED_FACTION`. A memory moves the relationship once (cast → `CharacterManager`, patients → `PeopleManager`, staff → loyalty) and the reputation dimensions, and gives them something to say (`recall_line`, ~60% of visits) | `data/memories.json` |
 | `PeopleManager` | Everyone who walked in, as people: identity, traits, finances, relationship (stranger … loyal / hostile), visits, money paid, chrome, links (friend, family, crew), history. After a visit they may come back days later, changed (`_evolve`: wealth, scars, chrome from elsewhere, a new crew or job; appearance events persist). Referrals, payment terms (`settle`), patient debts (demand, plan, write off, fixer, favour), cyberware dependency (0–4) | `data/patients.json` |
 | `StaffLifeManager` | Employee lives (family, money, fear, dream), bonds between colleagues (friendly, professional, suspicious, competitive, resentful, loyal, fearful, respectful, involved), life events as COMMS choices, reactions (defend after a death, resent a forced job, envy a raise); `team_modifier` feeds `EmployeeAI.success_chance` | `data/staff_life.json` |
-| `TimeManager` | The clinic clock (09:00–04:00), moved by arrivals (`arrival_gap` spreads the day's jobs), operations (20 min … 2 h by difficulty), triage and talk. Five periods weight archetypes, incidents, prices (`get_modifiers`), black-market prices, staff (`staff_modifier`), room tint and ambience; daily appointments become incidents at their time | `data/time.json` |
+| `TimeManager` | The clinic clock (09:00–04:00), moved by arrivals (`arrival_gap` spreads the day's jobs), operations (20 min … 2 h by difficulty), triage and talk. Five periods weight archetypes, incidents, prices (`get_modifiers`), black-market prices, staff (`staff_modifier`), room tint and ambience; daily appointments become incidents at their time (once each; behind any decision already waiting, never dropped for it) | `data/time.json` |
 | `ClinicLifeManager` | Waiting room (seats walk-ins while you work; patience runs out; rival factions make a scene), hourly vignettes with small effects, the Clinic Wall (pins for milestones, losses, regulars, wanted notices, faction marks, clippings) | `data/clinic_life.json` |
 | `WorldEventManager` | City situations lasting days (gang war, recall, inquiry, takeover, missing fixer, port strike, mass casualty, neural program, blackout, someone you know in trouble) as weights and modifiers; the news wire (situations, reactions to the clinic, filler, your street identity) | `data/world_events.json` |
 | `SurgicalDilemmas` (class) + `SurgeryManager` hooks | Decision complications that freeze the table (`dilemma_started`, `resolve_dilemma`), with odds from patient, chrome, tools, skill, staff | `data/dilemmas.json` |
@@ -721,6 +722,13 @@ No new managers or screens. Audit, plan and results are in
     (`UIManager.set_feedback_hidden`) and routes ESC to `skip_scene`.
   - Save keys: `cutscenes`, `seen_cutscenes`. Harnesses set
     `CutscenePlayer.enabled = false`.
+  - Length: left alone, a scene runs at least `MIN_SCENE_SEC` (30 s) at
+    every text speed. `CutscenePlayer.estimate_seconds(shots, cps)` is
+    the same timing the player uses (fade, typing, `hold_for`);
+    `narrative_tests` checks every scene with it, and
+    `narrative_probe -- --all-cutscenes` times each one in the game.
+  - Skipping marks the scene seen once: `pop_cutscene` marks it when it
+    starts, and `_close` runs once however often SKIP / ESC are pressed.
 - **Seasons** (`data/time.json` `seasons`, `TimeManager`):
   - Calendar: `season(day)`, `season_blend(day)`, `season_value(section,
     key)`, `season_tint()`.
@@ -742,6 +750,7 @@ No new managers, screens or save keys. Audit, plan and results are in
 - **Rivals**:
   - `FactionManager.change_by_choice(id, delta)` is used by `EventManager.apply_outcomes` and `StoryManager.apply_effects`. It applies the change, and on a gain of `RIVAL_MIN_GAIN` or more, each faction in `factions.json` `rivals` loses `RIVAL_SHARE` of it (at least 1, at most `RIVAL_MAX_LOSS`).
   - `rival_losses()` is pure; `Standing.preview` folds it into the totals it shows.
+  - Previews use the managers' own rules: `preview_by_choice()` and `preview_heat()` run the same `scaled_change()` (Faction Relations) and `scaled_heat()` (heat modifiers, criminal / corporate street reputation) as `change()` and `add_heat()`, and the same caps; street reputation uses `ReputationManager.applied_change()`, the diminishing returns and cap `change()` applies. Rivals lose a share of the gain actually made, after scaling.
   - Paid work and quest rewards use `change()` and stay neutral.
 - **Conditions**:
   - `StoryManager.cond` adds `rel_min` / `rel_max` (cast trust), `dim_min`, `faction_max`, `max_heat`, `not_flag_any` and `any` (a list of conditions, any of which may hold).
@@ -750,3 +759,43 @@ No new managers, screens or save keys. Audit, plan and results are in
 - **Cases**: `patient.referred_by` (shown on the door card, in the summary and in the file) and `patient.pay` (fee multiplier; the budget covers the fee).
 - **Nav**: `{"answer": true}` brings back what's waiting (decision > scene > conversation) through `ClinicScreen.resume_story()`. The NEXT line and `Guidance` use it.
 - **Tests**: `tests/reactive_tests.gd` (unit run) and `tests/narrative_probe.gd` `_reactive_case`.
+
+## After 3.12: stabilization
+
+- **Costs and requirements.** `EventManager.choice_costs(choice)` reads
+  what a choice spends for certain (money, supplies, parts, tokens in
+  event `outcomes` and their `effects`, COMMS `effects`, `security` fx,
+  `supplier_favor` fx; risk branches are consequences, not prices).
+  `get_choice_block_reason` treats those as requirements, so an event,
+  street encounter, place event or COMMS reply (`CommsManager.block_reason`,
+  checked in `act` and shown on the COMMS screen) can't be taken without
+  them. Tested by `tests/resource_cost_tests.gd`.
+- **Forced costs.** `BusinessManager.charge(category, amount)` is the one
+  way to take a cost the player can't refuse (bills, fines, a crew's cut,
+  severance): cash pays what it can, the rest becomes debt, and the whole
+  amount lands in the day's ledger. `EventManager.apply_outcomes`,
+  `StoryManager.apply_effects` and `StaffManager.fire` use it
+  (`tests/payment_tests.gd`).
+- **Ownership.** Only `BusinessManager` writes its debt, day and ledger,
+  only `EconomyManager` the cash, only `CustomerManager` who is at the
+  door and its schedule. Others call `add_debt`, `charge`, `spend` /
+  `add_money`, `take_from_door`, `quiet_for`. `tests/ownership_tests.gd`
+  scans the scripts for direct writes.
+- **Surgery endings.** `SurgeryManager._finish` clears any open dilemma.
+- **Save fixtures.** `tests/fixtures/saves` holds saves written by
+  3.10.0, 3.11.0 and 3.12.0 (provenance in its README);
+  `tests/save_fixture_tests.gd` loads them.
+- **CI.** `.github/workflows/tests.yml` runs `tests/run_tests.sh` with
+  Godot 4.3 under Xvfb on every push and pull request; only
+  `ALL SUITES PASSED` passes it.
+- **Deferred focus.** `UIManager.focus_later(control)` focuses a control
+  at the end of the frame only if it is still in the tree and visible;
+  screens and panels use it instead of `grab_focus.call_deferred()`.
+- **Conversations open in the city.** A city talk comes off the shared
+  story queue (`WorldSimulationManager._talk_for`), so one open at save
+  time goes back on that queue like any other: after a reload you can
+  pick it up from the same person at that place, or they come by the
+  clinic. `dialogue_save_tests` covers it.
+- **Art.** The surgical regions and the scan hologram come from
+  `tools/art/regions.py` (drape and iodine ramps 12 and 13).
+  `procedure_tests` fails if a step's point lands on the drape.

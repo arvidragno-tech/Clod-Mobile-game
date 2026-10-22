@@ -1205,6 +1205,19 @@
       "heat": 3,
       "text": "They leave with three crates and your spare light. Somebody calls it in. Nobody comes."
      }
+    },
+    {
+     "label": "STAND IN THE DOORWAY",
+     "outcomes": {
+      "faction": {
+       "street_gangs": -6
+      },
+      "heat": 4,
+      "effects": {
+       "appearance_player": "injury"
+      },
+      "text": "Nobody takes anything. One runner just puts you into the shelving on his way out, hard, so you remember. Your hands shake for days."
+     }
     }
    ]
   },

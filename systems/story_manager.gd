@@ -368,13 +368,10 @@ func apply_effects(e: Dictionary, char_id: StringName = &"") -> Array[String]:
 			EconomyManager.add_money(m, &"events")
 			out.append("+%d cr" % m)
 		elif m < 0:
-			var paid := mini(-m, EconomyManager.money)
-			EconomyManager.spend(paid, &"events")
-			if -m > paid:
-				BusinessManager.debt += -m - paid
+			BusinessManager.charge(&"events", -m)  # short of cash: the rest is owed
 			out.append("%d cr" % m)
 	if e.has("debt"):
-		BusinessManager.debt += int(e["debt"])
+		BusinessManager.add_debt(int(e["debt"]))
 		out.append("debt +%d" % int(e["debt"]))
 	if e.has("rep"):
 		ReputationManager.change(int(e["rep"]))
@@ -500,7 +497,7 @@ func case_finished(c: CustomerData, outcome: String) -> void:
 		else:
 			EventManager.queue_event(after)
 	# The room stays quiet for a while after a case like that.
-	CustomerManager.quiet_until = TimeManager.minute + int(TimeManager.data.get("pacing", {}).get("quiet_minutes_after_story", 60))
+	CustomerManager.quiet_for(int(TimeManager.data.get("pacing", {}).get("quiet_minutes_after_story", 60)))
 
 
 func case_declined(c: CustomerData) -> void:
@@ -606,9 +603,15 @@ func get_save_data() -> Dictionary:
 	var c := {}
 	for k: Variant in counters:
 		c[String(k)] = counters[k]
+	# A conversation open at save time goes back to the front of the queue,
+	# so it's waiting again after a reload (DialogueManager resumes it).
+	var talks := talk_queue.duplicate()
+	var open := DialogueManager.open_dialogue_id()
+	if open != "" and not talks.has(open):
+		talks.push_front(open)
 	return {"flags": f, "rumors": unlocked_rumors.map(func(x: StringName) -> String: return String(x)),
 			"met": met_characters.map(func(x: StringName) -> String: return String(x)), "act": act,
-			"act_started_day": act_started_day, "pending": pending.duplicate(true), "talks": talk_queue.duplicate(),
+			"act_started_day": act_started_day, "pending": pending.duplicate(true), "talks": talks,
 			"beats": fired_beats.duplicate(), "paths": p, "counters": c, "ending": String(ending),
 			"cases": case_state.duplicate(), "last_case_day": last_case_day,
 			"cutscenes": cutscene_queue.duplicate(), "seen_cutscenes": seen_cutscenes.duplicate()}

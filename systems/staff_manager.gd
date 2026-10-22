@@ -272,7 +272,7 @@ func _fire_impl(id: StringName) -> bool:
 	var e := get_employee(id)
 	if e.is_empty():
 		return false
-	EconomyManager.spend(mini(int(e["salary"]), EconomyManager.money), &"salaries")
+	BusinessManager.charge(&"salaries", int(e["salary"]))  # severance; owed if you're short
 	employees.erase(e)
 	for other in employees:
 		other["loyalty"] = clampf(float(other["loyalty"]) - 4.0 - float(other["relationships"].get(str(id), 0)) / 20.0, 0.0, 100.0)

@@ -139,7 +139,7 @@ func _actions(col: VBoxContainer) -> void:
 	UIKit.expand(decline)
 	row.add_child(decline)
 	if not _accept.disabled:
-		_accept.grab_focus.call_deferred()
+		UIManager.focus_later(_accept)
 
 
 # --- Level 2: details ----------------------------------------------------------------

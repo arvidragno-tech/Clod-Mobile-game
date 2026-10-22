@@ -26,12 +26,19 @@ func _ready() -> void:
 	CustomerManager.breather_scale = 0.0  # the next patient knocks at once
 	var shifts := 30
 	var monkey := 3000
+	var run_seed := 99
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--shifts="):
 			shifts = int(arg.trim_prefix("--shifts="))
 		elif arg.begins_with("--monkey="):
 			monkey = int(arg.trim_prefix("--monkey="))
-	_rng.seed = 99
+		elif arg.begins_with("--seed="):
+			run_seed = int(arg.trim_prefix("--seed="))
+	# The bot's own choices follow this seed; the game's systems keep their
+	# own generators, so a seed narrows a failure down but can't replay it.
+	_rng.seed = run_seed
+	seed(run_seed)
+	print("== STABILITY seed %d ==" % run_seed)
 	get_tree().root.content_scale_size = Vector2i(1920, 1080)
 	get_tree().root.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_KEEP
 	SaveManager.save_dir = "user://test_saves"
@@ -177,13 +184,18 @@ func _complete_surgery(shift: int) -> bool:
 	while UIManager.current_screen_id == UIManager.SCREEN_SURGERY and t < 60.0:
 		var screen := UIManager.current_screen as SurgeryScreen
 		if not SurgeryManager.active_dilemma.is_empty():
-			# Answer the dilemma with any choice that's allowed.
+			# Answer the dilemma with any choice that's allowed: try each one
+			# once from a random start (a fresh random pick per try could miss
+			# the only free choice, leaving the dilemma open).
 			var opts: Array = SurgeryManager.active_dilemma["choices"]
+			var start := _rng.randi() % opts.size()
+			var answered := false
 			for k in opts.size():
-				var pick := (k + _rng.randi()) % opts.size()
+				var pick := (start + k) % opts.size()
 				if SurgicalDilemmas.block_reason(opts[pick]) == "":
-					SurgeryManager.resolve_dilemma(pick)
+					answered = not SurgeryManager.resolve_dilemma(pick).is_empty()
 					break
+			check(answered, "shift %d: every dilemma has a choice you can make" % shift)
 			UIManager.close_modal()
 			_dilemmas += 1
 		if SurgeryManager.active_complication and _rng.randf() < 0.9:

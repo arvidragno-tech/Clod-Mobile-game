@@ -12,7 +12,11 @@ extends Node
 ##   mixed         a bit of everything (a typical player)
 ## Each strategy runs over several seeds and reports money over time,
 ## revenue, direct costs, recurring costs, profit, upgrade timing,
-## bankruptcy and recovery after a forced loss.
+## bankruptcy and recovery after a forced loss. The story is played too:
+## every event, conversation and COMMS reply that comes up is answered with
+## a choice the player could make (seeded, so a run repeats exactly), and
+## the money it brings in or costs (cash and debt) is reported as story
+## income and story costs.
 ##   godot --headless --path . res://tests/economy_sim.tscn -- [--days=20] [--seeds=5] [--check]
 ## --check asserts the 3.6 targets (exit 1 on failure; used by run_tests.sh).
 
@@ -45,6 +49,10 @@ func _ready() -> void:
 			runs.append(_run(strat, 1000 + s * 17, days))
 		summary[strat] = runs
 		_print_strategy(strat, runs)
+	# A seed replays exactly, story choices included.
+	var again := _run(STRATEGIES[0], 1000, days)
+	var first: Dictionary = summary[STRATEGIES[0]][0]
+	_target(again["final"] == first["final"] and again["tot"] == first["tot"], "a seed replays exactly, story included (%d / %d)" % [again["final"], first["final"]])
 	_print_targets(summary, days)
 	SaveManager.delete_save()
 	get_tree().quit(1 if _check and not _failures.is_empty() else 0)
@@ -74,7 +82,8 @@ func _run(strat: String, seed_value: int, days: int) -> Dictionary:
 	WorldEventManager.auto_roll = false
 	SecurityManager.auto_roll = false
 	var curve: Array[int] = []
-	var tot := {"revenue": 0, "direct": 0, "recurring": 0, "jobs": 0, "staff_jobs": 0, "declined": 0, "fails": 0, "bm_buys": 0}
+	var tot := {"revenue": 0, "direct": 0, "recurring": 0, "jobs": 0, "staff_jobs": 0, "declined": 0, "fails": 0, "bm_buys": 0,
+		"story_in": 0, "story_out": 0, "story_choices": 0}
 	var first_upgrade := -1
 	var first_clinic := -1
 	var bankrupt_days := 0
@@ -125,6 +134,7 @@ func _run(strat: String, seed_value: int, days: int) -> Dictionary:
 		var before := EconomyManager.money
 		var rep: Dictionary = BusinessManager.end_day()
 		tot["recurring"] += maxi(0, before - EconomyManager.money)
+		_play_story(tot)  # the morning's news, consequences and messages
 		_invest(strat, day)
 		if first_upgrade < 0 and _upgrades() > 0:
 			first_upgrade = day + 1
@@ -245,10 +255,53 @@ func _operate(strat: String, c: CustomerData, r: Dictionary, op: int, tot: Dicti
 	PeopleManager.after_visit(c, "success" if res.success else "death", res.pay)
 	CustomerManager.dismiss_current()
 	EventManager.on_operation_completed()
-	EventManager.pending_event = &""
+	_play_story(tot)
 	BlackMarketManager.on_operation_completed()  # as GameManager does: restocks the market
 	_spend_skills()
 	return res
+
+
+## Answers what the story put in front of the player (events in line,
+## queued conversations, COMMS replies) with a seeded pick among the
+## choices they could make, and books the money that moved.
+func _play_story(tot: Dictionary) -> void:
+	var worth := EconomyManager.money - BusinessManager.debt
+	for guard in 12:
+		if EventManager.has_pending():
+			var choices: Array = EventManager.get_event(EventManager.pending_event).get("choices", [])
+			var open := range(choices.size()).filter(func(i: int) -> bool: return EventManager.get_choice_block_reason(choices[i]) == "")
+			if open.is_empty():
+				EventManager.pending_event = EventManager._next_waiting()
+			else:
+				EventManager.resolve(int(open[_rng.randi() % open.size()]))
+				tot["story_choices"] += 1
+		elif StoryManager.has_talk() and not DialogueManager.is_active():
+			if DialogueManager.start(StoryManager.pop_talk()):
+				for step in 40:
+					if not DialogueManager.is_active():
+						break
+					var opts := DialogueManager.options().filter(func(o: Dictionary) -> bool: return str(o["locked"]) == "")
+					if opts.is_empty():
+						DialogueManager.advance()
+					else:
+						DialogueManager.choose(int(opts[_rng.randi() % opts.size()]["index"]))
+						tot["story_choices"] += 1
+				if DialogueManager.is_active():
+					DialogueManager.end()
+		else:
+			break
+	for m in CommsManager.inbox:
+		var acts: Array = m.get("actions", [])
+		if acts.is_empty() or int(m["resolved"]) >= 0:
+			continue
+		var open := range(acts.size()).filter(func(i: int) -> bool: return CommsManager.block_reason(acts[i]) == "")
+		if not open.is_empty() and CommsManager.act(int(m["uid"]), int(open[_rng.randi() % open.size()])):
+			tot["story_choices"] += 1
+	var moved := EconomyManager.money - BusinessManager.debt - worth
+	if moved > 0:
+		tot["story_in"] += moved
+	else:
+		tot["story_out"] += -moved
 
 
 func _staff_job(c: CustomerData, tot: Dictionary) -> bool:
@@ -334,13 +387,14 @@ func _invest(strat: String, _day: int) -> void:
 
 func _print_strategy(strat: String, runs: Array[Dictionary]) -> void:
 	print("\n== %s ==" % strat.to_upper())
-	print("seed  final  debt  revenue  direct  recurring  profit/day  jobs staff decl fails  1st upgr  1st clinic  bankrupt  recov  tier staff heat  bm")
+	print("seed  final  debt  revenue  direct  recurring  profit/day  jobs staff decl fails  1st upgr  1st clinic  bankrupt  recov  tier staff heat  bm  story+ story- picks")
 	for r in runs:
 		var t: Dictionary = r["tot"]
 		var days := (r["curve"] as Array).size()
-		var profit := int(t["revenue"]) - int(t["direct"]) - int(t["recurring"])
-		print("%4d %6d %5d %8d %7d %10d %11d %5d %5d %4d %5d %9s %11s %9d %6s %5d %5d %4d %3d" % [r["seed"], r["final"], r["debt"], t["revenue"], t["direct"], t["recurring"],
-			profit / maxi(1, days), t["jobs"], t["staff_jobs"], t["declined"], t["fails"], _d(r["first_upgrade"]), _d(r["first_clinic"]), r["bankrupt_days"], _d(r["recovered"]), r["tier"], r["staff"], r["heat"], t["bm_buys"]])
+		var profit := int(t["revenue"]) - int(t["direct"]) - int(t["recurring"]) + int(t["story_in"]) - int(t["story_out"])
+		print("%4d %6d %5d %8d %7d %10d %11d %5d %5d %4d %5d %9s %11s %9d %6s %5d %5d %4d %3d %7d %6d %5d" % [r["seed"], r["final"], r["debt"], t["revenue"], t["direct"], t["recurring"],
+			profit / maxi(1, days), t["jobs"], t["staff_jobs"], t["declined"], t["fails"], _d(r["first_upgrade"]), _d(r["first_clinic"]), r["bankrupt_days"], _d(r["recovered"]), r["tier"], r["staff"], r["heat"], t["bm_buys"],
+			t["story_in"], t["story_out"], t["story_choices"]])
 	var mid: Array = []
 	for r in runs:
 		mid.append(r["curve"])
@@ -381,6 +435,12 @@ func _print_targets(summary: Dictionary, days: int) -> void:
 		_target(bankrupt == 0, "%s: no run spends 3+ nights deep in debt (%d)" % [strat, bankrupt])
 		_target(upgraded * 10 >= n * 8, "%s: affords a first upgrade or clinic in at least 80%% of runs (%d/%d)" % [strat, upgraded, n])
 		_target(recovered * 10 >= n * 6, "%s: recovers from a 400 cr loss in at least 60%% of runs (%d/%d)" % [strat, recovered, n])
+		# The story is played and stays a side income or cost, not the business.
+		for r: Dictionary in runs:
+			var t: Dictionary = r["tot"]
+			_target(int(t["story_choices"]) > 0, "%s seed %d: the story comes up and is answered (%d choices)" % [strat, r["seed"], t["story_choices"]])
+			_target(int(t["story_in"]) * 4 <= int(t["revenue"]) and int(t["story_out"]) * 4 <= int(t["revenue"]),
+				"%s seed %d: story money in (%d) and out (%d) each stay under a quarter of job revenue (%d)" % [strat, r["seed"], t["story_in"], t["story_out"], t["revenue"]])
 		# Calibration bounds (3.6): viable, not trivial, long-term goals kept.
 		var finals: Array[int] = []
 		var tiers: Array[int] = []

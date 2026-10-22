@@ -98,6 +98,8 @@ func _act_impl(uid: int, index: int) -> bool:
 	var acts: Array = m.get("actions", [])
 	if m.is_empty() or int(m["resolved"]) >= 0 or index < 0 or index >= acts.size():
 		return false
+	if block_reason(acts[index]) != "":
+		return false
 	m["resolved"] = index
 	m["read"] = true
 	var a: Dictionary = acts[index]
@@ -115,6 +117,12 @@ func _act_impl(uid: int, index: int) -> bool:
 	changed.emit()
 	StoryManager.check()
 	return true
+
+
+## "" if the reply can be sent, otherwise why not (what it spends, or
+## its "requires"): the same rule as event choices.
+func block_reason(action: Dictionary) -> String:
+	return EventManager.get_choice_block_reason(action)
 
 
 ## Small on-screen notice (only while playing).

@@ -1,0 +1,61 @@
+# Runs the full test pass (tests/run_tests.sh) on every push and pull
+# request with the same Godot the game is built with, rendered suites
+# under Xvfb. The job fails unless the script ends "ALL SUITES PASSED":
+# a skipped suite (exit 2) fails it as surely as a failing one (exit 1).
+name: Tests
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GODOT_VERSION: "4.3"
+
+jobs:
+  tests:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Xvfb, Mesa and Godot ${{ env.GODOT_VERSION }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends xvfb xauth libgl1-mesa-dri libglu1-mesa \
+            libxcursor1 libxinerama1 libxrandr2 libxi6 libasound2 libpulse0 unzip
+          base="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable"
+          curl -fsSL -o godot.zip "$base/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q godot.zip -d "$RUNNER_TEMP/godot"
+          echo "GODOT=$RUNNER_TEMP/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64" >> "$GITHUB_ENV"
+
+      - name: Import the project
+        run: |
+          "$GODOT" --version
+          "$GODOT" --headless --path . --import || true  # the first import reports missing caches
+
+      - name: Full test pass
+        env:
+          LIBGL_ALWAYS_SOFTWARE: "1"
+        run: |
+          set -o pipefail
+          tests/run_tests.sh "$GODOT" 2>&1 | tee test-output.log
+          code=${PIPESTATUS[0]}
+          grep -q "^ALL SUITES PASSED" test-output.log || { echo "::error::the suite did not end ALL SUITES PASSED (exit $code)"; exit 1; }
+          exit "$code"
+
+      - name: Keep the log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-output
+          path: test-output.log
+          retention-days: 14

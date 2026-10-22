@@ -647,6 +647,11 @@ func _high_stakes() -> void:
 	SurgeryManager.resolve_dilemma(1)
 	SurgeryManager.abort()
 	StaffManager.employees.clear()
+	# An operation that ends any other way closes its open dilemma too.
+	_start_op(CustomerManager.generator.generate({"full_difficulty": true, "category": "neural"}))
+	SurgeryManager.debug_trigger_dilemma(&"cyberware_instability")
+	SurgeryManager.abort()
+	check(SurgeryManager.active_dilemma.is_empty() and not SurgeryManager.is_active, "aborting with a dilemma open leaves no dilemma behind")
 	# Learning players never see them.
 	EventManager.operations = 1
 	check(SurgicalDilemmas.chance(SurgeryManager) == 0.0, "no dilemmas while learning")
