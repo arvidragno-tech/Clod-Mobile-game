@@ -260,7 +260,7 @@ func apply_outcomes(o: Dictionary) -> String:
 		if m >= 0:
 			EconomyManager.add_money(m, &"events")
 		else:
-			EconomyManager.spend(mini(-m, EconomyManager.money), &"events")
+			BusinessManager.charge(&"events", -m)  # short of cash: the rest is owed
 	if o.has("reputation"):
 		ReputationManager.change(int(o["reputation"]))
 	var fac: Dictionary = o.get("faction", {})

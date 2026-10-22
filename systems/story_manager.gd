@@ -368,10 +368,7 @@ func apply_effects(e: Dictionary, char_id: StringName = &"") -> Array[String]:
 			EconomyManager.add_money(m, &"events")
 			out.append("+%d cr" % m)
 		elif m < 0:
-			var paid := mini(-m, EconomyManager.money)
-			EconomyManager.spend(paid, &"events")
-			if -m > paid:
-				BusinessManager.debt += -m - paid
+			BusinessManager.charge(&"events", -m)  # short of cash: the rest is owed
 			out.append("%d cr" % m)
 	if e.has("debt"):
 		BusinessManager.debt += int(e["debt"])
