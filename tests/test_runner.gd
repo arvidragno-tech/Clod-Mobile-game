@@ -29,6 +29,7 @@ const PreviewAccuracyTests := preload("res://tests/preview_accuracy_tests.gd")
 const ResourceCostTests := preload("res://tests/resource_cost_tests.gd")
 const PaymentTests := preload("res://tests/payment_tests.gd")
 const OwnershipTests := preload("res://tests/ownership_tests.gd")
+const SaveFixtureTests := preload("res://tests/save_fixture_tests.gd")
 
 var _failures: Array[String] = []
 var _dilemmas_seen: bool = false
@@ -85,6 +86,7 @@ func _run_all() -> void:
 	ResourceCostTests.new().run(self)
 	PaymentTests.new().run(self)
 	OwnershipTests.new().run(self)
+	SaveFixtureTests.new().run(self)
 	if OS.get_cmdline_user_args().has("--unit-only"):
 		_finish()
 		return
