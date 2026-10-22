@@ -496,11 +496,17 @@ func _comms() -> void:
 			v.add_child(row)
 			for i in acts.size():
 				var uid := int(m["uid"])
-				row.add_child(UIKit.button(str(acts[i]["label"]), &"AccentButton" if i == 0 else &"GhostButton", func() -> void:
+				var b := UIKit.button(str(acts[i]["label"]), &"AccentButton" if i == 0 else &"GhostButton", func() -> void:
 					var before := Consequence.snapshot()
-					CommsManager.act(uid, i)
-					Consequence.show("You answered: %s" % str(acts[i]["label"]), before)
-					_rebuild(), "MsgAction_%d" % i, 44))
+					if CommsManager.act(uid, i):
+						Consequence.show("You answered: %s" % str(acts[i]["label"]), before)
+					_rebuild(), "MsgAction_%d" % i, 44)
+				var why := CommsManager.block_reason(acts[i])
+				if why != "":
+					b.disabled = true
+					b.tooltip_text = why
+					b.text = "%s · %s" % [str(acts[i]["label"]), why.to_upper()]
+				row.add_child(b)
 
 
 # --- People ---------------------------------------------------------------------------

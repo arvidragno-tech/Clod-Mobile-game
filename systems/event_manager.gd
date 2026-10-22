@@ -174,9 +174,14 @@ func conditions_met(c: Dictionary) -> bool:
 	return true
 
 
-## "" if the choice can be taken, otherwise why not.
+## "" if the choice can be taken, otherwise why not. A choice that spends
+## something (choice_costs) needs it, so nothing comes free for an empty
+## stock: events, street encounters and COMMS replies all ask here.
 func get_choice_block_reason(choice: Dictionary) -> String:
-	var req: Dictionary = choice.get("requires", {})
+	var req: Dictionary = (choice.get("requires", {}) as Dictionary).duplicate()
+	var cost := choice_costs(choice)
+	for k: String in cost:
+		req[k] = maxi(int(req.get(k, 0)), int(cost[k]))
 	if req.has("money") and not EconomyManager.can_afford(int(req["money"])):
 		return "Need %s" % EconomyManager.format_money(int(req["money"]))
 	if req.has("parts") and InventoryManager.parts < int(req["parts"]):
@@ -188,6 +193,26 @@ func get_choice_block_reason(choice: Dictionary) -> String:
 	if req.has("flag") and not StoryManager.has_flag(StringName(str(req["flag"]))):
 		return "Unavailable"
 	return ""
+
+
+const COST_KEYS := ["money", "supplies", "parts", "tokens"]
+
+
+## The money, supplies, parts and tokens a choice spends for certain (not a
+## risk branch: that is a consequence, not a price). Reads event outcomes,
+## COMMS effects, security fx and supplier favours.
+static func choice_costs(choice: Dictionary) -> Dictionary:
+	var out := {}
+	var o: Dictionary = choice.get("outcomes", {})
+	var fav: Dictionary = choice.get("supplier_favor", {})
+	for part: Variant in [o, o.get("effects", {}), choice.get("effects", {}), choice.get("security", {}), fav.get("fx", {})]:
+		if not part is Dictionary:
+			continue
+		for k: String in COST_KEYS:
+			var v := int((part as Dictionary).get(k, 0))
+			if v < 0:
+				out[k] = int(out.get(k, 0)) - v
+	return out
 
 
 ## Applies a choice of the pending event; returns the result text.
