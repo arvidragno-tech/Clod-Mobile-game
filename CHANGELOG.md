@@ -27,6 +27,39 @@ in `export_presets.cfg`.
   so they were off whenever any of those applied, rivals' losses
   included. Street reputation (REP) ignored that gains shrink as it rises.
   Event choices and conversation lines now show the exact change.
+- **Nothing comes free for an empty store room.** Rook's favour, Hester's
+  tip-off and "let them take supplies" used to pay out their standing,
+  heat and introductions when you had none of the supplies they cost, and
+  some COMMS replies charged a voluntary payment on credit. Any choice
+  that spends money, supplies, parts or tokens now needs them, on the
+  decision card and in COMMS (where the reply says what's missing). Rook's
+  reprisal has a third answer you can always give, at a real cost.
+- **A fine you can't cover is owed, wherever it comes from.** Events
+  used to take what was in the drawer and forget the rest; conversations
+  put it on your debt but left most of it off the books. Now every cost
+  you can't refuse (fines, a crew's cut, severance, the night's bills)
+  takes the cash it can, owes the rest, and shows in full in the ledger.
+- **Every kind of chrome has its own operation.** Each category has its
+  own sequence of steps and a signature step: map the cortex (neural),
+  thread the spinal bus (spine), tension the tendons (arms), load-test
+  the knee (legs), hold the gaze (eyes), lay the plates (dermal), seal
+  the airway (respiratory), clamp the vessels (internal). Each has its
+  own mistake. See `docs/PROCEDURES.md`.
+- **Cutscenes are full scenes.** Every scene now runs at least 30 seconds
+  when left to play, with new shots and lines; SKIP and ESC still end it
+  at once.
+- **An operation that ends never leaves a dilemma open.**
+- **The operating table looks like one.** Every surgical site is draped,
+  prepped with iodine and clamped, with an opening shaped to the site, and
+  the diagnosis scan shows a skeleton and organs instead of a filled
+  outline. See `docs/GRAPHICS_3.13.md`.
+- A focus request that arrives after its panel has closed is now dropped
+  quietly instead of logging an engine error.
+- Saves from 3.10.0, 3.11.0 and 3.12.0 are kept as test fixtures and
+  load in this build.
+- Tests run on every push (GitHub Actions, Godot 4.3, Xvfb). The economy
+  simulation plays the story too and reports its income and costs; the
+  stability test takes `--seed=N`.
 - `tests/run_tests.sh` fails on unexpected engine errors (a missing
   resource, `push_error`) and reports skipped suites as skipped.
 
