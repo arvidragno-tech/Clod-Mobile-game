@@ -458,7 +458,7 @@ func _cutscenes() -> void:
 	var why := ""
 	for id: String in StoryManager.cutscenes:
 		var shots: Array = StoryManager.cutscenes[id].get("shots", [])
-		if shots.is_empty() or shots.size() > 5:
+		if shots.size() < 4 or shots.size() > 8:
 			valid = false
 			why += " %s:length" % id
 		for s: Dictionary in shots:
@@ -477,7 +477,25 @@ func _cutscenes() -> void:
 			if str(s.get("text", "")) == "" or str(s.get("text", "")).length() > 140:
 				valid = false
 				why += " %s:text" % id
-	check(valid, "cutscenes: short (5 shots at most), one line each, made from existing art and cast%s" % why)
+	check(valid, "cutscenes: 4 to 8 shots, one line each, made from existing art and cast%s" % why)
+	# Left alone, every scene runs at least 30 s, at every text speed.
+	var short := []
+	for id: String in StoryManager.cutscenes:
+		var shots: Array = StoryManager.cutscenes[id].get("shots", [])
+		for cps: float in Settings.TEXT_SPEEDS:
+			var secs := CutscenePlayer.estimate_seconds(shots, cps)
+			if secs < CutscenePlayer.MIN_SCENE_SEC:
+				short.append("%s %.1f s at %d cps" % [id, secs, int(cps)])
+	check(short.is_empty(), "cutscenes: every scene runs at least %d s when left to play %s" % [int(CutscenePlayer.MIN_SCENE_SEC), str(short)])
+	var lines := {}
+	var repeated := []
+	for id: String in StoryManager.cutscenes:
+		for sh: Dictionary in StoryManager.cutscenes[id]["shots"]:
+			var line := str(sh["text"])
+			if lines.has(line):
+				repeated.append(line)
+			lines[line] = true
+	check(repeated.is_empty(), "cutscenes: no line is used twice (every second is new content) %s" % str(repeated))
 	var acts_ok := true
 	for n in range(2, 6):
 		acts_ok = acts_ok and StoryManager.cutscenes.has("cs_act_%d" % n)

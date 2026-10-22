@@ -9,7 +9,9 @@ extends Control
 ##
 ## Click / SPACE / ENTER: finish the line, then the next shot. ESC or SKIP:
 ## end the scene. Lines move on by themselves after a moment, so a scene
-## never waits on the player. Nobody walks in while it plays.
+## never waits on the player; left alone, every scene runs at least
+## MIN_SCENE_SEC at any text speed (estimate_seconds). Nobody walks in
+## while it plays.
 
 signal closed()
 
@@ -20,6 +22,7 @@ const BAR_H := 120.0
 const FADE_SEC := 0.4
 const DRIFT := 1.05
 const TEXT_W := 1400.0
+const MIN_SCENE_SEC := 30.0
 
 var cutscene_id: StringName
 var _shots: Array = []
@@ -194,11 +197,28 @@ func _show(i: int) -> void:
 	_card.visible = _card.text != ""
 	_text.text = str(shot.get("text", ""))
 	_text.play()
-	_hold = float(shot.get("hold", clampf(1.6 + _text.text.length() * 0.03, 2.5, 6.0)))
+	_hold = hold_for(shot)
 	_layout()
 	var t := create_tween()
 	t.tween_property(_fade, "color:a", 0.0, FADE_SEC)
 	t.tween_callback(func() -> void: _busy = false)
+
+
+## Seconds a shot stays up after its line is typed: time to read it and
+## look at the picture.
+static func hold_for(shot: Dictionary) -> float:
+	return float(shot.get("hold", clampf(2.2 + str(shot.get("text", "")).length() * 0.035, 3.5, 7.0)))
+
+
+## How long a scene runs when nobody touches it, at `cps` characters a
+## second (0: lines appear at once): each shot fades in while its line
+## types, holds, and fades out.
+static func estimate_seconds(shots: Array, cps: float) -> float:
+	var total := 0.0
+	for shot: Dictionary in shots:
+		var typing := str(shot.get("text", "")).length() / cps if cps > 0.0 else 0.0
+		total += maxf(FADE_SEC, typing) + hold_for(shot) + FADE_SEC * 0.6
+	return total
 
 
 func _make_backdrop(spec: String) -> Control:
