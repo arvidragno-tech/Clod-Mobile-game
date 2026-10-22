@@ -103,6 +103,27 @@ jobs:
           name: UndercityRipper-${{ steps.ver.outputs.version }}-windows-x64
           path: build/windows/UndercityRipper.exe
 
+      - name: Write the release notes
+        shell: bash
+        run: |
+          # The standard download notes, then docs/releases/<version>.md if
+          # that version has one.
+          cat > build/release_notes.md <<'NOTES'
+          **Download `UndercityRipper.exe` and run it.** It is the whole game in one file (all content and expansions); no install needed.
+
+          - Windows 10/11 64-bit, OpenGL 3.3 or Direct3D 11 GPU
+          - Saves and settings: `%APPDATA%\UndercityRipper\`
+          - Windows SmartScreen may warn about an unknown publisher (the build is not code-signed): **More info → Run anyway**.
+
+          The zip has the same .exe plus the font licences. See CHANGELOG.md for what's new.
+          NOTES
+          notes="docs/releases/${{ steps.ver.outputs.version }}.md"
+          if [[ -f "$notes" ]]; then
+            printf '\n' >> build/release_notes.md
+            cat "$notes" >> build/release_notes.md
+          fi
+          cat build/release_notes.md
+
       - name: Publish the release
         if: github.ref_type == 'tag' || inputs.publish
         uses: softprops/action-gh-release@v2
@@ -113,11 +134,4 @@ jobs:
           files: |
             build/windows/UndercityRipper.exe
             build/UndercityRipper-${{ steps.ver.outputs.version }}-windows-x64.zip
-          body: |
-            **Download `UndercityRipper.exe` and run it.** It is the whole game in one file (all content and expansions); no install needed.
-
-            - Windows 10/11 64-bit, OpenGL 3.3 or Direct3D 11 GPU
-            - Saves and settings: `%APPDATA%\UndercityRipper\`
-            - Windows SmartScreen may warn about an unknown publisher (the build is not code-signed): **More info → Run anyway**.
-
-            The zip has the same .exe plus the font licences. See CHANGELOG.md for what's new.
+          body_path: build/release_notes.md
