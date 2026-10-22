@@ -46,7 +46,7 @@ func _shuffle(arr: Array[int]) -> void:
 
 
 func pin_local(index: int) -> Vector2:
-	var center := site.to_local_pos(site.implant_pos)
+	var center := site.implant_center()
 	return center + PIN_OFFSETS[index].rotated(site.implant_angle) * _px()
 
 

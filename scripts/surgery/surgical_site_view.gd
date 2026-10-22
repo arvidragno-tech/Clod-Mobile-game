@@ -10,12 +10,28 @@ extends Control
 ## Coordinates: stages work in normalised field space (0..1) over the
 ## FIELD_SIZE anatomy texture. Use to_local_pos() / to_norm() to convert, and
 ## art_px() for sizes given in design units (1/64 of the field, as in data).
+##
+## Implant geometry has one source of truth here, in field pixels: the socket
+## and the implant are anchored on whole pixels (socket_center() /
+## implant_center()), the implant art turns about its own centre on that
+## pixel (implant_pivot()), and the socket's key slot and the implant's notch
+## both sit on key_radius() from the anchor. Stages draw
+## their alignment marks and hit-test with these, never with their own sizes.
+##
+## A seated implant is drawn into the body, not over it: only the part inside
+## the open wound shows (the skin covers the rest, as a raised outline), and
+## once the skin is closed only its exposed part (site.implant.exposed_radius:
+## a jack, a lens) stays visible.
 
 const FIELD_SIZE := 160
 const DESIGN_GRID := 64.0
 ## Max half-width of the opened wound, in design units (overridable per surgery).
 const OPENING_HALF_WIDTH := 13.0
 const SOCKET_RADIUS := 7.0
+## _open_depth value for a pixel covered by intact (or closed) skin.
+const OUTSIDE_WOUND := 2.0
+## Implant art size when no texture is set (the cyberware icons are 32 px).
+const DEFAULT_IMPLANT_SIZE := Vector2(32, 32)
 const DEFAULT_IMPLANT_ICON := "res://assets/sprites/cyberware/neural_t1.png"
 const REGION_TEXTURES := {
 	&"neck": "res://assets/sprites/surgery/regions/neck.png",
@@ -56,11 +72,29 @@ var damaged_nodes: Array[Dictionary] = []
 var nerves: Array[PackedVector2Array] = []
 var show_socket: bool = false
 var socket_pos: Vector2 = Vector2(0.5, 0.5)
-var implant_state: ImplantState = ImplantState.NONE
-var implant_pos: Vector2 = Vector2(0.5, 0.86)
-var implant_angle: float = 0.0
+var implant_state: ImplantState = ImplantState.NONE:
+	set(v):
+		implant_state = v
+		_implant_dirty = true
+var implant_pos: Vector2 = Vector2(0.5, 0.86):
+	set(v):
+		implant_pos = v
+		_implant_dirty = true
+var implant_angle: float = 0.0:
+	set(v):
+		implant_angle = v
+		_implant_dirty = true
 var implant_aligned: bool = false
-var implant_texture: Texture2D
+var implant_texture: Texture2D:
+	set(v):
+		implant_texture = v
+		_implant_image = v.get_image() if v else null
+		if _implant_image and _implant_image.is_compressed():
+			_implant_image.decompress()
+		_implant_dirty = true
+## Field px around the implant centre that stay visible through closed skin
+## (from the surgery's site.implant.exposed_radius; 0 = fully subdermal).
+var implant_exposed_radius: float = 0.0
 ## Each: {"from": Vector2, "to": Vector2, "color": Color} (norm)
 var connections: Array[Dictionary] = []
 var stitches: Array[Vector2] = []
@@ -68,6 +102,7 @@ var closed: bool = false:
 	set(v):
 		closed = v
 		_wound_dirty = true
+		_implant_dirty = true
 var bleed_intensity: float = 0.0
 var blood_level: float = 0.0
 var emergency: bool = false
@@ -85,6 +120,13 @@ var _tube_xy: PackedInt32Array = PackedInt32Array()
 var _tube_d: PackedFloat32Array = PackedFloat32Array()
 var _tube_hw: PackedFloat32Array = PackedFloat32Array()
 var _splats: Array[Vector3] = []
+## Per field pixel: depth into the open wound (distance / half width, <= 1
+## inside the cavity), or OUTSIDE_WOUND where intact skin covers it.
+var _open_depth: PackedFloat32Array = PackedFloat32Array()
+var _implant_image: Image
+var _implant_layer: Image
+var _implant_layer_texture: ImageTexture
+var _implant_dirty: bool = true
 var _time: float = 0.0
 
 
@@ -95,6 +137,10 @@ func _ready() -> void:
 	resized.connect(_layout)
 	_wound_image = Image.create(FIELD_SIZE, FIELD_SIZE, false, Image.FORMAT_RGBA8)
 	_wound_texture = ImageTexture.create_from_image(_wound_image)
+	_implant_layer = Image.create(FIELD_SIZE, FIELD_SIZE, false, Image.FORMAT_RGBA8)
+	_implant_layer_texture = ImageTexture.create_from_image(_implant_layer)
+	_open_depth.resize(FIELD_SIZE * FIELD_SIZE)
+	_open_depth.fill(OUTSIDE_WOUND)
 	_layout()
 
 
@@ -116,6 +162,9 @@ func configure(customer: CustomerData, surgery: SurgeryData = null, backdrop_lev
 			pts.append(Vector2(float(p[0]), float(p[1])))
 		nerves.append(pts)
 	opening_half_width = float(site.get("opening_half_width", OPENING_HALF_WIDTH))
+	var implant_site: Dictionary = site.get("implant", {})
+	implant_exposed_radius = float(implant_site.get("exposed_radius", 0.0))
+	_implant_dirty = true
 	queue_redraw()
 
 
@@ -151,6 +200,58 @@ func to_local_pos(norm: Vector2) -> Vector2:
 
 func to_norm(local: Vector2) -> Vector2:
 	return (local - _field_origin) / FIELD_SIZE
+
+
+# --- Implant geometry (field px; see the class notes) --------------------------
+
+## The socket's anchor pixel (local units): its rings and key slot centre here.
+func socket_center() -> Vector2:
+	return to_local_pos(socket_pos).floor()
+
+
+## The implant's anchor pixel and rotation pivot (local units).
+func implant_center() -> Vector2:
+	return to_local_pos(implant_pos).floor()
+
+
+func socket_radius() -> float:
+	return SOCKET_RADIUS * art_px()
+
+
+## Distance from the anchor to the socket's key slot and the implant's notch:
+## the slot is cut into the socket rim, so the two meet there when aligned.
+func key_radius() -> float:
+	return roundf(socket_radius())
+
+
+## Where the notch must go: the socket's key slot (an anchor pixel).
+func socket_key_pos() -> Vector2:
+	return socket_center() + Vector2.UP * key_radius()
+
+
+## Where the implant's notch is at its current angle (an anchor pixel).
+func implant_notch_pos() -> Vector2:
+	return (implant_center() + Vector2.UP.rotated(implant_angle) * key_radius()).round()
+
+
+## The point the art turns about: its true centre, placed so the art's
+## corner lands on a whole pixel (the anchor pixel's corner for even sizes,
+## its centre for odd ones).
+func implant_pivot() -> Vector2:
+	return implant_center() + _pivot_offset(implant_size())
+
+
+static func _pivot_offset(art: Vector2) -> Vector2:
+	return art / 2.0 - (art / 2.0).floor()
+
+
+func implant_size() -> Vector2:
+	return Vector2(implant_texture.get_size()) if implant_texture else DEFAULT_IMPLANT_SIZE
+
+
+## Radius of the circle that encloses the implant art at any angle.
+func implant_reach() -> float:
+	return implant_size().length() / 2.0
 
 
 func is_inside_opening(norm: Vector2, margin_norm: float = 0.0, open_amount: float = -1.0) -> bool:
@@ -261,6 +362,8 @@ func _build_tube() -> void:
 
 func _rebuild_wound() -> void:
 	_wound_dirty = false
+	_implant_dirty = true
+	_open_depth.fill(OUTSIDE_WOUND)
 	var data := PackedByteArray()
 	data.resize(FIELD_SIZE * FIELD_SIZE * 4)
 	if not closed and opening > 0.01:
@@ -272,6 +375,7 @@ func _rebuild_wound() -> void:
 			var c: Color
 			if d <= hw:
 				var r := d / maxf(hw, 0.001)
+				_open_depth[idx] = r
 				var x := idx % FIELD_SIZE
 				var y := idx / FIELD_SIZE
 				var shade := 1.6 + r * 3.6 + (0.6 if (x * 7 + y * 13) % 29 == 0 else 0.0)
@@ -349,10 +453,13 @@ func _draw() -> void:
 	_draw_damaged_nodes()
 	_draw_cut()
 	_draw_splats()
-	_draw_anchors()
+	# Anchors and wiring are inside the body: closed skin covers them.
+	if not closed:
+		_draw_anchors()
 	_draw_clamps()
 	_draw_implant()
-	_draw_connections()
+	if not closed:
+		_draw_connections()
 	_draw_stitches()
 	_draw_blood()
 
@@ -361,10 +468,21 @@ func _px(p: Vector2, c: Color) -> void:
 	draw_rect(Rect2(p.floor(), Vector2.ONE), c)
 
 
-func _line(a: Vector2, b: Vector2, c: Color) -> void:
+func _line(a: Vector2, b: Vector2, c: Color, wound_only: bool = false) -> void:
 	var steps := int(maxf(absf(b.x - a.x), absf(b.y - a.y)))
 	for k in steps + 1:
-		_px(a.lerp(b, float(k) / maxf(steps, 1)), c)
+		var p := a.lerp(b, float(k) / maxf(steps, 1))
+		if not wound_only or is_in_wound(p):
+			_px(p, c)
+
+
+## True when a local point lies inside the open wound as last drawn (the
+## per-pixel mask behind the implant compositing).
+func is_in_wound(local: Vector2) -> bool:
+	var f := (local - _field_origin).floor()
+	if f.x < 0 or f.y < 0 or f.x >= FIELD_SIZE or f.y >= FIELD_SIZE:
+		return false
+	return _open_depth[int(f.y) * FIELD_SIZE + int(f.x)] <= 1.0
 
 
 func _disc(center: Vector2, r: float, c: Color) -> void:
@@ -419,8 +537,8 @@ func _draw_nerves() -> void:
 
 
 func _draw_socket() -> void:
-	var c := to_local_pos(socket_pos)
-	var r := SOCKET_RADIUS * art_px()
+	var c := socket_center()
+	var r := socket_radius()
 	_disc(c + Vector2(1, 2), r + 2, Color(0, 0, 0, 0.5))
 	_disc(c, r + 1, STEEL[1])
 	_disc(c, r, STEEL[4])
@@ -430,10 +548,11 @@ func _draw_socket() -> void:
 	for k in 8:  # mounting screws
 		var a := TAU * k / 8.0
 		_px(c + Vector2(cos(a), sin(a)) * (r - 1.5), STEEL[7] if k < 3 else STEEL[3])
-	var slot := STEEL[0]
+	# Key slot, centred on the same pixel the stage's target mark uses.
+	var k := socket_key_pos()
 	var key := Palette.OK if implant_aligned else Palette.WARN
-	draw_rect(Rect2((c + Vector2(-2, -r - 2)).floor(), Vector2(4, 5)), slot)
-	draw_rect(Rect2((c + Vector2(-1, -r - 1)).floor(), Vector2(2, 3)), key)
+	draw_rect(Rect2(k - Vector2(2, 2), Vector2(5, 5)), STEEL[0])
+	draw_rect(Rect2(k - Vector2(1, 1), Vector2(3, 3)), key)
 
 
 func _draw_damaged_nodes() -> void:
@@ -480,20 +599,128 @@ func _draw_anchors() -> void:
 func _draw_implant() -> void:
 	if implant_state == ImplantState.NONE or implant_texture == null:
 		return
+	if implant_state == ImplantState.SEATED:
+		if _implant_dirty:
+			_rebuild_implant_layer()
+		draw_texture(_implant_layer_texture, _field_origin)
+		return
 	var ts := Vector2(implant_texture.get_size())
-	var center := to_local_pos(implant_pos).floor()
+	var center := implant_center()
+	var pivot := implant_pivot()
 	if implant_state == ImplantState.IN_TRAY:
 		var tray := Rect2(center - ts / 2.0 - Vector2(3, 3), ts + Vector2(6, 6))
 		draw_rect(tray, Color(STEEL[1], 0.92))
 		draw_rect(tray, STEEL[4], false, 1.0)
 	if implant_state == ImplantState.HELD:
 		draw_texture_rect(implant_texture, Rect2(center - ts / 2.0 + Vector2(3, 4), ts), false, Color(0, 0, 0, 0.4))
-	draw_set_transform(center, implant_angle, Vector2.ONE)
+	draw_set_transform(pivot, implant_angle, Vector2.ONE)
 	draw_texture(implant_texture, -ts / 2.0)
 	draw_set_transform_matrix(Transform2D.IDENTITY)
 	if implant_state == ImplantState.PLACED:
 		var ring := Palette.OK if implant_aligned else Color(Palette.WARN, 0.55 + 0.45 * sin(_time * 8.0))
 		draw_arc(center, ts.x * 0.5 + 4.0, 0, TAU, 32, ring, 1.0)
+
+
+## Composites the seated implant into the body (field-sized layer, rebuilt
+## only when the implant, the wound or the closure changes): art inside the
+## open wound shows, shaded where the tissue edge overlaps it, with a contact
+## shadow on the tissue; art under intact skin shows only as a raised outline
+## in the skin; art within implant_exposed_radius always shows, ringed by skin.
+func _rebuild_implant_layer() -> void:
+	_implant_dirty = false
+	if _wound_dirty:
+		_rebuild_wound()
+		_implant_dirty = false
+	var data := PackedByteArray()
+	data.resize(FIELD_SIZE * FIELD_SIZE * 4)
+	if _implant_image == null:
+		_implant_layer.set_data(FIELD_SIZE, FIELD_SIZE, false, Image.FORMAT_RGBA8, data)
+		_implant_layer_texture.update(_implant_layer)
+		return
+	var anchor := implant_center() - _field_origin
+	var cover := implant_coverage(anchor, implant_angle)
+	var shadow := Color(0, 0, 0, 0.45)
+	var exposed_rim := skin_color.darkened(0.5)
+	var raised := skin_color.lightened(0.18)
+	var sunk := skin_color.darkened(0.28)
+	var under := {}  # field index -> true: art hidden under skin
+	# The socket stays as the implant's mount, as far as the wound shows it.
+	if not closed:
+		var mount_r := socket_radius() + 1.0
+		for y in range(maxi(0, int(anchor.y - mount_r)), mini(FIELD_SIZE, int(anchor.y + mount_r) + 1)):
+			for x in range(maxi(0, int(anchor.x - mount_r)), mini(FIELD_SIZE, int(anchor.x + mount_r) + 1)):
+				var idx := y * FIELD_SIZE + x
+				var d := Vector2(x, y).distance_to(anchor)
+				if d <= mount_r and _open_depth[idx] <= 1.0:
+					_put(data, idx, STEEL[1] if d > mount_r - 1.0 else (STEEL[4] if d > mount_r - 3.0 else STEEL[2]))
+	for idx: int in cover:
+		var src: Vector2i = cover[idx]
+		var c := _implant_image.get_pixelv(src)
+		var x := idx % FIELD_SIZE
+		var y := idx / FIELD_SIZE
+		var depth := _open_depth[idx] if not closed else OUTSIDE_WOUND
+		var from_center := Vector2(x + 0.5, y + 0.5) - (anchor + _pivot_offset(implant_size()))
+		if depth <= 1.0:
+			if depth > 0.86:
+				c = c.darkened(0.45)  # the wound's edge laps over it
+			_put(data, idx, c)
+		elif implant_exposed_radius > 0.0 and from_center.length() <= implant_exposed_radius:
+			_put(data, idx, c)
+		else:
+			under[idx] = true
+	for idx: int in cover:
+		var x := idx % FIELD_SIZE
+		var y := idx / FIELD_SIZE
+		if under.has(idx):
+			# Raised outline: lit along the top-left edge, shaded bottom-right.
+			if not cover.has(idx - FIELD_SIZE) or not cover.has(idx - 1):
+				_put(data, idx, raised)
+			elif not cover.has(idx + FIELD_SIZE) or not cover.has(idx + 1):
+				_put(data, idx, sunk)
+		else:
+			# Visible art: skin rim where it leaves the skin, contact shadow
+			# where it rests on tissue.
+			for n: int in [idx - FIELD_SIZE, idx - 1, idx + 1, idx + FIELD_SIZE]:
+				if under.has(n) and _open_depth[n] > 1.0:
+					_put(data, n, exposed_rim)
+			var below := idx + FIELD_SIZE + 1
+			if x + 1 < FIELD_SIZE and y + 1 < FIELD_SIZE and not cover.has(below) and _open_depth[below] <= 1.0 and not closed \
+					and data[below * 4 + 3] == 0:
+				_put(data, below, shadow)
+	_implant_layer.set_data(FIELD_SIZE, FIELD_SIZE, false, Image.FORMAT_RGBA8, data)
+	_implant_layer_texture.update(_implant_layer)
+
+
+## Field pixels covered by the implant art anchored at field pixel `anchor`
+## and turned by `angle` about its pivot: {field index: source texel}. The
+## same mapping draw_set_transform() applies to the held / placed sprite.
+## (A tiny bias settles texel-edge ties the same way every time, so a
+## quarter turn of mixed odd / even art neither drops nor doubles pixels.)
+func implant_coverage(anchor: Vector2, angle: float) -> Dictionary:
+	var out := {}
+	if _implant_image == null:
+		return out
+	var ts := Vector2(_implant_image.get_size())
+	var pivot := anchor + _pivot_offset(ts)
+	var reach := ceili(ts.length() / 2.0) + 1
+	for y in range(maxi(0, int(anchor.y) - reach), mini(FIELD_SIZE, int(anchor.y) + reach + 1)):
+		for x in range(maxi(0, int(anchor.x) - reach), mini(FIELD_SIZE, int(anchor.x) + reach + 1)):
+			var q := (Vector2(x + 0.5, y + 0.5) - pivot).rotated(-angle) + ts / 2.0 + Vector2(0.0001, 0.0001)
+			if q.x < 0.0 or q.y < 0.0 or q.x >= ts.x or q.y >= ts.y:
+				continue
+			var src := Vector2i(int(q.x), int(q.y))
+			if _implant_image.get_pixelv(src).a < 0.5:
+				continue
+			out[y * FIELD_SIZE + x] = src
+	return out
+
+
+static func _put(data: PackedByteArray, idx: int, c: Color) -> void:
+	var o := idx * 4
+	data[o] = c.r8
+	data[o + 1] = c.g8
+	data[o + 2] = c.b8
+	data[o + 3] = c.a8
 
 
 func _draw_connections() -> void:
@@ -502,11 +729,13 @@ func _draw_connections() -> void:
 		var b := to_local_pos(c["to"])
 		var mid := (a + b) / 2.0 + Vector2(0, 6)
 		var col: Color = c["color"]
+		# Wiring runs inside the body: only the stretch in the open wound shows.
 		for seg: Array in [[a, mid], [mid, b]]:
-			_line(seg[0] + Vector2(0, 1), seg[1] + Vector2(0, 1), col.darkened(0.5))
-			_line(seg[0], seg[1], col)
-		_disc(b, 2.0, col.darkened(0.3))
-		_px(b - Vector2(1, 1), col.lightened(0.5))
+			_line(seg[0] + Vector2(0, 1), seg[1] + Vector2(0, 1), col.darkened(0.5), true)
+			_line(seg[0], seg[1], col, true)
+		if is_in_wound(b):
+			_disc(b, 2.0, col.darkened(0.3))
+			_px(b - Vector2(1, 1), col.lightened(0.5))
 
 
 func _draw_stitches() -> void:

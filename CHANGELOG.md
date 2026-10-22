@@ -4,6 +4,17 @@ All notable changes to *UNDERCITY: RIPPER*. Versions follow
 `application/config/version` in `project.godot` and the Windows file version
 in `export_presets.cfg`.
 
+## Unreleased
+
+- **Implants are installed into the patient, not laid on top.** A seated
+  implant now shows only where the wound is open, sits in its socket mount,
+  and disappears under the skin when you close up, apart from the parts
+  meant to stay visible (a neural jack, an optic's lens). The wiring and
+  anchors are covered by the closed skin too.
+- **The rotation marks line up with the socket.** The target square now
+  frames the socket's own key slot and the notch rides the same circle, so
+  "aligned" on screen is aligned in the socket at every zoom and window size.
+
 ## 3.13.0 — Holding together: costs, procedures, scenes and the operating field
 
 - **A conversation open when the game closes is no longer lost.** Closing
