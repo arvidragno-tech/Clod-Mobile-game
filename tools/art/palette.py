@@ -104,12 +104,14 @@ FIXED = ["0b0a10", "d9dee4", "15131a", "f6f8fb", "7c0f1e", "1c2534", "a9e9ff", "
 
 RAMP_SKIN, RAMP_HAIR, RAMP_CLOTH_A, RAMP_CLOTH_B, RAMP_METAL, RAMP_GLOW, RAMP_IRIS, RAMP_FIXED = range(8)
 # v2 character ramps (encoding R = ramp * 16 allows up to 16 ramps):
-RAMP_CLOTH_C, RAMP_LEATHER, RAMP_GRIME, RAMP_BLOOD = range(8, 12)
+RAMP_CLOTH_C, RAMP_LEATHER, RAMP_GRIME, RAMP_BLOOD, RAMP_DRAPE, RAMP_IODINE = range(8, 14)
 # Fixed material ramps shared by every character (not recoloured).
 MATERIALS = {
     "leather": "3b2a24",   # worn dark leather, warm
     "grime": "4a3f2c",     # dirt, grease, oil stains
     "blood": "6e1018",     # dried to fresh blood
+    "drape": "2f6b66",     # sterile surgical drape, washed teal
+    "iodine": "8a4a1c",    # skin prep wash, burnt amber
 }
 
 
