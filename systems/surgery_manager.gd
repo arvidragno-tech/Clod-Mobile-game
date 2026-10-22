@@ -307,6 +307,8 @@ func _apply_stage_outputs(stage: SurgeryStageData, data: Dictionary) -> void:
 func _finish(success: bool, reason: StringName) -> void:
 	is_active = false
 	is_running = false
+	# However the operation ends, nothing is left to decide.
+	active_dilemma = {}
 	_pending_complication_delay = -1.0
 	if active_complication:
 		complication_resolved.emit(active_complication, false)
