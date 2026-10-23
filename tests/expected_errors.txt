@@ -6,7 +6,7 @@
 # Format: <scope> <extended regex>
 #   scope: a suite id from run_tests.sh (compile, balance, economy, offers,
 #          stability, e2e, display, living, city, ui, ui_stability, ux,
-#          onboarding, clinic_310, narrative, selftest) or * for every suite.
+#          onboarding, clinic_310, narrative, implant, selftest) or * for every suite.
 #   The regex is matched against the whole "ERROR: ..." line.
 
 # No sound card (CI runners, containers): the ALSA driver can't open an

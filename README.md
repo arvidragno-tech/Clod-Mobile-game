@@ -7,7 +7,10 @@ almost nothing, take customers, install cyberware at a surgical workstation,
 hire staff, buy clinics across the city, and decide what you become while a
 corporate conspiracy spreads through your patients' nerves.
 
-**Status: 3.13.0**: the clinic holds together. Every kind of chrome
+**Status: 3.13.1**: implants are installed into the patient, not laid
+on top, and the rotation marks line up with the socket.
+
+**3.13.0**: the clinic holds together. Every kind of chrome
 has its own operation, cutscenes are full scenes, nothing comes free for
 an empty store room, fines you can't pay become debt the same way
 everywhere, and the operating table is draped and prepped.

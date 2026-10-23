@@ -89,6 +89,7 @@ func _run_all() -> void:
 	OwnershipTests.new().run(self)
 	SaveFixtureTests.new().run(self)
 	ProcedureTests.new().run(self)
+	ImplantPlacementTests.new().run(self)
 	if OS.get_cmdline_user_args().has("--unit-only"):
 		_finish()
 		return

@@ -4,7 +4,7 @@
 # 1920x1080 canvas, and, when xvfb-run is installed, the rendered probes:
 # display (real window at 1920x1080, 1600x900, 1366x768, 1280x720,
 # borderless, fullscreen and a 5:4 letterbox), living world, city, UI,
-# UI stability, UX, onboarding, 3.10 and narrative.
+# UI stability, UX, onboarding, 3.10, narrative and implant placement.
 #
 # A suite fails on a non-zero exit, a "SCRIPT ERROR", an engine "ERROR:" line
 # that tests/expected_errors.txt doesn't allow for it (a missing resource,
@@ -102,6 +102,8 @@ run_rendered "3.10 probe (scan finding explained, plan FOUND row, selling from s
   --resolution 1920x1080 res://tests/clinic_310_probe.tscn
 run_rendered "3.11-3.12 narrative probe (opening scene, chapter card, skip, story case and decision, reactive case, breathers, seasons)" narrative "NARRATIVE PROBE PASSED" \
   --resolution 1920x1080 res://tests/narrative_probe.tscn
+run_rendered "implant probe (drop, rotate, seat and close for every implant type; 1920x1080 and 1280x720)" implant "IMPLANT PROBE PASSED" \
+  --resolution 1920x1080 res://tests/implant_probe.tscn
 rm -f "$LOG"
 if [ $status -ne 0 ]; then
   echo "SOME SUITES FAILED"

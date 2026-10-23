@@ -43,7 +43,10 @@
             ]
           ]
         ],
-        "opening_half_width": 13.0
+        "opening_half_width": 13.0,
+        "implant": {
+          "exposed_radius": 5.0
+        }
       },
       "scan_region": "neck",
       "diagnosis_options": [
@@ -1058,7 +1061,10 @@
             ]
           ]
         ],
-        "opening_half_width": 11.0
+        "opening_half_width": 11.0,
+        "implant": {
+          "exposed_radius": 10.0
+        }
       },
       "scan_region": "head",
       "diagnosis_options": [
