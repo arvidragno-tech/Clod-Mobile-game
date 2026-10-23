@@ -4,7 +4,7 @@ All notable changes to *UNDERCITY: RIPPER*. Versions follow
 `application/config/version` in `project.godot` and the Windows file version
 in `export_presets.cfg`.
 
-## Unreleased
+## 3.13.1 — Implants go in, not on
 
 - **Implants are installed into the patient, not laid on top.** A seated
   implant now shows only where the wound is open, sits in its socket mount,
