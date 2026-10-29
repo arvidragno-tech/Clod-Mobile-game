@@ -34,7 +34,7 @@ AGES = ["young", "adult", "old"]
 
 
 def portrait() -> HDCanvas:
-    return HDCanvas(PW, PH, dither=0.22)
+    return HDCanvas(PW, PH, dither=0.0)
 
 
 def mirror(pts, cx=CX + 0.5):
@@ -82,117 +82,92 @@ def _lx(X):
     return (X + 0.5) / S - 0.5
 
 
+def cel(v: float, cuts=((3.7, 5), (2.2, 4)), floor=3) -> int:
+    """Quantises a continuous light value into flat cel bands."""
+    for t, s in cuts:
+        if v >= t:
+            return s
+    return floor
+
+
 def draw_head(c: HDCanvas, shape: str):
+    """Cel-shaded head: a flat lit plane, one form-shadow band on the far
+    side and under the cheekbone, a darker core at the far edge. The ink
+    contour (characters_hd.ink_outline) closes the silhouette."""
     p = FACES[shape]
     mask = head_mask(shape)
-    # Ears behind the silhouette: helix rim, inner fold, lobe; the far one in shadow.
+    # Ears: flat plane, the inner fold drawn as one dark line and a lobe catch.
     for side in (-1, 1):
         ex = CX + 0.5 + side * (p["rx"] + 0.6)
         for X, Y, x, y in grid(ex - 4, 35, ex + 4, 52):
             d = ((x + 0.5 - ex) / 2.7) ** 2 + ((y + 0.5 - 43.3) / 6.7) ** 2
             if d <= 1 and (X, Y) not in mask:
-                v = (3.6 if side < 0 else 2.0) - (0.9 if d > 0.6 else 0)
-                c.shade_px(X, Y, SK, v)
+                P(c, X, Y, SK, (4 if side < 0 else 3) - (d > 0.62))
         ix = H(ex + (0.6 if side < 0 else -0.6))
-        VL(c, ix, H(39.5), H(46.5), SK, 1 if side > 0 else 2)
-        P(c, ix + side, H(41), SK, 4 if side < 0 else 2)
-        P(c, ix, H(48), SK, 4 if side < 0 else 2)  # lobe catch
-    for (X, Y) in mask:
-        c.shade_px(X, Y, SK, skin_light(_lx(X), _lx(Y), shape))
-    # Structure: cheekbones, hollows.
+        VL(c, ix, H(39.5), H(46.5), SK, 2 if side < 0 else 1)
+        P(c, ix + side, H(40), SK, 2 if side < 0 else 1)
+        P(c, ix, H(48), SK, 5 if side < 0 else 3)
     hollow = p["hollow"]
     for (X, Y) in mask:
         x, y = _lx(X), _lx(Y)
-        dx = x - CX
-        g = sum(w * math.exp(-((dx - side * 11.5) ** 2) / 14.0 - ((y - 52) ** 2) / 22.0) for side, w in ((-1, 1.0), (1, 0.35)))
-        if g > 0.05:
-            c.shade_px(X, Y, SK, skin_light(x, y, shape) - (0.45 + hollow) * g)
-    # Form shadow on the far edge and under the jaw (2 HD px deep, then 1 lighter).
+        nx = (x + 0.5 - CX) / p["rx"]
+        ny = (y + 0.5 - p["cy"]) / (p["ry"] + 6)
+        # Mostly lit: the shadow band only wraps the far side of the face
+        # and dips under the far cheekbone and the jaw.
+        dark = nx + 0.18 * ny * ny + 0.35 * max(0.0, ny - 0.55)
+        cheek = math.exp(-((x - CX - 11.0) ** 2) / 10.0 - ((y - 53) ** 2) / 14.0) * (0.25 + hollow * 0.4)
+        near_cheek = math.exp(-((x - CX + 11.0) ** 2) / 10.0 - ((y - 53) ** 2) / 14.0) * hollow * 0.5
+        d = dark + cheek + near_cheek
+        P(c, X, Y, SK, 5 if d < 0.52 else (4 if d < 0.86 else 3))
+    # Far-side core shadow (3 px) and a light terminator under the jaw.
     for (X, Y) in mask:
-        if X > HCX:
-            if (X + 1, Y) not in mask or (X + 2, Y) not in mask:
-                P(c, X, Y, SK, 1)
-            elif (X + 3, Y) not in mask:
-                P(c, X, Y, SK, 2)
-        if (X, Y + 1) not in mask and Y > H(55):
-            P(c, X, Y, SK, 1)
-        elif (X, Y + 2) not in mask and Y > H(57):
-            P(c, X, Y, SK, 2)
-    # Cheekbone highlight (lit side): a small soft cluster.
-    for dX, dY in ((0, 0), (1, 0), (-1, 1), (0, 1), (1, 1), (0, 2)):
-        X, Y = H(CX - 11) + dX, H(46) + dY
+        if X > HCX + 4 and ((X + 2, Y) not in mask or (X + 3, Y) not in mask):
+            P(c, X, Y, SK, 2 if (X + 1, Y) not in mask else 3)
+        if Y > H(56) and ((X, Y + 1) not in mask or (X, Y + 2) not in mask):
+            P(c, X, Y, SK, 3)
+    # Cheekbone light on the lit side and the forehead sheen.
+    for X, Y in ((H(CX - 11) + dx, H(46) + dy) for dx in range(-1, 3) for dy in range(0, 2)):
         if (X, Y) in mask:
             P(c, X, Y, SK, 6)
-    # Broken rim light (screen glow) along the right edge.
-    for (X, Y) in mask:
-        if (X + 1, Y) not in mask and X > HCX and (H(22) < Y < H(34) or H(44) < Y < H(52)):
-            P(c, X, Y, FX, F_RIM)
-    # Eye sockets: the brow ridge shadow and the soft under-eye.
-    for ex in HEX:
-        for X in range(ex - 7, ex + 8):
-            for Y, k in ((HEY - 5, 0.7), (HEY - 4, 1.5), (HEY - 3, 1.1)):
-                if (X, Y) in mask:
-                    c.shade_px(X, Y, SK, skin_light(_lx(X), _lx(Y), shape) - k * (1 - abs(X - ex) / 9))
-        for X in range(ex - 4, ex + 5):
-            Y = HEY + 4
-            if (X, Y) in mask:
-                c.shade_px(X, Y, SK, skin_light(_lx(X), _lx(Y), shape) - 0.9)
-    # Philtrum: two soft ridges above the lip.
-    VL(c, HCX - 1, H(55), H(57), SK, 4)
-    VL(c, HCX + 1, H(55), H(57), SK, 3)
-    P(c, HCX, H(56), SK, 2)
+    for X in range(HCX - 9, HCX - 2):
+        if (X, H(29)) in mask:
+            P(c, X, H(29), SK, 6)
+    # Chin: one light step, one shadow step.
+    chin = H(p["jaw"][-1][1])
+    HL(c, HCX - 3, HCX, chin - 3, SK, 6)
+    HL(c, HCX - 2, HCX + 3, chin - 1, SK, 4)
     if shape == "heavy":
-        HL(c, H(CX - 7), H(CX + 7), H(68), SK, 2)  # chin fold
-        HL(c, H(CX - 5), H(CX + 5), H(68) + 1, SK, 3)
+        HL(c, H(CX - 6), H(CX + 6), H(68), SK, 3)
     if shape in ("square", "heavy"):
-        for Y in range(H(60), H(62)):
-            P(c, H(CX - 12), Y, SK, 3)
-            P(c, H(CX + 12), Y, SK, 1)
-    # Chin highlight.
-    for dX in (-2, -1, 0):
-        X, Y = HCX + dX, H(p["jaw"][-1][1] - 2.5)
-        if (X, Y) in mask:
-            P(c, X, Y, SK, 5)
+        VL(c, H(CX + 12), H(59), H(62), SK, 3)
 
 
 def draw_nose(c: HDCanvas, kind: str):
-    top, tip = H(43), H(52)
+    """Read as light and shadow, not lines: a lit bridge, the shadow plane
+    on the far side ending in a nostril, and the shadow it casts."""
+    top, tip = H(44), H(52)
     bend = 2 if kind == "broken" else 0
+    w = {"broad": 5, "small": 2, "hooked": 3}.get(kind, 3)
     for Y in range(top, tip):
-        X = HCX + (bend if Y > H(47) else 0)
-        P(c, X - 1, Y, SK, 5 if Y < tip - 3 else 6)   # bridge highlight (lit side)
-        if Y > top + 3:
-            P(c, X + 2, Y, SK, 3)                       # side plane
-            P(c, X + 3, Y, SK, 2 if Y > H(47) else 3)   # shadow side
+        X = HCX + (bend if Y > H(48) else 0)
+        if Y > top + 2:
+            P(c, X + 2, Y, SK, 3)                      # shadow plane
+        if Y > tip - 6:
+            P(c, X - 1, Y, SK, 6)                      # bridge light
     if kind == "hooked":
-        for Y in range(H(46), H(49)):
-            P(c, HCX, Y, SK, 6)
-            P(c, HCX + 1, Y, SK, 5)
-        P(c, HCX + 3, H(49), SK, 1)
-    w = {"broad": 6, "small": 3}.get(kind, 4)
-    # Tip ball, alae and nostrils.
-    for dX in range(-w + 1, w):
-        P(c, HCX + dX, tip, SK, 4 if dX < 0 else 3)
-    P(c, HCX - 1, tip - 1, SK, 6)
-    P(c, HCX, tip - 1, SK, 5)
-    P(c, HCX - 1, tip - 2, SK, 6)
-    for side in (-1, 1):
-        ax = HCX + side * w
-        P(c, ax, tip, SK, 3 if side < 0 else 1)          # ala crease
-        P(c, ax, tip - 1, SK, 3 if side < 0 else 2)
-        P(c, ax - side, tip + 1, SK, 1)                   # nostril
-        P(c, ax - side * 2, tip + 1, SK, 0)
-    HL(c, HCX - w + 3, HCX + w - 3, tip + 1, SK, 3)       # columella
-    HL(c, HCX - w + 2, HCX + w - 2, tip + 2, SK, 2)       # under-nose shadow
+        VL(c, HCX + 1, H(46), H(48), SK, 3)
+        P(c, HCX, H(47), SK, 6)
+    HL(c, HCX - w + 1, HCX + w, tip, SK, 3)            # under-tip shadow
+    P(c, HCX - 1, tip - 1, SK, 6)                      # tip highlight
+    P(c, HCX + w, tip - 1, SK, 2)                      # far nostril wing
+    P(c, HCX + w - 1, tip, SK, 1)                      # nostril
+    P(c, HCX - w, tip, SK, 2)                          # near nostril
+    for Y in range(tip - 3, tip + 2):                  # cast shadow to the right
+        P(c, HCX + w + 2, Y, SK, 3)
+    HL(c, HCX - 1, HCX + 3, tip + 1, SK, 3)
     if kind == "broken":
-        P(c, HCX + 1, H(47), SK, 2)
-        P(c, HCX + 2, H(47), SK, 2)
-        P(c, HCX + 1, H(48), SK, 6)
-    # Shadow cast to the right of the nose (key light from the left).
-    for Y in range(tip - 5, tip + 2):
-        P(c, HCX + w + 2, Y, SK, 2)
-        if Y > tip - 3:
-            P(c, HCX + w + 3, Y, SK, 2)
+        P(c, HCX + 1, H(48), SK, 2)
+        P(c, HCX + 2, H(48), SK, 2)
 
 
 MOUTHS = {
@@ -207,51 +182,43 @@ MOUTHS = {
 
 
 def draw_mouth(c: HDCanvas, expr: str):
+    """A clean lip line in ink, a darker upper lip, a lit lower lip and the
+    shadow under it (lipstick recolours the lips, see draw_makeup)."""
     ly, ry, opening, teeth = MOUTHS[expr]
     Y = H(59) + 1
-    half = 7 if expr != "fear" else 6
+    half = 6 if expr != "fear" else 5
     if opening:
         for yy in range(Y - 1, Y + opening + 1):
             inset = 1 if yy in (Y - 1, Y + opening) else 0
             HL(c, HCX - half + 1 + inset, HCX + half - 1 - inset, yy, FX, F_OUT)
         if teeth:
             HL(c, HCX - half + 2, HCX + half - 2, Y - 1, FX, F_EYEW)
-            for X in range(HCX - half + 3, HCX + half - 2, 3):
-                P(c, X, Y - 1, SK, 2)
             HL(c, HCX - half + 3, HCX + half - 3, Y + opening, FX, F_EYEW)
-        HL(c, HCX - half + 1, HCX + half - 1, Y - 2, SK, 2)        # upper lip
-        HL(c, HCX - half + 2, HCX + half - 2, Y + opening + 1, SK, 3)
-        HL(c, HCX - half + 3, HCX + half - 3, Y + opening + 2, SK, 5)  # lower lip light
-    else:
-        # The lip line: darkest in the middle and at the corners.
-        for X in range(HCX - half + 1, HCX + half):
-            P(c, X, Y, SK, 0 if abs(X - HCX) < 3 else 1)
-        for side, dy in ((-1, ly), (1, ry)):
-            cx = HCX + side * half
-            P(c, cx, Y + dy, SK, 1)
-            if dy:
-                P(c, cx - side, Y + (dy > 0) - (dy < 0) * 0, SK, 1)
-            P(c, cx + side, Y + dy - (1 if dy < 0 else 0), SK, 3)  # corner pit
-        if ry < 0:
-            P(c, HCX + half + 2, Y - 2, SK, 3)  # smirk dimple
-            P(c, HCX + half + 2, Y - 3, SK, 3)
-        # Upper lip: a cupid's bow in a slightly darker tone.
-        HL(c, HCX - half + 2, HCX + half - 2, Y - 1, SK, 3)
-        HL(c, HCX - 2, HCX + 2, Y - 2, SK, 3)
-        P(c, HCX, Y - 2, SK, 4)
-        # Lower lip: lit fullness and the shadow beneath.
-        HL(c, HCX - half + 3, HCX + half - 3, Y + 1, SK, 4)
-        HL(c, HCX - half + 4, HCX + 1, Y + 2, SK, 5)
-        P(c, HCX - 2, Y + 1, SK, 6)
-        HL(c, HCX - 3, HCX + 3, Y + 3, SK, 3)
-        HL(c, HCX - 2, HCX + 2, Y + 4, SK, 2)
+        HL(c, HCX - half + 1, HCX + half - 1, Y - 2, SK, 2)
+        HL(c, HCX - half + 2, HCX + half - 2, Y + opening + 1, SK, 4)
+        HL(c, HCX - half + 3, HCX - 1, Y + opening + 2, SK, 5)
+        HL(c, HCX - 2, HCX + 3, Y + opening + 3, SK, 3)
+        return
+    for X in range(HCX - half + 1, HCX + half):
+        P(c, X, Y, SK, 0 if abs(X - HCX) < half - 1 else 1)
+    for side, dy in ((-1, ly), (1, ry)):
+        cx = HCX + side * half
+        P(c, cx, Y + dy, SK, 1)
+        if dy:
+            P(c, cx - side, Y + (1 if dy > 0 else 0), SK, 1)
+    if ry < 0:
+        P(c, HCX + half + 1, Y - 2, SK, 3)
+    HL(c, HCX - half + 2, HCX + half - 2, Y - 1, SK, 3)   # upper lip
+    P(c, HCX - 1, Y - 2, SK, 3)
+    P(c, HCX + 1, Y - 2, SK, 3)
+    HL(c, HCX - half + 2, HCX + half - 2, Y + 1, SK, 4)   # lower lip
+    HL(c, HCX - 3, HCX, Y + 1, SK, 6)                     # its highlight
+    HL(c, HCX - 2, HCX + 3, Y + 3, SK, 3)                 # shadow under it
     if expr == "angry":
-        HL(c, HCX - 4, HCX + 4, Y + 5, SK, 3)
-        P(c, HCX - half - 2, Y - 2, SK, 3)
-        P(c, HCX + half + 2, Y - 2, SK, 2)
+        HL(c, HCX - 3, HCX + 3, Y + 4, SK, 3)
     if expr == "sad":
-        P(c, HCX - half - 2, Y + 3, SK, 3)
-        P(c, HCX + half + 2, Y + 3, SK, 2)
+        P(c, HCX - half - 1, Y + 3, SK, 3)
+        P(c, HCX + half + 1, Y + 3, SK, 3)
 
 
 BROWS = {
@@ -265,34 +232,33 @@ BROWS = {
 
 
 def draw_brows(c: HDCanvas, expr: str, heavy: bool):
+    """Crisp, tapered brows: darkest at the core, thinning to a point at
+    the outer end, a lit edge on top when heavy."""
     inner, outer, lift = BROWS[expr]
     for side, ex in ((-1, HEX[0]), (1, HEX[1])):
         x_in = ex - side * 1 + (4 if side < 0 else -4)
-        x_out = ex + side * 8
+        x_out = ex + side * 7
         lo_, hi_ = min(x_in, x_out), max(x_in, x_out)
         for X in range(lo_, hi_ + 1):
             t = abs(X - x_in) / max(1, abs(x_out - x_in))
             yl = inner + (outer - inner) * t + (lift if side > 0 else 0)
-            # A gentle arch peaking two thirds of the way out.
-            Y = H(yl + 0.5) - (1 if 0.45 < t < 0.85 else 0)
-            core = 3 if 0.15 < t < 0.7 else 2
-            P(c, X, Y, HR, core)
-            P(c, X, Y + 1, HR, 1)
-            if heavy or t < 0.55:
-                P(c, X, Y - 1, HR, 2 if heavy else 1)
-            if heavy and t < 0.8:
-                P(c, X, Y + 2, HR, 1)
-        # A few hairs at the inner head flick upward.
-        P(c, x_in, H(inner + 0.5) - 2, HR, 1)
+            Y = H(yl + 0.5) - (1 if 0.4 < t < 0.8 else 0)
+            P(c, X, Y, HR, 0)
+            if t < 0.75:
+                P(c, X, Y + 1, HR, 1)
+            if heavy and t < 0.6:
+                P(c, X, Y - 1, HR, 1)
+                P(c, X, Y + 2, HR, 0 if t < 0.3 else 1)
     if expr in ("angry", "pain"):
         for dx in (-2, 2):
-            VL(c, HCX + dx, H(38), H(40) + 1, SK, 2)  # glabella crease
+            VL(c, HCX + dx, H(38), H(40), SK, 3)
 
 
 def draw_eyes(c: HDCanvas, expr: str, gaze: str):
-    """Almond eyes ~11x5 HD px: shaded sclera, a round 5 px iris with a dark
-    limbal ring, pupil, two catch-lights, a lash line thickening to the
-    outer corner, the lid crease, a lit lower lid and the tear duct."""
+    """Reference-style eyes ~11x6 HD px: a heavy ink lash line that winds
+    out past the outer corner, a tall iris filling the opening (dark under
+    the lid, light at the bottom), a 2 px pupil, a hard white catch-light,
+    a little sclera either side, the lid crease and a short lower lid."""
     wide = expr == "fear"
     squint = expr in ("angry", "pain")
     heavy_lid = expr == "sad"
@@ -301,98 +267,81 @@ def draw_eyes(c: HDCanvas, expr: str, gaze: str):
         lit = i == 0
         outer = -1 if i == 0 else 1
         if gaze == "closed":
-            for k, X in enumerate(range(ex - 5, ex + 6)):
+            for X in range(ex - 5, ex + 6):
                 sag = 1 if abs(X - ex) < 4 else 0
-                P(c, X, HEY + sag, SK, 0)
-            P(c, ex + outer * 6, HEY - 1, SK, 0)
-            HL(c, ex - 4, ex + 4, HEY - 1, SK, 4 if lit else 3)
-            HL(c, ex - 3, ex + 3, HEY - 3, SK, 3 if lit else 2)   # crease
-            HL(c, ex - 3, ex + 3, HEY + 2, SK, 3 if lit else 2)
+                P(c, X, HEY + sag, FX, F_OUT)
+                if abs(X - ex) < 3:
+                    P(c, X, HEY + sag + 1, FX, F_OUT)
+            P(c, ex + outer * 6, HEY - 1, FX, F_OUT)
+            P(c, ex + outer * 7, HEY - 2, FX, F_OUT)
+            HL(c, ex - 3, ex + 3, HEY - 3, SK, 3)
             continue
-        h = 6 if wide else (3 if squint else 5)
+        h = 7 if wide else (4 if squint else 6)
         top = HEY - h // 2
-        rows = list(range(top, top + h))
         half_w = 5
-        # Sclera: almond (narrower on the first and last rows), shaded under the lid.
+        rows = list(range(top, top + h))
         for k, Y in enumerate(rows):
-            edge = 2 if (k == 0 or k == h - 1) else (1 if (k == 1 or k == h - 2) and h > 4 else 0)
-            x0, x1 = ex - half_w + edge, ex + half_w - edge
-            for X in range(x0, x1 + 1):
+            edge = 2 if k == h - 1 else (1 if k == 0 or k == h - 2 else 0)
+            for X in range(ex - half_w + edge, ex + half_w - edge + 1):
                 P(c, X, Y, FX, F_EYEW)
-            far = x1 if lit else x0
-            P(c, far, Y, SK, 4 if lit else 3)
             if k == 0:
-                HL(c, x0, x1, Y, SK, 4 if lit else 3)  # lid shadow on the white
-        # Iris: 5 wide, round, dark limbal ring, lighter lower half.
+                HL(c, ex - half_w + edge, ex + half_w - edge, Y, SK, 3)  # lid shadow on the white
         ix = ex + ox
-        icy = HEY + (0 if not wide else 0)
         for Y in rows:
+            k = Y - top
             for dx in range(-2, 3):
-                dd = (dx / 2.6) ** 2 + ((Y - icy) / 2.6) ** 2
-                if dd > 1.0:
+                if (k == h - 1 and abs(dx) == 2) or (k == 0 and abs(dx) == 2 and h < 6):
                     continue
-                ring = dd > 0.55
-                shade = 1 if ring else (4 if Y > icy else 3)
-                P(c, ix + dx, Y, IR, shade + (1 if lit and not ring else 0))
-        for py in ([icy] if h < 6 else [icy - 1, icy]):
-            P(c, ix, py, FX, F_PUPIL)
-            P(c, ix + 1, py, FX, F_PUPIL)
-        # Upper lid: lash line thickening outward, the crease above, a flick.
-        lash_y = top - 1
-        HL(c, ex - half_w + 1, ex + half_w - 1, lash_y, SK, 0)
-        for d in range(3):
-            P(c, ex + outer * (half_w - 1 + d), lash_y + (1 if d == 0 else 0) - (d == 2), SK, 0)
-        P(c, ex + outer * (half_w - 2), lash_y - 1, SK, 0)
-        HL(c, ex - 4, ex + 4, top - 3, SK, 3 if lit else 2)  # crease
-        HL(c, ex - 3, ex + 3, top - 2, SK, 5 if lit else 3)  # lid fold catches light
+                shade = 1 if k <= 1 else (3 if k < h - 2 else 5)
+                if abs(dx) == 2:
+                    shade = max(0, shade - 1)
+                P(c, ix + dx, Y, IR, shade + (1 if lit and k > 1 and abs(dx) < 2 else 0))
+        py = top + max(1, h // 2 - 1)
+        for dy in range(2 if h >= 6 else 1):
+            P(c, ix, py + dy, FX, F_PUPIL)
+            P(c, ix + 1, py + dy, FX, F_PUPIL)
+        # Lash line: two rows of ink, the wing at the outer corner.
+        HL(c, ex - half_w, ex + half_w, top - 1, FX, F_OUT)
+        HL(c, ex - half_w + 1 if outer < 0 else ex - half_w + 3, ex + half_w - 3 if outer < 0 else ex + half_w - 1, top - 2, FX, F_OUT)
+        P(c, ex + outer * (half_w + 1), top - 1, FX, F_OUT)
+        P(c, ex + outer * (half_w + 2), top - 2, FX, F_OUT)
+        P(c, ex + outer * half_w, top, FX, F_OUT)
+        P(c, ex + outer * half_w, top + 1, FX, F_OUT)
+        HL(c, ex - 3, ex + 3, top - 4, SK, 3)                  # crease
         if heavy_lid:
             HL(c, ex - half_w + 1, ex + half_w - 1, top, SK, 2)
-            HL(c, ex - half_w + 2, ex + half_w - 2, top + 1, SK, 3)
-        elif not squint:
-            HL(c, ix - 1, ix + 1, top, IR, 0)
+            HL(c, ex - half_w + 1, ex + half_w - 1, top + 1, FX, F_OUT)
         if squint:
             HL(c, ex - half_w + 1, ex + half_w - 1, top + h, SK, 2)
-            HL(c, ex - half_w + 2, ex + half_w - 2, top - 1, SK, 0)
-        # Lower lid: lit rim, waterline, the tear duct.
-        HL(c, ex - 3, ex + 3, top + h, SK, 5 if lit else 3)
-        P(c, ex - outer * half_w, HEY, BL, 4)
-        P(c, ex + outer * (half_w - 1), top + h, SK, 3)
-        # Catch-lights last.
-        P(c, ix - 1, icy - 1, FX, F_HI)
-        if h > 3:
-            P(c, ix + 1, icy + 1, IR, 6)
+        # Lower lid: a short dark stroke at the outer half, lit inner rim.
+        for X in range(ex, ex + outer * (half_w + 1), outer):
+            P(c, X, top + h, SK, 2)
+        P(c, ex - outer * 3, top + h, SK, 5 if lit else 4)
+        # Catch-light last.
+        P(c, ix - 1, top + 1 + (h >= 6), FX, F_HI)
+        P(c, ix - 1, top + 2 + (h >= 6), FX, F_HI) if h >= 6 else None
+        P(c, ix + 1, top + h - 2, IR, 7)
 
 
 def draw_age(c: HDCanvas, age: str):
+    """Age as a few clean strokes in the shadow tone, not a net of lines."""
     if age == "young":
         return
-    # Forehead lines, crow's feet, nasolabial folds.
-    HL(c, H(CX - 7), H(CX - 2), H(31), SK, 4)
-    HL(c, H(CX - 6), H(CX - 2), H(31) + 1, SK, 3)
-    HL(c, H(CX + 1), H(CX + 5), H(31), SK, 3)
     for side, ex in ((-1, HEX[0]), (1, HEX[1])):
-        ox = ex + side * 8
-        for k in range(3):
-            P(c, ox + side * (k // 2), HEY - 1 + k, SK, 3)
-        for k in range(7):
-            P(c, HCX + side * (8 + k // 2), H(53.5) + k, SK, 3 if side < 0 else 2)
-            if k > 2:
-                P(c, HCX + side * (8 + k // 2) - side, H(53.5) + k, SK, 4 if side < 0 else 3)
+        P(c, ex + side * 7, HEY + 1, SK, 3)                         # crow's foot
+        for k in range(5):                                          # nasolabial fold
+            P(c, HCX + side * (7 + k // 2), H(54) + k, SK, 3)
     if age == "old":
-        HL(c, H(CX - 9), H(CX - 3), H(28), SK, 4)
-        HL(c, H(CX + 2), H(CX + 7), H(28), SK, 3)
-        HL(c, H(CX - 5), H(CX + 4), H(34), SK, 4)
+        HL(c, H(CX - 7), H(CX - 1), H(29), SK, 3)
+        HL(c, H(CX + 1), H(CX + 6), H(30), SK, 3)
+        HL(c, H(CX - 4), H(CX + 4), H(33), SK, 3)
         for side, ex in ((-1, HEX[0]), (1, HEX[1])):
-            HL(c, ex - 4, ex + 3, HEY + 5, SK, 3)   # under-eye bags
-            HL(c, ex - 3, ex + 2, HEY + 6, SK, 4 if side < 0 else 3)
-            P(c, ex + side * 8, HEY - 2, SK, 3)
-            P(c, ex + side * 9, HEY + 3, SK, 3)
-            for k in range(8):
-                P(c, HCX + side * (11 + k // 4), H(60) + k, SK, 3)   # jowl lines
-        VL(c, HCX - 4, H(67), H(69) + 1, SK, 3)   # neck cords
-        VL(c, HCX + 4, H(67), H(69) + 1, SK, 2)
-        for k in range(4):  # age spots
-            P(c, HCX - 14 + k * 3, H(30) + (k % 2) * 4, SK, 3)
+            HL(c, ex - 3, ex + 3, HEY + 5, SK, 3)                   # under-eye bags
+            P(c, ex + side * 7, HEY + 3, SK, 3)
+            for k in range(6):
+                P(c, HCX + side * (11 + k // 3), H(60) + k, SK, 3)  # jowls
+        VL(c, HCX - 4, H(67), H(69) + 1, SK, 3)
+        VL(c, HCX + 4, H(67), H(69) + 1, SK, 3)
 
 
 FACIAL_HAIR = ["stubble", "beard", "goatee", "mustache", "full", "chops"]

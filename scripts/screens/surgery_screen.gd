@@ -44,9 +44,12 @@ const MISTAKE_TIPS := {
 }
 const BURN_SFX_INTERVAL := 0.15
 const MISTAKE_SHAKE := 5.0
-## Operating-field magnification (integer, art px -> screen px).
-const ZOOM_MIN := 3
+## Operating-field magnification (field px -> screen px). The field renders
+## at SurgicalSiteView.ART_RES viewport pixels per field px (the anatomy art
+## carries that much detail), so the zoom moves in steps of ART_RES.
+const ZOOM_MIN := 2
 const ZOOM_MAX := 6
+const ZOOM_STEP := SurgicalSiteView.ART_RES
 const QUICK_KEYS := {&"coag": "quick_coag", &"sedate": "quick_sedate", &"stabilize": "quick_stabilize"}
 
 @onready var _stage_counter: Label = %StageCounter
@@ -60,6 +63,8 @@ const QUICK_KEYS := {&"coag": "quick_coag", &"sedate": "quick_sedate", &"stabili
 @onready var _instruction: Label = %Instruction
 @onready var _field_area: Control = %FieldArea
 @onready var _field_viewport: SubViewportContainer = %FieldViewport
+@onready var _viewport: SubViewport = %Viewport
+@onready var _field_root: Control = %FieldRoot
 @onready var _site: SurgicalSiteView = %SiteView
 @onready var _stage_host: Control = %StageHost
 @onready var _fx: FxLayer = %Fx
@@ -112,6 +117,9 @@ func on_enter(_params: Dictionary) -> void:
 	_abort.tooltip_text = "Abort the operation (asks first)"
 	_build_quick_actions()
 	_build_side_panels()
+	_field_root.scale = Vector2.ONE * SurgicalSiteView.ART_RES
+	_viewport.size_changed.connect(_fit_field_root)
+	_fit_field_root()
 	_set_zoom(_fit_zoom(), true)
 	# Until the player zooms by hand, follow the largest magnification that
 	# fits (window resizes / resolution changes re-fit it).
@@ -169,16 +177,22 @@ func _fit_zoom() -> int:
 	if area.x <= 0.0:
 		return field_scale
 	var fit := floori(minf(area.x, area.y) / SurgicalSiteView.FIELD_SIZE)
-	return clampi(fit, ZOOM_MIN, ZOOM_MAX)
+	return clampi(fit - fit % ZOOM_STEP, ZOOM_MIN, ZOOM_MAX)
+
+
+## The field's controls work in field px: their root is the viewport scaled
+## down by ART_RES (and drawn scaled back up).
+func _fit_field_root() -> void:
+	_field_root.size = Vector2(_viewport.size) / SurgicalSiteView.ART_RES
 
 
 ## Changes the field magnification (never mid-gesture: positions would jump).
 func _set_zoom(z: int, force: bool = false) -> void:
-	z = clampi(z, ZOOM_MIN, ZOOM_MAX)
+	z = clampi(z - posmod(z, ZOOM_STEP), ZOOM_MIN, ZOOM_MAX)
 	if (z == field_scale and not force) or (current_stage and current_stage.is_pointer_down):
 		return
 	field_scale = z
-	_field_viewport.stretch_shrink = z
+	_field_viewport.stretch_shrink = z / ZOOM_STEP
 	_fx.unit_scale = 1.0 / z
 	if current_stage:
 		current_stage.view_scale = z
@@ -383,7 +397,7 @@ func _input(event: InputEvent) -> void:
 			var steps := -1 if mb.button_index == MOUSE_BUTTON_WHEEL_UP else 1
 			if not (current_stage and current_stage.wheel_steps(steps)):
 				_user_zoomed = true
-				_set_zoom(field_scale - steps)
+				_set_zoom(field_scale - steps * ZOOM_STEP)
 			get_viewport().set_input_as_handled()
 		MOUSE_BUTTON_RIGHT:
 			_cancel()
@@ -426,7 +440,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		_tool_tray.cycle(1 if event.is_action("tool_next") else -1)
 	elif event.is_action("zoom_in") or event.is_action("zoom_out"):
 		_user_zoomed = true
-		_set_zoom(field_scale + (1 if event.is_action("zoom_in") else -1))
+		_set_zoom(field_scale + (ZOOM_STEP if event.is_action("zoom_in") else -ZOOM_STEP))
 	else:
 		for id: StringName in QUICK_KEYS:
 			if event.is_action(QUICK_KEYS[id]):

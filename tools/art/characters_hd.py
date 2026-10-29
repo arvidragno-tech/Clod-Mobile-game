@@ -16,12 +16,18 @@ import random
 from PIL import Image
 
 from .lib import ROOT
-from .hdc_core import bbox
+from .hdc_core import bbox, ink_outline
 from . import hdc_face as face, hdc_hair as hair, hdc_outfit as outfit, hdc_gear as gear, hdc_body as body
 
 PORTRAIT_ORDER = ["hair_back", "body", "outfit", "head", "age", "nose", "mouth", "brows", "eyes", "facial_hair",
                   "scar", "tattoo", "makeup", "cyber_low", "piercing", "hair", "cyber", "accessory"]
 BODY_ORDER = ["body", "outfit", "cyber", "hair", "acc"]
+# Slots whose parts get the ink contour (the reference look: every shape
+# that reads as its own form is closed by a near-black line).
+OUTLINED = {"portrait": ("hair_back", "body", "outfit", "head", "cyber", "cyber_low", "hair", "accessory"),
+            "body": ("body", "outfit", "cyber", "hair", "acc")}
+# Marks drawn flat on the skin: no contour.
+FLAT_PARTS = {"skin_seam", "serial_marks", "cheek_leds", "temple_ports", "cigarette"}
 OUT_DIR = os.path.join(ROOT, "assets", "sprites", "characters_hd")
 
 
@@ -31,6 +37,8 @@ def build_parts():
     def put(view, slot, pid, fn, *args):
         cv = face.portrait() if view == "portrait" else body.body_canvas()
         fn(cv, *args)
+        if slot in OUTLINED.get(view, ()) and pid not in FLAT_PARTS:
+            ink_outline(cv)
         parts[view].setdefault(slot, {})[pid] = cv
 
     # --- portrait ---

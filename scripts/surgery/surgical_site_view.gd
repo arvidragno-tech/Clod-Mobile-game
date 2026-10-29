@@ -1,8 +1,8 @@
 class_name SurgicalSiteView
 extends Control
-## Renders the operating field at native art resolution (it lives inside a
-## SubViewport scaled by GameConfig.PIXEL_SCALE, so every pixel here is one
-## art pixel): the operating-room backdrop, the patient's anatomy close-up
+## Renders the operating field in field pixels (it lives inside a SubViewport
+## that draws ART_RES viewport pixels per field pixel, scaled up by the
+## zoom): the operating-room backdrop, the patient's anatomy close-up
 ## (recoloured for their skin/hair), and everything the surgery has done so
 ## far — incision, opening, clamps, anchors, burns, implant, wires, stitches.
 ## Stages mutate the public state; this node only draws it.
@@ -24,6 +24,11 @@ extends Control
 ## a jack, a lens) stays visible.
 
 const FIELD_SIZE := 160
+## Art pixels per field pixel. The anatomy close-ups (320 px) and the
+## implant art (cyberware/field/, 64 px) are drawn at this density, so the
+## field shows twice the detail while every rule (geometry, hit tests, the
+## wound and implant masks) stays on the 160 px field grid.
+const ART_RES := 2
 const DESIGN_GRID := 64.0
 ## Max half-width of the opened wound, in design units (overridable per surgery).
 const OPENING_HALF_WIDTH := 13.0
@@ -88,9 +93,21 @@ var implant_aligned: bool = false
 var implant_texture: Texture2D:
 	set(v):
 		implant_texture = v
+		implant_detail = null  # set_implant_icon() pairs a new footprint with its art
 		_implant_image = v.get_image() if v else null
 		if _implant_image and _implant_image.is_compressed():
 			_implant_image.decompress()
+		_implant_dirty = true
+## The implant drawn at ART_RES (its footprint is implant_texture's): the
+## sprite on the tray and in the hand, and the art inside the seated layer.
+var implant_detail: Texture2D:
+	set(v):
+		implant_detail = v
+		_detail_image = v.get_image() if v else null
+		if _detail_image:
+			if _detail_image.is_compressed():
+				_detail_image.decompress()
+			_detail_image.convert(Image.FORMAT_RGBA8)
 		_implant_dirty = true
 ## Field px around the implant centre that stay visible through closed skin
 ## (from the surgery's site.implant.exposed_radius; 0 = fully subdermal).
@@ -124,6 +141,9 @@ var _splats: Array[Vector3] = []
 ## inside the cavity), or OUTSIDE_WOUND where intact skin covers it.
 var _open_depth: PackedFloat32Array = PackedFloat32Array()
 var _implant_image: Image
+var _detail_image: Image
+var _detail_layer: Image
+var _detail_layer_texture: ImageTexture
 var _implant_layer: Image
 var _implant_layer_texture: ImageTexture
 var _implant_dirty: bool = true
@@ -139,6 +159,8 @@ func _ready() -> void:
 	_wound_texture = ImageTexture.create_from_image(_wound_image)
 	_implant_layer = Image.create(FIELD_SIZE, FIELD_SIZE, false, Image.FORMAT_RGBA8)
 	_implant_layer_texture = ImageTexture.create_from_image(_implant_layer)
+	_detail_layer = Image.create(FIELD_SIZE * ART_RES, FIELD_SIZE * ART_RES, false, Image.FORMAT_RGBA8)
+	_detail_layer_texture = ImageTexture.create_from_image(_detail_layer)
 	_open_depth.resize(FIELD_SIZE * FIELD_SIZE)
 	_open_depth.fill(OUTSIDE_WOUND)
 	_layout()
@@ -168,8 +190,23 @@ func configure(customer: CustomerData, surgery: SurgeryData = null, backdrop_lev
 	queue_redraw()
 
 
+## Loads an implant by its item icon path. The field uses the ART_RES art in
+## cyberware/field/ when there is one: its footprint (implant_texture, one
+## texel per field px) is that art sampled down, so geometry never depends
+## on the item icon's size.
 func set_implant_icon(path: String) -> void:
-	implant_texture = PixelArt.tex(path if path != "" else DEFAULT_IMPLANT_ICON)
+	var icon := path if path != "" else DEFAULT_IMPLANT_ICON
+	var detail := PixelArt.tex(icon.replace("/cyberware/", "/cyberware/field/"))
+	if detail == null:
+		implant_detail = null
+		implant_texture = PixelArt.tex(icon)
+		return
+	var img := detail.get_image()
+	if img.is_compressed():
+		img.decompress()
+	img.resize(img.get_width() / ART_RES, img.get_height() / ART_RES, Image.INTERPOLATE_NEAREST)
+	implant_texture = ImageTexture.create_from_image(img)
+	implant_detail = detail
 
 
 func set_incision_path(path: Array[Vector2]) -> void:
@@ -437,7 +474,7 @@ func _draw() -> void:
 	draw_rect(field.grow(2), Color(0, 0, 0, 0.55))
 	draw_rect(field.grow(1), Color(0.05, 0.12, 0.13, 1.0))
 	if _region_texture:
-		draw_texture(_region_texture, _field_origin)
+		draw_texture_rect(_region_texture, field, false)
 	if _wound_dirty:
 		_rebuild_wound()
 	draw_texture(_wound_texture, _field_origin)
@@ -602,7 +639,10 @@ func _draw_implant() -> void:
 	if implant_state == ImplantState.SEATED:
 		if _implant_dirty:
 			_rebuild_implant_layer()
-		draw_texture(_implant_layer_texture, _field_origin)
+		if _detail_image:
+			draw_texture_rect(_detail_layer_texture, get_field_rect(), false)
+		else:
+			draw_texture(_implant_layer_texture, _field_origin)
 		return
 	var ts := Vector2(implant_texture.get_size())
 	var center := implant_center()
@@ -611,10 +651,11 @@ func _draw_implant() -> void:
 		var tray := Rect2(center - ts / 2.0 - Vector2(3, 3), ts + Vector2(6, 6))
 		draw_rect(tray, Color(STEEL[1], 0.92))
 		draw_rect(tray, STEEL[4], false, 1.0)
+	var art: Texture2D = implant_detail if implant_detail else implant_texture
 	if implant_state == ImplantState.HELD:
-		draw_texture_rect(implant_texture, Rect2(center - ts / 2.0 + Vector2(3, 4), ts), false, Color(0, 0, 0, 0.4))
+		draw_texture_rect(art, Rect2(center - ts / 2.0 + Vector2(3, 4), ts), false, Color(0, 0, 0, 0.4))
 	draw_set_transform(pivot, implant_angle, Vector2.ONE)
-	draw_texture(implant_texture, -ts / 2.0)
+	draw_texture_rect(art, Rect2(-ts / 2.0, ts), false)
 	draw_set_transform_matrix(Transform2D.IDENTITY)
 	if implant_state == ImplantState.PLACED:
 		var ring := Palette.OK if implant_aligned else Color(Palette.WARN, 0.55 + 0.45 * sin(_time * 8.0))
@@ -689,6 +730,50 @@ func _rebuild_implant_layer() -> void:
 				_put(data, below, shadow)
 	_implant_layer.set_data(FIELD_SIZE, FIELD_SIZE, false, Image.FORMAT_RGBA8, data)
 	_implant_layer_texture.update(_implant_layer)
+	_rebuild_detail_layer(data, cover, under, anchor)
+
+
+## The seated layer at ART_RES for drawing: every field pixel of the layer
+## above becomes an ART_RES block, and where it shows the implant's art the
+## block is filled from the detail art (same rotation, same pivot, the same
+## wound-edge darkening), so the masks stay the field-pixel ones.
+func _rebuild_detail_layer(data: PackedByteArray, cover: Dictionary, under: Dictionary, anchor: Vector2) -> void:
+	if _detail_image == null:
+		return
+	var n := FIELD_SIZE * ART_RES
+	var hi := PackedByteArray()
+	hi.resize(n * n * 4)
+	for idx in FIELD_SIZE * FIELD_SIZE:
+		if data[idx * 4 + 3] == 0:
+			continue
+		var x := idx % FIELD_SIZE
+		var y := idx / FIELD_SIZE
+		for dy in ART_RES:
+			var o := ((y * ART_RES + dy) * n + x * ART_RES) * 4
+			for dx in ART_RES:
+				for k in 4:
+					hi[o + dx * 4 + k] = data[idx * 4 + k]
+	var ts := Vector2(_detail_image.get_size())
+	var pivot := (anchor + _pivot_offset(implant_size())) * ART_RES
+	for idx: int in cover:
+		if under.has(idx):
+			continue
+		var x := idx % FIELD_SIZE
+		var y := idx / FIELD_SIZE
+		var edge := not closed and _open_depth[idx] > 0.86 and _open_depth[idx] <= 1.0
+		for dy in ART_RES:
+			for dx in ART_RES:
+				var X := x * ART_RES + dx
+				var Y := y * ART_RES + dy
+				var q := (Vector2(X + 0.5, Y + 0.5) - pivot).rotated(-implant_angle) + ts / 2.0 + Vector2(0.0001, 0.0001)
+				if q.x < 0.0 or q.y < 0.0 or q.x >= ts.x or q.y >= ts.y:
+					continue
+				var c := _detail_image.get_pixel(int(q.x), int(q.y))
+				if c.a < 0.5:
+					continue
+				_put(hi, Y * n + X, c.darkened(0.45) if edge else c)
+	_detail_layer.set_data(n, n, false, Image.FORMAT_RGBA8, hi)
+	_detail_layer_texture.update(_detail_layer)
 
 
 ## Field pixels covered by the implant art anchored at field pixel `anchor`

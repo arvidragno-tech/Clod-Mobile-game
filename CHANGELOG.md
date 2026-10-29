@@ -4,6 +4,28 @@ All notable changes to *UNDERCITY: RIPPER*. Versions follow
 `application/config/version` in `project.godot` and the Windows file version
 in `export_presets.cfg`.
 
+## Unreleased — Graphics overhaul: characters, surgery and implants
+
+A full restyle of the character, surgery and implant art toward clean,
+modern character pixel art (see `docs/GRAPHICS_OVERHAUL.md`).
+
+- **Characters** are cel-shaded with a near-black ink contour on every
+  form (head, hair, clothes, chrome). Faces are lit flat with one shadow
+  band, eyes have a heavy lash line, a tall iris and a hard catch-light,
+  lips and noses are drawn in light and shadow, and hair falls in clumps
+  split by dark strand lines with a glossy band round the crown. No
+  dithering anywhere on a character.
+- **Implants** are redrawn at a higher resolution: 48 px item icons (the
+  same on-screen size as the old 32 px ones) and 64 px art for the
+  operating field, with segmented plates, pistons, screw heads, panel
+  seams, an articulated fist on the arm and an ink contour.
+- **The operating field shows twice the detail.** The anatomy close-ups are
+  320 px and the field renders at two art pixels per field pixel, so the
+  skin, drape, clamps and the implant you install are drawn at double the
+  resolution. Everything you aim at, the implant's footprint, the socket,
+  the key slot and every tolerance stay exactly where they were. Zoom now
+  steps 2x / 4x / 6x.
+
 ## 3.13.1 — Implants go in, not on
 
 - **Implants are installed into the patient, not laid on top.** A seated

@@ -23,7 +23,9 @@ so pixels stay sharp (never blurred); other aspect ratios are letterboxed.
 Nothing is ever drawn at a different density inside the canvas. That rules
 out mixed-res sprites, smooth scaling and rotated pixel art in the UI. The
 only deliberate exception is the operating field, an integer zoom camera
-(3×–6×, default = largest that fits) over the 160 px surgical site.
+(2×/4×/6×, default = largest that fits) over the 160 px surgical site,
+whose anatomy and implant art are drawn at 2 art px per field px
+(`SurgicalSiteView.ART_RES`).
 
 | Asset | Native size (art px) | Shown at |
 |---|---|---|
@@ -31,10 +33,11 @@ only deliberate exception is the operating field, an integer zoom camera
 | Main-menu key art | 640 × 360 | 3× (full screen) |
 | Black-market den (wide) | 600 × 150 | 3× (header strip) |
 | Surgery backdrop (wide) | 340 × 270 | 1× inside the field viewport |
-| Surgical region close-ups | 160 × 160 | 1× inside the field viewport (3×–6× zoom) |
-| Character portraits | 64 × 64 | 3× |
-| Character bodies (clinic door) | 32 × 64 | 3× |
-| Cyberware icons | 32 × 32 | 3× (or 1× in field) |
+| Surgical region close-ups | 320 × 320 | 2 art px per field px inside the field viewport (2×/4×/6× zoom) |
+| Character portraits | 144 × 168 | 2× |
+| Character bodies (clinic door) | 60 × 120 | 2× |
+| Cyberware icons | 48 × 48 | 2× (`PixelArt.density()`) |
+| Cyberware field implants (`cyberware/field/`) | 64 × 64 | 2 art px per field px (32 field px footprint) |
 | Tool icons | 24 × 24 | 3× |
 | UI icons | 12 × 12 | 3× |
 | Faction emblems | 16 × 16 | 3× |
@@ -62,6 +65,17 @@ Colour carries meaning. Use these consistently across UI, FX and sprites.
 
 Rarity colours are common `8e9aa8`, uncommon green, rare blue, epic `c46aff`
 and legendary magenta.
+
+## Character style (graphics overhaul)
+
+Characters, the operating field and implants follow clean modern character
+pixel art: flat cel bands instead of gradients, no dithering, and a 1 px
+near-black ink contour (`FIXED[0]`) closing every form. Parts in
+`characters_hd.OUTLINED` slots get the contour (`hdc_core.ink_outline`);
+small marks on the skin (seams, serial marks, LEDs) do not. Shaded
+primitives in the character generator land on four bands
+(`HDCanvas.shade_px`); faces use one shadow band on the far side, eyes a
+two-row ink lash line with a wing, a tall iris and a hard catch-light.
 
 ## Ramps and shading
 

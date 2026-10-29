@@ -25,9 +25,19 @@ static func tex(path: String) -> Texture2D:
 	return _textures[path]
 
 
+## Screen units per art pixel for a sprite: the cyberware art is drawn at
+## 1.5x the UI grid (48 px for the old 32 px footprint) and shown at
+## GameConfig.ART_SCALE; every other sprite uses GameConfig.PIXEL_SCALE.
+static func density(path: String) -> int:
+	return GameConfig.ART_SCALE if path.contains("/sprites/cyberware/") else GameConfig.PIXEL_SCALE
+
+
 ## Texture upscaled with nearest filtering so it displays at the game's
 ## pixel density when used at native size (Button icons, TextureRects).
-static func scaled(path: String, factor: int = GameConfig.PIXEL_SCALE) -> Texture2D:
+## factor 0 = the sprite's own density().
+static func scaled(path: String, factor: int = 0) -> Texture2D:
+	if factor <= 0:
+		factor = density(path)
 	var key := "%s@%d" % [path, factor]
 	if _scaled.has(key):
 		return _scaled[key]
