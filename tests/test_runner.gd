@@ -335,7 +335,12 @@ func _e2e() -> void:
 	await _click_named("BackButton")
 	await _wait_screen(UIManager.SCREEN_CLINIC)
 	await _checkpoint("clinic_upgraded")
-	# Business ledger and the city map.
+	# Business ledger and the city map. BUSINESS opens on the second day; a
+	# fast run can still be on day 1 here, so open it as a contextual link
+	# would (onboarding_tests checks the day rule itself).
+	if not Features.is_on(&"business"):
+		Features.introduce(&"business", false)
+		await _frames(2)
 	await _click_named("Nav_business")
 	await _wait_screen(UIManager.SCREEN_BUSINESS)
 	await _checkpoint("business")

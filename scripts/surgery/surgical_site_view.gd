@@ -203,6 +203,14 @@ func set_implant_icon(path: String) -> void:
 		implant_texture = PixelArt.tex(icon)
 		return
 	var img := detail.get_image()
+	if img == null or img.is_empty() or img.get_size() != Vector2i(detail.get_size()):
+		# No real texture data on the CPU (the headless dummy renderer hands
+		# back a placeholder): read the file.
+		img = Image.load_from_file(icon.replace("/cyberware/", "/cyberware/field/"))
+	if img == null or img.is_empty():
+		implant_detail = null
+		implant_texture = PixelArt.tex(icon)
+		return
 	if img.is_compressed():
 		img.decompress()
 	img.resize(img.get_width() / ART_RES, img.get_height() / ART_RES, Image.INTERPOLATE_NEAREST)

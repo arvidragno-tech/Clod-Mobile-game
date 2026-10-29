@@ -14,38 +14,54 @@ any existing franchise's logos, typography, characters or architecture.
 
 ## Pixel density
 
-**Two densities.** UI sprites, icons and the surgical field: 1 art pixel = 3 canvas units (`GameConfig.PIXEL_SCALE`). World art (clinic rooms 600x336, portraits 144x168, bodies 60x120, street scenes, the title): drawn at 1.5x the resolution, 1 art pixel = 2 canvas units (`GameConfig.ART_SCALE`). Never mix the two inside one picture.
-The design canvas is 1920×1080, so the screen is 640×360 art pixels. The
-canvas is scaled uniformly to the window (`canvas_items`, aspect `keep`):
-integer-perfect at 1920×1080 (3 screen px per art px) and 1280×720 (2 px);
-1600×900 and 1366×768 are uniform fractional scales with nearest sampling,
-so pixels stay sharp (never blurred); other aspect ratios are letterboxed.
-Nothing is ever drawn at a different density inside the canvas. That rules
-out mixed-res sprites, smooth scaling and rotated pixel art in the UI. The
-only deliberate exception is the operating field, an integer zoom camera
-(2×/4×/6×, default = largest that fits) over the 160 px surgical site,
-whose anatomy and implant art are drawn at 2 art px per field px
-(`SurgicalSiteView.ART_RES`).
+**Design pixels and texels.** Every picture is laid out in *design pixels*
+(the units screens, hotspots, fx anchors and the surgical grid use) and
+painted with more texels than that, so at 1920x1080 one texel lands on one
+screen pixel wherever possible. Fine detail (bevels, glints, micro text,
+neon tube cores, stitching) lives at the texel level; layout never does.
 
-| Asset | Native size (art px) | Shown at |
-|---|---|---|
-| Clinic room (wide) | 400 × 224 | 3× (1200×672, cropped by its frame) |
-| Main-menu key art | 640 × 360 | 3× (full screen) |
-| Black-market den (wide) | 600 × 150 | 3× (header strip) |
-| Surgery backdrop (wide) | 340 × 270 | 1× inside the field viewport |
-| Surgical region close-ups | 320 × 320 | 2 art px per field px inside the field viewport (2×/4×/6× zoom) |
-| Character portraits | 144 × 168 | 2× |
-| Character bodies (clinic door) | 60 × 120 | 2× |
-| Cyberware icons | 48 × 48 | 2× (`PixelArt.density()`) |
-| Cyberware field implants (`cyberware/field/`) | 64 × 64 | 2 art px per field px (32 field px footprint) |
-| Tool icons | 24 × 24 | 3× |
-| UI icons | 12 × 12 | 3× |
-| Faction emblems | 16 × 16 | 3× |
-| Mouse cursors | 16 × 16 | 2× hardware cursor (32 px) |
-| UI frames (9-slice) | drawn at 3× | 1× |
+- **World art** (clinic rooms, upgrade overlays, street views, title key
+  art, black-market banner): `GameConfig.SCENE_RES` = 2 texels per design
+  px (`hd.Scene(res=2)`), drawn at `ART_SCALE` (2 canvas units per design
+  px). `PixelArt.scene_size(tex)` converts back to design size.
+- **Surgical field**: 4 texels per field unit (`SurgicalSiteView.ART_RES`):
+  640 px anatomy, 128 px implants, a 1360x1080 operating-table surround.
+  The field viewport draws at that density (`SurgeryScreen.field_density`)
+  and the zoom (2x / 4x / 6x, default 4x) is the remaining integer scale.
+- **Icons** (cyberware 96 px, tools 72 px, UI 36 px, faction emblems
+  48 px) are painted at their display size: `PixelArt.density()` returns 1
+  for these folders.
+- **Characters**: designed at 144x168 / 60x120 and Scale2x-upscaled on
+  palette indices to 288x336 portraits and 120x240 bodies, then given a
+  rim-light pass; the runtime reads sizes from the manifest.
+- **Cutscene illustrations**: 960x420 design, 1920x840 texels, the stage
+  between the letterbox bars at 1080p.
+- **City map**: 320x180 design, 960x540 texels.
+
+The design canvas is 1920×1080. The canvas is scaled uniformly to the
+window (`canvas_items`, aspect `keep`) with nearest sampling, so pixels stay
+sharp (never blurred); other aspect ratios are letterboxed.
+
+| Asset | Design size | Texels | Shown at |
+|---|---|---|---|
+| Clinic room (wide) | 600 × 336 | 1200 × 672 | 2 units per design px |
+| Main-menu key art | 960 × 540 | 1920 × 1080 | full screen |
+| Street views | 520 × 150 | 1040 × 300 | 2 units per design px |
+| Black-market den | 900 × 111 | 1800 × 222 | header strip |
+| Cutscene illustrations | 960 × 420 | 1920 × 840 | the cutscene stage |
+| City map | 320 × 180 | 960 × 540 | 3 units per design px |
+| Surgery backdrop | 340 × 270 | 1360 × 1080 | 4 texels per field unit |
+| Surgical region close-ups | 160 × 160 | 640 × 640 | 4 texels per field unit |
+| Cyberware field implants | 32 × 32 | 128 × 128 | 4 texels per field unit |
+| Character portraits | 96 × 112 layout | 288 × 336 | 1.5 texels per layout unit at ART_SCALE |
+| Character bodies | 40 × 80 layout | 120 × 240 | `BODY_ART_W` = 60 art px wide |
+| Cyberware icons | | 96 × 96 | 1 : 1 |
+| Tool icons | | 72 × 72 | 1 : 1 |
+| UI icons | | 36 × 36 | 1 : 1 |
+| Faction emblems | | 48 × 48 | 1 : 1 |
 
 How the density is enforced in the engine:
-- **The surgical field** renders in a `SubViewport` whose container uses `stretch_shrink` = the field zoom, so field drawing happens at native art resolution and is then integer-scaled.
+- **The surgical field** renders in a `SubViewport`; its `FieldRoot` is scaled by the field density and the container's `stretch_shrink` is zoom / density, so field art is drawn at its own texel size and then integer-scaled.
 - **Icons and backgrounds** go through `PixelArt.scaled(path)`, which does a nearest-neighbour ×3 upscale (cached), shown with `TEXTURE_FILTER_NEAREST`; the root viewport's default canvas filter is nearest (Settings can switch to linear).
 - **Fonts:** straight, readable cyberpunk faces: Chakra Petch for body, buttons, headers and titles, Share Tech Mono for numbers, terminals and logs (DejaVu Sans fallback). Signs painted inside the art use the generators' own 3x5 / 5x7 pixel letters.
 

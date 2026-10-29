@@ -4,27 +4,39 @@ All notable changes to *UNDERCITY: RIPPER*. Versions follow
 `application/config/version` in `project.godot` and the Windows file version
 in `export_presets.cfg`.
 
-## Unreleased — Graphics overhaul: characters, surgery and implants
+## Unreleased — Graphics overhaul: more pixels everywhere
 
-A full restyle of the character, surgery and implant art toward clean,
-modern character pixel art (see `docs/GRAPHICS_OVERHAUL.md`).
+Two rounds of restyling toward clean, dense, modern pixel art (see
+`docs/GRAPHICS_OVERHAUL.md`). The palette is unchanged.
 
-- **Characters** are cel-shaded with a near-black ink contour on every
-  form (head, hair, clothes, chrome). Faces are lit flat with one shadow
-  band, eyes have a heavy lash line, a tall iris and a hard catch-light,
-  lips and noses are drawn in light and shadow, and hair falls in clumps
-  split by dark strand lines with a glossy band round the crown. No
-  dithering anywhere on a character.
-- **Implants** are redrawn at a higher resolution: 48 px item icons (the
-  same on-screen size as the old 32 px ones) and 64 px art for the
-  operating field, with segmented plates, pistons, screw heads, panel
-  seams, an articulated fist on the arm and an ink contour.
-- **The operating field shows twice the detail.** The anatomy close-ups are
-  320 px and the field renders at two art pixels per field pixel, so the
-  skin, drape, clamps and the implant you install are drawn at double the
-  resolution. Everything you aim at, the implant's footprint, the socket,
-  the key slot and every tolerance stay exactly where they were. Zoom now
-  steps 2x / 4x / 6x.
+- **Twice the pixels in every scene.** Clinic rooms, their upgrades, all
+  street views, the title key art and the black-market banner are painted
+  at two texels per pixel of the old layout, so lights, bevels, rivets,
+  labels, screens, neon tubes, cables and grime are drawn with fine detail
+  while everything stays where it was. New clutter in the rooms (gas
+  cylinders, a wall phone, a fuse box, a sharps bin, a first-aid case).
+- **The operating field at four texels per field pixel**: 640 px anatomy,
+  128 px implants, and a new table surround with drape and towel clips,
+  trays of instruments, gauze, vials, a vitals monitor, an IV bag and robot
+  arms. At the default zoom every texel is one screen pixel. Zoom steps
+  2x / 4x / 6x.
+- **Icons at display size**: implants 96 px, surgical tools 72 px, UI icons
+  36 px, faction emblems 48 px. Implant art no longer clips at the edges
+  and loose tape and wires now sit on the part.
+- **Characters** at 288x336 (portraits) and 120x240 (bodies), smoothed
+  with a pixel-art upscale and a rim light, faces at the same size as
+  before.
+- **City map** at 960x540 with rooftop detail (AC units, water tanks,
+  skylights, lit windows) and embanked canal.
+- **Cutscenes**: seven new full-screen illustrations (the flooded towers,
+  the stairs down to the clinic, three cars in the rain, the table under
+  the lamp, the lattice in its tray, the notes wall, the cash drawer),
+  painted at the size of the cutscene stage and used by 11 shots.
+- **Render fixes**: no more windows showing through buildings and doors,
+  drips stay inside the tunnel arch, title-art silhouettes and signs no
+  longer overlap, duplicate stall signs removed.
+- Earlier in this round: cel-shaded characters with an ink contour,
+  redrawn implants with segmented plates, pistons and screw heads.
 
 ## 3.13.1 — Implants go in, not on
 

@@ -60,6 +60,11 @@ static func scaled(path: String, factor: int = 0) -> Texture2D:
 	if t == null:
 		return null
 	var img := t.get_image()
+	# Native-resolution sprites need no upscale; without CPU-side texture
+	# data (the headless dummy renderer) there is nothing to scale.
+	if factor == 1 or img == null or img.is_empty() or img.get_size() != Vector2i(t.get_size()):
+		_scaled[key] = t
+		return t
 	if img.is_compressed():
 		img.decompress()
 	img.resize(img.get_width() * factor, img.get_height() * factor, Image.INTERPOLATE_NEAREST)
