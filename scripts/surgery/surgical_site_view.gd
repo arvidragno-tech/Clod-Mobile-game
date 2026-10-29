@@ -24,11 +24,12 @@ extends Control
 ## a jack, a lens) stays visible.
 
 const FIELD_SIZE := 160
-## Art pixels per field pixel. The anatomy close-ups (320 px) and the
-## implant art (cyberware/field/, 64 px) are drawn at this density, so the
-## field shows twice the detail while every rule (geometry, hit tests, the
-## wound and implant masks) stays on the 160 px field grid.
-const ART_RES := 2
+## Art pixels per field pixel. The anatomy close-ups (640 px) and the
+## implant art (cyberware/field/, 128 px) are drawn at this density (one
+## texel per screen pixel at the default 4x zoom), while every rule
+## (geometry, hit tests, the wound and implant masks) stays on the 160 px
+## field grid.
+const ART_RES := 4
 const DESIGN_GRID := 64.0
 ## Max half-width of the opened wound, in design units (overridable per surgery).
 const OPENING_HALF_WIDTH := 13.0
@@ -465,8 +466,9 @@ func _process(delta: float) -> void:
 
 func _draw() -> void:
 	if _backdrop:
-		var bs := Vector2(_backdrop.get_size())
-		draw_texture(_backdrop, ((size - bs) / 2.0).floor())
+		# Backdrops are painted at ART_RES texels per field unit, like the anatomy.
+		var bs := Vector2(_backdrop.get_size()) / ART_RES
+		draw_texture_rect(_backdrop, Rect2(((size - bs) / 2.0).floor(), bs), false)
 	else:
 		draw_rect(Rect2(Vector2.ZERO, size), Palette.BG_0)
 	var field := get_field_rect()
@@ -741,18 +743,10 @@ func _rebuild_detail_layer(data: PackedByteArray, cover: Dictionary, under: Dict
 	if _detail_image == null:
 		return
 	var n := FIELD_SIZE * ART_RES
-	var hi := PackedByteArray()
-	hi.resize(n * n * 4)
-	for idx in FIELD_SIZE * FIELD_SIZE:
-		if data[idx * 4 + 3] == 0:
-			continue
-		var x := idx % FIELD_SIZE
-		var y := idx / FIELD_SIZE
-		for dy in ART_RES:
-			var o := ((y * ART_RES + dy) * n + x * ART_RES) * 4
-			for dx in ART_RES:
-				for k in 4:
-					hi[o + dx * 4 + k] = data[idx * 4 + k]
+	# Field-pixel layer blown up to ART_RES blocks (native nearest resize).
+	var lo := Image.create_from_data(FIELD_SIZE, FIELD_SIZE, false, Image.FORMAT_RGBA8, data)
+	lo.resize(n, n, Image.INTERPOLATE_NEAREST)
+	var hi := lo.get_data()
 	var ts := Vector2(_detail_image.get_size())
 	var pivot := (anchor + _pivot_offset(implant_size())) * ART_RES
 	for idx: int in cover:

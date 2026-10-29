@@ -44,12 +44,12 @@ const MISTAKE_TIPS := {
 }
 const BURN_SFX_INTERVAL := 0.15
 const MISTAKE_SHAKE := 5.0
-## Operating-field magnification (field px -> screen px). The field renders
-## at SurgicalSiteView.ART_RES viewport pixels per field px (the anatomy art
-## carries that much detail), so the zoom moves in steps of ART_RES.
+## Operating-field magnification (field px -> screen px), in even steps.
+## The field renders at field_density() viewport pixels per field px (the
+## anatomy art carries SurgicalSiteView.ART_RES), scaled up by the rest.
 const ZOOM_MIN := 2
 const ZOOM_MAX := 6
-const ZOOM_STEP := SurgicalSiteView.ART_RES
+const ZOOM_STEP := 2
 const QUICK_KEYS := {&"coag": "quick_coag", &"sedate": "quick_sedate", &"stabilize": "quick_stabilize"}
 
 @onready var _stage_counter: Label = %StageCounter
@@ -117,7 +117,6 @@ func on_enter(_params: Dictionary) -> void:
 	_abort.tooltip_text = "Abort the operation (asks first)"
 	_build_quick_actions()
 	_build_side_panels()
-	_field_root.scale = Vector2.ONE * SurgicalSiteView.ART_RES
 	_viewport.size_changed.connect(_fit_field_root)
 	_fit_field_root()
 	_set_zoom(_fit_zoom(), true)
@@ -180,10 +179,22 @@ func _fit_zoom() -> int:
 	return clampi(fit - fit % ZOOM_STEP, ZOOM_MIN, ZOOM_MAX)
 
 
+## Viewport pixels per field px at zoom z: the art's full ART_RES where the
+## zoom is a multiple of it (one texel per screen pixel at 4x), otherwise
+## the largest power-of-two share of it that divides the zoom.
+static func field_density(z: int) -> int:
+	var d := SurgicalSiteView.ART_RES
+	while d > 1 and z % d != 0:
+		d = d >> 1
+	return maxi(1, d)
+
+
 ## The field's controls work in field px: their root is the viewport scaled
-## down by ART_RES (and drawn scaled back up).
+## down by the field density (and drawn scaled back up).
 func _fit_field_root() -> void:
-	_field_root.size = Vector2(_viewport.size) / SurgicalSiteView.ART_RES
+	var d := field_density(field_scale)
+	_field_root.scale = Vector2.ONE * d
+	_field_root.size = Vector2(_viewport.size) / float(d)
 
 
 ## Changes the field magnification (never mid-gesture: positions would jump).
@@ -192,7 +203,8 @@ func _set_zoom(z: int, force: bool = false) -> void:
 	if (z == field_scale and not force) or (current_stage and current_stage.is_pointer_down):
 		return
 	field_scale = z
-	_field_viewport.stretch_shrink = z / ZOOM_STEP
+	_field_viewport.stretch_shrink = z / field_density(z)
+	_fit_field_root()
 	_fx.unit_scale = 1.0 / z
 	if current_stage:
 		current_stage.view_scale = z

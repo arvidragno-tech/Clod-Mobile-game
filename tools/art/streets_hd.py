@@ -56,7 +56,10 @@ def sky(s: Scene, pal, night):
 
 
 def skyline(s: Scene, rng, pal, night, depth, y_min, y_max, dark, lit_p, step=(10, 26)):
-    """A row of buildings with lit windows, rooftop clutter and holo ads."""
+    """A row of buildings with lit windows, floor lines, rooftop clutter
+    (antennas, water tanks, dishes, AC boxes) and holo ads. The far row
+    is drawn at the hi-res grid: half-pixel windows and edges."""
+    f = 1.0 / s.res
     x = -6
     base = shade(hexc(pal[0]), dark)
     while x < W + 6:
@@ -64,80 +67,144 @@ def skyline(s: Scene, rng, pal, night, depth, y_min, y_max, dark, lit_p, step=(1
         top = rng.randint(y_min, y_max)
         col = shade(base, rng.uniform(-0.12, 0.08))
         s.rect(x, top, w, GROUND - top, col)
-        s.vline(x, top, GROUND - 1, shade(col, 0.12))  # lit edge (sky behind)
-        # Rooftop: antennas, tanks, dishes.
-        r = rng.random()
-        if r < 0.3:
-            ax = x + rng.randint(2, max(3, w - 3))
-            s.vline(ax, top - rng.randint(4, 12), top, shade(col, 0.1))
-            if night and rng.random() < 0.6:
-                s.gpx(ax, top - 12 if top > 12 else top, C("red"), 0.9)
-        elif r < 0.5:
-            s.rect(x + 2, top - 4, min(8, w - 3), 4, shade(col, 0.05))
+        s.fvline(x, top, GROUND - 1, shade(col, 0.22))  # lit edge (sky behind)
+        s.fvline(x + f, top, GROUND - 1, shade(col, 0.1))
+        s.fvline(x + w - f, top, GROUND - 1, shade(col, -0.25))
+        s.fhline(x, x + w, top, shade(col, 0.25))  # parapet
+        if rng.random() < 0.5:
+            s.rect(x - 0.5, top - 1, w + 1, 1, shade(col, 0.05))
+        # Rooftop: antennas, tanks, dishes, AC boxes.
+        for k in range(rng.randint(0, 3)):
+            r = rng.random()
+            ax = x + rng.uniform(1, max(2, w - 4))
+            if r < 0.35:
+                ah = rng.uniform(4, 14)
+                s.fvline(ax, top - ah, top, shade(col, 0.15))
+                s.fhline(ax - 1, ax + 1.5, top - ah * 0.6, shade(col, 0.1))
+                if night and rng.random() < 0.6:
+                    s.gpx(ax - 0.5, top - ah - 0.5, C("red"), 0.9)
+            elif r < 0.6:
+                tw = min(7, w - 3)
+                s.rect(ax, top - 5, tw, 4, shade(col, 0.05))  # water tank
+                s.fhline(ax, ax + tw, top - 5, shade(col, 0.2))
+                s.fvline(ax + 1, top - 1, top, shade(col, -0.1))
+                s.fvline(ax + tw - 1, top - 1, top, shade(col, -0.1))
+            elif r < 0.8:
+                s.disc(ax + 1.5, top - 2, 1.6, shade(col, 0.12))  # dish
+                s.fline(ax + 1.5, top - 2, ax + 3, top - 3.5, shade(col, 0.25))
+            else:
+                s.rect(ax, top - 2.5, 3, 2.5, shade(col, 0.08))  # AC box
+                s.fhline(ax, ax + 3, top - 2.5, shade(col, 0.25))
         # Windows: a regular grid per building, whole floors lit together.
-        ww = 2 if depth else 3
-        gx, gy = (4, 5) if depth else (6, 7)
+        if depth:
+            ww, wh, gx, gy = 1.0, 1.0, 2.0, 2.5
+        else:
+            ww, wh, gx, gy = 2.0, 1.5, 3.5, 4.0
         floor_p = lit_p * 2.2
-        for wy in range(top + 4, GROUND - 4, gy):
+        wy = top + 3
+        while wy < GROUND - 3:
             floor_lit = rng.random() < floor_p
             c = rng.choice(["amber", "tungsten", "tungsten", "cyan", "ice", "pink"])
-            for wx in range(x + 2, x + w - ww - 1, gx):
+            s.fhline(x, x + w, wy + wh + (gy - wh) / 2, shade(col, -0.12))
+            wx = x + 1.5
+            while wx < x + w - ww - 1:
                 on = floor_lit and rng.random() < 0.75
                 if night and on:
-                    s.glow(wx, wy, ww, 2, shade(C(c), -0.25 - 0.2 * depth), 0.55 - 0.15 * depth)
+                    s.glow(wx, wy, ww, wh, shade(C(c), -0.25 - 0.2 * depth), 0.55 - 0.15 * depth)
+                    if not depth and rng.random() < 0.3:
+                        s.scale_buf(wx + rng.uniform(0, ww - f), wy + f, f, wh - f, 0.2)  # someone at the window
                 else:
-                    s.rect(wx, wy, ww, 2, shade(col, 0.18 if not night else -0.25))
+                    s.rect(wx, wy, ww, wh, shade(col, (0.1 if depth else 0.18) if not night else -0.25))
+                    if not night and not depth:
+                        s.fhline(wx, wx + ww, wy, shade(col, 0.35))  # glass glint
+                wx += gx
+            wy += gy
         # A vertical holo ad on some tall buildings.
         if night and w > 16 and top < y_min + 10 and rng.random() < 0.35:
             ac = C(rng.choice(NEONS))
             hx = x + w // 2 - 3
-            s.glow(hx, top + 6, 6, min(30, GROUND - top - 10), shade(ac, -0.5), 0.6)
-            for k in range(top + 8, min(top + 34, GROUND - 6), 3):
-                s.glow(hx + 1, k, 4, 1, ac, 0.5)
+            hh = min(30, GROUND - top - 10)
+            s.glow(hx, top + 6, 6, hh, shade(ac, -0.5), 0.6)
+            k = top + 8
+            while k < min(top + 34, GROUND - 6):
+                s.glow(hx + 1, k, rng.uniform(2, 4), f, ac, 0.6)
+                k += 1.5
+            s.glow(hx, top + 6, f, hh, ac, 0.8)
+            s.glow(hx + 6 - f, top + 6, f, hh, ac, 0.8)
             s.light(hx + 3, top + 18, ac * 0.7, 40, 0.35)
         x += w + rng.randint(-1, 2)
 
 
 def street(s: Scene, pal, night, rng):
+    f = 1.0 / s.res
     base = shade(hexc(pal[0]), -0.55 if night else -0.3)
     s.vgrad(0, GROUND, W, H - GROUND, base, shade(base, 0.15))
     s.hline(0, W, GROUND, shade(hexc(pal[2]), -0.2))
     s.rect(0, GROUND + 1, W, 3, shade(base, 0.1))  # kerb
+    s.fhline(0, W, GROUND + 1, shade(base, 0.35))
+    for x in range(0, W, 14):
+        s.fvline(x, GROUND + 1, GROUND + 4, shade(base, -0.2))
     s.hline(0, W, GROUND + 4, shade(base, -0.3))
     for x in range(6, W, 22):
         s.rect(x, GROUND + 14, 10, 1, shade(hexc(pal[1]), -0.25))
-    s.noise(0, GROUND, W, H - GROUND, 0.1, seed=rng.randint(0, 999), scale=2)
-    s.gloss[GROUND + 1:, :] = 0.75 if night else 0.45
+        s.fhline(x, x + 10, GROUND + 14, shade(hexc(pal[1]), -0.05))
+    s.noise(0, GROUND, W, H - GROUND, 0.08, seed=rng.randint(0, 999), scale=2)
+    s.noise(0, GROUND, W, H - GROUND, 0.06, seed=rng.randint(0, 999), scale=1)
+    # Manhole covers and cracks in the asphalt.
+    for k in range(2):
+        mx, my = rng.randint(30, W - 30), rng.randint(GROUND + 8, H - 8)
+        s.poly([(mx - 7, my), (mx + 7, my), (mx + 6, my + 2.5), (mx - 6, my + 2.5)], shade(base, -0.25))
+        for j in range(-5, 6, 2):
+            s.fhline(mx + j - 0.5, mx + j + 0.5, my + 1, shade(base, 0.15))
+    for k in range(10):
+        cx, cy = rng.uniform(0, W), rng.uniform(GROUND + 6, H - 2)
+        for i in range(rng.randint(6, 16)):
+            nx, ny = cx + rng.uniform(0.5, 2), cy + rng.uniform(-0.6, 0.6)
+            s.fline(cx, cy, nx, ny, shade(base, -0.35))
+            cx, cy = nx, ny
+    s.set_gloss(0, GROUND + 1, W, H, 0.75 if night else 0.45)
     s.floor_y = GROUND + 1
     for k in range(6):  # puddles
         px_, py_ = rng.randint(10, W - 60), rng.randint(GROUND + 6, H - 6)
         pw = rng.randint(24, 60)
         for yy in range(py_, min(H, py_ + 4)):
             inset = abs(yy - py_ - 2) * 5
-            s.gloss[yy, max(0, px_ + inset):min(W, px_ + pw - inset)] = 0.98
+            s.set_gloss(px_ + inset, yy, pw - 2 * inset, 1, 0.98)
 
 
 def overhead(s: Scene, rng, night):
-    """Cables slung between buildings and a street lamp or two."""
-    for k in range(5):
+    """Cables slung between buildings, street lamps and hanging signs."""
+    f = 1.0 / s.res
+    for k in range(9):
         x0 = rng.randint(-40, W - 80)
         s.cable(x0, rng.randint(4, 20), x0 + rng.randint(80, 200), rng.randint(4, 24), rng.randint(6, 18),
-                C("void"), thick=1, hl=C("steel2"))
+                C("void"), thick=rng.choice((0.5, 0.5, 1)), hl=C("steel2"))
     for lx in (rng.randint(30, 120), rng.randint(360, 480)):
         s.rect(lx, GROUND - 58, 2, 58, C("steel1"))
+        s.fvline(lx, GROUND - 58, GROUND, C("steel3"))
+        s.rect(lx - 1, GROUND - 4, 4, 4, C("steel1"))
+        s.rect(lx - 0.5, GROUND - 30, 3, 6, C("steel2"))  # junction box
+        s.label(lx - 0.5, GROUND - 22, 3, 4, C("bone", -0.3))
         s.hline(lx, lx + 12, GROUND - 58, C("steel2"))
+        s.fhline(lx, lx + 12, GROUND - 58, C("steel3"))
         s.rect(lx + 9, GROUND - 57, 6, 2, C("steel3"))
         if night:
             s.glow(lx + 10, GROUND - 55, 4, 1, C("sodium"), 1.0)
+            s.glow(lx + 10.5, GROUND - 55, 3, f, C("white"), 0.9)
             s.light(lx + 12, GROUND - 52, C("sodium"), 70, 0.7, cone=(0, 1, 50))
 
 
 def sign(s: Scene, x, y, text, color, big=True, frame=True, on=True):
+    """A backed sign; lit signs are neon tubes with hot cores."""
     tw = len(text) * (6 if big else 4)
+    th = 7 if big else 5
     if frame:
-        s.box(x - 3, y - 3, tw + 4, (7 if big else 5) + 6, C("void"), 0.1)
+        s.box(x - 3, y - 3, tw + 4, th + 6, C("void"), 0.1)
+        s.fhline(x - 2, x + tw, y - 2, C("steel1"))
+        s.rivet(x - 2, y - 2, C("steel2"))
+        s.rivet(x + tw - 1, y - 2, C("steel2"))
     if on:
-        s.text(x, y, text, C(color), "emissive", big=big)
+        s.text(x, y, text, C(color), "emissive", big=big, neon=True)
         s.light(x + tw / 2, y + 4, C(color), tw * 1.6 + 40, 0.7)
     else:
         s.text(x, y, text, shade(C(color), -0.6), "albedo", big=big)
@@ -145,10 +212,30 @@ def sign(s: Scene, x, y, text, color, big=True, frame=True, on=True):
 
 
 def storefront(s: Scene, x, w, h, col, night, rng, lit=True, color="amber"):
+    f = 1.0 / s.res
     top = GROUND - h
     s.occlude(x, top, w, h)
     s.panel(x, top, w, h, col, seams=True, rivets=False)
-    # Shop window with a warm interior.
+    s.rect(x, top, w, 3, shade(col, 0.08))  # cornice
+    s.fhline(x, x + w, top, shade(col, 0.35))
+    s.fhline(x, x + w, top + 3, shade(col, -0.4))
+    # Facade clutter: AC units, a downpipe, flyers, a tag.
+    for k in range(rng.randint(1, 3)):
+        ax = x + rng.uniform(6, w - 16)
+        ay = top + rng.uniform(6, max(7, h - 40))
+        s.box(ax, ay, 9, 6, C("steel3"), 0.2)
+        for j in range(4):
+            s.fhline(ax + 1, ax + 5, ay + 1 + j * 1.2, C("steel1"))
+        s.disc(ax + 7, ay + 3, 1.4, C("steel1"))
+        if rng.random() < 0.5:
+            s.fvline(ax + 8, ay + 6, ay + 10, shade(C("ice"), -0.5))  # drip
+    dp = x + w - 4
+    s.rect(dp, top + 3, 2, h - 3, shade(col, -0.2))
+    s.fvline(dp, top + 3, GROUND, shade(col, 0.2))
+    for k in range(rng.randint(3, 7)):
+        s.label(x + rng.uniform(2, w - 10), GROUND - rng.uniform(28, 40), rng.uniform(4, 7), rng.uniform(4, 6),
+                shade(C(rng.choice(["bone", "pink", "amber", "cyan", "white"])), -0.45))
+    # Shop window with a warm interior, mullions and glass glare.
     wx, ww = x + 4, w - 8
     wy, wh = GROUND - 26, 20
     s.rect(wx, wy, ww, wh, C("void"))
@@ -156,23 +243,41 @@ def storefront(s: Scene, x, w, h, col, night, rng, lit=True, color="amber"):
         s.vgrad(wx + 1, wy + 1, ww - 2, wh - 2, shade(C(color), -0.6), shade(C(color), -0.8))
         for k in range(wy + 4, wy + wh - 8, 4):  # shelves of bottles
             s.hline(wx + 3, wx + ww - 4, k, shade(C(color), -0.85))
-            for bx in range(wx + 4, wx + ww - 4, 3):
-                if rng.random() < 0.6:
-                    s.gpx(bx, k - 1, shade(C(rng.choice(["amber", "green", "cyan", "pink"])), -0.3), 0.6)
+            bx = wx + 4
+            while bx < wx + ww - 4:
+                if rng.random() < 0.7:
+                    bc = shade(C(rng.choice(["amber", "green", "cyan", "pink"])), -0.3)
+                    s.glow(bx, k - 2, 1, 2, bc, 0.55)
+                    s.glow(bx + 0.25, k - 2.5, 0.5, 0.5, bc, 0.4)
+                    s.gpx(bx, k - 2, C("white"), 0.35, t=f)
+                bx += 1.5
         s.rect(wx + 1, wy + wh - 6, ww - 2, 5, shade(C("void"), 0.05))  # counter
         s.hline(wx + 1, wx + ww - 2, wy + wh - 6, shade(C(color), -0.3))
+        s.fhline(wx + 1, wx + ww - 1, wy + wh - 6, shade(C(color), 0.1))
         for k in range(rng.randint(3, 6)):  # silhouettes at the counter
             sx = wx + 4 + rng.randint(0, max(1, ww - 12))
             s.rect(sx, wy + wh - 13, 4, 8, C("void"))
-            s.rect(sx + 1, wy + wh - 15, 2, 2, C("void"))
+            s.disc(sx + 2, wy + wh - 14.5, 1.6, C("void"))
+            s.fvline(sx, wy + wh - 13, wy + wh - 6, shade(C(color), -0.45))  # rim light
         for k in range(3):  # pendant lamps
             lx = wx + (k + 1) * ww // 4
+            s.fvline(lx + 0.5, wy, wy + 2, C("void"))
             s.gpx(lx, wy + 2, C(color), 1.0)
+            s.gpx(lx + 0.25, wy + 2.5, C("white"), 0.8, t=f)
         if night:
             s.light(wx + ww / 2, wy + wh, C(color) * 0.7, 60, 0.5)
+    for mx in range(int(wx) + 24, int(wx + ww), 24):  # mullions
+        s.rect(mx, wy, 1, wh, C("steel2"))
+        s.fvline(mx, wy, wy + wh, C("steel4"))
+    s.glass(wx, wy, ww, wh, 0.05)
     s.hline(wx, wx + ww - 1, wy, C("steel3"))
-    # Awning.
+    s.fhline(wx, wx + ww, wy + wh, C("steel4"))
+    # Striped awning with a scalloped edge.
     s.box(x - 2, wy - 6, w + 4, 4, shade(C(color), -0.45), 0.2)
+    for k in range(0, w + 4, 6):
+        s.rect(x - 2 + k, wy - 5, 3, 3, shade(C(color), -0.6))
+        s.disc(x + 1 + k - 1.5, wy - 2, 1.5, shade(C(color), -0.45))
+    s.fhline(x - 2, x + w + 2, wy - 6, shade(C(color), -0.15))
 
 
 # =============================================================================
@@ -221,12 +326,22 @@ def place_residential(s, rng, pal, night):
 def place_bar(s, rng, pal, night, name="VALVE", color="amber"):
     storefront(s, 140, 240, 60, shade(hexc(pal[0]), 0.05), night, rng, color=color)
     # Riveted tank by the entrance, pipes up the wall.
+    s.occlude(150, GROUND - 40, 26, 40)
     s.box(150, GROUND - 40, 26, 40, C("rust2"), 0.2)
+    s.fvline(153, GROUND - 39, GROUND, shade(C("rust2"), 0.35))
+    s.fvline(172, GROUND - 39, GROUND, shade(C("rust2"), -0.4))
     for k in range(GROUND - 38, GROUND, 6):
-        s.px(152, k, C("steel4"))
+        s.rivet(152, k, C("rust2"))
+        s.rivet(172, k, C("rust2"))
+    s.rect(156, GROUND - 30, 12, 6, C("bone", -0.4))
+    s.ftext(157, GROUND - 29, "CO2", C("void"), "albedo")
     for x in (190, 196):
         s.rect(x, GROUND - 120, 3, 60, C("rust1"))
+    s.occlude(252, GROUND - 36, 26, 36)
+    s.rect(252, GROUND - 36, 26, 36, C("steel1"))  # door frame
+    s.fhline(252, 278, GROUND - 36, C("steel3"))
     s.rect(254, GROUND - 34, 22, 34, C("void"))  # door
+    s.fvline(265, GROUND - 32, GROUND, C("steel0"))
     s.glow(256, GROUND - 32, 18, 1, C(color), 0.6)
     sign(s, 214, GROUND - 76, name, "pink" if color == "pink" else color, on=night or True)
     sign(s, 300, GROUND - 52, "OPEN", "green", big=False, on=night)
@@ -243,7 +358,7 @@ def place_black_market(s, rng, pal, night):
         s.vline(X, top - 8, top, C("concrete2"))
         s.vline(X, top, GROUND - 1, C("void") if abs(t) < 0.9 else C("concrete1"))
         if 0 <= X < W:
-            s.emissive[max(0, top - 8):GROUND, X] = 0
+            s.occlude(X, top - 8, 1, GROUND - top + 8)
     for k in range(9):  # the tunnel's ribs
         s.vline(cx - 100 + k * 25, GROUND - 60, GROUND - 1, shade(C("concrete1"), -0.3))
     for k in range(5):  # stalls inside
@@ -254,7 +369,9 @@ def place_black_market(s, rng, pal, night):
         s.glow(x + 4, GROUND - 20, 6, 2, c, 0.8)
         s.light(x + 15, GROUND - 24, c * 0.6, 40, 0.45)
     for k in range(14):  # drips
-        s.vline(rng.randint(cx - 110, cx + 110), GROUND - 96, GROUND - 90, shade(C("ice"), -0.5), "emissive")
+        dx = rng.randint(-70, 70)
+        dy = GROUND - 100 * (1 - (dx / 120) ** 2) ** 0.5 + 3
+        s.fvline(cx + dx, dy, dy + rng.uniform(3, 7), shade(C("ice"), -0.4), "emissive")
     sign(s, cx - 15, GROUND - 92, "NO ID", "red", big=False, on=True)
 
 
@@ -318,7 +435,12 @@ def place_transit(s, rng, pal, night):
     for x in range(cx - 210, cx + 211, 30):
         s.vline(x, GROUND - 60, GROUND - 1, C("steel2"))
     s.rect(0, GROUND - 22, W, 3, C("steel3"))  # platform edge
+    s.occlude(80, GROUND - 40, 300, 18)
     s.box(80, GROUND - 40, 300, 18, C("steel4"), 0.2)  # a train
+    s.rect(80, GROUND - 26, 300, 2, C("steel2"))
+    s.fhline(80, 380, GROUND - 26, C("steel5"))
+    for k in range(80, 380, 42):
+        s.fvline(k, GROUND - 40, GROUND - 22, C("steel1"))
     for k in range(14):
         s.glow(86 + k * 21, GROUND - 36, 14, 6, C("tungsten"), 0.7 if night else 0.3)
     s.light(230, GROUND - 32, C("tungsten"), 160, 0.5)
@@ -355,14 +477,27 @@ def place_restricted(s, rng, pal, night, annex=False):
     for x in range(0, W, 7):  # razor wire
         s.px(x, GROUND - 42, C("steel5"))
         s.px(x + 3, GROUND - 43, C("steel5"))
+    s.occlude(380, GROUND - 90, 40, 90)
     s.box(380, GROUND - 90, 40, 90, C("steel2"), 0.2)  # watchtower
+    for k in range(GROUND - 70, GROUND - 4, 8):
+        s.fhline(381, 419, k, C("steel1"))
+        s.rivet(382, k + 2, C("steel2"))
+        s.rivet(417, k + 2, C("steel2"))
     s.glow(384, GROUND - 86, 32, 10, C("ice"), 0.5)
     s.light(400, GROUND - 70, C("ice"), 200, 0.7, cone=(-1, 1, 30))
     if annex:
+        s.occlude(80, GROUND - 100, 200, 100)
         s.box(80, GROUND - 100, 200, 100, C("steel4"), 0.2)
+        for k in range(90, 280, 20):
+            s.fvline(k, GROUND - 99, GROUND, C("steel3"))
+            s.fvline(k + 0.5, GROUND - 99, GROUND, C("steel5"))
+        for k in range(GROUND - 50, GROUND - 6, 8):
+            for j in range(92, 272, 20):
+                s.glow(j, k, 14, 3, shade(C("ice"), -0.7), 0.6)
         s.glow(90, GROUND - 60, 180, 2, C("violet"), 0.6)
         sign(s, 140, GROUND - 90, "LYRA", "violet", on=True)
     else:
+        s.occlude(200, GROUND - 50, 90, 50)
         s.box(200, GROUND - 50, 90, 50, C("steel3"), 0.2)  # checkpoint booth
         s.glow(210, GROUND - 40, 70, 12, C("red", -0.3), 0.6)
         sign(s, 216, GROUND - 64, "STOP", "red", on=True)
@@ -381,11 +516,11 @@ PLACES = {
 }
 
 
-def scene(loc, dist, night) -> Scene:
+def scene(loc, dist, night, res=hd.RES) -> Scene:
     pal = dist.get(loc.get("district") or "undercity", dist["undercity"]).get("palette", ["202028", "404050", "604030", "c0a040"])
     seed = sum(ord(ch) for ch in loc["id"]) * 7
     amb = (0.42, 0.42, 0.55) if night else (0.95, 0.95, 1.0)
-    s = Scene(W, H, ambient=amb, seed=seed)
+    s = Scene(W, H, ambient=amb, seed=seed, res=res)
     s.haze = 0.32 if night else 0.2
     s.haze_color = shade(mix(hexc(pal[1]), C("violet"), 0.4), -0.35) if night else shade(hexc(pal[1]), 0.2)
     rng = random.Random(seed)
@@ -481,13 +616,38 @@ def title_scene() -> Scene:
             if rng.random() < 0.6:
                 s.glow(fx, fy, 22, 24, shade(C(rng.choice(["amber", "tungsten"])), -0.62), 0.8)
                 for k in range(fy + 2, fy + 24, 3):  # blinds
-                    s.emissive[k, fx:fx + 22] *= 0.35
-                if rng.random() < 0.4:  # someone at the window
-                    s.emissive[fy + 8:fy + 24, fx + 8:fx + 14] *= 0.1
+                    s.scale_buf(fx, k, 22, 1, 0.35)
+                if rng.random() < 0.4:  # someone at the window: head and shoulders
+                    hx = fx + rng.uniform(6, 14)
+                    s.scale_buf(hx - 4, fy + 16, 9, 8, 0.12)
+                    s.scale_buf(hx - 1.5, fy + 10, 4, 6, 0.12)
+                s.fhline(fx, fx + 22, fy, C("steel3"))
+                s.fvline(fx + 11, fy, fy + 24, C("steel1"))  # window frame
             else:
                 s.rect(fx, fy, 22, 24, C("void"))
             s.hline(fx - 2, fx + 23, fy + 25, C("steel3"))
     _tsign_v(s, 480, 150, "RIPPER", "pink")
+    # Fire escape zigzagging down the left building.
+    fe = C("steel2")
+    for k, fy in enumerate(range(164, T_GROUND - 40, 40)):
+        s.rect(338, fy, 132, 2, fe)  # landing
+        s.fhline(338, 470, fy, C("steel4"))
+        for rx in range(340, 470, 4):
+            s.fvline(rx, fy - 8, fy, fe)  # railing bars
+        s.hline(338, 469, fy - 8, fe, t=0.5)
+        x0, x1 = (350, 450) if k % 2 == 0 else (450, 350)
+        s.line(x0, fy + 2, x1, fy + 38, fe, t=1.5)  # stair stringer
+        for j in range(12):
+            u = j / 11
+            tx, ty = x0 + (x1 - x0) * u, fy + 2 + 36 * u
+            s.fhline(tx - 3, tx + 3, ty, C("steel2"))
+    # A potted plant and laundry on the landings.
+    s.rect(440, 158, 6, 6, C("rust1"))
+    for k in range(6):
+        s.fline(443, 158, 443 + rng.uniform(-4, 4), 150 + rng.uniform(-2, 2), shade(C("green"), -0.55))
+    s.fhline(346, 420, 196, C("steel3"))
+    for j in range(5):
+        s.rect(350 + j * 14, 196.5, 8, 9, shade(C(rng.choice(["pink", "bone", "teal", "amber"])), -0.55))
     s.occlude(720, 230, 240, T_GROUND - 230)
     s.panel(720, 230, 240, T_GROUND - 230, shade(hexc(pal[1]), -0.38), seams=True, rivets=True, vent=True)
     for fy in range(250, 360, 36):
@@ -495,7 +655,7 @@ def title_scene() -> Scene:
             if rng.random() < 0.55:
                 s.glow(fx, fy, 22, 22, shade(C(rng.choice(["amber", "tungsten", "pink"])), -0.6), 0.75)
                 for k in range(fy + 2, fy + 22, 3):
-                    s.emissive[k, fx:fx + 22] *= 0.35
+                    s.scale_buf(fx, k, 22, 1, 0.35)
             else:
                 s.rect(fx, fy, 22, 22, C("void"))
             s.hline(fx - 2, fx + 23, fy + 23, C("steel3"))
@@ -520,22 +680,44 @@ def title_scene() -> Scene:
         for k in range(ay + 2, ay + 15, 2):
             s.hline(ax + 2, ax + 13, k, C("steel1"))
     s.rect(708, 230, 4, T_GROUND - 230, C("rust2"))
-    s.box(860, T_GROUND - 40, 80, 40, shade(C("teal"), -0.6), 0.2)
+    dc = shade(C("teal"), -0.6)
+    s.box(860, T_GROUND - 40, 80, 40, dc, 0.2)  # dumpster
+    s.box(858, T_GROUND - 44, 84, 5, shade(dc, 0.1), 0.25)  # lid
+    for k in range(866, 936, 10):
+        s.fvline(k, T_GROUND - 38, T_GROUND - 4, shade(dc, -0.35))
+        s.fvline(k + 0.5, T_GROUND - 38, T_GROUND - 4, shade(dc, 0.15))
+    s.label(870, T_GROUND - 30, 16, 8, shade(C("yellow"), -0.35), text="NO")
+    for wx in (866, 930):
+        s.disc(wx, T_GROUND - 1.5, 2, C("void"))
+    for k in range(4):  # trash bags
+        bx = 836 + k * 9
+        s.disc(bx, T_GROUND - 5, 5 + (k % 2), hexc("101318"))
+        s.fline(bx - 3, T_GROUND - 9, bx + 1, T_GROUND - 10.5, C("steel2"))
+    # Posters and tags on the right wall by the door.
+    for k, (px_, py_, c) in enumerate(((728, 300, "pink"), (740, 352, "cyan"), (826, 380, "amber"))):
+        s.box(px_, py_, 18, 24, shade(C(c), -0.6), 0.1)
+        s.disc(px_ + 9, py_ + 8, 4, shade(C(c), -0.3))
+        s.ftext(px_ + 2, py_ + 15, ["CHROME", "LINK", "WORK"][k], shade(C(c), 0.1), "albedo")
+        for j in range(3):
+            s.fhline(px_ + 2, px_ + 14 - j * 2, py_ + 19 + j * 1.5, shade(C(c), -0.25))
+    # A blade sign over the far end of the alley.
+    _tsign_v(s, 700, 120, "HOTEL", "cyan")
     s.box(T_VENT[0] - 14, T_VENT[1] - 2, 28, 4, C("steel2"), 0.2)
     # The street.
     s.vgrad(0, T_GROUND, TW, TH - T_GROUND, hexc("0e0c16"), hexc("1c1826"))
     s.noise(0, T_GROUND, TW, TH - T_GROUND, 0.1, seed=4, scale=2)
-    s.gloss[T_GROUND + 1:, :] = 0.85
+    s.set_gloss(0, T_GROUND + 1, TW, TH, 0.85)
     s.floor_y = T_GROUND + 1
     for k in range(10):
         px_, py_ = rng.randint(340, TW - 80), rng.randint(T_GROUND + 8, TH - 8)
         pw = rng.randint(40, 110)
         for yy in range(py_, min(TH, py_ + 5)):
             inset = abs(yy - py_ - 2) * 8
-            s.gloss[yy, max(0, px_ + inset):min(TW, px_ + pw - inset)] = 1.0
+            s.set_gloss(px_ + inset, yy, pw - 2 * inset, 1, 1.0)
     # The waiting customer: a coated silhouette with one red optic.
     ex, ey = T_EYE
-    s.rect(ex - 6, ey - 4, 10, 10, C("void"))            # head + hood
+    s.disc(ex - 1, ey + 1, 6, C("void"))                 # hood
+    s.poly([(ex - 7, ey + 1), (ex + 5, ey + 1), (ex + 7, ey + 7), (ex - 9, ey + 7)], C("void"))
     s.poly([(ex - 12, ey + 6), (ex + 9, ey + 6), (ex + 12, T_GROUND - 18), (ex - 15, T_GROUND - 18)], C("void"))
     s.rect(ex - 10, T_GROUND - 18, 6, 18, C("void"))
     s.rect(ex + 1, T_GROUND - 18, 6, 18, C("void"))
@@ -543,7 +725,12 @@ def title_scene() -> Scene:
     s.vline(ex + 9, ey + 10, T_GROUND - 22, shade(C("cyan"), -0.5))
     s.hline(ex - 5, ex + 3, ey - 4, shade(C("sodium"), -0.4))      # lamp light on the hood
     s.vline(ex - 12, ey + 8, T_GROUND - 22, shade(C("sodium"), -0.55))
+    s.fline(ex - 4, ey - 4, ex + 2, ey - 5.5, shade(C("sodium"), -0.2))  # hood rim
+    s.fline(ex + 8.5, ey + 6, ex + 11.5, T_GROUND - 18, shade(C("cyan"), 0.1))
+    for k in range(4):  # coat folds
+        s.fline(ex - 6 + k * 4, ey + 12, ex - 8 + k * 5, T_GROUND - 19, hexc("141420"))
     s.gpx(ex, ey, C("red"), 1.0)
+    s.gpx(ex - 0.5, ey, C("white"), 0.8, t=0.5)
     # A street lamp near the left wall.
     s.rect(560, T_GROUND - 170, 3, 170, C("steel1"))
     s.hline(560, 582, T_GROUND - 170, C("steel2"))
@@ -568,54 +755,118 @@ def den_scene() -> Scene:
     s = Scene(w, h, ambient=(0.4, 0.34, 0.5), seed=78)
     s.haze = 0.3
     s.haze_color = hexc("2a1030")
+    f = 1.0 / s.res
     s.vgrad(0, 0, w, floor, hexc("0a0610"), hexc("1e1024"))
-    # Steel grate wall.
+    # Steel grate wall: bars with a lit edge, rust weeping from the welds.
     for x in range(0, w, 6):
         s.vline(x, 0, floor - 1, hexc("1a1420"))
+        s.fvline(x, 0, floor - 1, hexc("2a2232"))
     for y in range(0, floor, 6):
         s.hline(0, w, y, hexc("1a1420"))
-    # Rails of hooks with chrome hanging: arms, optics, spines.
+        s.fhline(0, w, y, hexc("2a2232"))
+    for k in range(40):
+        x, y = rng.randrange(0, w, 6), rng.randrange(0, floor - 10, 6)
+        s.fvline(x + 0.5, y, y + rng.uniform(3, 9), C("rust1"))
+    # Flyers wired to the grate.
+    for k in range(9):
+        x, y = rng.uniform(0, w - 20), rng.uniform(2, 44)
+        c = shade(C(rng.choice(["pink", "cyan", "amber", "bone"])), -0.62)
+        s.rect(x, y, 9, 12, c)
+        s.ftext(x + 1, y + 1, rng.choice(["EYES", "ARMS", "CASH", "FIX"]), shade(c, 0.45), "albedo")
+        for j in range(3):
+            s.fhline(x + 1, x + 7 - j, y + 6 + j * 1.5, shade(c, 0.2))
+    # Rails of hooks with chrome hanging: arms, optics, spines, jars.
     for rail in (14, 34):
         s.hline(0, w, rail, C("steel3"))
+        s.fhline(0, w, rail, C("steel5"))
         s.hline(0, w, rail + 1, C("steel1"))
-        for x in range(10, w, rng.randint(22, 30)):
+        x = 10
+        while x < w:
             kind = rng.random()
-            s.vline(x, rail + 1, rail + 4, C("steel4"))
-            if kind < 0.4:  # a chrome forearm
-                s.box(x - 2, rail + 4, 5, 14, C("steel4"), 0.3)
-                s.hline(x - 2, x + 2, rail + 10, C("steel2"))
-                s.gpx(x, rail + 7, C(rng.choice(["cyan", "pink", "green"])), 0.9)
-            elif kind < 0.7:  # an optic on a wire
-                s.box(x - 2, rail + 6, 5, 5, C("steel2"), 0.2)
-                s.gpx(x, rail + 8, C(rng.choice(["red", "cyan", "amber"])), 1.0)
-            else:  # a spine segment
+            s.vline(x, rail + 1, rail + 4, C("steel4"), t=0.5)
+            s.fpx(int(x * s.res), int((rail + 4) * s.res), C("steel5"))
+            if kind < 0.3:  # a chrome forearm with fingers and a status LED
+                s.box(x - 2, rail + 4, 5, 12, C("steel4"), 0.3)
+                s.fvline(x - 1.5, rail + 5, rail + 15, C("white"))
+                s.fhline(x - 2, x + 3, rail + 9, C("steel1"))
                 for k in range(4):
-                    s.rect(x - 1, rail + 5 + k * 3, 3, 2, C("bone", -0.3))
-    # Booths with neon under the counters.
+                    s.rect(x - 2 + k * 1.25, rail + 16, f * 3, 3 - (k % 2), C("steel3"))
+                s.gpx(x + 1, rail + 7, C(rng.choice(["cyan", "pink", "green"])), 0.9, t=0.5)
+            elif kind < 0.55:  # an optic on a wire: housing, lens ring, iris
+                s.vline(x, rail + 4, rail + 6, C("void"), t=0.25)
+                s.disc(x + 0.5, rail + 8.5, 2.6, C("steel2"))
+                s.disc(x + 0.5, rail + 8.5, 1.7, C("steel4"))
+                col = C(rng.choice(["red", "cyan", "amber"]))
+                s.disc(x + 0.5, rail + 8.5, 1.0, col, "emissive")
+                s.fpx(int((x - 0.3) * s.res), int((rail + 7.3) * s.res), C("white"), "emissive")
+            elif kind < 0.8:  # a spine segment: vertebrae with fine highlights
+                for k in range(4):
+                    s.rect(x - 1.5, rail + 5 + k * 3, 4, 2, C("bone", -0.3))
+                    s.fhline(x - 1.5, x + 2.5, rail + 5 + k * 3, C("bone", 0.05))
+                    s.rect(x - 0.25, rail + 7 + k * 3, 1.5, 1, C("steel2"))
+            else:  # a jar with something floating in it
+                s.box(x - 3, rail + 5, 7, 9, shade(C("teal"), -0.6), 0.15)
+                s.glow(x - 2.5, rail + 6, 6, 7.5, shade(C("green"), -0.82), 1.0)
+                s.disc(x + 0.5, rail + 10, 1.6, C("bone", -0.2))
+                s.disc(x + 0.8, rail + 10, 0.6, C("void"))
+                s.rect(x - 3, rail + 4.5, 7, 1, C("steel3"))
+                s.fvline(x - 2.5, rail + 6, rail + 13, C("white", -0.3))
+            if rng.random() < 0.3:  # a paper price tag
+                s.label(x + 3, rail + 11, 5, 3, C("bone", -0.2))
+            x += rng.randint(20, 28)
+    # A neon sign over the market's middle.
+    s.box(392, 2, 116, 11, C("void"), 0.1)
+    s.text(398, 4, "UNDERMARKET", C("magenta"), "emissive", neon=True)
+    s.light(450, 8, C("magenta"), 160, 0.5)
+    # Booths with neon under the counters: panels, tape, goods, price cards.
+    names = ["OPTICS", "NO REFUNDS", "NO ID", "CHROME", "WETWARE", "CASH ONLY"]
     for i in range(6):
         x = 20 + i * 150
         col = C(["magenta", "pink", "violet", "cyan", "magenta", "green"][i])
         s.occlude(x, 52, 120, floor - 52)
         s.box(x, 66, 120, floor - 66, C("steel1"), 0.2)
+        for px_ in range(x + 2, x + 118, 29):  # front panels with seams and screws
+            s.fvline(px_, 67, floor - 1, C("steel0"))
+            s.fvline(px_ + 0.5, 67, floor - 1, C("steel2"))
+            s.rivet(px_ + 2, 68, C("steel2"))
+            s.rivet(px_ + 2, floor - 3, C("steel2"))
+        if i % 2 == 0:  # tape patch
+            s.line(x + 80, 77, x + 92, 85, shade(C("bone"), -0.45), t=2)
+            s.line(x + 80, 85, x + 92, 77, shade(C("bone"), -0.5), t=2)
         s.box(x - 4, 52, 128, 6, shade(col, -0.55), 0.2)
         s.glow(x - 4, 58, 128, 1, col, 0.9)
+        s.glow(x - 4, 58 + f, 128, f, C("white"), 0.5)
         s.light(x + 60, 62, col, 120, 0.7)
         for k in range(5):  # goods on the counter
             gx = x + 8 + k * 22
             s.box(gx, 60, 14, 6, C("steel3"), 0.2)
-            s.gpx(gx + 7, 62, C(rng.choice(["cyan", "pink", "amber", "green"])), 0.9)
-        s.text(x + 10, 72, rng.choice(["NO REFUNDS", "CASH ONLY", "CHROME", "WETWARE", "NO ID", "OPTICS"]), shade(col, -0.1), "emissive")
-    # Vendor silhouettes behind two booths, cables overhead.
-    for vx in (95, 545):
-        s.rect(vx, 40, 8, 12, C("void"))
-        s.rect(vx + 2, 36, 4, 4, C("void"))
-        s.gpx(vx + 4, 37, C("red"), 1.0)
+            s.fhline(gx + 1, gx + 13, 61, C("steel5"))
+            s.gpx(gx + 7, 62, C(rng.choice(["cyan", "pink", "amber", "green"])), 0.9, t=0.5)
+            for j in range(3):
+                s.fpx(int((gx + 2 + j * 1.5) * s.res), int(63.5 * s.res), C("steel1"))
+        s.label(x + 100, 60, 10, 5, C("bone", -0.15), text="$")
+        s.text(x + 10, 72, names[i], shade(col, -0.1), "emissive", neon=True)
+    # Vendors behind two booths: hooded, rim-lit by their counters.
+    for vx, col in ((95, C("magenta")), (545, C("cyan"))):
+        s.occlude(vx - 2, 30, 14, 22)
+        s.poly([(vx - 1, 52), (vx + 9, 52), (vx + 8, 42), (vx + 6, 39), (vx + 2, 39), (vx, 42)], C("void"))
+        s.disc(vx + 4, 36.5, 3.2, C("void"))
+        s.fline(vx - 0.5, 51.5, vx + 0.5, 42, shade(col, -0.2))
+        s.fline(vx + 8.5, 51.5, vx + 7.5, 42, shade(col, -0.2))
+        s.fline(vx + 2, 34, vx + 6, 34, shade(col, -0.4))
+        s.gpx(vx + 5, 37, C("red"), 1.0, t=0.5)
+    # Cables overhead, a steam vent, crates on the floor.
     for k in range(6):
         x0 = rng.randint(-50, w - 150)
         s.cable(x0, 2, x0 + rng.randint(100, 260), 4, rng.randint(6, 14), C("void"), thick=1, hl=C("steel2"))
+    for cx in (152, 448, 744):
+        s.box(cx, floor - 9, 12, 9, C("rust1"), 0.2)
+        s.fhline(cx, cx + 12, floor - 5, C("rust0"))
+        s.label(cx + 3, floor - 8, 6, 3, shade(C("yellow"), -0.4))
     # Wet floor.
     s.vgrad(0, floor, w, h - floor, hexc("0e0a12"), hexc("1a1420"))
-    s.gloss[floor + 1:, :] = 0.8
+    s.noise(0, floor, w, h - floor, 0.1, seed=6, scale=1)
+    s.set_gloss(0, floor + 1, w, h, 0.8)
     s.floor_y = floor + 1
     return s
 

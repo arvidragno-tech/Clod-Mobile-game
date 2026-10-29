@@ -1,7 +1,7 @@
 """Surgical-field anatomy textures (320x320, palette-indexed).
 
 The field is 160 field px wide (SurgicalSiteView.FIELD_SIZE) and every
-rule in the game works on that grid; the art is drawn at RES = 2 art px per
+rule in the game works on that grid; the art is drawn at RES = 4 art px per
 field px, so a region shows twice the detail of the old 160 px textures.
 Designs are written in field coordinates (0..160) and evaluated at the
 centre of every art pixel.
@@ -23,7 +23,7 @@ from .lib import Canvas, LIGHT, bayer, clamp
 SK, HR, CA, CB, MT, GL, IR, FX = range(8)
 DR, IO = 12, 13  # fixed material ramps: sterile drape, iodine prep wash
 SIZE = 160       # field px (design coordinates)
-RES = 2          # art px per field px
+RES = 4          # art px per field px
 N = SIZE * RES   # texture size
 INK = (FX, 0)
 

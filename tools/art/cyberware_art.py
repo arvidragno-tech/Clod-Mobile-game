@@ -1,8 +1,8 @@
 """Cyberware art, drawn once as a design and rasterised at two densities:
 
-* the item icon, 48x48 (shown at GameConfig.ART_SCALE, the same 96-unit
+* the item icon, 96x96 (shown one texel per screen unit, the same 96-unit
   footprint the old 32 px icons had at PIXEL_SCALE), and
-* the surgical-field implant, 64x64 (the field is 320 px wide, so the
+* the surgical-field implant, 128x128 (the field is 640 px wide, so the
   implant keeps the share of the field the old 32 px art had of 160).
 
 Designs are written on a 32-unit grid and every primitive is evaluated per
@@ -22,8 +22,8 @@ from . import palette as pal
 from .lib import Canvas, LIGHT, clamp, poly_pixels
 
 CATEGORIES = ["eyes", "arms", "legs", "spine", "neural", "dermal", "respiratory", "internal"]
-ICON_SIZE = 48
-FIELD_SIZE = 64
+ICON_SIZE = 96
+FIELD_SIZE = 128
 INK = (14, 12, 20, 255)
 
 # Tier material language
@@ -77,24 +77,31 @@ class Pen:
     """Draws a 32-unit design onto a canvas of any size. Shapes take design
     units; `px` is output pixels per design unit."""
 
+    # The 32-unit design is fitted into the canvas with a small margin so
+    # parts that reach the design edge (fingers, cables, the foot) and the
+    # ink contour around them are never clipped.
+    FIT = 0.9
+
     def __init__(self, size: int):
         self.cv = Canvas(size, size)
-        self.px = size / 32.0
+        self.px = size / 32.0 * self.FIT
+        self.off = size * (1 - self.FIT) / 2
 
     # -- coordinates ----------------------------------------------------------------------------
     def P(self, v):
-        return v * self.px
+        """Design coordinate -> output pixel coordinate."""
+        return v * self.px + self.off
 
     def cells(self, x0, y0, x1, y1):
         """Output pixels whose centres fall in the design box, with the
         design coordinate of each centre."""
-        k = self.px
-        for Y in range(int(math.floor(y0 * k)), int(math.ceil(y1 * k))):
-            y = (Y + 0.5) / k
+        k, o = self.px, self.off
+        for Y in range(int(math.floor(y0 * k + o)), int(math.ceil(y1 * k + o))):
+            y = (Y + 0.5 - o) / k
             if not (y0 <= y < y1):
                 continue
-            for X in range(int(math.floor(x0 * k)), int(math.ceil(x1 * k))):
-                x = (X + 0.5) / k
+            for X in range(int(math.floor(x0 * k + o)), int(math.ceil(x1 * k + o))):
+                x = (X + 0.5 - o) / k
                 if x0 <= x < x1:
                     yield X, Y, x, y
 
@@ -145,7 +152,7 @@ class Pen:
     def panel(self, pts, ramp, top=5.0, bottom=2.4, bevel=True):
         """A flat plate: cel bands top to bottom, a lit top/left bevel and a
         dark bottom/right lip one output pixel wide."""
-        pix = set(poly_pixels([(x * self.px, y * self.px) for x, y in pts]))
+        pix = set(poly_pixels([(self.P(x), self.P(y)) for x, y in pts]))
         if not pix:
             return pix
         ys = [p[1] for p in pix]
@@ -163,18 +170,27 @@ class Pen:
 
     # -- line work ------------------------------------------------------------------------------
     def line(self, x0, y0, x1, y1, c):
-        self.cv.line(x0 * self.px, y0 * self.px, x1 * self.px, y1 * self.px, c)
+        self.cv.line(self.P(x0), self.P(y0), self.P(x1), self.P(y1), c)
+        if self.px >= 3.5:  # keep the stroke weight on the large raster
+            self.cv.line(self.P(x0) + 1, self.P(y0), self.P(x1) + 1, self.P(y1), c)
 
     def seam(self, x0, y0, x1, y1, ramp, lit=True):
         """Panel seam: a dark 1 px groove with a lit edge under it."""
         self.line(x0, y0, x1, y1, rgb(ramp, 0))
         if lit:
-            d = 1.0 / self.px
+            d = (2.0 if self.px >= 3.5 else 1.0) / self.px
             self.line(x0, y0 + d, x1, y1 + d, rgb(ramp, 5))
 
     def screw(self, x, y, ramp):
-        X, Y = int(x * self.px), int(y * self.px)
-        if self.px >= 1.9:
+        X, Y = int(self.P(x)), int(self.P(y))
+        if self.px >= 3.5:
+            for dy in range(4):
+                for dx in range(4):
+                    d = math.hypot(dx - 1.5, dy - 1.5)
+                    if d <= 2.0:
+                        s = 6 if dx + dy <= 1 else (1 if dx + dy >= 5 else (2 if dx == dy else 4))
+                        self.put(X + dx, Y + dy, rgb(ramp, s))
+        elif self.px >= 1.9:
             for dx, dy, s in ((0, 0, 6), (1, 0, 5), (2, 0, 4), (0, 1, 5), (1, 1, 1), (2, 1, 3), (0, 2, 3), (1, 2, 3), (2, 2, 1)):
                 self.put(X + dx, Y + dy, rgb(ramp, s))
         else:
@@ -182,8 +198,8 @@ class Pen:
                 self.put(X + dx, Y + dy, rgb(ramp, s))
 
     def led(self, x, y, st, big=False):
-        X, Y = int(x * self.px), int(y * self.px)
-        n = 2 if (big or self.px >= 1.9) else 1
+        X, Y = int(self.P(x)), int(self.P(y))
+        n = (4 if big else 3) if self.px >= 3.5 else (2 if (big or self.px >= 1.9) else 1)
         for dy in range(n):
             for dx in range(n):
                 self.put(X + dx, Y + dy, rgb(st.glow, 7 if dx == 0 and dy == 0 else 5))
@@ -203,15 +219,22 @@ class Pen:
             for k in range(0, n, step):
                 t = k / max(1, n)
                 x, y = a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t
-                self.put(x * self.px, y * self.px, rgb(st.cable, 0))
+                self.put(self.P(x), self.P(y), rgb(st.cable, 0))
 
     def spec(self, x, y, n=1):
-        X, Y = int(x * self.px), int(y * self.px)
-        for k in range(n):
-            self.put(X + k, Y, (246, 248, 251, 255))
+        X, Y = int(self.P(x)), int(self.P(y))
+        m = 2 if self.px >= 3.5 else 1
+        for k in range(n * m):
+            for j in range(m):
+                self.put(X + k, Y + j, (246, 248, 251, 255))
 
     def ink(self):
-        """1 px near-black contour just outside the silhouette."""
+        """Near-black contour just outside the silhouette: 1 px on the item
+        icon, 2 px on the large field art (the same weight on screen)."""
+        for _ in range(2 if self.px >= 3.5 else 1):
+            self._ink1()
+
+    def _ink1(self):
         cv = self.cv
         src = [row[:] for row in cv.px]
         for y in range(cv.h):
@@ -225,11 +248,16 @@ class Pen:
                         break
 
 
-def tape(p: Pen, x, y, w, h, st):
-    """Improvised repair tape (black-market tier)."""
-    p.panel([(x, y), (x + w, y), (x + w, y + h), (x, y + h)], st.tape, 5.2, 4.2, bevel=False)
+def tape(p: Pen, x, y, w, h, st, only_on_part=False):
+    """Improvised repair tape (black-market tier). only_on_part: wrap it
+    round whatever is already drawn there instead of floating in the air."""
+    k = max(1, int(round(p.px / 1.5)))
     for X, Y, xx, yy in p.cells(x, y, x + w, y + h):
-        if (X + Y) % 5 == 0:
+        if only_on_part and p.cv.get(X, Y) is None:
+            continue
+        t = (yy - y) / max(0.01, h)
+        p.put(X, Y, rgb(st.tape, 5 if t < 0.35 else 4))
+        if (X + Y) // k % 5 == 0:
             p.put(X, Y, rgb(st.tape, 2))
 
 
@@ -258,7 +286,7 @@ def draw_eyes(p: Pen, st):
     # Housing seam and the focus ring knurl.
     for k in range(9):
         a = math.radians(200 + k * 14)
-        p.put((13.5 + 10.6 * math.cos(a)) * p.px, (16 + 10.6 * math.sin(a)) * p.px, rgb(st.body, 1))
+        p.put(p.P(13.5 + 10.6 * math.cos(a)), p.P(16 + 10.6 * math.sin(a)), rgb(st.body, 1))
     p.led(4.5, 24, st)
 
 
@@ -266,22 +294,22 @@ def draw_arms(p: Pen, st):
     """Forearm and fist: segmented plates over a synthetic-muscle core,
     a piston along the ulna, an articulated hand."""
     # Forearm core, muscle showing through the plate gaps.
-    p.capsule(6, 29, 20, 13, 5.6, st.muscle, 1.0, 5.0, r2=4.8)
+    p.capsule(7.4, 27.2, 20, 13, 5.6, st.muscle, 1.0, 5.0, r2=4.8)
     for k, (t0, t1) in enumerate(((0.0, 0.28), (0.33, 0.6), (0.65, 0.94))):
-        ax, ay = 6 + 14 * t0, 29 - 16 * t0
-        bx, by = 6 + 14 * t1, 29 - 16 * t1
+        ax, ay = 7.4 + 12.6 * t0, 27.2 - 14.2 * t0
+        bx, by = 7.4 + 12.6 * t1, 27.2 - 14.2 * t1
         p.capsule(ax, ay, bx, by, 5.4 - k * 0.3, st.body, 1.0, 6.2)
         mx, my = (ax + bx) / 2, (ay + by) / 2
         p.seam(mx - 3.2, my - 2.8, mx + 2.8, my + 3.2, st.body)
     p.capsule(3.5, 25, 16.5, 10, 0.9, st.metal, 2.0, 7.0)   # piston rod
-    p.capsule(3.0, 26, 8.5, 19.5, 1.5, st.trim, 1.0, 5.2)   # piston sleeve
+    p.capsule(3.6, 25.4, 8.5, 19.5, 1.5, st.trim, 1.0, 5.2)   # piston sleeve
     # Wrist joint and the hand: palm block, four fingers curled into a fist, thumb.
     p.sphere(21, 12, 3.4, 3.4, st.trim, 1.0, 5.6)
     p.panel([(21, 5), (28, 4), (30, 7), (29, 13), (23, 14), (20, 10)], st.body, 5.4, 2.2)
     for k in range(4):
         fy = 4.6 + k * 2.3
         p.capsule(27.2, fy, 30.0, fy + 0.4, 1.0, st.metal, 1.2, 6.2)
-        p.put(30.2 * p.px, (fy + 0.3) * p.px, rgb(st.metal, 1))
+        p.put(p.P(30.2), p.P(fy + 0.3), rgb(st.metal, 1))
     p.capsule(22, 13.5, 26, 11.5, 1.1, st.metal, 1.2, 6.0)  # thumb
     p.screw(9, 25, st.metal)
     p.screw(15.5, 17.5, st.metal)
@@ -416,8 +444,14 @@ def make_icon(category: str, tier: int, size: int = ICON_SIZE) -> Canvas:
     st = Style(tier)
     DRAW[category](p, st)
     if tier == 5 and category != "neural":
-        tape(p, 2.5, 2.5, 4.5, 2.2, st)
-        p.line(1.5, 29.5, 9, 25, (255, 61, 129, 255))  # exposed live wire
+        # Tape wrapped round the part near its middle, and a live wire
+        # spliced along it (both only where there is a part to hold them).
+        tape(p, 8, 13.5, 16, 2.6, st, only_on_part=True)
+        pts = [(9 + k * 0.5, 22 - k * 0.45) for k in range(16)]
+        for (ax, ay), (bx, by) in zip(pts, pts[1:]):
+            for X, Y, xx, yy in p.cells(min(ax, bx) - 0.3, min(ay, by) - 0.3, max(ax, bx) + 0.3, max(ay, by) + 0.3):
+                if p.cv.get(X, Y) is not None:
+                    p.put(X, Y, (255, 61, 129, 255))
     p.ink()
     return p.cv
 
@@ -425,7 +459,7 @@ def make_icon(category: str, tier: int, size: int = ICON_SIZE) -> Canvas:
 def generate():
     """Renders only the category/tier icons that data/cyberware.json uses
     (plus neural_t1, the surgical field's default implant), each as the
-    48 px item icon and the 64 px surgical-field implant."""
+    96 px item icon and the 128 px surgical-field implant."""
     import json
     import os
     data = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "data", "cyberware.json")
@@ -439,4 +473,4 @@ def generate():
                 make_icon(cat, tier, ICON_SIZE).save(f"cyberware/{cat}_t{tier}.png")
                 make_icon(cat, tier, FIELD_SIZE).save(f"cyberware/field/{cat}_t{tier}.png")
                 n += 1
-    print("cyberware icons:", n, "(48 px icons + 64 px field implants)")
+    print("cyberware icons:", n, "(96 px icons + 128 px field implants)")

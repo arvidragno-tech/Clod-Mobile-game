@@ -152,7 +152,7 @@ func _draw() -> void:
 	var scene := _scene()
 	if scene:
 		# The HD street, bottom-aligned and centred; sky colour above it.
-		var ts := Vector2(scene.get_size())
+		var ts := PixelArt.scene_size(scene)
 		var o := Vector2(floorf((a.x - ts.x) / 2.0), a.y - ts.y)
 		draw_rect(Rect2(Vector2.ZERO, size), top)
 		draw_texture_rect(scene, Rect2(o * _s(), ts * _s()), false)

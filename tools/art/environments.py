@@ -1036,74 +1036,6 @@ def title_scene_wide() -> Canvas:
     return sc.render()
 
 
-def surgery_backdrop_wide(level: int) -> Canvas:
-    """PC operating view (340x270 art px): wider table, instrument trays on
-    both sides, monitors and robotic arms around the 160x160 field."""
-    rng = random.Random(320 + level)
-    Wd, Hd = 340, 270
-    sc = LitScene(Wd, Hd, ambient=(0.20, 0.21, 0.28))
-    a = sc.albedo
-    fl = MAT["floor_c"] if level == 0 else MAT["floor_t"] if level == 1 else MAT["floor_m"]
-    for y in range(Hd):
-        for x in range(Wd):
-            v = 2.6 + rng.random() * 0.4
-            if level > 0 and (x % 20 == 0 or y % 20 == 0):
-                v -= 1.0
-            a.shade_px(x, y, fl, v)
-    tm = MAT["wood"] if level == 0 else MAT["steel"]
-    a.shaded_poly([(70, 0), (270, 0), (270, Hd), (70, Hd)], tm, 4.5, 3.0, 2.0, 1.2)
-    for y in range(0, Hd, 16):
-        a.rect(70, y, 3, 8, C(MAT["dark"], 2))
-        a.rect(267, y + 6, 3, 8, C(MAT["dark"], 2))
-    for y in range(4, Hd - 4):
-        for x in range(76, 264):
-            hx = 6 * 0.07 * math.cos(x * 0.07 + 2 * math.sin(y * 0.03))
-            a.shade_px(x, y, MAT["cloth"], 3.2 - hx * 0.6 + (0.4 if rng.random() < 0.03 else 0))
-    # Instrument trays left and right with glinting tools.
-    for tx in (10, 282):
-        a.shaded_poly([(tx, 150), (tx + 48, 150), (tx + 48, 236), (tx, 236)], MAT["steel"], 5, 3, 1, 1)
-        for k in range(6):
-            y = 158 + k * 12
-            a.line(tx + 4, y, tx + 40, y - 4, C(MAT["steel"], 6))
-            a.line(tx + 4, y + 1, tx + 18, y - 1, C(MAT["dark"], 2))
-    # Vitals monitor stack top-left, drip bag top-right.
-    if level >= 1:
-        monitor_x = 14
-        a.shaded_poly([(monitor_x, 20), (monitor_x + 44, 20), (monitor_x + 44, 58), (monitor_x, 58)], MAT["dark"], 5, 2, 1, 1)
-        for yy in range(24, 54):
-            for xx in range(monitor_x + 3, monitor_x + 41):
-                sc.emissive.set(xx, yy, (6, 18, 14, 255))
-        prev = None
-        for xx in range(monitor_x + 3, monitor_x + 41):
-            k = (xx - monitor_x) % 14
-            dy = {6: -2, 7: 5, 8: -7, 9: 6, 10: -1}.get(k, 0)
-            yy = 40 + dy
-            if prev is not None:
-                for yyy in range(min(prev, yy), max(prev, yy) + 1):
-                    sc.emissive.set(xx, yyy, GLOW("green", 6))
-            prev = yy
-        sc.light(monitor_x + 22, 40, pal.ACCENT["green"], 60, 0.4)
-    a.rect(300, 16, 12, 18, C(R("8ab0b8"), 5))
-    a.vline(306, 0, 16, C(MAT["steel"], 4))
-    sc.emissive.set(304, 30, GLOW("cyan", 3))
-    for k in range(3):
-        pts = [(Wd - 1, 70 + k * 40), (300 - k * 8, 100 + k * 30), (290, 160 + k * 20), (Wd - 1, 200 + k * 25)]
-        a.polyline(pts, C(MAT["dark"], 0))
-    if level >= 1:
-        sc.light(Wd + 10, 90, pal.ACCENT["cyan"], 110, 0.45)
-    if level >= 2:
-        for side, bx in ((1, 60), (-1, 280)):
-            a.capsule(bx, 6, bx + side * 30, 34, 5, MAT["white"], 1.5, 6)
-            a.sphere(bx + side * 30, 34, 5, 5, MAT["dark"], 1.5, 5)
-            a.capsule(bx + side * 30, 34, bx + side * 36, 60, 3.5, MAT["white"], 1.5, 6)
-            sc.emissive.set(bx + side * 30, 34, GLOW("cyan", 6))
-            sc.emissive.set(bx + side * 36, 64, GLOW("red", 6))
-    sc.light(170, 130, pal.ACCENT["white"], 190, 1.0)
-    if level == 0:
-        sc.light(170, 120, "ffcf8a", 150, 0.5)
-    return sc.render()
-
-
 def black_market_wide() -> Canvas:
     """PC Undermarket banner (600x150 art px): steel grate, hooks of chrome,
     magenta neon, a vendor booth."""
@@ -1144,6 +1076,7 @@ def generate():
     citymap.generate()
     # The black-market banner is HD now: the "streets" group.
     # The title key art is HD now: the "streets" group (tools/art/streets_hd.py).
-    for lv in range(3):
-        surgery_backdrop_wide(lv).save(f"surgery/backdrop_{lv}.png")
-    print("environments: city map, black market, surgery x3")
+    # The operating-table backdrops are HD now (tools/art/surgery_hd.py).
+    from . import surgery_hd
+    surgery_hd.generate()
+    print("environments: city map, surgery backdrops")

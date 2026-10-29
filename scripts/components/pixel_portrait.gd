@@ -1,6 +1,6 @@
 class_name PixelPortrait
 extends Control
-## A character portrait (HD 144x168 art) at the world-art density on a
+## A character portrait (HD 288x336 art) at the world-art density on a
 ## lit, place-specific backdrop (clinic tiles, wet street, corporate glass,
 ## market haze...). Animated through CharacterAnimationManager: blinks,
 ## gaze shifts, a 1-pixel breath, tremor and cyberware flicker. Expression
@@ -43,8 +43,11 @@ func _exit_tree() -> void:
 	CharacterAnimationManager.unregister(self)
 
 
+## Screen units per portrait pixel. `pixel_scale` (and the default,
+## GameConfig.ART_SCALE) are given for the 1.5x layout atlas; a denser atlas
+## draws proportionally smaller pixels so the portrait keeps its size.
 func _ps() -> float:
-	return float(pixel_scale if pixel_scale > 0 else GameConfig.ART_SCALE)
+	return float(pixel_scale if pixel_scale > 0 else GameConfig.ART_SCALE) * 1.5 / _k()
 
 
 ## Portrait pixels per layout unit (1.5 for the HD atlas).
@@ -112,7 +115,10 @@ func _draw() -> void:
 	var origin := ((size - area) / 2.0).floor()
 	var r := Rect2(origin, area)
 	draw_rect(r, Palette.BG_0)
-	_draw_backdrop(r, s)
+	# Backdrop and vignette keep the 1.5x atlas's pixel size (sl) so their
+	# patterns read the same whatever the portrait's own density.
+	var sl := s * _k() / 1.5
+	_draw_backdrop(r, sl)
 	if not appearance.is_empty():
 		var tex: Array = _textures()
 		var breath := int(_anim.get("breath", 0))
@@ -131,8 +137,8 @@ func _draw() -> void:
 		_draw_action(r, s, cr)
 	# Grime vignette (no scanlines: faces stay clean and readable).
 	for i in 4:
-		draw_rect(Rect2(r.position.x, r.position.y + i * s, r.size.x, s), Color(0, 0, 0, 0.18 - i * 0.04))
-		draw_rect(Rect2(r.position.x, r.end.y - (i + 1) * s, r.size.x, s), Color(0, 0, 0, 0.22 - i * 0.05))
+		draw_rect(Rect2(r.position.x, r.position.y + i * sl, r.size.x, sl), Color(0, 0, 0, 0.18 - i * 0.04))
+		draw_rect(Rect2(r.position.x, r.end.y - (i + 1) * sl, r.size.x, sl), Color(0, 0, 0, 0.22 - i * 0.05))
 	# Frame + corner brackets
 	draw_rect(r.grow(2), Palette.LINE, false, 2.0)
 	for corner: Vector2 in [r.position, Vector2(r.end.x, r.position.y), Vector2(r.position.x, r.end.y), r.end]:

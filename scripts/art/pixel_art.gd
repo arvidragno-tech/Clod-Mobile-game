@@ -25,11 +25,26 @@ static func tex(path: String) -> Texture2D:
 	return _textures[path]
 
 
-## Screen units per art pixel for a sprite: the cyberware art is drawn at
-## 1.5x the UI grid (48 px for the old 32 px footprint) and shown at
-## GameConfig.ART_SCALE; every other sprite uses GameConfig.PIXEL_SCALE.
+## Folders whose sprites are drawn at full screen resolution (one texel
+## per screen unit at 1080p): cyberware (96 px icons), surgical tools
+## (72 px), UI icons (36 px) and faction emblems (48 px), each RES x its
+## old design grid (tools/art/tools_art.py, cyberware_art.py).
+const NATIVE_DIRS := ["/sprites/cyberware/", "/sprites/tools/", "/sprites/ui/icons/", "/sprites/factions/"]
+
+
+## Screen units per art pixel for a sprite: 1 for the full-resolution
+## folders above, GameConfig.PIXEL_SCALE for the rest of the UI sprites.
 static func density(path: String) -> int:
-	return GameConfig.ART_SCALE if path.contains("/sprites/cyberware/") else GameConfig.PIXEL_SCALE
+	for d: String in NATIVE_DIRS:
+		if path.contains(d):
+			return 1
+	return GameConfig.PIXEL_SCALE
+
+
+## Size of a scene texture in design pixels (GameConfig.SCENE_RES texels
+## each): what layouts, hotspots and anchors are measured in.
+static func scene_size(t: Texture2D) -> Vector2:
+	return Vector2(t.get_size()) / float(GameConfig.SCENE_RES) if t else Vector2.ZERO
 
 
 ## Texture upscaled with nearest filtering so it displays at the game's

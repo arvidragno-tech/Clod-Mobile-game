@@ -1,9 +1,10 @@
 class_name CutscenePlayer
 extends Control
 ## A short in-engine scene (data/cutscenes.json), played as a modal in the
-## clinic. Letterbox bars, a backdrop made from art the game already has
-## (the title key art, the clinic room, a street scene with today's weather
-## and light), an optional cast portrait or chapter card, and one line of
+## clinic. Letterbox bars, a backdrop (a full-screen illustration painted
+## for the scenes, the title key art, the clinic room, or a street scene
+## with today's weather and light), an optional cast portrait or chapter
+## card, and one line of
 ## text per shot, typed at the player's text speed. Shots fade into each
 ## other with a slow drift (none with Reduce Motion).
 ##
@@ -221,6 +222,11 @@ static func estimate_seconds(shots: Array, cps: float) -> float:
 	return total
 
 
+## The illustration file for a "scene:<id>" backdrop.
+static func scene_path(spec: String) -> String:
+	return "res://assets/sprites/cutscenes/%s.png" % spec.trim_prefix("scene:")
+
+
 func _make_backdrop(spec: String) -> Control:
 	if spec.begins_with("street:"):
 		# The street at the game's pixel size, doubled: it fills the frame
@@ -239,6 +245,10 @@ func _make_backdrop(spec: String) -> Control:
 		holder.resized.connect(func() -> void: v.size = (holder.size / 2.0).ceil())
 		return holder
 	var path := ""
+	if spec.begins_with("scene:"):
+		# A cutscene illustration, painted at the stage's size (1920x840) so
+		# it shows at one texel per screen pixel at 1080p.
+		path = scene_path(spec)
 	match spec:
 		"keyart":
 			path = "res://assets/sprites/ui/title_keyart.png"

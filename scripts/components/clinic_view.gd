@@ -258,7 +258,7 @@ func _foot_pad(tex: Texture2D) -> float:
 func _layout() -> void:
 	if _background == null or size.x <= 0.0:
 		return
-	var img := Vector2(_background.get_size())
+	var img := PixelArt.scene_size(_background)
 	# Always the HD world density (2 units per art px on the 1920x1080 canvas);
 	# the panel frame absorbs any leftover space.
 	_scale = float(GameConfig.ART_SCALE)
@@ -323,10 +323,10 @@ func _draw() -> void:
 	if _background == null:
 		return
 	draw_rect(Rect2(Vector2.ZERO, size), Color(0.02, 0.02, 0.04))
-	draw_texture_rect(_background, Rect2(_offset, Vector2(_background.get_size()) * _scale), false)
+	draw_texture_rect(_background, Rect2(_offset, PixelArt.scene_size(_background) * _scale), false)
 	for o: Array in _overlays:
 		var t: Texture2D = o[0]
-		draw_texture_rect(t, Rect2(_offset + (o[1] as Vector2) * _scale, Vector2(t.get_size()) * _scale), false)
+		draw_texture_rect(t, Rect2(_offset + (o[1] as Vector2) * _scale, PixelArt.scene_size(t) * _scale), false)
 	_draw_fx()
 	_draw_wall()
 	_draw_hotspot()

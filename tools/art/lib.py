@@ -283,6 +283,103 @@ class Canvas:
         return path
 
 
+class SuperCanvas(Canvas):
+    """A Canvas drawn in design pixels (w x h) but rasterised at k times the
+    resolution. Flat pixels (set/rect/hline...) keep the weight of a whole
+    design pixel; shaded primitives (sphere, capsule, cylinder, polygons,
+    ellipses) and lines are evaluated per output pixel, so curves, ramps and
+    diagonals get the extra resolution instead of an upscale. `fine(X, Y, c)`
+    sets a single output pixel for detail the design grid cannot hold."""
+
+    def __init__(self, w: int, h: int, k: int = 3, indexed: bool = False, fill=None):
+        super().__init__(w * k, h * k, indexed, fill)
+        self.k = k
+        self.dw, self.dh = w, h
+        self._raw = 0
+
+    # --- design-pixel access ---
+    def set(self, x, y, c) -> None:
+        if self._raw:
+            return Canvas.set(self, x, y, c)
+        k = self.k
+        X, Y = int(x) * k, int(y) * k
+        for dy in range(k):
+            for dx in range(k):
+                Canvas.set(self, X + dx, Y + dy, c)
+
+    def get(self, x, y):
+        if self._raw:
+            return Canvas.get(self, x, y)
+        k = self.k
+        return Canvas.get(self, int(x) * k + k // 2, int(y) * k + k // 2)
+
+    def fine(self, X, Y, c) -> None:
+        Canvas.set(self, int(X), int(Y), c)
+
+    def _hi(self, fn, *args, **kw):
+        self._raw += 1
+        try:
+            return fn(*args, **kw)
+        finally:
+            self._raw -= 1
+
+    def line(self, x0, y0, x1, y1, c):
+        """Design-weight line stepped per output pixel (smooth diagonals)."""
+        if self._raw:
+            return Canvas.line(self, x0, y0, x1, y1, c)
+        k = self.k
+        X0, Y0, X1, Y1 = x0 * k, y0 * k, x1 * k, y1 * k
+        n = int(max(abs(X1 - X0), abs(Y1 - Y0))) + 1
+        for i in range(n + 1):
+            t = i / max(1, n)
+            X, Y = int(round(X0 + (X1 - X0) * t)), int(round(Y0 + (Y1 - Y0) * t))
+            for dy in range(k):
+                for dx in range(k):
+                    Canvas.set(self, X + dx, Y + dy, c)
+
+    def fline(self, x0, y0, x1, y1, c):
+        """A one-output-pixel line between design pixel centres."""
+        k = self.k
+        self._hi(Canvas.line, self, (x0 + 0.5) * k - 0.5, (y0 + 0.5) * k - 0.5, (x1 + 0.5) * k - 0.5, (y1 + 0.5) * k - 0.5, c)
+
+    def ellipse(self, cx, cy, rx, ry, c):
+        k = self.k
+        self._hi(Canvas.ellipse, self, cx * k, cy * k, rx * k, ry * k, c)
+
+    def poly(self, pts, c):
+        k = self.k
+        self._hi(Canvas.poly, self, [(x * k, y * k) for x, y in pts], c)
+
+    def sphere(self, cx, cy, rx, ry, ramp, lo=1.0, hi=6.0, light=LIGHT, rim=None, clip=None):
+        k = self.k
+        cl = (lambda X, Y: clip(X // k, Y // k)) if clip else None
+        self._hi(Canvas.sphere, self, cx * k, cy * k, rx * k, ry * k, ramp, lo, hi, light, rim, cl)
+
+    def cylinder(self, x, y, w, h, ramp, lo=1.0, hi=6.0, vertical=True, light=LIGHT):
+        k = self.k
+        self._hi(Canvas.cylinder, self, x * k, y * k, w * k, h * k, ramp, lo, hi, vertical, light)
+
+    def capsule(self, ax, ay, bx, by, r, ramp, lo=1.0, hi=6.0, light=LIGHT, r2=None):
+        k = self.k
+        self._hi(Canvas.capsule, self, ax * k, ay * k, bx * k, by * k, r * k, ramp, lo, hi, light, None if r2 is None else r2 * k)
+
+    def shaded_poly(self, pts, ramp, top=5.0, bottom=2.0, left_bias=0.8, edge_dark=1.0):
+        k = self.k
+        self._hi(Canvas.shaded_poly, self, [(x * k, y * k) for x, y in pts], ramp, top, bottom, left_bias, edge_dark)
+
+    def selective_outline(self, darken_lit_side=True, only_ramp=None, width=None):
+        for _ in range(width if width is not None else max(1, self.k - 1)):
+            self._hi(Canvas.selective_outline, self, darken_lit_side, only_ramp)
+
+    def noise(self, x, y, w, h, c, chance, rng, mask=None):
+        """Fine grain: per output pixel."""
+        k = self.k
+        for yy in range(int(y * k), int((y + h) * k)):
+            for xx in range(int(x * k), int((x + w) * k)):
+                if rng.random() < chance and (mask is None or Canvas.get(self, xx, yy) is not None):
+                    Canvas.set(self, xx, yy, c)
+
+
 def poly_pixels(pts):
     """Scanline polygon fill; returns covered pixel coordinates."""
     out = []
