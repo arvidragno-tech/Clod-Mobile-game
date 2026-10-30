@@ -4,7 +4,7 @@ All notable changes to *UNDERCITY: RIPPER*. Versions follow
 `application/config/version` in `project.godot` and the Windows file version
 in `export_presets.cfg`.
 
-## Unreleased — Graphics overhaul: more pixels everywhere
+## 3.14.0 — Graphics overhaul: more pixels everywhere
 
 Two rounds of restyling toward clean, dense, modern pixel art (see
 `docs/GRAPHICS_OVERHAUL.md`). The palette is unchanged.

@@ -7,7 +7,11 @@ almost nothing, take customers, install cyberware at a surgical workstation,
 hire staff, buy clinics across the city, and decide what you become while a
 corporate conspiracy spreads through your patients' nerves.
 
-**Status: 3.13.1**: implants are installed into the patient, not laid
+**Status: 3.14.0**: the graphics overhaul. Twice the pixels in every
+scene, the operating field at four times the detail, sharper characters
+and icons, and full-screen cutscene illustrations.
+
+**3.13.1**: implants are installed into the patient, not laid
 on top, and the rotation marks line up with the socket.
 
 **3.13.0**: the clinic holds together. Every kind of chrome
