@@ -35,7 +35,7 @@ func _ready() -> void:
 func _layout() -> void:
 	if _tex == null:
 		return
-	var img := Vector2(_tex.get_size())
+	var img := PixelArt.scene_size(_tex)
 	_scale = float(GameConfig.ART_SCALE)
 	while img.x * _scale < size.x:
 		_scale += 1.0
@@ -49,7 +49,7 @@ func _layout() -> void:
 func _process(delta: float) -> void:
 	_time += delta
 	if not Settings.reduce_motion and Settings.environment_effects:
-		var img := Vector2(_tex.get_size()) if _tex else Vector2(180, 400)
+		var img := PixelArt.scene_size(_tex) if _tex else Vector2(180, 400)
 		for i in _drops.size():
 			var d := _drops[i]
 			d.x += DROP_SPEED.x * delta
@@ -80,7 +80,7 @@ func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, size), Color("07060c"))
 	if _tex == null:
 		return
-	draw_texture_rect(_tex, Rect2(_offset, Vector2(_tex.get_size()) * _scale), false)
+	draw_texture_rect(_tex, Rect2(_offset, PixelArt.scene_size(_tex) * _scale), false)
 	# Darken the left third (menu column) in hard steps so the wordmark and
 	# menu read over the city; the alley stays bright on the right.
 	var col_end := size.x * 0.42

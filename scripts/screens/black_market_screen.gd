@@ -159,7 +159,7 @@ func _den_strip() -> Control:
 	holder.clip_contents = true
 	var tex := TextureRect.new()
 	var at := AtlasTexture.new()
-	at.atlas = PixelArt.scaled(DEN, GameConfig.ART_SCALE)
+	at.atlas = PixelArt.scaled(DEN, maxi(1, GameConfig.ART_SCALE / GameConfig.SCENE_RES))
 	at.region = Rect2(DEN_CROP.position * GameConfig.ART_SCALE, DEN_CROP.size * GameConfig.ART_SCALE)
 	tex.texture = at
 	tex.expand_mode = TextureRect.EXPAND_IGNORE_SIZE

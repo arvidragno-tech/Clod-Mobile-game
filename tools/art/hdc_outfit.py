@@ -116,20 +116,18 @@ def _stains(c, rng, ramp_shade_list, n, box):
         cx, cy = rng.uniform(x0, x1), rng.uniform(y0, y1)
         r = rng.uniform(1.0, 3.2)
         for X, Y, x, y in grid(cx - r, cy - r, cx + r + 1, cy + r + 1):
-            if (x - cx) ** 2 + (y - cy) ** 2 <= r * r and c.get(X, Y) is not None and rng.random() < 0.78:
-                P(c, X, Y, *rng.choice(ramp_shade_list))
+            if (x - cx) ** 2 + (y - cy) ** 2 <= r * r and c.get(X, Y) is not None:
+                P(c, X, Y, *ramp_shade_list[0 if (x - cx) + (y - cy) < 0 else -1])
 
 
 def _leather_sheen(c, rng, ramp, n=16, box=None):
+    """Leather catches the light in a few long, clean glints."""
     x0, y0, x1, y1 = box
-    for _ in range(int(n * 1.8)):
+    for _ in range(max(3, n // 4)):
         X, Y = rng.randint(H(x0), H(x1)), rng.randint(H(y0), H(y1))
-        if c.has(X, Y, ramp):
-            P(c, X, Y, ramp, 6 if X < HCX else 5)
-            if rng.random() < 0.6 and c.has(X + 1, Y):
-                P(c, X + 1, Y, ramp, 5 if X < HCX else 4)
-            if rng.random() < 0.3 and c.has(X, Y + 1):
-                P(c, X, Y + 1, ramp, 2)
+        for k in range(rng.randint(3, 6)):
+            if c.has(X + k // 3, Y + k, ramp):
+                P(c, X + k // 3, Y + k, ramp, 5 if X < HCX else 4)
 
 
 def _buttons(c, X, Y0, Y1, ramp=MT, step=9):

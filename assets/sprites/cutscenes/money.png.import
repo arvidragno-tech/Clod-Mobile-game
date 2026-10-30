@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dsevj7qcb5xtb"
-path="res://.godot/imported/scalpel_mono.png-ff224f6cf87eb6bb904bb21aaf889228.ctex"
+uid="uid://dfujmelauo2xb"
+path="res://.godot/imported/money.png-0fdd5f8760f383cac7df919c75eb8b99.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/tools/scalpel_mono.png"
-dest_files=["res://.godot/imported/scalpel_mono.png-ff224f6cf87eb6bb904bb21aaf889228.ctex"]
+source_file="res://assets/sprites/cutscenes/money.png"
+dest_files=["res://.godot/imported/money.png-0fdd5f8760f383cac7df919c75eb8b99.ctex"]
 
 [params]
 

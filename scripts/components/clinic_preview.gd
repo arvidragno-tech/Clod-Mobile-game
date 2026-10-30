@@ -37,11 +37,12 @@ func _draw() -> void:
 		return
 	var s := _s()
 	var src := Rect2(region)
-	draw_texture_rect_region(_bg, Rect2(Vector2.ZERO, src.size * s), src)
+	var k := float(GameConfig.SCENE_RES)
+	draw_texture_rect_region(_bg, Rect2(Vector2.ZERO, src.size * s), Rect2(src.position * k, src.size * k))
 	for o: Array in _overlays:
 		var tex: Texture2D = o[0]
-		var r := Rect2(o[1] as Vector2, Vector2(tex.get_size()))
+		var r := Rect2(o[1] as Vector2, PixelArt.scene_size(tex))
 		var clip := r.intersection(src)
 		if clip.has_area():
-			draw_texture_rect_region(tex, Rect2((clip.position - src.position) * s, clip.size * s), Rect2(clip.position - r.position, clip.size))
+			draw_texture_rect_region(tex, Rect2((clip.position - src.position) * s, clip.size * s), Rect2((clip.position - r.position) * k, clip.size * k))
 	draw_rect(Rect2(Vector2.ZERO, src.size * s), Palette.LINE, false, 2.0)

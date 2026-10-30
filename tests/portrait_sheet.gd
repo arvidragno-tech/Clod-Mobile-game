@@ -54,7 +54,7 @@ func _ready() -> void:
 		t.texture = CharacterArt.body(CharacterAppearanceManager.normalize(app))
 		t.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		t.custom_minimum_size = Vector2(CharacterArt.size_of(&"body")) * 2
+		t.custom_minimum_size = Vector2(CharacterArt.size_of(&"body")) * 2.0 * GameConfig.BODY_ART_W / float(CharacterArt.size_of(&"body").x)
 		row.add_child(t)
 	for i in 60:
 		await get_tree().process_frame

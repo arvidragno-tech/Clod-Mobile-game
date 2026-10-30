@@ -230,8 +230,8 @@ func _customer_generation() -> void:
 	var round_trip := CustomerData.from_save_dict(ca.to_save_dict())
 	check(round_trip.display_name == ca.display_name and round_trip.existing_cyberware == ca.existing_cyberware and round_trip.appearance == ca.appearance, "customer serialises losslessly")
 	var tex := CharacterArt.portrait(ca.appearance)
-	check(tex != null and tex.get_width() == 144 and tex.get_height() == 168, "portrait composites to the HD 144x168")
-	check(CharacterArt.body(ca.appearance).get_height() == 120, "body sprite composites to the HD 60x120")
+	check(tex != null and tex.get_width() == 288 and tex.get_height() == 336, "portrait composites to the HD 288x336")
+	check(CharacterArt.body(ca.appearance).get_height() == 240, "body sprite composites to the HD 120x240")
 	_character_system(gen)
 
 

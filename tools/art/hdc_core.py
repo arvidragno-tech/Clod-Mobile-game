@@ -50,7 +50,7 @@ class HDCanvas(Canvas):
     shade_px, rect...) work in HD pixels; the l* methods take logical
     coordinates."""
 
-    def __init__(self, lw: int, lh: int, dither: float = 0.25):
+    def __init__(self, lw: int, lh: int, dither: float = 0.0):
         super().__init__(int(round(lw * S)), int(round(lh * S)), indexed=True)
         self.dither_band = dither
 
@@ -79,6 +79,15 @@ class HDCanvas(Canvas):
     def lline(self, x0, y0, x1, y1, c):
         """Thin (1 HD px) line between logical cell centres."""
         self.line((x0 + 0.5) * S - 0.5, (y0 + 0.5) * S - 0.5, (x1 + 0.5) * S - 0.5, (y1 + 0.5) * S - 0.5, c)
+
+    def shade_px(self, x, y, ramp, value):
+        """Cel quantisation: shaded primitives land on four flat bands
+        (deep shadow, shadow, base, light) instead of a smooth ramp."""
+        v = float(value)
+        s = 1 if v < 1.6 else (2 if v < 2.9 else (4 if v < 4.4 else 5))
+        if v < 0.6:
+            s = 0
+        self.set(x, y, self.resolve(ramp, s))
 
     def has(self, X, Y, ramp=None) -> bool:
         p = self.get(X, Y)
@@ -246,3 +255,18 @@ def bbox(cv: HDCanvas):
     if not xs:
         return None
     return min(xs), min(ys), max(xs) - min(xs) + 1, max(ys) - min(ys) + 1
+
+
+def ink_outline(cv: HDCanvas, ramp=FX, shade=F_OUT):
+    """Closes a part with a 1 px ink line just outside its silhouette
+    (4-neighbour), the clean dark contour of modern character pixel art."""
+    src = [row[:] for row in cv.px]
+    for y in range(cv.h):
+        for x in range(cv.w):
+            if src[y][x] is not None:
+                continue
+            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                nx, ny = x + dx, y + dy
+                if 0 <= nx < cv.w and 0 <= ny < cv.h and src[ny][nx] is not None and src[ny][nx] != (ramp, shade):
+                    cv.px[y][x] = (ramp, shade)
+                    break

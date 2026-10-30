@@ -25,9 +25,34 @@ static func tex(path: String) -> Texture2D:
 	return _textures[path]
 
 
+## Folders whose sprites are drawn at full screen resolution (one texel
+## per screen unit at 1080p): cyberware (96 px icons), surgical tools
+## (72 px), UI icons (36 px) and faction emblems (48 px), each RES x its
+## old design grid (tools/art/tools_art.py, cyberware_art.py).
+const NATIVE_DIRS := ["/sprites/cyberware/", "/sprites/tools/", "/sprites/ui/icons/", "/sprites/factions/"]
+
+
+## Screen units per art pixel for a sprite: 1 for the full-resolution
+## folders above, GameConfig.PIXEL_SCALE for the rest of the UI sprites.
+static func density(path: String) -> int:
+	for d: String in NATIVE_DIRS:
+		if path.contains(d):
+			return 1
+	return GameConfig.PIXEL_SCALE
+
+
+## Size of a scene texture in design pixels (GameConfig.SCENE_RES texels
+## each): what layouts, hotspots and anchors are measured in.
+static func scene_size(t: Texture2D) -> Vector2:
+	return Vector2(t.get_size()) / float(GameConfig.SCENE_RES) if t else Vector2.ZERO
+
+
 ## Texture upscaled with nearest filtering so it displays at the game's
 ## pixel density when used at native size (Button icons, TextureRects).
-static func scaled(path: String, factor: int = GameConfig.PIXEL_SCALE) -> Texture2D:
+## factor 0 = the sprite's own density().
+static func scaled(path: String, factor: int = 0) -> Texture2D:
+	if factor <= 0:
+		factor = density(path)
 	var key := "%s@%d" % [path, factor]
 	if _scaled.has(key):
 		return _scaled[key]
@@ -35,6 +60,11 @@ static func scaled(path: String, factor: int = GameConfig.PIXEL_SCALE) -> Textur
 	if t == null:
 		return null
 	var img := t.get_image()
+	# Native-resolution sprites need no upscale; without CPU-side texture
+	# data (the headless dummy renderer) there is nothing to scale.
+	if factor == 1 or img == null or img.is_empty() or img.get_size() != Vector2i(t.get_size()):
+		_scaled[key] = t
+		return t
 	if img.is_compressed():
 		img.decompress()
 	img.resize(img.get_width() * factor, img.get_height() * factor, Image.INTERPOLATE_NEAREST)

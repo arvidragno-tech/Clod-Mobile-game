@@ -468,6 +468,10 @@ func _cutscenes() -> void:
 				if not LocationManager.locations.has(loc) or not ResourceLoader.exists("res://assets/sprites/streets/%s_night.png" % loc):
 					valid = false
 					why += " %s:%s" % [id, bd]
+			elif bd.begins_with("scene:"):
+				if not ResourceLoader.exists(CutscenePlayer.scene_path(bd)):
+					valid = false
+					why += " %s:%s" % [id, bd]
 			elif not bd in ["keyart", "clinic", "black"]:
 				valid = false
 				why += " %s:%s" % [id, bd]

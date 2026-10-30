@@ -79,8 +79,8 @@
   },
   "backalley/diagnostics/2": {
    "path": "res://assets/sprites/clinic/upgrades/backalley_diagnostics_2.png",
-   "x": 60,
-   "y": 19,
+   "x": 58,
+   "y": 15,
    "fx": [
     {
      "type": "led",
@@ -111,8 +111,8 @@
   },
   "backalley/diagnostics/3": {
    "path": "res://assets/sprites/clinic/upgrades/backalley_diagnostics_3.png",
-   "x": 60,
-   "y": 19,
+   "x": 58,
+   "y": 15,
    "fx": [
     {
      "type": "led",
@@ -214,8 +214,8 @@
   },
   "backalley/black_market/2": {
    "path": "res://assets/sprites/clinic/upgrades/backalley_black_market_2.png",
-   "x": 340,
-   "y": 75,
+   "x": 336,
+   "y": 73,
    "fx": [
     {
      "type": "monitor",
@@ -237,8 +237,8 @@
   },
   "backalley/black_market/3": {
    "path": "res://assets/sprites/clinic/upgrades/backalley_black_market_3.png",
-   "x": 340,
-   "y": 75,
+   "x": 336,
+   "y": 73,
    "fx": [
     {
      "type": "monitor",
@@ -290,8 +290,8 @@
   },
   "backalley/staff/3": {
    "path": "res://assets/sprites/clinic/upgrades/backalley_staff_3.png",
-   "x": 134,
-   "y": 79,
+   "x": 130,
+   "y": 75,
    "fx": [
     {
      "type": "steam",
@@ -319,8 +319,8 @@
   },
   "backalley/customer/2": {
    "path": "res://assets/sprites/clinic/upgrades/backalley_customer_2.png",
-   "x": 64,
-   "y": 49,
+   "x": 62,
+   "y": 46,
    "fx": [
     {
      "type": "monitor",
@@ -334,8 +334,8 @@
   },
   "backalley/customer/3": {
    "path": "res://assets/sprites/clinic/upgrades/backalley_customer_3.png",
-   "x": 64,
-   "y": 49,
+   "x": 62,
+   "y": 46,
    "fx": [
     {
      "type": "monitor",
@@ -409,7 +409,7 @@
   },
   "undercity/diagnostics/1": {
    "path": "res://assets/sprites/clinic/upgrades/undercity_diagnostics_1.png",
-   "x": 168,
+   "x": 170,
    "y": 151,
    "fx": [
     {
@@ -425,8 +425,8 @@
   },
   "undercity/diagnostics/2": {
    "path": "res://assets/sprites/clinic/upgrades/undercity_diagnostics_2.png",
-   "x": 60,
-   "y": 19,
+   "x": 58,
+   "y": 15,
    "fx": [
     {
      "type": "led",
@@ -457,8 +457,8 @@
   },
   "undercity/diagnostics/3": {
    "path": "res://assets/sprites/clinic/upgrades/undercity_diagnostics_3.png",
-   "x": 60,
-   "y": 19,
+   "x": 58,
+   "y": 15,
    "fx": [
     {
      "type": "led",
@@ -560,8 +560,8 @@
   },
   "undercity/black_market/2": {
    "path": "res://assets/sprites/clinic/upgrades/undercity_black_market_2.png",
-   "x": 340,
-   "y": 75,
+   "x": 336,
+   "y": 73,
    "fx": [
     {
      "type": "monitor",
@@ -583,8 +583,8 @@
   },
   "undercity/black_market/3": {
    "path": "res://assets/sprites/clinic/upgrades/undercity_black_market_3.png",
-   "x": 340,
-   "y": 75,
+   "x": 336,
+   "y": 73,
    "fx": [
     {
      "type": "monitor",
@@ -636,8 +636,8 @@
   },
   "undercity/staff/3": {
    "path": "res://assets/sprites/clinic/upgrades/undercity_staff_3.png",
-   "x": 133,
-   "y": 79,
+   "x": 130,
+   "y": 75,
    "fx": [
     {
      "type": "steam",
@@ -665,8 +665,8 @@
   },
   "undercity/customer/2": {
    "path": "res://assets/sprites/clinic/upgrades/undercity_customer_2.png",
-   "x": 64,
-   "y": 51,
+   "x": 62,
+   "y": 46,
    "fx": [
     {
      "type": "monitor",
@@ -680,8 +680,8 @@
   },
   "undercity/customer/3": {
    "path": "res://assets/sprites/clinic/upgrades/undercity_customer_3.png",
-   "x": 64,
-   "y": 51,
+   "x": 62,
+   "y": 46,
    "fx": [
     {
      "type": "monitor",
@@ -755,8 +755,8 @@
   },
   "industrial/diagnostics/1": {
    "path": "res://assets/sprites/clinic/upgrades/industrial_diagnostics_1.png",
-   "x": 172,
-   "y": 151,
+   "x": 170,
+   "y": 149,
    "fx": [
     {
      "type": "led",
@@ -771,8 +771,8 @@
   },
   "industrial/diagnostics/2": {
    "path": "res://assets/sprites/clinic/upgrades/industrial_diagnostics_2.png",
-   "x": 60,
-   "y": 19,
+   "x": 58,
+   "y": 15,
    "fx": [
     {
      "type": "led",
@@ -803,8 +803,8 @@
   },
   "industrial/diagnostics/3": {
    "path": "res://assets/sprites/clinic/upgrades/industrial_diagnostics_3.png",
-   "x": 60,
-   "y": 19,
+   "x": 58,
+   "y": 15,
    "fx": [
     {
      "type": "led",
@@ -906,8 +906,8 @@
   },
   "industrial/black_market/2": {
    "path": "res://assets/sprites/clinic/upgrades/industrial_black_market_2.png",
-   "x": 340,
-   "y": 75,
+   "x": 336,
+   "y": 73,
    "fx": [
     {
      "type": "monitor",
@@ -929,8 +929,8 @@
   },
   "industrial/black_market/3": {
    "path": "res://assets/sprites/clinic/upgrades/industrial_black_market_3.png",
-   "x": 340,
-   "y": 75,
+   "x": 336,
+   "y": 73,
    "fx": [
     {
      "type": "monitor",
@@ -982,8 +982,8 @@
   },
   "industrial/staff/3": {
    "path": "res://assets/sprites/clinic/upgrades/industrial_staff_3.png",
-   "x": 134,
-   "y": 79,
+   "x": 131,
+   "y": 75,
    "fx": [
     {
      "type": "steam",
@@ -1011,8 +1011,8 @@
   },
   "industrial/customer/2": {
    "path": "res://assets/sprites/clinic/upgrades/industrial_customer_2.png",
-   "x": 64,
-   "y": 49,
+   "x": 62,
+   "y": 45,
    "fx": [
     {
      "type": "monitor",
@@ -1026,8 +1026,8 @@
   },
   "industrial/customer/3": {
    "path": "res://assets/sprites/clinic/upgrades/industrial_customer_3.png",
-   "x": 64,
-   "y": 49,
+   "x": 62,
+   "y": 45,
    "fx": [
     {
      "type": "monitor",
@@ -1101,8 +1101,8 @@
   },
   "nightmarket/diagnostics/1": {
    "path": "res://assets/sprites/clinic/upgrades/nightmarket_diagnostics_1.png",
-   "x": 166,
-   "y": 149,
+   "x": 170,
+   "y": 151,
    "fx": [
     {
      "type": "led",
@@ -1117,8 +1117,8 @@
   },
   "nightmarket/diagnostics/2": {
    "path": "res://assets/sprites/clinic/upgrades/nightmarket_diagnostics_2.png",
-   "x": 60,
-   "y": 19,
+   "x": 58,
+   "y": 15,
    "fx": [
     {
      "type": "led",
@@ -1149,8 +1149,8 @@
   },
   "nightmarket/diagnostics/3": {
    "path": "res://assets/sprites/clinic/upgrades/nightmarket_diagnostics_3.png",
-   "x": 60,
-   "y": 19,
+   "x": 58,
+   "y": 15,
    "fx": [
     {
      "type": "led",
@@ -1252,8 +1252,8 @@
   },
   "nightmarket/black_market/2": {
    "path": "res://assets/sprites/clinic/upgrades/nightmarket_black_market_2.png",
-   "x": 340,
-   "y": 75,
+   "x": 336,
+   "y": 73,
    "fx": [
     {
      "type": "monitor",
@@ -1275,8 +1275,8 @@
   },
   "nightmarket/black_market/3": {
    "path": "res://assets/sprites/clinic/upgrades/nightmarket_black_market_3.png",
-   "x": 340,
-   "y": 75,
+   "x": 336,
+   "y": 73,
    "fx": [
     {
      "type": "monitor",
@@ -1328,8 +1328,8 @@
   },
   "nightmarket/staff/3": {
    "path": "res://assets/sprites/clinic/upgrades/nightmarket_staff_3.png",
-   "x": 134,
-   "y": 79,
+   "x": 130,
+   "y": 75,
    "fx": [
     {
      "type": "steam",
@@ -1357,8 +1357,8 @@
   },
   "nightmarket/customer/2": {
    "path": "res://assets/sprites/clinic/upgrades/nightmarket_customer_2.png",
-   "x": 66,
-   "y": 49,
+   "x": 62,
+   "y": 46,
    "fx": [
     {
      "type": "monitor",
@@ -1372,8 +1372,8 @@
   },
   "nightmarket/customer/3": {
    "path": "res://assets/sprites/clinic/upgrades/nightmarket_customer_3.png",
-   "x": 66,
-   "y": 49,
+   "x": 62,
+   "y": 46,
    "fx": [
     {
      "type": "monitor",
@@ -1447,8 +1447,8 @@
   },
   "professional/diagnostics/1": {
    "path": "res://assets/sprites/clinic/upgrades/professional_diagnostics_1.png",
-   "x": 172,
-   "y": 151,
+   "x": 170,
+   "y": 149,
    "fx": [
     {
      "type": "led",
@@ -1463,8 +1463,8 @@
   },
   "professional/diagnostics/2": {
    "path": "res://assets/sprites/clinic/upgrades/professional_diagnostics_2.png",
-   "x": 60,
-   "y": 19,
+   "x": 58,
+   "y": 15,
    "fx": [
     {
      "type": "led",
@@ -1495,8 +1495,8 @@
   },
   "professional/diagnostics/3": {
    "path": "res://assets/sprites/clinic/upgrades/professional_diagnostics_3.png",
-   "x": 60,
-   "y": 19,
+   "x": 58,
+   "y": 15,
    "fx": [
     {
      "type": "led",
@@ -1598,8 +1598,8 @@
   },
   "professional/black_market/2": {
    "path": "res://assets/sprites/clinic/upgrades/professional_black_market_2.png",
-   "x": 340,
-   "y": 75,
+   "x": 336,
+   "y": 73,
    "fx": [
     {
      "type": "monitor",
@@ -1621,8 +1621,8 @@
   },
   "professional/black_market/3": {
    "path": "res://assets/sprites/clinic/upgrades/professional_black_market_3.png",
-   "x": 340,
-   "y": 75,
+   "x": 336,
+   "y": 73,
    "fx": [
     {
      "type": "monitor",
@@ -1674,8 +1674,8 @@
   },
   "professional/staff/3": {
    "path": "res://assets/sprites/clinic/upgrades/professional_staff_3.png",
-   "x": 134,
-   "y": 79,
+   "x": 130,
+   "y": 75,
    "fx": [
     {
      "type": "steam",
@@ -1703,8 +1703,8 @@
   },
   "professional/customer/2": {
    "path": "res://assets/sprites/clinic/upgrades/professional_customer_2.png",
-   "x": 64,
-   "y": 49,
+   "x": 62,
+   "y": 45,
    "fx": [
     {
      "type": "monitor",
@@ -1718,8 +1718,8 @@
   },
   "professional/customer/3": {
    "path": "res://assets/sprites/clinic/upgrades/professional_customer_3.png",
-   "x": 64,
-   "y": 49,
+   "x": 62,
+   "y": 45,
    "fx": [
     {
      "type": "monitor",
@@ -1793,8 +1793,8 @@
   },
   "corporate/diagnostics/1": {
    "path": "res://assets/sprites/clinic/upgrades/corporate_diagnostics_1.png",
-   "x": 172,
-   "y": 153,
+   "x": 170,
+   "y": 152,
    "fx": [
     {
      "type": "led",
@@ -1809,8 +1809,8 @@
   },
   "corporate/diagnostics/2": {
    "path": "res://assets/sprites/clinic/upgrades/corporate_diagnostics_2.png",
-   "x": 60,
-   "y": 19,
+   "x": 58,
+   "y": 15,
    "fx": [
     {
      "type": "led",
@@ -1841,8 +1841,8 @@
   },
   "corporate/diagnostics/3": {
    "path": "res://assets/sprites/clinic/upgrades/corporate_diagnostics_3.png",
-   "x": 60,
-   "y": 19,
+   "x": 58,
+   "y": 15,
    "fx": [
     {
      "type": "led",
@@ -1944,8 +1944,8 @@
   },
   "corporate/black_market/2": {
    "path": "res://assets/sprites/clinic/upgrades/corporate_black_market_2.png",
-   "x": 340,
-   "y": 75,
+   "x": 336,
+   "y": 73,
    "fx": [
     {
      "type": "monitor",
@@ -1967,8 +1967,8 @@
   },
   "corporate/black_market/3": {
    "path": "res://assets/sprites/clinic/upgrades/corporate_black_market_3.png",
-   "x": 340,
-   "y": 75,
+   "x": 336,
+   "y": 73,
    "fx": [
     {
      "type": "monitor",
@@ -2020,8 +2020,8 @@
   },
   "corporate/staff/3": {
    "path": "res://assets/sprites/clinic/upgrades/corporate_staff_3.png",
-   "x": 134,
-   "y": 79,
+   "x": 130,
+   "y": 75,
    "fx": [
     {
      "type": "steam",
@@ -2049,8 +2049,8 @@
   },
   "corporate/customer/2": {
    "path": "res://assets/sprites/clinic/upgrades/corporate_customer_2.png",
-   "x": 64,
-   "y": 49,
+   "x": 62,
+   "y": 45,
    "fx": [
     {
      "type": "monitor",
@@ -2064,8 +2064,8 @@
   },
   "corporate/customer/3": {
    "path": "res://assets/sprites/clinic/upgrades/corporate_customer_3.png",
-   "x": 64,
-   "y": 49,
+   "x": 62,
+   "y": 45,
    "fx": [
     {
      "type": "monitor",
@@ -2140,7 +2140,7 @@
   "elite/diagnostics/1": {
    "path": "res://assets/sprites/clinic/upgrades/elite_diagnostics_1.png",
    "x": 172,
-   "y": 147,
+   "y": 151,
    "fx": [
     {
      "type": "led",
@@ -2155,8 +2155,8 @@
   },
   "elite/diagnostics/2": {
    "path": "res://assets/sprites/clinic/upgrades/elite_diagnostics_2.png",
-   "x": 60,
-   "y": 19,
+   "x": 58,
+   "y": 15,
    "fx": [
     {
      "type": "led",
@@ -2187,8 +2187,8 @@
   },
   "elite/diagnostics/3": {
    "path": "res://assets/sprites/clinic/upgrades/elite_diagnostics_3.png",
-   "x": 60,
-   "y": 19,
+   "x": 58,
+   "y": 15,
    "fx": [
     {
      "type": "led",
@@ -2290,8 +2290,8 @@
   },
   "elite/black_market/2": {
    "path": "res://assets/sprites/clinic/upgrades/elite_black_market_2.png",
-   "x": 340,
-   "y": 75,
+   "x": 336,
+   "y": 73,
    "fx": [
     {
      "type": "monitor",
@@ -2313,8 +2313,8 @@
   },
   "elite/black_market/3": {
    "path": "res://assets/sprites/clinic/upgrades/elite_black_market_3.png",
-   "x": 340,
-   "y": 75,
+   "x": 336,
+   "y": 73,
    "fx": [
     {
      "type": "monitor",
@@ -2366,8 +2366,8 @@
   },
   "elite/staff/3": {
    "path": "res://assets/sprites/clinic/upgrades/elite_staff_3.png",
-   "x": 134,
-   "y": 79,
+   "x": 130,
+   "y": 75,
    "fx": [
     {
      "type": "steam",
@@ -2395,8 +2395,8 @@
   },
   "elite/customer/2": {
    "path": "res://assets/sprites/clinic/upgrades/elite_customer_2.png",
-   "x": 64,
-   "y": 49,
+   "x": 62,
+   "y": 45,
    "fx": [
     {
      "type": "monitor",
@@ -2410,8 +2410,8 @@
   },
   "elite/customer/3": {
    "path": "res://assets/sprites/clinic/upgrades/elite_customer_3.png",
-   "x": 64,
-   "y": 49,
+   "x": 62,
+   "y": 45,
    "fx": [
     {
      "type": "monitor",

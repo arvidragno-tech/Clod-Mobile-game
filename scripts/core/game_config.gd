@@ -278,6 +278,14 @@ const ART_SCALE := 2
 ## Body sprites are authored at this width (art px) for ART_SCALE; older,
 ## narrower bodies are scaled up to match.
 const BODY_ART_W := 60.0
+## Scene art (clinic rooms and their upgrade overlays, street scenes, the
+## title key art, the black-market den, the operating-table backdrops, the
+## city map) is rendered at this many texture pixels per design pixel.
+## Layouts, hotspots and animation anchors stay in design pixels
+## (PixelArt.scene_size), so each design pixel is drawn ART_SCALE units wide
+## and holds SCENE_RES x SCENE_RES real pixels: one texel per screen pixel
+## at 1080p.
+const SCENE_RES := 2
 ## The logical canvas every layout is built for (project.godot viewport).
 const VIEWPORT_WIDTH := 1920
 const VIEWPORT_HEIGHT := 1080

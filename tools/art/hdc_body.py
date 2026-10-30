@@ -19,7 +19,7 @@ LIMB_R = {"slim": 1.3, "average": 1.5, "heavy": 2.0, "muscular": 2.1}
 
 
 def body_canvas() -> HDCanvas:
-    return HDCanvas(BW, BH, dither=0.3)
+    return HDCanvas(BW, BH, dither=0.0)
 
 
 def skeleton(build: str, posture: str) -> dict:

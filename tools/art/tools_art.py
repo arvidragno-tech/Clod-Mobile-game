@@ -1,11 +1,16 @@
-"""Surgical tool sprites (24x24), quick-action icons (12x12), UI icons (12x12)
-and faction emblems (16x16)."""
+"""Surgical tool sprites (24x24 design), quick-action icons (12x12), UI icons
+(12x12) and faction emblems (16x16), rasterised at RES x their design grid."""
 from __future__ import annotations
 
 import math
 
 from . import palette as pal
-from .lib import Canvas, clamp
+from .lib import Canvas, SuperCanvas, clamp
+
+# Every sprite here is designed on its small grid and rasterised at RES x
+# (72 px tools, 36 px UI icons, 48 px emblems), shown one texel per screen
+# unit (PixelArt.density): the same footprint with RES^2 the pixels.
+RES = 3
 
 STEEL = pal.ramp("9aa6b4", 0.06, 1.15)
 DARK = pal.ramp("3a404c", 0.06, 1.1)
@@ -186,7 +191,7 @@ DRAW = {
 
 
 def make_tool(category, tier) -> Canvas:
-    cv = Canvas(24, 24)
+    cv = SuperCanvas(24, 24, RES)
     DRAW[category](cv, tier)
     cv.selective_outline()
     return cv
@@ -195,7 +200,7 @@ def make_tool(category, tier) -> Canvas:
 # --- 12x12 UI / quick-action icons -------------------------------------------
 
 def icon(draw) -> Canvas:
-    cv = Canvas(12, 12)
+    cv = SuperCanvas(12, 12, RES)
     draw(cv)
     return cv
 
@@ -344,7 +349,7 @@ UI_ICONS = {
 # --- Faction emblems (16x16) -----------------------------------------------------
 
 def emblem(fid) -> Canvas:
-    cv = Canvas(16, 16)
+    cv = SuperCanvas(16, 16, RES)
     if fid == "street_gangs":  # crossed rebar + rust red
         col = pal.ramp("c0452a")
         cv.shaded_poly([(1, 2), (15, 2), (15, 9), (8, 15), (1, 9)], pal.ramp("2a1a1a"), 4, 2, 1, 1)

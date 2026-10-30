@@ -70,6 +70,14 @@
     "color": "amber"
    },
    {
+    "type": "steam",
+    "x": 163,
+    "y": 152,
+    "w": 1,
+    "h": 1,
+    "color": "white"
+   },
+   {
     "type": "led",
     "x": 161,
     "y": 192,
@@ -249,6 +257,14 @@
     "w": 20,
     "h": 20,
     "color": "pink"
+   },
+   {
+    "type": "steam",
+    "x": 163,
+    "y": 152,
+    "w": 1,
+    "h": 1,
+    "color": "white"
    },
    {
     "type": "led",
@@ -467,6 +483,14 @@
     "color": "amber"
    },
    {
+    "type": "steam",
+    "x": 163,
+    "y": 152,
+    "w": 1,
+    "h": 1,
+    "color": "white"
+   },
+   {
     "type": "led",
     "x": 161,
     "y": 192,
@@ -637,6 +661,14 @@
     "w": 20,
     "h": 20,
     "color": "yellow"
+   },
+   {
+    "type": "steam",
+    "x": 163,
+    "y": 152,
+    "w": 1,
+    "h": 1,
+    "color": "white"
    },
    {
     "type": "led",

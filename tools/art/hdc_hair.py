@@ -1,6 +1,8 @@
 """HD portrait hair (front and back layers)."""
 from __future__ import annotations
 
+import math
+
 from .hdc_core import (S, SK, HR, CC, grid, P, HL, VL, H, clamp, HDCanvas, stipple)
 from .hdc_face import CX, HCX
 
@@ -14,22 +16,26 @@ def hairline(x):
 
 
 def _hair_px(c, X, Y, x, y, rng, base=2.0):
-    """One HD hair pixel: lit from the top-left, with fine strands that run
-    down and outwards from the crown (2 HD px apart) and stray hairs."""
-    nx = (x - CX) / 20.0
-    ny = (y - 20) / 22.0
-    v = base + 2.3 * clamp(-nx * 0.7 - ny * 0.8 + 0.4, 0, 1)
-    lean = int((X - HCX) * 0.35 * max(0, Y - 15) / 45.0)
-    k = (X - lean + (Y // 6)) % 5
-    if k == 0:
-        v -= 1.0
-    elif k == 2 and v > base + 0.9:
-        v += 0.45
-    elif k == 3:
-        v -= 0.25
-    if rng.random() < 0.035:
-        v -= 0.9
-    c.shade_px(X, Y, HR, v)
+    """One HD hair pixel, cel-shaded in clumps: strands fan out and down
+    from the crown, each clump split from the next by a dark line; the
+    light falls in three flat bands from the top left, and a glossy ring
+    (broken by the clump lines) sits round the crown on the lit side."""
+    dx, dy = x - CX, y - 10.0
+    r = math.hypot(dx, dy)
+    a = math.atan2(dx, max(0.5, dy + 6.0))
+    s = a * 5.2 + math.sin(r * 0.17 + a * 2.0) * 0.22
+    f = s - math.floor(s)
+    nx = dx / 20.0
+    ny = (y - 26) / 24.0
+    v = base + 2.4 * clamp(-nx * 0.75 - ny * 0.55 + 0.45, 0, 1)
+    shade = 4 if v >= 3.7 else (3 if v >= 2.6 else 2)
+    if f < 0.07 or (f < 0.16 and r > 22):
+        shade = 1
+    elif f > 0.8:
+        shade = max(1, shade - 1)
+    elif 15.5 < r < 19.5 and dx < 9 and y < 30:
+        shade = 6 if (16.5 < r < 18.5 and 0.3 < f < 0.7 and dx < 3) else 5
+    P(c, X, Y, HR, shade)
 
 
 def _cap(c, rng, grow=2.5, top_extra=0.0, line=hairline, base=2.0, side_cut=None, max_y=46):
@@ -50,7 +56,7 @@ def _cap(c, rng, grow=2.5, top_extra=0.0, line=hairline, base=2.0, side_cut=None
 
 
 def _hair_shadow(c):
-    """Skin shadow under the hair edge on the forehead and temples."""
+    """Hard shadow the hair casts on the forehead and temples: 2 px."""
     for X in range(H(30), H(67)):
         bottom = None
         for Y in range(H(4), H(50)):
@@ -58,23 +64,23 @@ def _hair_shadow(c):
                 bottom = Y
         if bottom is None or bottom > H(44):
             continue
-        for d, shade in ((1, 1), (2, 2), (3, 2)):
+        for d in (1, 2, 3):
             Y = bottom + d
             x, y = (X + 0.5) / S - 0.5, (Y + 0.5) / S - 0.5
             if ((x + 0.5 - CX) / 15.5) ** 2 + ((y + 0.5 - 38) / 21.5) ** 2 <= 1 and c.get(X, Y) is None:
-                P(c, X, Y, SK, shade)
+                P(c, X, Y, SK, 2 if d == 1 else 3)
 
 
 def _strand_highlights(c, rng, x0, x1, y0, y1, n=20):
-    """Glossy strand highlights: short diagonal runs of 3 HD px."""
-    for _ in range(int(n * 1.6)):
+    """Loose glossy strands on the lit side: short runs of the highlight
+    shade that follow the clump direction."""
+    for _ in range(int(n * 0.6)):
         X = rng.randint(H(x0), H(x1))
         Y = rng.randint(H(y0), H(y1))
-        if c.has(X, Y, HR):
-            lit = X < HCX
-            for k in range(3):
-                if c.has(X + k // 2, Y + k, HR):
-                    P(c, X + k // 2, Y + k, HR, (6 if lit else 4) - (k == 2))
+        if c.has(X, Y, HR) and X < HCX + 6:
+            for k in range(4):
+                if c.has(X, Y + k, HR) and c.get(X, Y + k)[1] >= 2:
+                    P(c, X, Y + k, HR, 5 if k < 3 else 4)
 
 
 def _fall(c, rng, x0, x1, y0, y1, taper=0):
@@ -86,8 +92,16 @@ def _fall(c, rng, x0, x1, y0, y1, taper=0):
 
 
 def _fringe(c, X, Y0, Y1, shade, w=1):
-    for k in range(w):
-        VL(c, X + k, Y0, Y1, HR, shade - k)
+    """A pointed lock of fringe: widest at the hairline, tapering to a tip,
+    split from its neighbour by a dark line on the shadow side."""
+    Y1 += 2
+    n = max(1, Y1 - Y0)
+    for Y in range(Y0, Y1 + 1):
+        t = (Y - Y0) / n
+        half = int(round((w + 0.6) * (1 - t)))
+        for dx in range(-half, half + 1):
+            P(c, X + dx, Y, HR, (shade + 1) if dx < 0 and t < 0.5 else shade)
+        P(c, X + half + 1, Y, HR, 1)
 
 
 def draw_hair(c: HDCanvas, style: str, rng):
@@ -100,9 +114,8 @@ def _draw_hair(c: HDCanvas, style: str, rng):
     if style == "buzz":
         for X, Y, x, y in grid(28, 14, 69, 40):
             if ((x + 0.5 - CX) / 17.2) ** 2 + ((y + 0.5 - 37) / 22.6) ** 2 <= 1 and y <= hairline(x):
-                edge = y > hairline(x) - 1.5
-                if not edge or stipple(X, Y, 0.5):
-                    P(c, X, Y, HR, 1 + stipple(X, Y, 0.45) + (x < CX - 4 and y < 26))
+                edge = y > hairline(x) - 1.0
+                P(c, X, Y, HR, 1 if edge or x > CX + 8 else (3 if (x < CX - 4 and y < 26) else 2))
     elif style == "short":
         _cap(c, rng, grow=2.6)
         for k in range(9):  # fringe locks
@@ -132,11 +145,9 @@ def _draw_hair(c: HDCanvas, style: str, rng):
         _cap(c, rng, grow=4.0, top_extra=1.5, line=lambda x: 30 if x < CX + 12 else 28,
              side_cut=lambda x, y: y > 30 and (x < CX - 13 or x > CX + 13))
         for X, Y, x, y in grid(30, 30, 35, 42):  # shaved sides
-            if stipple(X, Y, 0.45):
-                P(c, X, Y, HR, 1)
+            P(c, X, Y, HR, 2 if y > 31 else 1)
         for X, Y, x, y in grid(62, 30, 67, 42):
-            if stipple(X, Y, 0.45):
-                P(c, X, Y, HR, 1)
+            P(c, X, Y, HR, 1)
         for k in range(18):  # swept fringe to the right
             Y = H(22) + k // 2
             HL(c, H(CX - 8) + k, H(CX + 2) + k, Y, HR, 4 if k < 6 else (3 if k < 12 else 2))
@@ -188,15 +199,15 @@ def _draw_hair(c: HDCanvas, style: str, rng):
         for X, Y, x, y in grid(CX - 4, 4, CX + 5, 34):
             w = 4 if y < 28 else 3
             if abs(x - CX) <= w:
-                P(c, X, Y, HR, 2 + (x < CX) + (y < 12) - stipple(X, Y, 0.2) + ((X + Y // 2) % 4 == 0))
+                P(c, X, Y, HR, 1 if abs(x - CX) > w - 1 and x > CX else (4 if x < CX - 1 and y < 14 else (3 if x < CX else 2)))
         for k in range(7):  # spikes
             X = HCX - 5 + k * 2
             VL(c, X, H(0) + (k % 2) * 2, H(4), HR, 3 + (k % 2))
         for X, Y, x, y in grid(30, 18, 39, 40):
-            if y <= hairline(x) and stipple(X, Y, 0.3):
+            if y <= hairline(x):
                 P(c, X, Y, HR, 1)
         for X, Y, x, y in grid(58, 18, 67, 40):
-            if y <= hairline(x) and stipple(X, Y, 0.3):
+            if y <= hairline(x):
                 P(c, X, Y, HR, 1)
     elif style == "locs":
         _cap(c, rng, grow=3.6)
@@ -222,7 +233,7 @@ def _draw_hair(c: HDCanvas, style: str, rng):
                 P(c, X, H(19) + rng.randint(0, 3), HR, 3)
     elif style == "shaved":
         for X, Y, x, y in grid(29, 15, CX + 1, 42):
-            if ((x + 0.5 - CX) / 17.2) ** 2 + ((y + 0.5 - 37) / 22.6) ** 2 <= 1 and y <= hairline(x) and stipple(X, Y, 0.4):
+            if ((x + 0.5 - CX) / 17.2) ** 2 + ((y + 0.5 - 37) / 22.6) ** 2 <= 1 and y <= hairline(x):
                 P(c, X, Y, HR, 1)
         _cap(c, rng, grow=3.0, side_cut=lambda x, y: x < CX - 1)
         for X in range(H(CX + 2), H(CX + 21)):  # the long side falling over
@@ -234,13 +245,12 @@ def draw_hair_back(c: HDCanvas, style: str, rng):
     if style == "long":
         for X, Y, x, y in grid(CX - 25, 36, CX + 26, 98):
             if 14 < abs(x - CX) < 25 - max(0, y - 80) * 0.6:
-                v = 1 + (rng.random() < 0.35) + (x < CX) + ((X + Y // 5) % 4 == 0)
-                P(c, X, Y, HR, v)
+                _hair_px(c, X, Y, x, y, rng, 1.0 if x > CX else 1.4)
     elif style == "tied":
         for Y in range(H(30), H(70)):
             X = H(CX + 17) + (Y - H(30)) // 12
             for d in range(-3, 4):
-                P(c, X + d, Y, HR, 1 + (d < 0) + (rng.random() < 0.25) + (d == -2))
+                P(c, X + d, Y, HR, 1 if d > 1 else (3 if d == -2 else 2))
     elif style == "locs":
         for k in range(8):
             X0 = H(CX - 24 + k * 7)

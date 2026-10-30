@@ -1,14 +1,30 @@
-"""Cyberware icons (32x32). Engineered, not magical: housings, screws,
-connectors, cables and synthetic muscle; glow is reserved for status LEDs,
-optics and active cores. Tier changes the material language."""
+"""Cyberware art, drawn once as a design and rasterised at two densities:
+
+* the item icon, 96x96 (shown one texel per screen unit, the same 96-unit
+  footprint the old 32 px icons had at PIXEL_SCALE), and
+* the surgical-field implant, 128x128 (the field is 640 px wide, so the
+  implant keeps the share of the field the old 32 px art had of 160).
+
+Designs are written on a 32-unit grid and every primitive is evaluated per
+output pixel, so the larger rasters get real extra detail (panel seams,
+screw slots, pistons, finger joints) rather than an upscale. The look
+follows modern character pixel art: flat cel bands lit from the upper
+left, a 1 px near-black ink contour, 1 px speculars and hard emissive
+cores. Engineered, not magical: housings, screws, connectors, cables and
+synthetic muscle; glow is reserved for status LEDs, optics and active
+cores. Tier changes the material language.
+"""
 from __future__ import annotations
 
 import math
 
 from . import palette as pal
-from .lib import Canvas, clamp
+from .lib import Canvas, LIGHT, clamp, poly_pixels
 
 CATEGORIES = ["eyes", "arms", "legs", "spine", "neural", "dermal", "respiratory", "internal"]
+ICON_SIZE = 96
+FIELD_SIZE = 128
+INK = (14, 12, 20, 255)
 
 # Tier material language
 TIER_STYLE = {
@@ -36,7 +52,9 @@ class Style:
         self.cable = R("2a2a32")
         self.muscle = R("7a2030", 0.1)
         self.gold = R("a8843a", 0.05)
+        self.glass = R("12161e")
         self.pcb = R("1f4a3a" if tier < 5 else "2a1f30")
+        self.tape = R("b0965c", 0.04)
 
 
 def rgb(ramp, i):
@@ -44,188 +62,404 @@ def rgb(ramp, i):
     return (c[0], c[1], c[2], 255)
 
 
-def screw(cv, x, y, st):
-    cv.set(x, y, rgb(st.metal, 6))
-    cv.set(x + 1, y, rgb(st.metal, 3))
-    cv.set(x, y + 1, rgb(st.metal, 2))
-    cv.set(x + 1, y + 1, rgb(st.metal, 1))
+def band(v: float) -> int:
+    """Cel bands: deep shadow, shadow, base, light."""
+    if v < 1.6:
+        return 1
+    if v < 2.9:
+        return 2
+    if v < 4.4:
+        return 4
+    return 5
 
 
-def led(cv, x, y, st, big=False):
-    cv.set(x, y, rgb(st.glow, 7))
-    if big:
-        for dx, dy in ((1, 0), (0, 1), (1, 1)):
-            cv.set(x + dx, y + dy, rgb(st.glow, 5))
+class Pen:
+    """Draws a 32-unit design onto a canvas of any size. Shapes take design
+    units; `px` is output pixels per design unit."""
 
+    # The 32-unit design is fitted into the canvas with a small margin so
+    # parts that reach the design edge (fingers, cables, the foot) and the
+    # ink contour around them are never clipped.
+    FIT = 0.9
 
-def cable(cv, pts, st, w=1):
-    for a, b in zip(pts, pts[1:]):
-        steps = int(max(abs(b[0] - a[0]), abs(b[1] - a[1]))) + 1
-        for k in range(steps + 1):
-            t = k / max(1, steps)
-            x = a[0] + (b[0] - a[0]) * t
-            y = a[1] + (b[1] - a[1]) * t
-            cv.set(int(x), int(y), rgb(st.cable, 3))
-            if w > 1:
-                cv.set(int(x) + 1, int(y), rgb(st.cable, 1))
-            cv.set(int(x), int(y) - 1, rgb(st.cable, 5)) if k % 3 == 0 else None
+    def __init__(self, size: int):
+        self.cv = Canvas(size, size)
+        self.px = size / 32.0 * self.FIT
+        self.off = size * (1 - self.FIT) / 2
 
+    # -- coordinates ----------------------------------------------------------------------------
+    def P(self, v):
+        """Design coordinate -> output pixel coordinate."""
+        return v * self.px + self.off
 
-def tape(cv, x, y, w, h):
-    """Improvised repair tape (black-market tier)."""
-    for yy in range(y, y + h):
-        for xx in range(x, x + w):
-            cv.set(xx, yy, (176, 150, 92, 255) if (xx + yy) % 4 else (140, 118, 70, 255))
+    def cells(self, x0, y0, x1, y1):
+        """Output pixels whose centres fall in the design box, with the
+        design coordinate of each centre."""
+        k, o = self.px, self.off
+        for Y in range(int(math.floor(y0 * k + o)), int(math.ceil(y1 * k + o))):
+            y = (Y + 0.5 - o) / k
+            if not (y0 <= y < y1):
+                continue
+            for X in range(int(math.floor(x0 * k + o)), int(math.ceil(x1 * k + o))):
+                x = (X + 0.5 - o) / k
+                if x0 <= x < x1:
+                    yield X, Y, x, y
 
+    def put(self, X, Y, c):
+        self.cv.set(int(X), int(Y), c)
 
-def draw_eyes(cv, st):
-    cable(cv, [(30, 26), (24, 22), (20, 19)], st, 2)
-    cv.cylinder(19, 13, 6, 10, st.trim, 1, 5, vertical=False)
-    cv.sphere(14, 16, 11, 11, st.body, 1.2, 6.4)
-    # Front optic: dark glass with aperture ring
-    cv.sphere(12, 15, 7, 7, st.metal, 0.8, 5.5)
-    cv.sphere(12, 15, 5, 5, R("12161e"), 0.5, 3.5)
-    for a in range(0, 360, 45):  # aperture blades
-        x = 12 + round(3.5 * math.cos(math.radians(a)))
-        y = 15 + round(3.5 * math.sin(math.radians(a)))
-        cv.set(x, y, rgb(st.metal, 2))
-    cv.sphere(12, 15, 2, 2, st.glow, 2.5, 7)
-    cv.set(10, 12, (240, 250, 255, 255))
-    cv.set(11, 12, (180, 200, 220, 255))
-    screw(cv, 21, 9, st)
-    screw(cv, 21, 21, st)
-    led(cv, 5, 22, st)
+    def shade(self, X, Y, ramp, v):
+        self.put(X, Y, rgb(ramp, band(v)))
 
-
-def draw_arms(cv, st):
-    # Forearm housing (diagonal), synthetic muscle visible through a slot.
-    cv.capsule(7, 27, 23, 9, 6.0, st.body, 1.0, 6.2, r2=5.0)
-    for k in range(10):  # muscle slot
-        t = k / 9
-        x = 10 + (19 - 10) * t
-        y = 22 + (12 - 22) * t
-        for d in (-1, 0, 1):
-            cv.set(int(x + d), int(y + d), rgb(st.muscle, 2 + (k + d) % 3))
-    cv.capsule(5, 22, 18, 7, 1.0, st.metal, 2, 6.5)  # piston
-    cv.capsule(12, 30, 26, 14, 1.0, st.metal, 1, 5)
-    cv.sphere(25, 7, 4, 4, st.trim, 1, 5.5)  # wrist joint
-    for p in ((8, 26), (15, 18), (21, 12)):
-        screw(cv, *p, st)
-    led(cv, 18, 19, st)
-    if st.tier >= 3:  # armour plate
-        cv.shaded_poly([(10, 27), (17, 20), (20, 23), (13, 30)], st.trim, 5, 2.5, 1, 1)
-
-
-def draw_legs(cv, st):
-    cv.capsule(10, 3, 14, 15, 5.5, st.body, 1.0, 6.0, r2=5.0)  # thigh
-    cv.capsule(16, 18, 20, 30, 4.0, st.body, 1.0, 5.5, r2=3.2)  # shin
-    cv.capsule(21, 17, 24, 29, 1.0, st.metal, 2, 7)  # shock piston
-    cv.capsule(22, 17, 25, 22, 1.6, st.trim, 1, 5)
-    cv.sphere(15, 16, 4.5, 4.5, st.metal, 1.0, 6.5)  # knee
-    cv.sphere(15, 16, 1.8, 1.8, st.trim, 1, 4)
-    screw(cv, 8, 6, st)
-    screw(cv, 18, 26, st)
-    led(cv, 12, 9, st)
-
-
-def draw_spine(cv, st):
-    cable(cv, [(23, 2), (24, 10), (23, 18), (24, 30)], st, 2)
-    for k in range(5):
-        y = 3 + k * 6
-        cv.shaded_poly([(9, y), (21, y), (22, y + 2), (21, y + 4), (9, y + 4), (8, y + 2)], st.body, 6, 2.5, 1.4, 1)
-        cv.set(6, y + 2, rgb(st.metal, 5))
-        cv.set(7, y + 2, rgb(st.metal, 3))
-        cv.set(23, y + 2, rgb(st.metal, 4))
-        led(cv, 15, y + 2, st) if k % 2 == 0 else cv.set(15, y + 2, rgb(st.trim, 2))
-    cv.rect(14, 2, 2, 28, rgb(st.trim, 2))
-
-
-def draw_neural(cv, st):
-    cv.shaded_poly([(5, 7), (27, 7), (27, 25), (5, 25)], st.pcb, 4.5, 2.5, 1.0, 1)
-    for x in range(6, 27, 2):  # gold contact pins
-        cv.set(x, 5, rgb(st.gold, 6))
-        cv.set(x, 6, rgb(st.gold, 4))
-        cv.set(x, 26, rgb(st.gold, 3))
-        cv.set(x, 27, rgb(st.gold, 2))
-    for y in (10, 14, 18, 22):  # traces
-        for x in range(7, 11):
-            cv.set(x, y, rgb(st.gold, 3))
-    cv.shaded_poly([(12, 10), (24, 10), (24, 22), (12, 22)], st.body, 5.5, 2, 1, 1)  # die / heat spreader
-    for x in range(13, 24, 2):  # heat sink fins
-        cv.rect(x, 11, 1, 10, rgb(st.metal, 5 if x < 18 else 3))
-    led(cv, 8, 21, st, big=True)
-    screw(cv, 25, 8, st)
-    if st.tier == 5:
-        tape(cv, 4, 14, 6, 3)
-
-
-def draw_dermal(cv, st):
-    cx, cy = 16, 16
-    for y in range(3, 30):
-        for x in range(3, 30):
-            dx, dy = (x + 0.5 - cx) / 13, (y + 0.5 - cy) / 13
-            d = dx * dx + dy * dy
-            if d > 1:
+    # -- shaded primitives ----------------------------------------------------------------------
+    def sphere(self, cx, cy, rx, ry, ramp, lo=1.0, hi=6.0, clip=None):
+        for X, Y, x, y in self.cells(cx - rx, cy - ry, cx + rx, cy + ry):
+            nx, ny = (x - cx) / rx, (y - cy) / ry
+            d = nx * nx + ny * ny
+            if d > 1.0 or (clip and not clip(x, y)):
                 continue
             nz = math.sqrt(1 - d)
-            i = clamp(dx * -0.55 + dy * -0.62 + nz * 0.56, 0, 1)
-            # hex tile seams
-            q = (x + (y // 4 % 2) * 2) % 5
-            seam = (y % 4 == 0) or q == 0
-            cv.shade_px(x, y, st.trim if seam else st.body, (1.2 + 4.8 * i) - (1.2 if seam else 0))
-    for p in ((9, 9), (22, 10), (16, 23)):
-        screw(cv, *p, st)
-    led(cv, 16, 15, st)
+            i = clamp(nx * LIGHT[0] + ny * LIGHT[1] + nz * LIGHT[2], 0, 1)
+            self.shade(X, Y, ramp, lo + (hi - lo) * i)
+
+    def capsule(self, ax, ay, bx, by, r, ramp, lo=1.0, hi=6.0, r2=None, mask=None):
+        r2 = r if r2 is None else r2
+        m = max(r, r2)
+        vx, vy = bx - ax, by - ay
+        ll = vx * vx + vy * vy or 1.0
+        for X, Y, x, y in self.cells(min(ax, bx) - m, min(ay, by) - m, max(ax, bx) + m, max(ay, by) + m):
+            px, py = x - ax, y - ay
+            t = clamp((px * vx + py * vy) / ll, 0.0, 1.0)
+            rr = r + (r2 - r) * t
+            dx, dy = px - vx * t, py - vy * t
+            d = math.hypot(dx, dy)
+            if d > rr:
+                continue
+            if mask is not None:
+                mask.add((X, Y))
+            nx, ny = dx / rr, dy / rr
+            nz = math.sqrt(max(0.0, 1 - nx * nx - ny * ny))
+            i = clamp(nx * LIGHT[0] + ny * LIGHT[1] + nz * LIGHT[2], 0, 1)
+            self.shade(X, Y, ramp, lo + (hi - lo) * i)
+
+    def cylinder(self, x0, y0, w, h, ramp, lo=1.0, hi=6.0, vertical=True):
+        for X, Y, x, y in self.cells(x0, y0, x0 + w, y0 + h):
+            t = ((x - x0) / w) * 2 - 1 if vertical else ((y - y0) / h) * 2 - 1
+            nz = math.sqrt(max(0.0, 1 - t * t))
+            i = clamp((t * LIGHT[0] if vertical else t * LIGHT[1]) + nz * LIGHT[2], 0, 1)
+            self.shade(X, Y, ramp, lo + (hi - lo) * i)
+
+    def panel(self, pts, ramp, top=5.0, bottom=2.4, bevel=True):
+        """A flat plate: cel bands top to bottom, a lit top/left bevel and a
+        dark bottom/right lip one output pixel wide."""
+        pix = set(poly_pixels([(self.P(x), self.P(y)) for x, y in pts]))
+        if not pix:
+            return pix
+        ys = [p[1] for p in pix]
+        y0, y1 = min(ys), max(ys)
+        for X, Y in pix:
+            t = (Y - y0) / max(1, y1 - y0)
+            self.shade(X, Y, ramp, top + (bottom - top) * t)
+        if bevel:
+            for X, Y in pix:
+                if (X, Y - 1) not in pix or (X - 1, Y) not in pix:
+                    self.put(X, Y, rgb(ramp, 6))
+                elif (X, Y + 1) not in pix or (X + 1, Y) not in pix:
+                    self.put(X, Y, rgb(ramp, 1))
+        return pix
+
+    # -- line work ------------------------------------------------------------------------------
+    def line(self, x0, y0, x1, y1, c):
+        self.cv.line(self.P(x0), self.P(y0), self.P(x1), self.P(y1), c)
+        if self.px >= 3.5:  # keep the stroke weight on the large raster
+            self.cv.line(self.P(x0) + 1, self.P(y0), self.P(x1) + 1, self.P(y1), c)
+
+    def seam(self, x0, y0, x1, y1, ramp, lit=True):
+        """Panel seam: a dark 1 px groove with a lit edge under it."""
+        self.line(x0, y0, x1, y1, rgb(ramp, 0))
+        if lit:
+            d = (2.0 if self.px >= 3.5 else 1.0) / self.px
+            self.line(x0, y0 + d, x1, y1 + d, rgb(ramp, 5))
+
+    def screw(self, x, y, ramp):
+        X, Y = int(self.P(x)), int(self.P(y))
+        if self.px >= 3.5:
+            for dy in range(4):
+                for dx in range(4):
+                    d = math.hypot(dx - 1.5, dy - 1.5)
+                    if d <= 2.0:
+                        s = 6 if dx + dy <= 1 else (1 if dx + dy >= 5 else (2 if dx == dy else 4))
+                        self.put(X + dx, Y + dy, rgb(ramp, s))
+        elif self.px >= 1.9:
+            for dx, dy, s in ((0, 0, 6), (1, 0, 5), (2, 0, 4), (0, 1, 5), (1, 1, 1), (2, 1, 3), (0, 2, 3), (1, 2, 3), (2, 2, 1)):
+                self.put(X + dx, Y + dy, rgb(ramp, s))
+        else:
+            for dx, dy, s in ((0, 0, 6), (1, 0, 3), (0, 1, 2), (1, 1, 1)):
+                self.put(X + dx, Y + dy, rgb(ramp, s))
+
+    def led(self, x, y, st, big=False):
+        X, Y = int(self.P(x)), int(self.P(y))
+        n = (4 if big else 3) if self.px >= 3.5 else (2 if (big or self.px >= 1.9) else 1)
+        for dy in range(n):
+            for dx in range(n):
+                self.put(X + dx, Y + dy, rgb(st.glow, 7 if dx == 0 and dy == 0 else 5))
+        if big:
+            for dx in range(-1, n + 1):
+                for dy in (-1, n):
+                    if self.cv.get(X + dx, Y + dy) is not None:
+                        self.put(X + dx, Y + dy, rgb(st.glow, 3))
+
+    def cable(self, pts, st, w=1.2):
+        """A sheathed cable: dark core, a lit stripe, ribbing every few px."""
+        for a, b in zip(pts, pts[1:]):
+            self.capsule(a[0], a[1], b[0], b[1], w, st.cable, 1.0, 5.6)
+        step = max(3, int(3 * self.px))
+        for a, b in zip(pts, pts[1:]):
+            n = int(math.hypot(b[0] - a[0], b[1] - a[1]) * self.px)
+            for k in range(0, n, step):
+                t = k / max(1, n)
+                x, y = a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t
+                self.put(self.P(x), self.P(y), rgb(st.cable, 0))
+
+    def spec(self, x, y, n=1):
+        X, Y = int(self.P(x)), int(self.P(y))
+        m = 2 if self.px >= 3.5 else 1
+        for k in range(n * m):
+            for j in range(m):
+                self.put(X + k, Y + j, (246, 248, 251, 255))
+
+    def ink(self):
+        """Near-black contour just outside the silhouette: 1 px on the item
+        icon, 2 px on the large field art (the same weight on screen)."""
+        for _ in range(2 if self.px >= 3.5 else 1):
+            self._ink1()
+
+    def _ink1(self):
+        cv = self.cv
+        src = [row[:] for row in cv.px]
+        for y in range(cv.h):
+            for x in range(cv.w):
+                if src[y][x] is not None:
+                    continue
+                for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                    nx, ny = x + dx, y + dy
+                    if 0 <= nx < cv.w and 0 <= ny < cv.h and src[ny][nx] is not None:
+                        cv.px[y][x] = INK
+                        break
 
 
-def draw_respiratory(cv, st):
-    cv.cylinder(8, 6, 16, 22, st.body, 1.0, 6.0)
+def tape(p: Pen, x, y, w, h, st, only_on_part=False):
+    """Improvised repair tape (black-market tier). only_on_part: wrap it
+    round whatever is already drawn there instead of floating in the air."""
+    k = max(1, int(round(p.px / 1.5)))
+    for X, Y, xx, yy in p.cells(x, y, x + w, y + h):
+        if only_on_part and p.cv.get(X, Y) is None:
+            continue
+        t = (yy - y) / max(0.01, h)
+        p.put(X, Y, rgb(st.tape, 5 if t < 0.35 else 4))
+        if (X + Y) // k % 5 == 0:
+            p.put(X, Y, rgb(st.tape, 2))
+
+
+# --- designs ----------------------------------------------------------------------------------------
+
+def draw_eyes(p: Pen, st):
+    p.cable([(31, 27), (26, 23), (21, 19)], st, 1.6)
+    p.cable([(30, 30), (24, 27)], st, 0.9)
+    # Mounting bracket behind the optic.
+    p.panel([(17, 9), (25, 9), (27, 11), (27, 21), (25, 23), (17, 23)], st.trim, 5.0, 2.0)
+    p.seam(19, 12, 25, 12, st.trim)
+    p.seam(19, 20, 25, 20, st.trim)
+    p.screw(24, 10, st.metal)
+    p.screw(24, 21, st.metal)
+    # Housing, front bezel ring, glass, aperture blades and the core.
+    p.sphere(13.5, 16, 11.5, 11.5, st.body, 1.0, 6.2)
+    p.sphere(12.5, 15.5, 8.2, 8.2, st.metal, 1.2, 6.4)
+    p.sphere(12.5, 15.5, 6.4, 6.4, st.glass, 0.6, 3.6)
+    for a in range(0, 360, 40):
+        ca, sa = math.cos(math.radians(a)), math.sin(math.radians(a))
+        p.line(12.5 + 2.4 * ca, 15.5 + 2.4 * sa, 12.5 + 5.4 * math.cos(math.radians(a + 32)),
+               15.5 + 5.4 * math.sin(math.radians(a + 32)), rgb(st.metal, 2))
+    p.sphere(12.5, 15.5, 2.3, 2.3, st.glow, 3.0, 7.2)
+    p.spec(9.5, 11.5, 2)
+    p.spec(15.5, 18.5)
+    # Housing seam and the focus ring knurl.
+    for k in range(9):
+        a = math.radians(200 + k * 14)
+        p.put(p.P(13.5 + 10.6 * math.cos(a)), p.P(16 + 10.6 * math.sin(a)), rgb(st.body, 1))
+    p.led(4.5, 24, st)
+
+
+def draw_arms(p: Pen, st):
+    """Forearm and fist: segmented plates over a synthetic-muscle core,
+    a piston along the ulna, an articulated hand."""
+    # Forearm core, muscle showing through the plate gaps.
+    p.capsule(7.4, 27.2, 20, 13, 5.6, st.muscle, 1.0, 5.0, r2=4.8)
+    for k, (t0, t1) in enumerate(((0.0, 0.28), (0.33, 0.6), (0.65, 0.94))):
+        ax, ay = 7.4 + 12.6 * t0, 27.2 - 14.2 * t0
+        bx, by = 7.4 + 12.6 * t1, 27.2 - 14.2 * t1
+        p.capsule(ax, ay, bx, by, 5.4 - k * 0.3, st.body, 1.0, 6.2)
+        mx, my = (ax + bx) / 2, (ay + by) / 2
+        p.seam(mx - 3.2, my - 2.8, mx + 2.8, my + 3.2, st.body)
+    p.capsule(3.5, 25, 16.5, 10, 0.9, st.metal, 2.0, 7.0)   # piston rod
+    p.capsule(3.6, 25.4, 8.5, 19.5, 1.5, st.trim, 1.0, 5.2)   # piston sleeve
+    # Wrist joint and the hand: palm block, four fingers curled into a fist, thumb.
+    p.sphere(21, 12, 3.4, 3.4, st.trim, 1.0, 5.6)
+    p.panel([(21, 5), (28, 4), (30, 7), (29, 13), (23, 14), (20, 10)], st.body, 5.4, 2.2)
+    for k in range(4):
+        fy = 4.6 + k * 2.3
+        p.capsule(27.2, fy, 30.0, fy + 0.4, 1.0, st.metal, 1.2, 6.2)
+        p.put(p.P(30.2), p.P(fy + 0.3), rgb(st.metal, 1))
+    p.capsule(22, 13.5, 26, 11.5, 1.1, st.metal, 1.2, 6.0)  # thumb
+    p.screw(9, 25, st.metal)
+    p.screw(15.5, 17.5, st.metal)
+    p.screw(23.5, 7.5, st.metal)
+    p.led(12, 21, st)
+    p.spec(8, 22, 2)
+    if st.tier >= 3:  # armour plate
+        p.panel([(9, 27), (16, 20), (19, 23), (12, 30)], st.trim, 5.0, 2.4)
+        p.seam(11, 27, 16, 22, st.trim)
+
+
+def draw_legs(p: Pen, st):
+    p.capsule(10.5, 6.5, 14, 15, 5.4, st.body, 1.0, 6.0, r2=5.0)      # thigh
+    p.seam(7, 10, 14.5, 8.5, st.body)
+    p.capsule(16, 18, 19.5, 28.5, 4.2, st.body, 1.0, 5.8, r2=3.4)     # shin
+    p.seam(13.5, 23, 20, 21.5, st.body)
+    p.capsule(21.5, 16.5, 24, 28, 0.9, st.metal, 2.0, 7.0)            # shock piston
+    p.capsule(22, 16.5, 23.6, 21.5, 1.7, st.trim, 1.0, 5.2)
+    p.panel([(14, 28), (22, 28), (26, 30), (26, 31.5), (13, 31.5)], st.trim, 5.0, 2.0)   # foot
+    p.sphere(15, 16, 4.8, 4.8, st.metal, 1.0, 6.6)                    # knee
+    p.sphere(15, 16, 2.0, 2.0, st.trim, 1.0, 4.4)
+    p.spec(13, 13.5, 2)
+    p.screw(8, 7.5, st.metal)
+    p.screw(18, 25, st.metal)
+    p.led(11.5, 12, st)
+
+
+def draw_spine(p: Pen, st):
+    p.cable([(24, 1.5), (25, 10), (23.5, 18), (25, 30.5)], st, 1.3)
+    p.cylinder(13.6, 1.5, 3.2, 29, st.trim, 1.0, 4.8)                 # central conduit
+    for k in range(5):
+        y = 2.5 + k * 6
+        p.panel([(8.5, y), (21.5, y), (23, y + 2.2), (21.5, y + 4.4), (8.5, y + 4.4), (7, y + 2.2)], st.body, 5.6, 2.4)
+        p.capsule(5.0, y + 2.2, 8.0, y + 2.2, 0.8, st.metal, 1.5, 6.0)   # transverse pins
+        p.capsule(22, y + 2.2, 24.5, y + 2.2, 0.8, st.metal, 1.5, 6.0)
+        if k % 2 == 0:
+            p.led(14.5, y + 1.6, st)
+        else:
+            p.screw(14.3, y + 1.4, st.metal)
+
+
+def draw_neural(p: Pen, st):
+    p.panel([(4.5, 6.5), (27.5, 6.5), (27.5, 25.5), (4.5, 25.5)], st.pcb, 4.6, 2.6)
+    for x in range(6, 27, 2):  # gold contact pins
+        p.panel([(x, 4.2), (x + 1.1, 4.2), (x + 1.1, 6.5), (x, 6.5)], st.gold, 6.0, 4.0, bevel=False)
+        p.panel([(x, 25.5), (x + 1.1, 25.5), (x + 1.1, 27.8), (x, 27.8)], st.gold, 4.2, 2.2, bevel=False)
+    for k, y in enumerate((9.5, 13, 16.5, 20, 23)):  # traces into the die
+        p.line(6, y, 10 + (k % 2), y, rgb(st.gold, 4))
+        p.line(10 + (k % 2), y, 11.5, y - 1.5 + k * 0.6, rgb(st.gold, 4))
+    p.panel([(12, 9.5), (25, 9.5), (25, 23), (12, 23)], st.body, 5.8, 2.2)   # heat spreader
+    for k in range(7):  # fins
+        x = 13 + k * 1.75
+        p.panel([(x, 10.6), (x + 0.9, 10.6), (x + 0.9, 21.8), (x, 21.8)], st.metal, 6.2 if k < 4 else 4.2, 2.4, bevel=False)
+    p.spec(13, 10.6, 3)
+    p.led(7.5, 21, st, big=True)
+    p.screw(25.5, 7.6, st.metal)
+    p.screw(5.4, 7.6, st.metal)
+    if st.tier == 5:
+        tape(p, 3.5, 14, 6.5, 3, st)
+
+
+def draw_dermal(p: Pen, st):
+    """A curved hex-weave mesh plate."""
+    cx, cy, r = 16, 16, 13.2
+    for X, Y, x, y in p.cells(cx - r, cy - r, cx + r, cy + r):
+        dx, dy = (x - cx) / r, (y - cy) / r
+        d = dx * dx + dy * dy
+        if d > 1:
+            continue
+        nz = math.sqrt(1 - d)
+        i = clamp(dx * LIGHT[0] + dy * LIGHT[1] + nz * LIGHT[2], 0, 1)
+        # Hex cells 4 units across.
+        hy = y / 3.4
+        row = math.floor(hy)
+        hx = (x + (row % 2) * 2.0) / 4.0
+        fx, fy = hx - math.floor(hx), hy - row
+        seam = fy < 0.18 or fx < 0.12 or fx > 0.94
+        if seam:
+            p.put(X, Y, rgb(st.trim, max(0, band(1.0 + 4.0 * i) - 1)))
+        else:
+            p.shade(X, Y, st.body, 1.2 + 5.2 * i - (0.8 if fy > 0.8 else 0))
+    p.spec(9, 7.5, 3)
+    for q in ((8.5, 9.5), (22, 10), (15.5, 23.5)):
+        p.screw(*q, st.metal)
+    p.led(15.5, 15, st)
+
+
+def draw_respiratory(p: Pen, st):
+    p.cylinder(8, 6, 16, 22, st.body, 1.0, 6.0)
     for y in range(9, 26, 3):  # vents
-        cv.rect(10, y, 12, 1, rgb(st.trim, 1))
-    cv.sphere(16, 6, 8, 2.5, st.metal, 2, 6.5)
-    cv.sphere(16, 28, 8, 2.5, st.metal, 1, 4.5)
-    cable(cv, [(16, 3), (16, 1), (24, 1), (29, 4)], st, 2)
-    cv.sphere(16, 17, 3.2, 3.2, st.metal, 1, 6)  # intake fan hub
+        p.panel([(10, y), (22, y), (22, y + 1.1), (10, y + 1.1)], st.trim, 1.6, 1.0, bevel=False)
+    p.sphere(16, 6, 8.2, 2.6, st.metal, 2.0, 6.6)
+    p.sphere(16, 28, 8.2, 2.6, st.metal, 1.0, 4.6)
+    p.cable([(16, 3), (16, 1.2), (24, 1.2), (29.5, 4)], st, 1.1)
+    p.sphere(16, 17, 3.6, 3.6, st.metal, 1.0, 6.2)  # intake fan
     for a in range(0, 360, 60):
-        cv.set(16 + round(2.2 * math.cos(math.radians(a))), 17 + round(2.2 * math.sin(math.radians(a))), rgb(st.trim, 2))
-    led(cv, 21, 25, st)
+        ca, sa = math.cos(math.radians(a)), math.sin(math.radians(a))
+        p.line(16 + 0.8 * ca, 17 + 0.8 * sa, 16 + 3.2 * math.cos(math.radians(a + 25)), 17 + 3.2 * math.sin(math.radians(a + 25)),
+               rgb(st.trim, 1))
+    p.sphere(16, 17, 1.0, 1.0, st.trim, 3.0, 5.0)
+    p.spec(10, 8.5, 2)
+    p.led(21, 25, st)
 
 
-def draw_internal(cv, st):
-    cv.capsule(9, 16, 23, 16, 8.0, st.body, 1.0, 6.0)
-    # Glass window with bio-fluid
-    for y in range(12, 21):
-        for x in range(11, 22):
-            v = 2.5 + (21 - y) * 0.35
-            cv.shade_px(x, y, st.glow if st.tier >= 2 else R("4a8a3a"), v)
-    cv.rect(11, 12, 11, 1, rgb(st.metal, 6))
-    cv.rect(11, 20, 11, 1, rgb(st.metal, 2))
-    cv.set(13, 14, (230, 255, 250, 255))
-    cable(cv, [(2, 10), (5, 13)], st, 2)
-    cable(cv, [(30, 22), (27, 19)], st, 2)
-    for p in ((7, 11), (24, 20)):
-        screw(cv, *p, st)
-    led(cv, 25, 11, st)
+def draw_internal(p: Pen, st):
+    p.capsule(9, 16, 23, 16, 8.0, st.body, 1.0, 6.0)
+    fluid = st.glow if st.tier >= 2 else R("4a8a3a")
+    window = [(11, 12), (22, 12), (22, 20.5), (11, 20.5)]
+    p.panel(window, st.glass, 3.0, 2.0, bevel=False)
+    for X, Y, x, y in p.cells(11, 14, 22, 20.5):   # bio-fluid with a meniscus
+        if y > 14.2 + 0.6 * math.sin(x * 0.9):
+            p.shade(X, Y, fluid, 2.4 + (20.5 - y) * 0.42)
+    for X, Y, x, y in p.cells(12, 15.5, 21, 20):    # bubbles
+        if (X * 7 + Y * 13) % 41 == 0:
+            p.put(X, Y, rgb(fluid, 7))
+    p.line(11, 12, 22, 12, rgb(st.metal, 6))
+    p.line(11, 20.5, 22, 20.5, rgb(st.metal, 1))
+    p.spec(12.5, 13, 2)
+    p.cable([(1.5, 9.5), (5.5, 13)], st, 1.2)
+    p.cable([(30.5, 22.5), (26.5, 19)], st, 1.2)
+    p.screw(6.5, 11, st.metal)
+    p.screw(24, 20, st.metal)
+    p.led(25, 11, st)
 
 
 DRAW = {"eyes": draw_eyes, "arms": draw_arms, "legs": draw_legs, "spine": draw_spine, "neural": draw_neural,
         "dermal": draw_dermal, "respiratory": draw_respiratory, "internal": draw_internal}
 
 
-def make_icon(category: str, tier: int) -> Canvas:
-    cv = Canvas(32, 32)
+def make_icon(category: str, tier: int, size: int = ICON_SIZE) -> Canvas:
+    p = Pen(size)
     st = Style(tier)
-    DRAW[category](cv, st)
+    DRAW[category](p, st)
     if tier == 5 and category != "neural":
-        tape(cv, 3, 3, 4, 2)
-        cv.line(2, 29, 9, 25, (255, 61, 129, 255))  # exposed live wire
-    cv.selective_outline()
-    return cv
+        # Tape wrapped round the part near its middle, and a live wire
+        # spliced along it (both only where there is a part to hold them).
+        tape(p, 8, 13.5, 16, 2.6, st, only_on_part=True)
+        pts = [(9 + k * 0.5, 22 - k * 0.45) for k in range(16)]
+        for (ax, ay), (bx, by) in zip(pts, pts[1:]):
+            for X, Y, xx, yy in p.cells(min(ax, bx) - 0.3, min(ay, by) - 0.3, max(ax, bx) + 0.3, max(ay, by) + 0.3):
+                if p.cv.get(X, Y) is not None:
+                    p.put(X, Y, (255, 61, 129, 255))
+    p.ink()
+    return p.cv
 
 
 def generate():
     """Renders only the category/tier icons that data/cyberware.json uses
-    (plus neural_t1, the surgical field's default implant)."""
+    (plus neural_t1, the surgical field's default implant), each as the
+    96 px item icon and the 128 px surgical-field implant."""
     import json
     import os
     data = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "data", "cyberware.json")
@@ -236,6 +470,7 @@ def generate():
     for cat in CATEGORIES:
         for tier in range(1, 6):
             if f"{cat}_t{tier}" in wanted:
-                make_icon(cat, tier).save(f"cyberware/{cat}_t{tier}.png")
+                make_icon(cat, tier, ICON_SIZE).save(f"cyberware/{cat}_t{tier}.png")
+                make_icon(cat, tier, FIELD_SIZE).save(f"cyberware/field/{cat}_t{tier}.png")
                 n += 1
-    print("cyberware icons:", n)
+    print("cyberware icons:", n, "(96 px icons + 128 px field implants)")

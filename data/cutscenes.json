@@ -1,19 +1,19 @@
 {
- "_doc": "In-engine cutscenes, each at least 30 seconds long when left to play (CutscenePlayer.estimate_seconds; tests/narrative_tests.gd checks every one, tests/narrative_probe.gd times one in the running game) (StoryManager queue, CutscenePlayer). Each plays at most once per save, only in the clinic, before any queued conversation, and is skippable (ESC or SKIP; click or SPACE moves on). Acts queue cs_act_<n> when they begin; beats, story-case decisions and conversation effects can queue others ({\"cutscene\": id}). A shot: backdrop (keyart | clinic | street:<location id> | black), optional card (a chapter title), optional portrait (cast id) with expr, text (typed out), optional hold (seconds after the text, default from its length). Everything reuses existing art: the title key art, the clinic room, the street scenes (with today's weather) and the cast portraits.",
+ "_doc": "In-engine cutscenes, each at least 30 seconds long when left to play (CutscenePlayer.estimate_seconds; tests/narrative_tests.gd checks every one, tests/narrative_probe.gd times one in the running game) (StoryManager queue, CutscenePlayer). Each plays at most once per save, only in the clinic, before any queued conversation, and is skippable (ESC or SKIP; click or SPACE moves on). Acts queue cs_act_<n> when they begin; beats, story-case decisions and conversation effects can queue others ({\"cutscene\": id}). A shot: backdrop (scene:<illustration id> | keyart | clinic | street:<location id> | black), optional card (a chapter title), optional portrait (cast id) with expr, text (typed out), optional hold (seconds after the text, default from its length). Backdrops are the full-screen cutscene illustrations (assets/sprites/cutscenes, tools/art/cutscenes_hd.py: towers, stairs, cars, table, lattice, wall_notes, money), the title key art, the clinic room, the street scenes (with today's weather) and the cast portraits.",
  "cutscenes": [
   {"id": "cs_opening", "shots": [
    {"backdrop": "keyart", "text": "Caldera. The water came up, and the city went down to meet it."},
-   {"backdrop": "street:caldera_stacks", "text": "The towers kept their lights on. Everything below the fortieth floor learned to live by them."},
+   {"backdrop": "scene:towers", "text": "The towers kept their lights on. Everything below the fortieth floor learned to live by them."},
    {"backdrop": "street:flood_tunnels", "text": "Down here nobody has a licence. Everybody has chrome that needs fixing."},
    {"backdrop": "street:sump_tenements", "text": "Hands that grip, eyes that zoom, spines that carry a double shift. All of it wears out. All of it is still on finance."},
-   {"backdrop": "clinic", "text": "Kaspar's old storeroom, under the Sump. A table, a lamp, a drain in the floor. Rent due Friday."},
-   {"backdrop": "street:clinic", "text": "Someone is already on the stairs."}
+   {"backdrop": "scene:table", "text": "Kaspar's old storeroom, under the Sump. A table, a lamp, a drain in the floor. Rent due Friday."},
+   {"backdrop": "scene:stairs", "text": "Someone is already on the stairs."}
   ]},
   {"id": "cs_mother", "shots": [
    {"backdrop": "street:rusty_valve", "text": "Word travels down the Valve faster than the water does. Tonight the word is your address."},
-   {"backdrop": "street:clinic", "text": "Three cars in Rustline colours stop outside. Nobody gets out until she does."},
+   {"backdrop": "scene:cars", "text": "Three cars in Rustline colours stop outside. Nobody gets out until she does."},
    {"backdrop": "street:clinic", "text": "Her people check the stairs, the drain, the window that doesn't open. One of them nods. Only then does she come in."},
-   {"backdrop": "clinic", "text": "She looks at the table, the lamp, the tray of tools. She looks at you last, and longest."},
+   {"backdrop": "scene:table", "text": "She looks at the table, the lamp, the tray of tools. She looks at you last, and longest."},
    {"backdrop": "clinic", "text": "The room gets quieter than a room with five people in it should be."},
    {"backdrop": "clinic", "portrait": "rika_kessel", "expr": "neutral", "text": "Mother doesn't knock."}
   ]},
@@ -37,7 +37,7 @@
    {"backdrop": "black", "card": "ACT IV · CONSPIRACY", "text": "Truth is expensive. So is silence."},
    {"backdrop": "street:lyra_checkpoint", "text": "Forty static cases. A trial buried in the Sump. A lattice with a part number."},
    {"backdrop": "street:lyra_annex", "text": "The annex lights stay on all night. The intake door has no handle on the outside."},
-   {"backdrop": "clinic", "text": "Your notes cover the whole wall now: names, dates, the same scar behind the same left ear."},
+   {"backdrop": "scene:wall_notes", "text": "Your notes cover the whole wall now: names, dates, the same scar behind the same left ear."},
    {"backdrop": "street:clinic", "text": "She comes alone, in the rain, without an umbrella, like someone who forgot she was allowed one."},
    {"backdrop": "clinic", "portrait": "ilse_hartmann", "expr": "sad", "text": "Ilse holds her cup with both hands. It doesn't help. \"Sit down. I owe you something.\""}
   ]},
@@ -46,11 +46,11 @@
    {"backdrop": "street:caldera_stacks", "text": "The towers went dark at nine. Down here, every window lit at once."},
    {"backdrop": "street:sump_tenements", "text": "People you stitched up are on the stairs with torches and toolboxes. Some came to help. Some came to collect."},
    {"backdrop": "street:rusty_valve", "text": "The crews have closed the Valve both ways. Nobody is sure yet whose side the crews are on."},
-   {"backdrop": "clinic", "text": "You lay out every clean tool you own. It doesn't look like enough. It never has."},
-   {"backdrop": "street:clinic", "text": "The whole street knows your door now. Tonight they're all coming through it."}
+   {"backdrop": "scene:table", "text": "You lay out every clean tool you own. It doesn't look like enough. It never has."},
+   {"backdrop": "scene:stairs", "text": "The whole street knows your door now. Tonight they're all coming through it."}
   ]},
   {"id": "cs_runaway_freed", "shots": [
-   {"backdrop": "clinic", "text": "The lattice lies in a steel tray like a nest of grey hair. It's still warm."},
+   {"backdrop": "scene:lattice", "text": "The lattice lies in a steel tray like a nest of grey hair. It's still warm."},
    {"backdrop": "clinic", "text": "Bed 14 sleeps for nine hours straight. When they wake, the first thing they ask for is their own name."},
    {"backdrop": "clinic", "text": "You tell them. They say it twice, slowly, as if testing whether it still fits."},
    {"backdrop": "street:sump_tenements", "text": "By noon they're gone, in a borrowed coat, with a bag of antibiotics and no forwarding address."},
@@ -58,12 +58,12 @@
    {"backdrop": "street:sump_tenements", "text": "Somewhere above the Sump, someone is singing. Badly. On purpose."}
   ]},
   {"id": "cs_runaway_sold", "shots": [
-   {"backdrop": "clinic", "text": "You count the money twice. It comes to the same number both times. That doesn't help."},
+   {"backdrop": "scene:money", "text": "You count the money twice. It comes to the same number both times. That doesn't help."},
    {"backdrop": "street:clinic", "text": "The car has no plates. The driver holds the door like a waiter."},
    {"backdrop": "street:clinic", "text": "Bed 14 doesn't fight. They look back at your door once, the way you look at a stop you'll never ride to again."},
    {"backdrop": "street:meridian_plaza", "text": "Bed 14 waves from the back seat as it pulls away. Nobody waves from those cars."},
    {"backdrop": "street:lyra_annex", "text": "At the annex a new name goes on a clipboard. It isn't theirs."},
-   {"backdrop": "clinic", "text": "The room is clean. The money is in the drawer. You leave the lamp on longer than you need to."}
+   {"backdrop": "scene:money", "text": "The room is clean. The money is in the drawer. You leave the lamp on longer than you need to."}
   ]}
  ]
 }

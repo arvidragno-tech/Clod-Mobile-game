@@ -11,9 +11,10 @@ var _tex: Texture2D
 var _glow: PackedVector2Array = PackedVector2Array()
 var _glow_col: PackedColorArray = PackedColorArray()
 var _solid: PackedVector2Array = PackedVector2Array()
-var _center := Vector2(16, 16)
+var _center := Vector2(24, 24)
 var _time: float = 0.0
 var _art: int = 32
+var _scale: float = GameConfig.PIXEL_SCALE
 
 
 static func make(item: CyberwareData) -> CyberwareIcon:
@@ -25,12 +26,13 @@ static func make(item: CyberwareData) -> CyberwareIcon:
 func setup(path: String, p_category: StringName) -> void:
 	category = p_category
 	_tex = PixelArt.tex(path)
+	_scale = float(PixelArt.density(path))
 	_time = randf() * 10.0
 	if _tex == null:
 		return
 	var img := _tex.get_image()
 	_art = img.get_width()
-	custom_minimum_size = Vector2(img.get_size()) * GameConfig.PIXEL_SCALE
+	custom_minimum_size = Vector2(img.get_size()) * PixelArt.density(path)
 	var sum := Vector2.ZERO
 	var n := 0
 	for y in img.get_height():
@@ -63,7 +65,7 @@ func _process(delta: float) -> void:
 func _draw() -> void:
 	if _tex == null:
 		return
-	var s := float(GameConfig.PIXEL_SCALE)
+	var s := _scale
 	var origin := ((size - Vector2(_art, _art) * s) / 2.0).floor()
 	draw_texture_rect(_tex, Rect2(origin, Vector2(_art, _art) * s), false)
 	if Settings.reduce_motion:
